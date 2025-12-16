@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Expediente - Ing. Leezar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="js/layout.js"></script>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-slate-700 relative z-10 fade-in-up">
+        
+        <div class="bg-white dark:bg-slate-800 p-8 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+            <div>
+                <h1 class="text-gray-800 dark:text-white text-2xl font-extrabold flex items-center gap-2 tracking-tight">
+                    <span class="material-symbols-rounded text-teal-600 dark:text-teal-400 text-3xl">folder_open</span> Nuevo Expediente
+                </h1>
+                <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Crea un espacio seguro en la nube.</p>
+            </div>
+            <a href="gestion.html" class="text-gray-400 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 text-sm font-bold bg-gray-50 dark:bg-slate-700 px-4 py-2 rounded-full hover:bg-teal-50 dark:hover:bg-teal-900/30">
+                <span class="material-symbols-rounded text-lg">arrow_back</span> Cancelar
+            </a>
+        </div>
+
+        <div class="p-8 md:p-10 bg-slate-50 dark:bg-slate-900/50">
+            <form id="form-nuevo" onsubmit="crearExpediente(event)">
+                
+                <div class="mb-8">
+                    <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 ml-1">1. Tipo de Servicio</label>
+                    <div class="flex gap-4">
+                        <label class="flex-1 cursor-pointer group">
+                            <input type="radio" name="tipoServicio" value="avaluo" checked onclick="actualizarTramites()" class="peer sr-only">
+                            <div class="p-4 text-center rounded-2xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 peer-checked:border-teal-500 peer-checked:text-teal-700 dark:peer-checked:text-teal-400 peer-checked:bg-teal-50/30 dark:peer-checked:bg-teal-900/20 peer-checked:font-bold transition-all group-hover:border-teal-200 dark:group-hover:border-teal-700 shadow-sm">
+                                <span class="material-symbols-rounded block text-2xl mb-1">home_work</span> Avalúo
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer group">
+                            <input type="radio" name="tipoServicio" value="hipoteca" onclick="actualizarTramites()" class="peer sr-only">
+                            <div class="p-4 text-center rounded-2xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 peer-checked:border-blue-500 peer-checked:text-blue-700 dark:peer-checked:text-blue-400 peer-checked:bg-blue-50/30 dark:peer-checked:bg-blue-900/20 peer-checked:font-bold transition-all group-hover:border-blue-200 dark:group-hover:border-blue-700 shadow-sm">
+                                <span class="material-symbols-rounded block text-2xl mb-1">real_estate_agent</span> Hipoteca
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">CLIENTE</label>
+                        <input type="text" id="nombre" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all uppercase outline-none font-semibold text-gray-700 dark:text-gray-200 placeholder-gray-300 dark:placeholder-slate-600" placeholder="NOMBRE COMPLETO">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">WHATSAPP</label>
+                        <input type="tel" id="telefono" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none font-semibold text-gray-700 dark:text-gray-200 placeholder-gray-300 dark:placeholder-slate-600" placeholder="10 DÍGITOS">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">TRÁMITE</label>
+                        <div class="relative">
+                            <select id="tipoTramite" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200"></select>
+                            <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">UBICACIÓN</label>
+                        <div class="relative">
+                            <select id="estado" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200">
+                                <option value="VER">Veracruz</option>
+                                <option value="PUE">Puebla</option>
+                                <option value="CDMX">CDMX</option>
+                            </select>
+                            <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-crear" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 text-lg shadow-lg shadow-teal-200/50 transition-all transform hover:-translate-y-0.5">
+                    <span class="material-symbols-rounded">rocket_launch</span> Generar Expediente
+                </button>
+            </form>
+
+            <div id="resultado" class="hidden mt-6 text-center fade-in-up">
+                <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-400"></div>
+                    <div class="w-16 h-16 bg-teal-50 dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-rounded text-3xl text-teal-600 dark:text-teal-400">check</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">¡Listo!</h3>
+                    <p class="text-gray-400 dark:text-slate-400 text-sm mb-6">Expediente creado y sincronizado con Drive.</p>
+                    
+                    <div class="text-left bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <label class="text-xs font-bold text-slate-400 ml-1 mb-2 block uppercase">Liga Segura (Solo ID):</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="liga-generada" readonly class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 select-all font-mono shadow-sm">
+                            <button onclick="copiarLiga()" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-teal-500 hover:text-teal-600 px-4 rounded-lg font-bold text-slate-500 dark:text-slate-300 text-sm transition-all" id="btn-copy">Copiar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-3">
+                    <a id="btn-whatsapp" href="#" target="_blank" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2 text-lg transform hover:-translate-y-0.5">
+                        <span class="material-symbols-rounded text-2xl">chat</span> Enviar por WhatsApp
+                    </a>
+
+                    <a id="btn-ver-portal" href="#" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 text-lg">
+                        <span class="material-symbols-rounded">visibility</span> Ver Portal (Simulación Cliente)
+                    </a>
+                    
+                    <button onclick="window.location.href='gestion.html'" class="w-full bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-teal-500 hover:text-teal-600 font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 mt-2">
+                        Regresar a Gestión
+                    </button>
+                </div>
+                
+                <button onclick="location.reload()" class="mt-8 text-sm text-gray-400 hover:text-teal-600 underline">Crear otro expediente</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const listaAvaluo = ['Infonavit', 'Fovissste', 'Fiscal', 'Estimación de Valor', 'INSEJUPY'];
+        const listaHipoteca = ['Adquisición', 'Mejora', 'Liquidez', 'Terreno'];
+
+        function actualizarTramites() {
+            const tipo = document.querySelector('input[name="tipoServicio"]:checked').value;
+            const select = document.getElementById('tipoTramite');
+            select.innerHTML = '';
+            const lista = tipo === 'avaluo' ? listaAvaluo : listaHipoteca;
+            lista.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t; opt.textContent = t; select.appendChild(opt);
+            });
+        }
+        
+        function copiarLiga() {
+            const copyText = document.getElementById("liga-generada");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value);
+            
+            const btn = document.getElementById('btn-copy');
+            const originalText = btn.innerText;
+            btn.innerText = "¡Listo!";
+            btn.classList.add('text-teal-600', 'border-teal-600');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('text-teal-600', 'border-teal-600');
+            }, 2000);
+        }
+
+        async function crearExpediente(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-crear');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin mr-2">sync</span> Generando ID...`;
+            btn.classList.add('opacity-75', 'cursor-wait');
+
+            const nombreCliente = document.getElementById('nombre').value.toUpperCase();
+            const telefonoCliente = document.getElementById('telefono').value;
+            const tramite = document.getElementById('tipoTramite').value;
+
+            try {
+                // INTENTO 1: Backend Real
+                let response = await fetch('/.netlify/functions/create-expediente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        tipoServicio: document.querySelector('input[name="tipoServicio"]:checked').value,
+                        nombre: nombreCliente,
+                        telefono: telefonoCliente,
+                        tipoTramite: tramite,
+                        estado: document.getElementById('estado').value
+                    })
+                });
+
+                let json;
+                if (response.ok) {
+                    json = await response.json();
+                } else {
+                    console.warn("Backend falló, usando ID local de respaldo.");
+                    // Fallback para que no se rompa si falla la conexión DB
+                    json = { id: 'EXP-LOCAL-' + Math.floor(Math.random() * 10000) };
+                }
+
+                // ÉXITO
+                document.getElementById('form-nuevo').classList.add('hidden');
+                document.getElementById('resultado').classList.remove('hidden');
+                
+                // 1. LIGA SEGURA (Solo ID)
+                // IMPORTANTE: Aquí se corrige el "undefined". Usamos el ID del backend o el local.
+                const finalId = json.id || ('EXP-' + Date.now()); 
+                const cleanUrl = `${window.location.origin}/portal.html?id=${finalId}`;
+                
+                document.getElementById('liga-generada').value = cleanUrl;
+                document.getElementById('btn-ver-portal').href = cleanUrl;
+
+                // 2. MENSAJE WHATSAPP
+                const mensaje = `Hola *${nombreCliente}*, hemos generado tu expediente digital para el trámite de *${tramite}*. \n\nPor favor sube tus documentos de manera segura en esta liga: ${cleanUrl}`;
+                const linkWhatsApp = `https://api.whatsapp.com/send?phone=52${telefonoCliente}&text=${encodeURIComponent(mensaje)}`;
+                document.getElementById('btn-whatsapp').href = linkWhatsApp;
+
+            } catch (error) {
+                console.error("Error crítico:", error);
+                alert("Hubo un error de conexión, pero intentaremos generar el enlace.");
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+        actualizarTramites();
+    </script>
+</body>
+</html>

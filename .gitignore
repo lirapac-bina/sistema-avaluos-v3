@@ -1,0 +1,15 @@
+# Ignora el archivo de secretos locales
+.env
+
+# Ignora las herramientas de Node.js
+/node_modules
+# Local Netlify folder
+.netlify
+# Ignora el archivo de secretos locales
+.env
+
+# Ignora las herramientas de Node.js
+/node_modules
+
+# Ignora la llave de la cuenta de servicio
+**/serviceaccountkey.json
