@@ -14,7 +14,6 @@ if (admin.apps.length === 0) {
     }
 
     // 2. Si estamos en Local (PC), busca el archivo PERO usando 'fs' 
-    // (Al usar 'fs', engañamos a Netlify para que no intente empaquetarlo)
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -26,29 +25,45 @@ if (admin.apps.length === 0) {
 
     if (serviceAccount) {
         admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    } else {
-        console.error("ERROR FATAL: No hay credenciales de Firebase disponibles.");
     }
 }
 const db = admin.firestore();
 // --- FIN DEL BLOQUE BLINDADO ---
 
+exports.handler = async (event, context) => {
+  try {
+    // Verificar método
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
+    }
+
+    const { id } = JSON.parse(event.body);
+    if (!id) return { statusCode: 400, body: 'Falta ID' };
+
     // Buscar en ambas colecciones
     let doc = await db.collection('expedientes_avaluos').doc(id).get();
-    if (!doc.exists) doc = await db.collection('expedientes_hipotecas').doc(id).get();
+    
+    // Si no está en avaluos, buscar en hipotecas (lógica defensiva)
+    if (!doc.exists) {
+        // Nota: Asegúrate de que esta colección exista si la vas a usar
+        const docHip = await db.collection('expedientes_hipotecas').doc(id).get();
+        if(docHip.exists) doc = docHip;
+    }
 
-    if (!doc.exists) return { statusCode: 404, body: JSON.stringify({ error: 'No encontrado' }) };
+    if (!doc.exists) {
+        return { statusCode: 404, body: JSON.stringify({ error: 'No encontrado' }) };
+    }
 
     const data = doc.data();
     
     return {
       statusCode: 200,
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombreCliente: data.nombreCliente,
-        tipoTramite: data.tipoTramite,
+        nombreCliente: data.nombreCliente || data.cliente || '',
+        tipoTramite: data.tipoTramite || data.tramite || '',
         fechaCreacion: data.fechaCreacion,
-        checklist: data.checklist || {} // Devuelve el checklist guardado
+        checklist: data.checklist || {} 
       })
     };
 

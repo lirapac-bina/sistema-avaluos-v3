@@ -1,17 +1,28 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-const initFirebase = () => {
-  if (admin.apps.length) return;
-  let serviceAccount;
-  try {
-    serviceAccount = require('./serviceaccountkey.json');
-  } catch (e) {
-    const envVar = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (envVar) serviceAccount = JSON.parse(envVar);
-  }
-  if (!serviceAccount) throw new Error("Credenciales no encontradas");
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-};
+// --- INICIALIZACIÓN BLINDADA ---
+if (admin.apps.length === 0) {
+    let serviceAccount;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
+    }
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
+const db = admin.firestore();
+// ------------------------------
+
+// ... DEJA EL RESTO DE TU CÓDIGO (exports.handler...) IGUAL ...
 
 exports.handler = async (event, context) => {
   const headers = {
