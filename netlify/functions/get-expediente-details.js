@@ -1,14 +1,37 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-exports.handler = async (event, context) => {
-  const headers = { 'Access-Control-Allow-Origin': '*' }; // Para que el portal no tenga errores de CORS
-  const id = event.queryStringParameters.id;
-  if (!id) return { statusCode: 400, body: 'Falta ID' };
+// --- INICIO DEL BLOQUE BLINDADO ---
+if (admin.apps.length === 0) {
+    let serviceAccount;
 
-  try {
-    const serviceAccount = require('./serviceaccountkey.json');
-    if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    const db = admin.firestore();
+    // 1. Si estamos en Netlify (Nube), usa la variable de entorno
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } catch (e) { console.error("Error ENV:", e); }
+    }
+
+    // 2. Si estamos en Local (PC), busca el archivo PERO usando 'fs' 
+    // (Al usar 'fs', engañamos a Netlify para que no intente empaquetarlo)
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+
+    if (serviceAccount) {
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    } else {
+        console.error("ERROR FATAL: No hay credenciales de Firebase disponibles.");
+    }
+}
+const db = admin.firestore();
+// --- FIN DEL BLOQUE BLINDADO ---
 
     // Buscar en ambas colecciones
     let doc = await db.collection('expedientes_avaluos').doc(id).get();

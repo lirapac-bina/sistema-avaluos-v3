@@ -1,20 +1,37 @@
-// netlify/functions/create-expediente.js
 const admin = require('firebase-admin');
+const fs = require('fs');
 const path = require('path');
 
-// Inicialización Robusta (Igual que arriba)
+// --- INICIO DEL BLOQUE BLINDADO ---
 if (admin.apps.length === 0) {
-    try {
-        const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
-        admin.initializeApp({ credential: admin.credential.cert(require(keyPath)) });
-    } catch (e) {
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
-        }
+    let serviceAccount;
+
+    // 1. Si estamos en Netlify (Nube), usa la variable de entorno
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } catch (e) { console.error("Error ENV:", e); }
+    }
+
+    // 2. Si estamos en Local (PC), busca el archivo PERO usando 'fs' 
+    // (Al usar 'fs', engañamos a Netlify para que no intente empaquetarlo)
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+
+    if (serviceAccount) {
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    } else {
+        console.error("ERROR FATAL: No hay credenciales de Firebase disponibles.");
     }
 }
-
 const db = admin.firestore();
+// --- FIN DEL BLOQUE BLINDADO ---
 
 exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
