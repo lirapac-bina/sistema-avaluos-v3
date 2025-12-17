@@ -2,19 +2,15 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIO DEL BLOQUE BLINDADO ---
+// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-
-    // 1. Si estamos en Netlify (Nube), usa la variable de entorno
+    // 1. Variable de Entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        } catch (e) { console.error("Error ENV:", e); }
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
     }
-
-    // 2. Si estamos en Local (PC), busca el archivo PERO usando 'fs' 
-    // (Al usar 'fs', engañamos a Netlify para que no intente empaquetarlo)
+    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -23,15 +19,10 @@ if (admin.apps.length === 0) {
             }
         } catch (e) { }
     }
-
-    if (serviceAccount) {
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    } else {
-        console.error("ERROR FATAL: No hay credenciales de Firebase disponibles.");
-    }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-// --- FIN DEL BLOQUE BLINDADO ---
+// ------------------------------------------------
 
 exports.handler = async (event, context) => {
   const headers = {

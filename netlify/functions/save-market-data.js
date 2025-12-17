@@ -1,32 +1,28 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-// Inicialización Robusta
-const initFirebase = () => {
-  if (admin.apps.length) return;
-
-  let serviceAccount;
-  try {
-    // 1. Intento Local: Buscamos el archivo con doble extensión .json.json
-    console.log("Buscando llave local: serviceaccountkey.json");
-    serviceAccount = require('./serviceaccountkey.json');
-  } catch (e) {
-    console.log("No se encontró archivo local, buscando en entorno...");
-    // 2. Intento Nube
-    // Validamos que la variable exista ANTES de intentar parsearla para evitar el error "undefined"
-    const envVar = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (envVar) {
-        serviceAccount = JSON.parse(envVar);
+// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
+if (admin.apps.length === 0) {
+    let serviceAccount;
+    // 1. Variable de Entorno (Nube)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
     }
-  }
-
-  if (!serviceAccount) {
-      throw new Error("FATAL: No se encontraron credenciales de Firebase (ni archivo local ni variable de entorno).");
-  }
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-};
+    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
+const db = admin.firestore();
+// ------------------------------------------------
 
 exports.handler = async (event, context) => {
   const headers = {

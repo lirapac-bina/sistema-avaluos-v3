@@ -1,16 +1,29 @@
-const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-// Evita errores si Firebase ya se inició
-if (getApps().length === 0) {
-    // Aquí carga tu llave recién renombrada
-    var serviceAccount = require("./serviceaccountkey.json"); 
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
+// --- INICIALIZACIÓN BLINDADA (ESTA ES LA QUE FUNCIONA) ---
+if (admin.apps.length === 0) {
+    let serviceAccount;
+    // 1. Variable de Entorno (Nube)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
+    }
+    // 2. Archivo Local (PC) - Usando 'fs' para que Netlify NO falle
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
+const db = admin.firestore();
 
-const db = getFirestore();
+// ... A PARTIR DE AQUÍ DEJA TU CÓDIGO DE "exports.handler" IGUAL ...
 
 exports.handler = async (event, context) => {
     try {

@@ -1,14 +1,28 @@
-const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-if (getApps().length === 0) {
-    var serviceAccount = require("./serviceaccountkey.json"); 
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
+// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
+if (admin.apps.length === 0) {
+    let serviceAccount;
+    // 1. Variable de Entorno (Nube)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
+    }
+    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
+    if (!serviceAccount) {
+        try {
+            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { }
+    }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
-
-const db = getFirestore();
+const db = admin.firestore();
+// ------------------------------------------------
 
 exports.handler = async (event, context) => {
     // Solo aceptamos peticiones POST (enviar datos)

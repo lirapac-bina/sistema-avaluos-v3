@@ -3,20 +3,21 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIALIZACIÓN DE FIREBASE (COMPATIBLE CON NETLIFY) ---
+// --- 1. BLOQUE DE CONEXIÓN BLINDADO (SOLUCIÓN DEFINITIVA) ---
 if (admin.apps.length === 0) {
     let serviceAccount;
 
-    // 1. Intentar cargar desde Variable de Entorno (Producción/Netlify)
+    // A. Intentamos cargar desde Variable de Entorno (Producción en Netlify)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try {
             serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
         } catch (e) {
-            console.error("Error parseando variable de entorno:", e);
+            console.error("Error leyendo variable de entorno:", e);
         }
     }
 
-    // 2. Intentar cargar archivo local (Desarrollo) - USANDO 'fs' PARA EVITAR ERROR DE BUILD
+    // B. Intentamos cargar archivo local (Tu PC) usando 'fs'
+    // Al usar 'fs' y no 'require', Netlify NO buscará el archivo al construir
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -24,23 +25,23 @@ if (admin.apps.length === 0) {
                 serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
             }
         } catch (e) {
-            console.warn("No se encontró credencial local (Normal en Netlify).");
+            console.warn("No se encontró archivo local (Normal en Netlify).");
         }
     }
 
-    // 3. Inicializar
+    // C. Inicializamos
     if (serviceAccount) {
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });
     } else {
-        console.error("FATAL: No se encontraron credenciales de Firebase.");
+        console.error("FATAL: No hay credenciales disponibles.");
     }
 }
+// ----------------------------------------------------------------------------
 
 exports.handler = async (event, context) => {
   try {
-    // Detecta si estás en localhost o en producción
     const host = event.headers.host;
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const redirectUri = `${protocol}://${host}/.netlify/functions/auth-finish`;
