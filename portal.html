@@ -16,13 +16,11 @@
         body { font-family: 'Roboto', sans-serif; background-color: #f0f2f5; }
         .dark body { background-color: #0f172a; }
         
-        /* Animaciones */
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .fade-in { animation: popIn 0.3s ease-out forwards; }
         .jack-bounce { animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         
-        /* Botón Latiendo para acciones importantes */
         .btn-pulse { animation: pulse-blue 2s infinite; }
         @keyframes pulse-blue { 
             0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.7); } 
@@ -30,18 +28,11 @@
             100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); } 
         }
 
-        /* Tabs */
-        .tab-btn { background: white; border-bottom: 3px solid transparent; color: #64748b; font-weight: 600; opacity: 0.7; transition: all 0.2s; }
-        .dark .tab-btn { background: #1e293b; color: #94a3b8; }
-        .tab-btn.active { opacity: 1; background: #fff; border-radius: 8px 8px 0 0; }
-        .dark .tab-btn.active { background: #0f172a; }
-
-        /* Colores Tabs */
-        .tab-btn.active.tab-solicitante { border-bottom-color: #0d9488; color: #0d9488; }
-        .tab-btn.active.tab-propietario { border-bottom-color: #f97316; color: #f97316; }
-        .tab-btn.active.tab-inmueble { border-bottom-color: #6366f1; color: #6366f1; }
-
         .privacy-backdrop { background-color: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); }
+        
+        .tab-btn { transition: all 0.2s ease-in-out; border-bottom-width: 3px; }
+        .tab-btn:hover { background-color: #f8fafc; }
+        .dark .tab-btn:hover { background-color: #1e293b; }
     </style>
 </head>
 <body class="pb-32 bg-slate-50 dark:bg-slate-900 transition-colors">
@@ -88,7 +79,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 mb-8 text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-500"></div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white mb-2 tracking-tight" id="cliente-nombre">Cargando...</h1>
-            <div id="header-info" class="flex justify-center gap-2 mt-2">
+            <div id="header-info" class="flex justify-center flex-wrap gap-2 mt-2">
                 <span id="tipo-tramite" class="uppercase font-bold tracking-wider text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full">...</span>
             </div>
             <div class="mt-4 flex justify-center" id="estado-badge"></div>
@@ -142,9 +133,9 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl">
-                <button onclick="switchTab('solicitante')" class="tab-btn tab-solicitante active py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">person</span> <span class="text-xs font-bold">Solicitante</span></button>
-                <button onclick="switchTab('propietario')" class="tab-btn tab-propietario py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">group</span> <span class="text-xs font-bold">Propietario</span></button>
-                <button onclick="switchTab('inmueble')" class="tab-btn tab-inmueble py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">home</span> <span class="text-xs font-bold">Inmueble</span></button>
+                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">person</span> <span class="text-xs font-bold">Solicitante</span></button>
+                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">group</span> <span class="text-xs font-bold">Propietario</span></button>
+                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">home</span> <span class="text-xs font-bold">Inmueble</span></button>
             </div>
 
             <div class="space-y-4 min-h-[300px]">
@@ -152,8 +143,8 @@
                 <div id="section-propietario" class="tab-content hidden fade-in space-y-3"><div id="list-propietario" class="space-y-3"></div></div>
                 <div id="section-inmueble" class="tab-content hidden fade-in space-y-3">
                     
-                    <div class="bg-white dark:bg-slate-800 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <div class="bg-indigo-50 border border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center shadow-sm">
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
                             <span class="material-symbols-rounded text-2xl">my_location</span>
                         </div>
                         <h3 class="font-bold text-slate-800 dark:text-white mb-1">Ubicación del Inmueble</h3>
@@ -184,8 +175,6 @@
         const params = new URLSearchParams(window.location.search);
         const expedienteId = params.get('id');
         let totalRequisitos = 0; let completados = 0; let contadoresPartes = {}; 
-        
-        // Variable para recordar la pestaña activa entre recargas
         let currentTab = 'solicitante'; 
 
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
@@ -204,25 +193,23 @@
                 if (!response.ok) throw new Error('No encontrado');
                 const data = await response.json();
                 
-                // CHECKLIST ROBUSTO
-                if(!data.checklist || Object.keys(data.checklist).length === 0) {
-                    data.checklist = {
-                        'INE_SOLICITANTE': { nombre: 'INE Solicitante (Frente y Vuelta)', estado: 'pendiente', categoria: 'solicitante' },
-                        'CURP_SOLICITANTE': { nombre: 'CURP', estado: 'pendiente', categoria: 'solicitante' },
-                        'RFC_SOLICITANTE': { nombre: 'Constancia Situación Fiscal', estado: 'pendiente', categoria: 'solicitante' },
-                        'ACTA_NAC_SOLICITANTE': { nombre: 'Acta de Nacimiento', estado: 'pendiente', categoria: 'solicitante' },
-                        'NSS_SOLICITANTE': { nombre: 'Número de Seguro Social', estado: 'pendiente', categoria: 'solicitante' },
-                        'INE_PROPIETARIO': { nombre: 'INE Propietario', estado: 'pendiente', categoria: 'propietario' },
-                        'ACTA_MAT_PROPIETARIO': { nombre: 'Acta de Matrimonio', estado: 'pendiente', categoria: 'propietario' },
-                        'ESCRITURA': { nombre: 'Escritura Pública', estado: 'pendiente', categoria: 'inmueble', permitirExtras: true },
-                        'PREDIAL': { nombre: 'Boleta Predial 2025', estado: 'pendiente', categoria: 'inmueble' },
-                        'AGUA': { nombre: 'Recibo de Agua', estado: 'pendiente', categoria: 'inmueble' },
-                        'LUZ': { nombre: 'Recibo de Luz (CFE)', estado: 'pendiente', categoria: 'inmueble' },
-                        'PLANO': { nombre: 'Plano Arquitectónico', estado: 'pendiente', categoria: 'inmueble' }
-                    };
-                }
+                const plantillaBase = {
+                    'INE_SOLICITANTE': { nombre: 'INE Solicitante (Frente y Vuelta)', estado: 'pendiente', categoria: 'solicitante' },
+                    'CURP_SOLICITANTE': { nombre: 'CURP', estado: 'pendiente', categoria: 'solicitante' },
+                    'RFC_SOLICITANTE': { nombre: 'Constancia Situación Fiscal', estado: 'pendiente', categoria: 'solicitante' },
+                    'ACTA_NAC_SOLICITANTE': { nombre: 'Acta de Nacimiento', estado: 'pendiente', categoria: 'solicitante' },
+                    'NSS_SOLICITANTE': { nombre: 'Número de Seguro Social', estado: 'pendiente', categoria: 'solicitante' },
+                    'INE_PROPIETARIO': { nombre: 'INE Propietario', estado: 'pendiente', categoria: 'propietario' },
+                    'ACTA_MAT_PROPIETARIO': { nombre: 'Acta de Matrimonio', estado: 'pendiente', categoria: 'propietario' },
+                    'ESCRITURA': { nombre: 'Escritura Pública', estado: 'pendiente', categoria: 'inmueble', permitirExtras: true },
+                    'PREDIAL': { nombre: 'Boleta Predial 2025', estado: 'pendiente', categoria: 'inmueble' },
+                    'AGUA': { nombre: 'Recibo de Agua', estado: 'pendiente', categoria: 'inmueble' },
+                    'LUZ': { nombre: 'Recibo de Luz (CFE)', estado: 'pendiente', categoria: 'inmueble' },
+                    'PLANO': { nombre: 'Plano Arquitectónico', estado: 'pendiente', categoria: 'inmueble' }
+                };
+
+                data.checklist = { ...plantillaBase, ...(data.checklist || {}) };
                 renderizarExpediente(data);
-                // IMPORTANTE: Restaurar la pestaña activa después de renderizar
                 switchTab(currentTab);
             } catch (error) { console.error(error); }
         }
@@ -231,37 +218,47 @@
             document.getElementById('loading-card').classList.add('hidden');
             document.getElementById('main-container').classList.remove('hidden');
             document.getElementById('cliente-nombre').textContent = data.nombreCliente;
-            document.getElementById('header-info').innerHTML = `<span class="uppercase font-bold tracking-wide text-xs bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full text-slate-500">${data.tipoTramite}</span>`;
+            
+            let fechaHtml = '';
+            if (data.fechaCreacion) {
+                try {
+                    const fechaObj = data.fechaCreacion._seconds ? new Date(data.fechaCreacion._seconds * 1000) : new Date(data.fechaCreacion);
+                    const opciones = { day: 'numeric', month: 'short', year: 'numeric' };
+                    const fechaStr = fechaObj.toLocaleDateString('es-MX', opciones).toUpperCase();
+                    fechaHtml = `<span class="uppercase font-bold tracking-wide text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">${fechaStr}</span>`;
+                } catch(e) { console.log("Error fecha", e); }
+            }
+
+            document.getElementById('header-info').innerHTML = `
+                <span class="uppercase font-bold tracking-wide text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full">${data.tipoTramite}</span>
+                ${fechaHtml}
+            `;
 
             const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
-            // Limpiamos contenido previo
             Object.values(containers).forEach(c => c.innerHTML = '');
 
-            // Actualizar Botones Superiores (Solicitudes)
             actualizarBotonSolicitud('SOLICITUD_INFONAVIT_FIRMADA', data.checklist, 'box-infonavit');
             actualizarBotonSolicitud('SOLICITUD_AVALUO_FIRMADA', data.checklist, 'box-avaluo');
 
             let itemsArray = Object.entries(data.checklist || {});
-            // Ordenar: Pendientes primero
             itemsArray.sort((a, b) => (a[1].estado === 'pendiente' ? -1 : 1));
 
             totalRequisitos = 0; completados = 0; let enRevision = 0;
 
             itemsArray.forEach(([key, item]) => {
-                // Filtramos lo que NO va en la lista (Ubicación y Solicitudes de arriba)
-                if (key !== 'UBICACION_MAPS' && !key.includes('SOLICITUD_')) { 
+                if (key !== 'UBICACION_MAPS') { 
                     if (!key.includes('_EXTRA_')) totalRequisitos++;
+                    
                     if (item.estado !== 'pendiente') {
                         if (!key.includes('_EXTRA_')) completados++;
                         if (item.estado === 'en_revision') enRevision++;
                     }
-                    
+                }
+
+                if (key !== 'UBICACION_MAPS' && !key.includes('SOLICITUD_')) {
                     let destino = item.categoria || 'solicitante';
                     if (!containers[destino]) destino = 'solicitante';
-                    
-                    // Renderizamos SIEMPRE, sin condición de error
                     containers[destino].insertAdjacentHTML('beforeend', generarTarjetaItem(key, item));
-
                 } else if (key === 'UBICACION_MAPS' && item.estado !== 'pendiente') {
                     document.getElementById('ubicacion-status').innerHTML = `<span class="text-green-600 font-bold flex items-center justify-center gap-1"><span class="material-symbols-rounded">check_circle</span> Ubicación recibida</span>`;
                     document.getElementById('btn-gps').disabled = true;
@@ -280,7 +277,7 @@
             const item = checklist[key];
             if (item && item.estado !== 'pendiente') {
                 const container = document.getElementById(containerId);
-                const btnUpload = container.querySelector('label'); // Buscar dentro del container
+                const btnUpload = container.querySelector('label'); 
                 if(btnUpload) {
                     btnUpload.className = "flex-1 bg-amber-100 text-amber-700 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-default border border-amber-200";
                     btnUpload.innerHTML = `<span class="material-symbols-rounded text-base">hourglass_top</span> En Revisión`;
@@ -292,16 +289,34 @@
 
         function generarTarjetaItem(key, item) {
             const acceptType = 'image/*,application/pdf';
-            const borderClass = key.includes('_EXTRA_') ? 'border-l-4 border-l-slate-300 ml-6 bg-slate-50' : 'border border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm';
+            
+            // --- AQUÍ ESTÁ EL CAMBIO PARA LOS COLORES ---
+            // Definimos el color base según la categoría
+            let bgClass = "bg-white border-gray-200"; // Por defecto
+            
+            if (item.categoria === 'solicitante') {
+                bgClass = "bg-teal-50 border-teal-100"; // Verde muy tenue
+            } else if (item.categoria === 'propietario') {
+                bgClass = "bg-orange-50 border-orange-100"; // Naranja muy tenue
+            } else if (item.categoria === 'inmueble') {
+                bgClass = "bg-indigo-50 border-indigo-100"; // Azul muy tenue
+            }
+
+            // Mantenemos la lógica de la "sangría" para los items extra
+            const borderClass = key.includes('_EXTRA_') 
+                ? 'border-l-4 border-l-slate-300 ml-6 ' + bgClass 
+                : 'border shadow-sm ' + bgClass;
+            // ---------------------------------------------
 
             let controlHtml = '';
             if (item.estado === 'pendiente') {
+                // Botones blancos para que resalten sobre el fondo de color tenue
                 controlHtml = `<div class="flex gap-2 w-full sm:w-auto">
-                    <label class="btn-action btn-camera flex-1 sm:flex-none justify-center dark:bg-slate-700 dark:text-teal-400"><span class="material-symbols-rounded text-xl">photo_camera</span> Foto<input type="file" class="hidden" accept="image/*" capture="environment" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
-                    <label class="btn-action btn-file flex-1 sm:flex-none justify-center dark:bg-slate-700 dark:text-gray-300"><span class="material-symbols-rounded text-xl">upload_file</span> Archivo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
+                    <label class="btn-action btn-camera flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-teal-400"><span class="material-symbols-rounded text-xl">photo_camera</span> Foto<input type="file" class="hidden" accept="image/*" capture="environment" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
+                    <label class="btn-action btn-file flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300"><span class="material-symbols-rounded text-xl">upload_file</span> Archivo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
                 </div>`;
             } else {
-                let color = item.estado === 'validado' ? 'text-green-600 bg-green-50 border-green-200' : 'text-amber-600 bg-amber-50 border-amber-200';
+                let color = item.estado === 'validado' ? 'text-green-600 bg-green-100 border-green-200' : 'text-amber-600 bg-amber-100 border-amber-200';
                 let icon = item.estado === 'validado' ? 'verified' : 'hourglass_top';
                 let text = item.estado === 'validado' ? 'Validado' : 'En Revisión';
                 controlHtml = `<div class="flex items-center gap-1 ${color} px-4 py-2 rounded-lg border text-xs font-bold w-full sm:w-auto justify-center uppercase tracking-wide"><span class="material-symbols-rounded text-lg">${icon}</span> ${text}</div>`;
@@ -310,10 +325,10 @@
             let extraBtn = (item.permitirExtras && item.estado !== 'pendiente') ? 
                 `<button onclick="clonarItem('${key}', '${item.nombre.replace(/'/g, "\\'")}', '${item.categoria}')" class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-bold flex items-center gap-1 transition-colors"><span class="material-symbols-rounded text-sm">add_circle</span> Agregar otra página</button>` : '';
 
-            return `<div class="${borderClass} p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all" id="card-${key}">
+            return `<div class="${borderClass} p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all" id="card-${key}">
                 <div class="flex items-start gap-3">
-                    <div class="mt-0.5 text-slate-300 dark:text-slate-600"><span class="material-symbols-rounded text-2xl">${item.estado === 'pendiente' ? 'radio_button_unchecked' : 'check_circle'}</span></div>
-                    <div><p class="font-bold text-slate-700 dark:text-slate-200 text-sm leading-tight">${item.nombre}</p>${extraBtn}</div>
+                    <div class="mt-0.5 text-slate-400 dark:text-slate-500"><span class="material-symbols-rounded text-2xl">${item.estado === 'pendiente' ? 'radio_button_unchecked' : 'check_circle'}</span></div>
+                    <div><p class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">${item.nombre}</p>${extraBtn}</div>
                 </div>
                 <div class="ml-9 sm:ml-0 w-full sm:w-auto">${controlHtml}</div>
             </div>`;
@@ -332,7 +347,7 @@
 
             let container = input.closest('label') || input.closest('div.flex');
             const originalHtml = container.innerHTML;
-            container.innerHTML = `<span class="material-symbols-rounded animate-spin text-teal-600 text-2xl">sync</span>`;
+            container.innerHTML = `<span class="material-symbols-rounded animate-spin text-current text-2xl">sync</span>`; 
 
             try {
                 const base64Full = await toBase64(archivo);
@@ -346,9 +361,7 @@
                 });
 
                 if(!response.ok) throw new Error('Error al subir');
-                
                 await cargarDetalles(); 
-                // NO Lanzar Jack aquí
 
             } catch (error) {
                 alert('Error al subir. Intenta de nuevo.');
@@ -360,7 +373,7 @@
             const porcentaje = totalRequisitos > 0 ? Math.round((completados / totalRequisitos) * 100) : 0;
             document.getElementById('progress-bar').style.width = `${porcentaje}%`;
             document.getElementById('progress-text').textContent = `${porcentaje}% Completado`;
-            if (porcentaje === 100) lanzarJack("¡Felicidades!", "Expediente Completado.");
+            if (porcentaje === 100 && lanzarFestejo) lanzarJack("¡Felicidades!", "Expediente Completado.");
         }
 
         function obtenerGPS() {
@@ -384,17 +397,28 @@
         }
         
         function switchTab(categoria) {
-            currentTab = categoria; // Guardar estado actual
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'tab-solicitante', 'tab-propietario', 'tab-inmueble'));
-            const activeBtn = document.querySelector(`.tab-${categoria}`);
-            if(activeBtn) activeBtn.classList.add('active', `tab-${categoria}`);
+            currentTab = categoria; 
+            
+            const allBtns = document.querySelectorAll('.tab-btn');
+            allBtns.forEach(btn => {
+                btn.className = 'tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 bg-white border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500';
+            });
             
             document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
             const section = document.getElementById(`section-${categoria}`);
             if(section) section.classList.remove('hidden');
+
+            const btn = document.getElementById(`tab-btn-${categoria}`);
+            if(btn) {
+                let activeClasses = "tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 border-b-4 shadow-sm transform scale-[1.02] transition-all ";
+                if(categoria === 'solicitante') activeClasses += "bg-teal-50 border-teal-500 text-teal-700 dark:bg-teal-900/20 dark:border-teal-400 dark:text-teal-300";
+                if(categoria === 'propietario') activeClasses += "bg-orange-50 border-orange-500 text-orange-700 dark:bg-orange-900/20 dark:border-orange-400 dark:text-orange-300";
+                if(categoria === 'inmueble')    activeClasses += "bg-indigo-50 border-indigo-500 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-400 dark:text-indigo-300";
+                btn.className = activeClasses;
+            }
         }
 
-        function clonarItem(key, name, cat) { /* lógica futura */ alert("Usa un compresor de PDF por ahora."); }
+        function clonarItem(key, name, cat) { alert("Usa un compresor de PDF por ahora."); }
         function lanzarJack(t, m) { document.getElementById('jack-titulo').innerText = t; document.getElementById('jack-frase').innerText = m; document.getElementById('successModal').classList.remove('hidden'); confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 }); }
         function cerrarModalJack() { document.getElementById('successModal').classList.add('hidden'); }
     </script>

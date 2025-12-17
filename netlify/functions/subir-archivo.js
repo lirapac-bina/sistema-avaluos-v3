@@ -5,16 +5,13 @@ const fs = require('fs');
 const path = require('path');
 
 // --- 1. BLOQUE BLINDADO (CARGA DE CREDENCIALES) ---
-let serviceAccount = null; // Variable global para reutilizar
+let serviceAccount = null;
 
 if (admin.apps.length === 0) {
-    // A. Intentar cargar desde Variable de Entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
-    
-    // B. Intentar cargar archivo local (PC) - Usando 'fs' para engañar a Netlify
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -23,22 +20,16 @@ if (admin.apps.length === 0) {
             }
         } catch (e) { }
     }
-
-    // C. Inicializar Firebase
     if (serviceAccount) {
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            storageBucket: 'leezar-expedientes-prod' // Definimos el bucket aquí
+            storageBucket: 'leezar-expedientes-prod'
         });
-    } else {
-        console.error("FATAL: No hay credenciales para subir archivos.");
     }
 }
 
 const db = admin.firestore();
-// Usamos el storage nativo de admin, ya no necesitamos 'new Storage' externo
 const bucket = admin.storage().bucket('leezar-expedientes-prod'); 
-// ----------------------------------------------------
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -53,12 +44,7 @@ exports.handler = async (event, context) => {
   try {
     const { expedienteId, itemKey, archivoBase64, nombreArchivo, mimeType } = JSON.parse(event.body);
     
-    // VALIDACIÓN DE SEGURIDAD
-    if (!serviceAccount && admin.apps.length === 0) {
-        throw new Error("Error de configuración del servidor: Credenciales no cargadas.");
-    }
-
-    // 1. BUSCAR EXPEDIENTE (Detectar si es Avalúo o Hipoteca)
+    // 1. BUSCAR EXPEDIENTE
     let docRef = db.collection('expedientes_avaluos').doc(expedienteId);
     let doc = await docRef.get();
     let tipoTramite = 'avaluos'; 
@@ -72,52 +58,63 @@ exports.handler = async (event, context) => {
     if (!doc.exists) throw new Error("Expediente no encontrado");
     const data = doc.data();
 
-    // 2. DEFINIR RUTA
-    const categoriaItem = data.checklist?.[itemKey]?.categoria || 'general';
+    // --- CORRECCIÓN MÁGICA: INICIALIZAR CHECKLIST SI ESTÁ VACÍO ---
+    // Esto evita que se "borren" los campos visualmente al subir el primer archivo
+    if (!data.checklist || Object.keys(data.checklist).length === 0) {
+        const plantillaBase = {
+            'INE_SOLICITANTE': { nombre: 'INE Solicitante (Frente y Vuelta)', estado: 'pendiente', categoria: 'solicitante' },
+            'CURP_SOLICITANTE': { nombre: 'CURP', estado: 'pendiente', categoria: 'solicitante' },
+            'RFC_SOLICITANTE': { nombre: 'Constancia Situación Fiscal', estado: 'pendiente', categoria: 'solicitante' },
+            'ACTA_NAC_SOLICITANTE': { nombre: 'Acta de Nacimiento', estado: 'pendiente', categoria: 'solicitante' },
+            'NSS_SOLICITANTE': { nombre: 'Número de Seguro Social', estado: 'pendiente', categoria: 'solicitante' },
+            'INE_PROPIETARIO': { nombre: 'INE Propietario', estado: 'pendiente', categoria: 'propietario' },
+            'ACTA_MAT_PROPIETARIO': { nombre: 'Acta de Matrimonio', estado: 'pendiente', categoria: 'propietario' },
+            'ESCRITURA': { nombre: 'Escritura Pública', estado: 'pendiente', categoria: 'inmueble', permitirExtras: true },
+            'PREDIAL': { nombre: 'Boleta Predial 2025', estado: 'pendiente', categoria: 'inmueble' },
+            'AGUA': { nombre: 'Recibo de Agua', estado: 'pendiente', categoria: 'inmueble' },
+            'LUZ': { nombre: 'Recibo de Luz (CFE)', estado: 'pendiente', categoria: 'inmueble' },
+            'PLANO': { nombre: 'Plano Arquitectónico', estado: 'pendiente', categoria: 'inmueble' }
+        };
+        // Guardamos la plantilla base en la BD para que sea permanente
+        await docRef.set({ checklist: plantillaBase }, { merge: true });
+    }
+    // -------------------------------------------------------------
+
+    // 2. DEFINIR RUTA Y SUBIR
+    // Volvemos a leer 'checklist' por si acabamos de crearlo, para obtener la categoría correcta
+    // Nota: Si el itemKey es nuevo (ej. SOLICITUD_INFONAVIT), la categoría vendrá del frontend en el futuro, 
+    // pero por seguridad usamos un fallback
+    const checklistActual = (data.checklist && Object.keys(data.checklist).length > 0) ? data.checklist : {};
+    const categoriaItem = checklistActual[itemKey]?.categoria || 'general'; // Fallback a 'general' si es nuevo
+
     const safeFileName = nombreArchivo.replace(/[^a-zA-Z0-9.-]/g, '_'); 
     const rutaArchivo = `${tipoTramite}/${expedienteId}/${categoriaItem}/${safeFileName}`;
     const file = bucket.file(rutaArchivo);
 
-    console.log(`🚀 Subiendo a Cloud Storage: ${rutaArchivo}`);
-
-    // 3. SUBIR EL ARCHIVO
     const buffer = Buffer.from(archivoBase64, 'base64');
     
     await file.save(buffer, {
       contentType: mimeType || 'application/octet-stream',
       resumable: false,
-      metadata: {
-        metadata: {
-          originalName: nombreArchivo,
-          subidoPor: 'cliente-portal'
-        }
-      }
+      metadata: { metadata: { originalName: nombreArchivo, subidoPor: 'cliente-portal' } }
     });
 
-    // 4. GENERAR URL FIRMADA
-    const [signedUrl] = await file.getSignedUrl({
-      action: 'read',
-      expires: '01-01-2030', 
-    });
+    const [signedUrl] = await file.getSignedUrl({ action: 'read', expires: '01-01-2030' });
 
-    console.log(`✅ Archivo guardado: ${rutaArchivo}`);
-
-    // 5. ACTUALIZAR BD
+    // 3. ACTUALIZAR BD (Solo el campo específico)
     await docRef.update({
       [`checklist.${itemKey}.estado`]: 'en_revision',
       [`checklist.${itemKey}.driveLink`]: signedUrl, 
       [`checklist.${itemKey}.fileId`]: rutaArchivo, 
-      [`checklist.${itemKey}.storageType`]: 'gcs_v1' 
+      [`checklist.${itemKey}.storageType`]: 'gcs_v1',
+      // Aseguramos que la categoría se guarde también por si es un item nuevo
+      [`checklist.${itemKey}.categoria`]: categoriaItem !== 'general' ? categoriaItem : 'solicitante' 
     });
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ 
-        message: 'Subido correctamente a Bóveda Segura', 
-        fileId: rutaArchivo,
-        url: signedUrl 
-      })
+      body: JSON.stringify({ message: 'Subido correctamente', fileId: rutaArchivo, url: signedUrl })
     };
 
   } catch (error) {
