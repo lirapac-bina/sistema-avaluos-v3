@@ -1,9 +1,42 @@
 const { google } = require('googleapis');
+const admin = require('firebase-admin');
+
+// --- 1. BLOQUE DE CONEXIÓN INTELIGENTE (ESTO ARREGLA EL ERROR DE NETLIFY) ---
+// Este bloque intenta leer de la Variable de Entorno primero. 
+// Si no la encuentra (como en tu PC), busca el archivo local.
+// El 'try-catch' evita que Netlify falle si no encuentra el archivo.
+if (admin.apps.length === 0) {
+    let serviceAccount;
+
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } catch (e) {
+            console.error("Error leyendo variable de entorno:", e);
+        }
+    }
+
+    if (!serviceAccount) {
+        try {
+            // Solo intenta cargar el archivo si no hay variable de entorno
+            serviceAccount = require('./serviceaccountkey.json');
+        } catch (e) {
+            console.warn("No se encontró archivo local serviceaccountkey.json (Esto es normal en el servidor de Netlify)");
+        }
+    }
+
+    if (serviceAccount) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    }
+}
+// ----------------------------------------------------------------------------
 
 exports.handler = async (event, context) => {
   try {
-    // 1. Carga directa del archivo (Esto obliga a Netlify a subirlo)
-    const serviceAccount = require('./serviceaccountkey.json');
+    // NOTA: Ya no necesitamos hacer 'require' del json aquí abajo, 
+    // porque ya lo gestionamos arriba de forma segura.
 
     // 2. Configuración dinámica de la URL de retorno
     // Detecta si estás en localhost o en sistema-avaluos-frontend.netlify.app
