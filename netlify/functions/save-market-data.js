@@ -2,15 +2,13 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
+// --- INICIALIZACIÓN BLINDADA ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-    // 1. Variable de Entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
-    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -22,7 +20,7 @@ if (admin.apps.length === 0) {
     if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-// ------------------------------------------------
+// ------------------------------
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -34,8 +32,9 @@ exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
   try {
-    initFirebase();
-    const db = admin.firestore();
+    // ELIMINADO: initFirebase(); (Ya lo hicimos arriba)
+    // ELIMINADO: const db = ... (Ya existe arriba)
+    
     const payload = JSON.parse(event.body);
     const { expedienteId, data, timestamp } = payload;
 
@@ -43,7 +42,6 @@ exports.handler = async (event, context) => {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan datos' }) };
     }
 
-    // Lógica de Folio para el buscador
     const folioEtiqueta = data['folio-gys'] ? data['folio-gys'].trim() : 'SIN_FOLIO';
 
     console.log(`💾 Guardando ID: ${expedienteId}`);

@@ -2,15 +2,13 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
+// --- INICIALIZACIÓN BLINDADA ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-    // 1. Variable de Entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
-    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -22,7 +20,7 @@ if (admin.apps.length === 0) {
     if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-// ------------------------------------------------
+// ------------------------------
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -35,8 +33,8 @@ exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method Not Allowed' };
 
   try {
-    initFirebase();
-    const db = admin.firestore();
+    // ELIMINADO: initFirebase(); 
+    
     const { action, email, nombre, rol } = JSON.parse(event.body);
 
     if (!email) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Falta email' }) };
@@ -44,11 +42,9 @@ exports.handler = async (event, context) => {
     const emailLimpio = email.toLowerCase().trim();
 
     if (action === 'delete') {
-        // DAR DE BAJA
         await db.collection('usuarios').doc(emailLimpio).delete();
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Usuario eliminado' }) };
     } else {
-        // DAR DE ALTA / ACTUALIZAR
         if (!nombre || !rol) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan datos' }) };
         
         await db.collection('usuarios').doc(emailLimpio).set({

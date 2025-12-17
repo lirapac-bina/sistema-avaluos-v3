@@ -1,16 +1,20 @@
+const { google } = require('googleapis');
+const busboy = require('busboy');
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
+// --- 1. BLOQUE BLINDADO (CARGA DE CREDENCIALES) ---
+let serviceAccount = null; // Variable global para reutilizar
+
 if (admin.apps.length === 0) {
-    let serviceAccount;
-    // 1. Variable de Entorno (Nube)
+    // A. Intentar cargar desde Variable de Entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
-    // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify
+    
+    // B. Intentar cargar archivo local (PC) - Usando 'fs' para engañar a Netlify
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -19,34 +23,24 @@ if (admin.apps.length === 0) {
             }
         } catch (e) { }
     }
-    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+
+    // C. Inicializar Firebase
+    if (serviceAccount) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            storageBucket: 'leezar-expedientes-prod' // Definimos el bucket aquí
+        });
+    } else {
+        console.error("FATAL: No hay credenciales para subir archivos.");
+    }
 }
+
 const db = admin.firestore();
-// ------------------------------------------------
-
-// --- CONFIGURACIÓN ---
-const initServices = () => {
-  const serviceAccount = require('./serviceaccountkey.json');
-  
-  // 1. Iniciar Firebase (Base de Datos)
-  if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  }
-  
-  // 2. Iniciar Google Cloud Storage (El Bucket)
-  const storage = new Storage({
-    projectId: serviceAccount.project_id,
-    credentials: {
-      client_email: serviceAccount.client_email,
-      private_key: serviceAccount.private_key,
-    },
-  });
-
-  return { db: admin.firestore(), storage };
-};
+// Usamos el storage nativo de admin, ya no necesitamos 'new Storage' externo
+const bucket = admin.storage().bucket('leezar-expedientes-prod'); 
+// ----------------------------------------------------
 
 exports.handler = async (event, context) => {
-  // Headers CORS para permitir peticiones desde tu web
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -59,15 +53,15 @@ exports.handler = async (event, context) => {
   try {
     const { expedienteId, itemKey, archivoBase64, nombreArchivo, mimeType } = JSON.parse(event.body);
     
-    // 1. INICIAR SERVICIOS
-    const { db, storage } = initServices();
-    const bucketName = 'leezar-expedientes-prod'; // <--- TU BUCKET EXACTO
-    const bucket = storage.bucket(bucketName);
+    // VALIDACIÓN DE SEGURIDAD
+    if (!serviceAccount && admin.apps.length === 0) {
+        throw new Error("Error de configuración del servidor: Credenciales no cargadas.");
+    }
 
-    // 2. BUSCAR EXPEDIENTE (Detectar si es Avalúo o Hipoteca)
+    // 1. BUSCAR EXPEDIENTE (Detectar si es Avalúo o Hipoteca)
     let docRef = db.collection('expedientes_avaluos').doc(expedienteId);
     let doc = await docRef.get();
-    let tipoTramite = 'avaluos'; // Carpeta raíz por defecto
+    let tipoTramite = 'avaluos'; 
 
     if (!doc.exists) {
       docRef = db.collection('expedientes_hipotecas').doc(expedienteId);
@@ -78,25 +72,20 @@ exports.handler = async (event, context) => {
     if (!doc.exists) throw new Error("Expediente no encontrado");
     const data = doc.data();
 
-    // 3. DEFINIR RUTA EN EL BUCKET (Estructura Bancaria Ordenada)
-    // Ruta: tipo_tramite / id_expediente / categoria / nombre_archivo
-    // Ej: avaluos/A100/propietario/escritura.pdf
-    
-    const categoriaItem = data.checklist[itemKey]?.categoria || 'general';
-    // Limpiamos el nombre de archivo de espacios y caracteres raros por seguridad
+    // 2. DEFINIR RUTA
+    const categoriaItem = data.checklist?.[itemKey]?.categoria || 'general';
     const safeFileName = nombreArchivo.replace(/[^a-zA-Z0-9.-]/g, '_'); 
-    
     const rutaArchivo = `${tipoTramite}/${expedienteId}/${categoriaItem}/${safeFileName}`;
     const file = bucket.file(rutaArchivo);
 
     console.log(`🚀 Subiendo a Cloud Storage: ${rutaArchivo}`);
 
-    // 4. SUBIR EL ARCHIVO
+    // 3. SUBIR EL ARCHIVO
     const buffer = Buffer.from(archivoBase64, 'base64');
     
     await file.save(buffer, {
       contentType: mimeType || 'application/octet-stream',
-      resumable: false, // Más rápido para archivos de documentos/fotos normales
+      resumable: false,
       metadata: {
         metadata: {
           originalName: nombreArchivo,
@@ -105,23 +94,20 @@ exports.handler = async (event, context) => {
       }
     });
 
-    // 5. GENERAR URL FIRMADA (Llave segura de acceso)
-    // Esto crea un link que funciona, pero el archivo sigue privado.
-    // Lo configuramos para que sea válido por mucho tiempo (o puedes reducirlo).
+    // 4. GENERAR URL FIRMADA
     const [signedUrl] = await file.getSignedUrl({
       action: 'read',
-      expires: '01-01-2030', // Fecha lejana para que el link funcione en tu dashboard
+      expires: '01-01-2030', 
     });
 
-    console.log(`✅ Archivo guardado y URL generada.`);
+    console.log(`✅ Archivo guardado: ${rutaArchivo}`);
 
-    // 6. ACTUALIZAR BD (Firebase)
-    // Mantenemos la estructura que tu Frontend espera (driveLink) para no romper nada visualmente
+    // 5. ACTUALIZAR BD
     await docRef.update({
       [`checklist.${itemKey}.estado`]: 'en_revision',
-      [`checklist.${itemKey}.driveLink`]: signedUrl, // Ahora es la URL de Storage
-      [`checklist.${itemKey}.fileId`]: rutaArchivo,  // Guardamos la ruta interna
-      [`checklist.${itemKey}.storageType`]: 'gcs_v1' // Marca para saber que ya usamos el sistema nuevo
+      [`checklist.${itemKey}.driveLink`]: signedUrl, 
+      [`checklist.${itemKey}.fileId`]: rutaArchivo, 
+      [`checklist.${itemKey}.storageType`]: 'gcs_v1' 
     });
 
     return {
