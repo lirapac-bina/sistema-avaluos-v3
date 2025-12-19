@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Ing. Leezar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { bg: '#0b1121', main: '#0f172a', card: '#1e293b', teal: '#14b8a6' } }, fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="js/layout.js"></script>
+
+    <style>
+        /* Animaciones */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-anim { animation: scaleIn 0.2s ease-out forwards; }
+        
+        /* Scrollbars */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
+        
+        /* Tablas */
+        .th-sortable { cursor: pointer; transition: background-color 0.2s; user-select: none; }
+        .th-sortable:hover { background-color: rgba(0,0,0,0.05); }
+        .dark .th-sortable:hover { background-color: rgba(255,255,255,0.05); }
+
+        /* ESTILOS EDITOR DE TEXTO LEGAL */
+        .editor-content { 
+            min-height: 400px; 
+            outline: none; 
+            line-height: 1.6; 
+        }
+        .editor-content ul { list-style-type: disc; padding-left: 20px; }
+        .editor-content ol { list-style-type: decimal; padding-left: 20px; }
+        .editor-toolbar button { 
+            padding: 6px; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            color: #64748b;
+        }
+        .dark .editor-toolbar button { color: #cbd5e1; }
+        .editor-toolbar button:hover { background-color: #f1f5f9; color: #0f172a; }
+        .dark .editor-toolbar button:hover { background-color: #334155; color: #fff; }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-600 dark:bg-leezar-main dark:text-slate-300 font-sans text-sm transition-colors duration-300">
+
+    <main class="w-full p-8 fade-in"> 
+        <header class="mb-8 flex justify-between items-end" id="main-header">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Configuración del Sistema</h1>
+                <p class="text-slate-400 text-sm mt-1">Control maestro, seguridad y auditoría.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="config-grid">
+            
+            <div onclick="abrirVista('catalogo')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-indigo-500 group">
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">checklist</span></div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Catálogo de Requisitos</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Administra documentos por Entidad y Tipo de Trámite.</p>
+                <span class="text-xs font-bold text-indigo-500 flex items-center gap-1 group-hover:gap-2 transition-all">Administrar <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+            </div>
+
+            <div onclick="abrirVista('legal')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-teal-500 group">
+                <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center mb-4 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">gavel</span></div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Legal y Privacidad</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Edita el Aviso de Privacidad del portal.</p>
+                <span class="text-xs font-bold text-teal-500 flex items-center gap-1 group-hover:gap-2 transition-all">Editar Contenido <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+            </div>
+
+            <div onclick="abrirVista('usuarios')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-rose-500 group">
+                <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">group_add</span></div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Usuarios y Seguridad</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Gestiona accesos, roles y datos personales.</p>
+                <span class="text-xs font-bold text-rose-500 flex items-center gap-1 group-hover:gap-2 transition-all">Gestionar <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+            </div>
+
+            <div onclick="abrirVista('bitacora')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-amber-500 group">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">history_edu</span></div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Bitácora de Cambios</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Auditoría de movimientos en la configuración.</p>
+                <span class="text-xs font-bold text-amber-500 flex items-center gap-1 group-hover:gap-2 transition-all">Ver Historial <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+            </div>
+
+            <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed group">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400"><span class="material-symbols-rounded text-3xl">label</span></div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Nomenclatura</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Próximamente: Configuración de folios.</p>
+            </div>
+        </div>
+
+        <div id="dynamic-view" class="hidden h-full flex flex-col"></div>
+
+        <div id="modal-editor" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 modal-anim relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6 relative z-10" id="modal-title">Nuevo Requisito</h3>
+                <div class="space-y-5 relative z-10">
+                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Nombre Visual (Portal)</label><input type="text" id="input-nombre" oninput="generarIDAuto()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></div>
+                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">ID Base Datos (Único)</label><input type="text" id="input-id" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono text-slate-500 dark:text-slate-400 outline-none cursor-not-allowed"></div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8 relative z-10">
+                    <button onclick="cerrarModalEditor()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+                    <button onclick="confirmarGuardado()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-transform active:scale-95">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-config-listas" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 modal-anim relative flex flex-col max-h-[80vh]">
+                <div class="flex justify-between items-center mb-6 shrink-0">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2" id="modal-config-title">Configuración</h3>
+                    <button onclick="cerrarModalConfigListas()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded text-2xl">close</span></button>
+                </div>
+                <div class="flex gap-2 mb-4 shrink-0">
+                    <input type="text" id="nuevo-config-input" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-bold" placeholder="Nuevo...">
+                    <button onclick="agregarConfigItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-bold text-sm shadow-md"><span class="material-symbols-rounded">add</span></button>
+                </div>
+                <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scroll" id="lista-config-modal">
+                    </div>
+            </div>
+        </div>
+
+        <div id="modal-usuario-v2" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 modal-anim">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6">Datos del Usuario</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Rol</label>
+                            <select id="user-rol" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer">
+                                <option value="SUPER ADMIN">SUPER ADMIN</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="GESTOR">GESTOR</option>
+                                <option value="CAPTURISTA">CAPTURISTA</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Iniciales</label><input type="text" id="user-iniciales" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none uppercase text-center font-bold" maxlength="2"></div>
+                    </div>
+                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Nombre Completo</label><input type="text" id="user-nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500"></div>
+                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Fecha Nacimiento (Para 🎂)</label><input type="date" id="user-fecha" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Celular</label><input type="tel" id="user-celular" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500"></div>
+                        <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Correo</label><input type="email" id="user-correo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500"></div>
+                    </div>
+                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">PIN (4 dígitos)</label><input type="text" id="user-pin" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500" maxlength="4"></div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button onclick="document.getElementById('modal-usuario-v2').classList.add('hidden')" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                    <button onclick="guardarUsuario()" class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition">Guardar Usuario</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // CONFIGURACIÓN Y DATOS
+        const CONFIG_DEFAULT = { entidades: ['VERACRUZ', 'CDMX', 'PUEBLA'], servicios: ['INFONAVIT', 'FOVISSSTE', 'ESTIMACIÓN DE VALOR'] };
+        const INIT_CATALOGO = { "GLOBAL": { "INFONAVIT": { "solicitante": [{ id: "INE", nombre: "Identificación Oficial (INE) vigente", obligatorio: true }], "propietario": [], "inmueble": [] } } };
+        const TEXTO_LEGAL_DEFAULT = `AVISO DE PRIVACIDAD\n\nEn cumplimiento con la Ley Federal de Protección de Datos Personales...`;
+
+        let configGlobal = JSON.parse(localStorage.getItem('leezar_config_v2')) || CONFIG_DEFAULT;
+        let catalogoData = JSON.parse(localStorage.getItem('leezar_catalogo_v2')) || INIT_CATALOGO;
+        let usuarios = JSON.parse(localStorage.getItem('leezar_users')) || [];
+        let bitacora = JSON.parse(localStorage.getItem('leezar_logs')) || [];
+        
+        let currentEntidad = 'GLOBAL', currentServicio = 'INFONAVIT';
+        let editMode = false, activeCategory = '', activeIndex = -1, activeUserIndex = -1;
+        let activeConfigType = '';
+        let currentSort = { key: 'fecha', order: 'desc' };
+
+        // --- SISTEMA DE LOGS ---
+        function registrarLog(accion, detalle) {
+            const userActive = JSON.parse(localStorage.getItem('leezar_user_active')) || { nombre: 'SUPER ADMIN' };
+            const nuevoLog = { timestamp: Date.now(), fecha: new Date().toLocaleString('es-MX'), usuario: userActive.nombre, accion: accion, detalle: detalle };
+            bitacora.unshift(nuevoLog);
+            if(bitacora.length > 200) bitacora.pop();
+            localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
+        }
+
+        // --- NAVEGACIÓN ---
+        function abrirVista(vista) {
+            document.getElementById('config-grid').classList.add('hidden');
+            document.getElementById('main-header').classList.add('hidden');
+            const container = document.getElementById('dynamic-view');
+            container.classList.remove('hidden');
+            container.innerHTML = ''; 
+            
+            if (vista === 'catalogo') renderCatalogo(container);
+            if (vista === 'legal') renderLegal(container);
+            if (vista === 'usuarios') renderUsuarios(container);
+            if (vista === 'bitacora') renderBitacora(container);
+        }
+
+        function cerrarVista() {
+            document.getElementById('dynamic-view').classList.add('hidden');
+            document.getElementById('config-grid').classList.remove('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+        }
+
+        // --- LEGAL (EDITOR PRO ENRIQUECIDO) ---
+        function renderLegal(container) {
+            const txt = localStorage.getItem('leezar_legal_text') || TEXTO_LEGAL_DEFAULT;
+            
+            // Convertimos saltos de línea a <br> solo si no es HTML ya guardado
+            const content = txt.includes('<') ? txt : txt.replace(/\n/g, '<br>');
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
+                    <div class="flex items-center gap-4 mb-6 shrink-0">
+                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button>
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Legal y Privacidad</h2>
+                    </div>
+                    <div class="flex-1 w-full bg-white dark:bg-leezar-card rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-lg flex flex-col relative overflow-hidden">
+                        
+                        <div class="flex items-center gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700 editor-toolbar shrink-0">
+                            <button onclick="document.execCommand('bold',false,null)" title="Negrita" class="hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-rounded">format_bold</span></button>
+                            <button onclick="document.execCommand('italic',false,null)" title="Cursiva" class="hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-rounded">format_italic</span></button>
+                            <button onclick="document.execCommand('underline',false,null)" title="Subrayado" class="hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-rounded">format_underlined</span></button>
+                            <div class="w-px h-6 bg-slate-200 dark:bg-slate-600 mx-2"></div>
+                            <button onclick="document.execCommand('insertUnorderedList',false,null)" title="Lista Puntos" class="hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-rounded">format_list_bulleted</span></button>
+                            <button onclick="document.execCommand('insertOrderedList',false,null)" title="Lista Numérica" class="hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-rounded">format_list_numbered</span></button>
+                        </div>
+                        
+                        <div id="legal-editor" contenteditable="true" class="flex-1 w-full text-sm text-slate-700 dark:text-slate-300 custom-scroll overflow-y-auto editor-content p-2 focus:ring-2 focus:ring-teal-500/20 rounded-lg transition-all" spellcheck="false">
+                            ${content}
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end shrink-0">
+                            <button onclick="guardarLegal()" class="bg-teal-600 hover:bg-teal-500 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-teal-500/30 flex items-center gap-2 transition-transform active:scale-95">
+                                <span class="material-symbols-rounded text-xl">save</span> Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function guardarLegal() {
+            const contenido = document.getElementById('legal-editor').innerHTML;
+            localStorage.setItem('leezar_legal_text', contenido);
+            registrarLog("LEGAL", "Se actualizó el Aviso de Privacidad");
+            
+            // Feedback visual
+            const btn = document.querySelector('button[onclick="guardarLegal()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-rounded text-xl">check</span> Guardado`;
+            btn.classList.add('bg-green-600');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-600');
+                cerrarVista();
+            }, 800);
+        }
+
+        // --- VISTA USUARIOS (V2) ---
+        function renderUsuarios(container) {
+            container.innerHTML = `
+                <div class="flex items-center gap-4 mb-6 animate-[fadeIn_0.3s]">
+                    <button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button>
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Gestión de Usuarios</h2>
+                    <div class="flex-1"></div>
+                    <button onclick="abrirModalUsuario(-1)" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md flex items-center gap-2"><span class="material-symbols-rounded">person_add</span> Nuevo Usuario</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-usuarios"></div>
+            `;
+            cargarUsuariosUI();
+        }
+
+        function cargarUsuariosUI() {
+            const grid = document.getElementById('grid-usuarios');
+            grid.innerHTML = '';
+            if(usuarios.length === 0) grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10">No hay usuarios registrados. Se usa PIN maestro (1077).</div>`;
+            usuarios.forEach((u, idx) => {
+                grid.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white dark:bg-leezar-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between group hover:border-rose-300 dark:hover:border-rose-700 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center font-bold text-rose-600 dark:text-rose-400 shadow-sm">${u.iniciales}</div>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm">${u.nombre}</p>
+                                <span class="text-[9px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-300 font-bold uppercase tracking-wider">${u.rol || 'USUARIO'}</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="abrirModalUsuario(${idx})" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-blue-500 transition"><span class="material-symbols-rounded">edit</span></button>
+                            <button onclick="borrarUsuario(${idx})" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-red-500 transition"><span class="material-symbols-rounded">delete</span></button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function abrirModalUsuario(idx) {
+            activeUserIndex = idx;
+            document.getElementById('modal-usuario-v2').classList.remove('hidden');
+            if(idx === -1) {
+                ['user-nombre','user-iniciales','user-pin','user-correo','user-celular','user-fecha'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('user-rol').value = 'SUPER ADMIN';
+            } else {
+                const u = usuarios[idx];
+                document.getElementById('user-nombre').value = u.nombre;
+                document.getElementById('user-iniciales').value = u.iniciales;
+                document.getElementById('user-pin').value = u.pin;
+                document.getElementById('user-rol').value = u.rol || 'SUPER ADMIN';
+                document.getElementById('user-correo').value = u.correo || '';
+                document.getElementById('user-celular').value = u.celular || '';
+                document.getElementById('user-fecha').value = u.fechaNacimiento || '';
+            }
+        }
+
+        function guardarUsuario() {
+            const nombre = document.getElementById('user-nombre').value.trim();
+            const iniciales = document.getElementById('user-iniciales').value.trim().toUpperCase();
+            const pin = document.getElementById('user-pin').value.trim();
+            const rol = document.getElementById('user-rol').value;
+            const correo = document.getElementById('user-correo').value.trim();
+            const celular = document.getElementById('user-celular').value.trim();
+            const fechaNacimiento = document.getElementById('user-fecha').value;
+
+            if(!nombre || !iniciales || pin.length !== 4) { alert("Datos incompletos o PIN inválido (4 dígitos)."); return; }
+            
+            const nuevoUsuario = { nombre, iniciales, pin, rol, correo, celular, fechaNacimiento };
+            
+            if(activeUserIndex === -1) { usuarios.push(nuevoUsuario); registrarLog("ALTA USUARIO", `Se creó: ${nombre} (${rol})`); } 
+            else { usuarios[activeUserIndex] = nuevoUsuario; registrarLog("EDICIÓN USUARIO", `Se modificó: ${nombre}`); }
+            
+            localStorage.setItem('leezar_users', JSON.stringify(usuarios));
+            document.getElementById('modal-usuario-v2').classList.add('hidden');
+            cargarUsuariosUI();
+        }
+
+        function borrarUsuario(idx) {
+            if(confirm("¿Eliminar usuario?")) {
+                const nombre = usuarios[idx].nombre;
+                usuarios.splice(idx, 1);
+                localStorage.setItem('leezar_users', JSON.stringify(usuarios));
+                registrarLog("BAJA USUARIO", `Se eliminó: ${nombre}`);
+                cargarUsuariosUI();
+            }
+        }
+
+        // --- VISTA BITÁCORA ---
+        function renderBitacora(container) {
+            container.innerHTML = `<div class="flex flex-col md:flex-row md:items-center gap-4 mb-6 animate-[fadeIn_0.3s] justify-between"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button><h2 class="text-2xl font-bold text-slate-800 dark:text-white">Bitácora de Cambios</h2></div><div class="relative w-full md:w-64"><span class="material-symbols-rounded absolute left-3 top-2.5 text-slate-400 text-sm">search</span><input type="text" id="log-search" oninput="filtrarBitacora()" placeholder="Buscar en logs..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 dark:text-white"></div></div><div class="bg-white dark:bg-leezar-card rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm"><table class="w-full text-sm text-left text-slate-500 dark:text-slate-400"><thead class="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-800 dark:text-slate-300"><tr><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('timestamp')">Fecha <span id="sort-timestamp"></span></th><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('usuario')">Usuario <span id="sort-usuario"></span></th><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('accion')">Acción <span id="sort-accion"></span></th><th class="px-6 py-3">Detalle</th></tr></thead><tbody id="tabla-logs"></tbody></table></div>`;
+            filtrarBitacora();
+        }
+
+        function filtrarBitacora() {
+            const query = document.getElementById('log-search') ? document.getElementById('log-search').value.toLowerCase() : '';
+            const tbody = document.getElementById('tabla-logs');
+            tbody.innerHTML = '';
+            let logsFiltrados = bitacora.filter(log => log.usuario.toLowerCase().includes(query) || log.accion.toLowerCase().includes(query) || log.detalle.toLowerCase().includes(query) || log.fecha.toLowerCase().includes(query));
+            logsFiltrados.sort((a, b) => {
+                let valA = a[currentSort.key], valB = b[currentSort.key];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if(currentSort.key === 'timestamp') { valA = a.timestamp || 0; valB = b.timestamp || 0; }
+                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+                return 0;
+            });
+            if(logsFiltrados.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">No se encontraron registros.</td></tr>`; return; }
+            logsFiltrados.forEach(log => {
+                tbody.insertAdjacentHTML('beforeend', `<tr class="bg-white border-b dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><td class="px-6 py-4 font-mono text-xs text-slate-500 whitespace-nowrap">${log.fecha}</td><td class="px-6 py-4 font-bold text-slate-800 dark:text-white">${log.usuario}</td><td class="px-6 py-4"><span class="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">${log.accion}</span></td><td class="px-6 py-4 truncate max-w-xs" title="${log.detalle}">${log.detalle}</td></tr>`);
+            });
+            ['timestamp', 'usuario', 'accion'].forEach(key => { const icon = document.getElementById(`sort-${key}`); if(icon) icon.textContent = currentSort.key === key ? (currentSort.order === 'asc' ? '↑' : '↓') : ''; });
+        }
+
+        function ordenarLogs(key) { currentSort.key === key ? currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc' : (currentSort.key = key, currentSort.order = 'asc'); filtrarBitacora(); }
+
+        // --- VISTA CATÁLOGO (IGUAL) ---
+        function renderCatalogo(container) {
+            const isGlobal = currentEntidad === 'GLOBAL';
+            const badgeEntidad = isGlobal ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-500 text-white';
+            const badgeServicio = 'bg-teal-100 text-teal-700';
+            let optEntidades = `<option value="GLOBAL" class="dark:bg-slate-800 font-bold text-indigo-400">GLOBAL</option><option disabled>─────</option>`;
+            configGlobal.entidades.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800">${ent}</option>`);
+            let optServicios = ``;
+            configGlobal.servicios.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800">${ser}</option>`);
+            container.innerHTML = `<div class="flex flex-col h-full animate-[fadeIn_0.3s]"><div class="flex flex-col xl:flex-row xl:items-center gap-4 mb-6 justify-between"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button><div><h2 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2 flex-wrap">Catálogo <span class="text-[10px] ${badgeEntidad} px-2 py-0.5 rounded font-extrabold uppercase shadow-sm">${currentEntidad}</span><span class="text-slate-300 dark:text-slate-600">/</span><span class="text-[10px] ${badgeServicio} px-2 py-0.5 rounded font-extrabold uppercase shadow-sm">${currentServicio}</span></h2><p class="text-xs text-slate-400 mt-0.5">Configuración activa.</p></div></div><div class="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl shadow-sm self-start"><div class="flex items-center gap-1 border-r border-slate-200 dark:border-slate-600 pr-2"><span class="material-symbols-rounded text-indigo-500 text-lg">map</span><select id="entidad-selector" onchange="cambiarContexto('entidad', this.value)" class="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer w-28 md:w-auto">${optEntidades}</select><button onclick="abrirModalConfig('entidades')" class="text-slate-300 hover:text-indigo-500"><span class="material-symbols-rounded text-base">settings</span></button></div><div class="flex items-center gap-1 pl-2"><span class="material-symbols-rounded text-teal-500 text-lg">folder_managed</span><select id="servicio-selector" onchange="cambiarContexto('servicio', this.value)" class="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer w-32 md:w-auto">${optServicios}</select><button onclick="abrirModalConfig('servicios')" class="text-slate-300 hover:text-teal-500"><span class="material-symbols-rounded text-base">settings</span></button></div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">${renderColumna('solicitante', 'Del Solicitante', 'person', 'teal')}${renderColumna('propietario', 'Del Propietario', 'group', 'orange')}${renderColumna('inmueble', 'Del Inmueble', 'home', 'indigo')}</div></div>`;
+            document.getElementById('entidad-selector').value = currentEntidad;
+            document.getElementById('servicio-selector').value = currentServicio;
+            cargarRequisitosUI();
+        }
+
+        function renderColumna(id, titulo, icono, color) {
+            const colors = { teal: 'bg-teal-50 text-teal-700 dark:text-teal-300', orange: 'bg-orange-50 text-orange-700 dark:text-orange-300', indigo: 'bg-indigo-50 text-indigo-700 dark:text-indigo-300' };
+            return `<div class="bg-white dark:bg-leezar-card border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50"><div class="flex gap-2 items-center"><div class="p-1.5 rounded-lg ${colors[color]} shadow-sm"><span class="material-symbols-rounded text-lg">${icono}</span></div><h3 class="font-bold text-slate-700 dark:text-white text-sm uppercase tracking-wide">${titulo}</h3></div><button onclick="abrirModalEditor('${id}', -1)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition shadow-sm font-bold flex items-center gap-1 text-[10px] uppercase border border-indigo-100 dark:border-indigo-800"><span class="material-symbols-rounded text-sm">add</span> Agregar</button></div><div id="list-${id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll"></div></div>`;
+        }
+
+        function cambiarContexto(tipo, valor) {
+            if(tipo === 'entidad') currentEntidad = valor;
+            if(tipo === 'servicio') currentServicio = valor;
+            if (!catalogoData[currentEntidad]) catalogoData[currentEntidad] = {}; 
+            if (!catalogoData[currentEntidad][currentServicio]) {
+                let source = catalogoData['GLOBAL'] && catalogoData['GLOBAL']['INFONAVIT'] ? catalogoData['GLOBAL']['INFONAVIT'] : null;
+                catalogoData[currentEntidad][currentServicio] = source ? JSON.parse(JSON.stringify(source)) : { solicitante: [], propietario: [], inmueble: [] };
+                localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData));
+            }
+            renderCatalogo(document.getElementById('dynamic-view'));
+        }
+
+        function cargarRequisitosUI() {
+            const datos = catalogoData[currentEntidad] && catalogoData[currentEntidad][currentServicio] ? catalogoData[currentEntidad][currentServicio] : { solicitante: [], propietario: [], inmueble: [] };
+            ['solicitante', 'propietario', 'inmueble'].forEach(cat => {
+                const list = document.getElementById(`list-${cat}`);
+                list.innerHTML = '';
+                if(!datos[cat] || datos[cat].length === 0) { list.innerHTML = `<div class="text-center py-10 opacity-30 select-none"><span class="material-symbols-rounded text-4xl block mb-2">folder_off</span><p class="text-xs font-medium">Sin requisitos</p></div>`; return; }
+                datos[cat].forEach((req, idx) => {
+                    list.insertAdjacentHTML('beforeend', `<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex justify-between items-start hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer shadow-sm hover:shadow-md"><div onclick="abrirModalEditor('${cat}', ${idx})" class="flex-1"><p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${req.nombre}</p><p class="text-[9px] text-slate-400 font-mono mt-1.5 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded inline-block tracking-wider border border-slate-200 dark:border-slate-700">${req.id}</p></div><div class="flex gap-1"><button onclick="abrirModalEditor('${cat}', ${idx})" class="p-1.5 text-slate-400 hover:text-indigo-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-rounded text-sm">edit</span></button><button onclick="borrarRequisito('${cat}', ${idx})" class="p-1.5 text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-rounded text-sm">delete</span></button></div></div>`);
+                });
+            });
+        }
+
+        // --- GESTIÓN CONFIGURACIÓN (CON PAPELERA CORREGIDA) ---
+        function abrirModalConfig(tipo) {
+            activeConfigType = tipo;
+            const titulo = tipo === 'entidades' ? 'Entidades Federativas' : 'Trámites / Servicios';
+            const lista = tipo === 'entidades' ? 'lista-entidades-modal' : 'lista-servicios-modal';
+            document.getElementById('modal-config-title').textContent = titulo;
+            document.getElementById('modal-config-listas').classList.remove('hidden');
+            renderListaConfig(tipo); // Renderizar al abrir
+        }
+        function cerrarModalConfigListas() { document.getElementById('modal-config-listas').classList.add('hidden'); renderCatalogo(document.getElementById('dynamic-view')); }
+        
+        function renderListaConfig(tipo) {
+            const lista = document.getElementById('lista-config-modal'); 
+            lista.innerHTML = '';
+            
+            if(configGlobal[tipo].length === 0) {
+                lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Lista vacía.</p>';
+                return;
+            }
+
+            configGlobal[tipo].forEach((item, idx) => {
+                lista.insertAdjacentHTML('beforeend', `
+                    <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300 pl-2">${item}</span>
+                        <button onclick="borrarConfig('${tipo}', ${idx})" class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center">
+                            <span class="material-symbols-rounded text-lg">delete</span>
+                        </button>
+                    </div>
+                `);
+            });
+        }
+        
+        function agregarConfigItem() {
+            const input = document.getElementById('nuevo-config-input');
+            const val = input.value.trim().toUpperCase();
+            if(val && !configGlobal[activeConfigType].includes(val)) {
+                configGlobal[activeConfigType].push(val);
+                localStorage.setItem('leezar_config_v2', JSON.stringify(configGlobal));
+                registrarLog(`AGREGAR ${activeConfigType.toUpperCase()}`, `Se añadió: ${val}`);
+                input.value = ''; 
+                renderListaConfig(activeConfigType); // Refrescar lista
+            } else if(configGlobal[activeConfigType].includes(val)) { alert("Ya existe."); }
+        }
+
+        function borrarConfig(tipo, idx) {
+            if(confirm("¿Eliminar?")) {
+                const val = configGlobal[tipo][idx];
+                configGlobal[tipo].splice(idx, 1);
+                localStorage.setItem('leezar_config_v2', JSON.stringify(configGlobal));
+                registrarLog(`BORRAR ${tipo.toUpperCase()}`, `Se eliminó: ${val}`);
+                renderListaConfig(tipo); // Refrescar lista
+            }
+        }
+
+        // --- EDITOR REQUISITOS ---
+        function abrirModalEditor(categoria, indice) {
+            activeCategory = categoria; activeIndex = indice;
+            document.getElementById('modal-editor').classList.remove('hidden');
+            const inputNom = document.getElementById('input-nombre'); const inputID = document.getElementById('input-id');
+            const title = document.getElementById('modal-title');
+            if (indice === -1) { editMode = false; title.textContent = `Agregar a ${categoria.toUpperCase()}`; inputNom.value = ''; inputID.value = ''; inputID.disabled = false; inputNom.focus(); }
+            else { editMode = true; const item = catalogoData[currentEntidad][currentServicio][categoria][indice]; title.textContent = `Editar Requisito`; inputNom.value = item.nombre; inputID.value = item.id; inputID.disabled = true; inputNom.focus(); }
+        }
+        function cerrarModalEditor() { document.getElementById('modal-editor').classList.add('hidden'); }
+        function generarIDAuto() { if (editMode) return; const nombre = document.getElementById('input-nombre').value; const idLimpio = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 25); document.getElementById('input-id').value = idLimpio; }
+        
+        function confirmarGuardado() {
+            const nombre = document.getElementById('input-nombre').value.trim(); const id = document.getElementById('input-id').value.trim();
+            if (!nombre || !id) { alert("Datos incompletos"); return; }
+            const listaActual = catalogoData[currentEntidad][currentServicio][activeCategory];
+            if (editMode) { listaActual[activeIndex].nombre = nombre; registrarLog("EDITAR REQUISITO", `Se editó: ${nombre} (${id})`); }
+            else { if (listaActual.some(i => i.id === id)) { alert("ID duplicado"); return; } listaActual.push({ id: id, nombre: nombre, obligatorio: true }); registrarLog("NUEVO REQUISITO", `Se agregó: ${nombre} (${id})`); }
+            localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData)); cargarRequisitosUI(); cerrarModalEditor();
+        }
+
+        function borrarRequisito(categoria, indice) {
+            if(confirm("¿Estás seguro de eliminar este requisito?")) {
+                const item = catalogoData[currentEntidad][currentServicio][categoria][indice];
+                catalogoData[currentEntidad][currentServicio][categoria].splice(indice, 1);
+                localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData));
+                registrarLog("BORRAR REQUISITO", `Se eliminó: ${item.nombre} (${item.id})`);
+                cargarRequisitosUI();
+            }
+        }
+    </script>
+</body>
+</html>

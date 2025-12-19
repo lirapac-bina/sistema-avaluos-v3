@@ -33,31 +33,77 @@
         .tab-btn { transition: all 0.2s ease-in-out; border-bottom-width: 3px; }
         .tab-btn:hover { background-color: #f8fafc; }
         .dark .tab-btn:hover { background-color: #1e293b; }
+
+        /* Estilos Mapa */
+        #map { height: 100%; width: 100%; }
+        /* Ajuste para que el autocompletado de Google no quede oculto por el modal */
+        .pac-container { z-index: 10000 !important; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: 'Roboto', sans-serif; }
     </style>
 </head>
 <body class="pb-32 bg-slate-50 dark:bg-slate-900 transition-colors">
 
-    <div id="privacyModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 privacy-backdrop">
+    <div id="dynamicPrivacyModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 privacy-backdrop">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-[popIn_0.3s_ease-out] flex flex-col max-h-[90vh]">
-            <div class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700">
-                <div class="w-12 h-12 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span class="material-symbols-rounded text-green-600 dark:text-green-400 text-3xl">verified_user</span>
+            <div class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-teal-600">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="material-symbols-rounded text-white text-3xl">verified_user</span>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Aviso de Confidencialidad</h2>
+                <h2 class="text-2xl font-bold text-white">Aviso de Privacidad</h2>
+                <p class="text-teal-100 text-xs mt-1">Por favor lee y acepta para continuar.</p>
             </div>
+            
             <div class="p-6 overflow-y-auto flex-1 bg-gray-50 dark:bg-slate-900/50">
-                <div class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-justify space-y-3">
-                    <p class="font-bold text-slate-900 dark:text-white">Estimado Cliente:</p>
-                    <p>En cumplimiento con la Ley Federal de Protección de Datos Personales, <strong>Ingeniería Leezar</strong> hace de su conocimiento que la información y documentación que usted carga en este portal está protegida bajo estrictos estándares de seguridad.</p>
-                    <p><strong>Uso de la Información:</strong> Los documentos (INE, Escrituras, Planos, etc.) serán utilizados <strong>única y exclusivamente</strong> para la integración del expediente técnico de valuación inmobiliaria.</p>
+                <div id="legal-dynamic-content" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-justify whitespace-pre-line">
+                    Cargando...
                 </div>
             </div>
+
             <div class="p-6 border-t border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
-                <label class="flex gap-3 items-start mb-6 cursor-pointer group select-none">
-                    <input type="checkbox" id="acceptCheck" onchange="toggleStartBtn()" class="mt-1 w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
-                    <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">He leído y acepto los términos de privacidad.</span>
+                <label class="flex gap-3 items-start mb-6 cursor-pointer group select-none" id="legal-check-container">
+                    <input type="checkbox" id="acceptCheckDynamic" class="mt-1 w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500 bg-gray-100 dark:bg-slate-700">
+                    <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">He leído, entiendo y acepto los términos de privacidad y el tratamiento exclusivo de mis documentos.</span>
                 </label>
-                <button id="btnStart" disabled onclick="closePrivacyModal()" class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none">Acceder al Expediente</button>
+                <button id="btnStartDynamic" disabled class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none">
+                    Aceptar y Comenzar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="mapModal" class="fixed inset-0 z-[90] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-lg h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-[popIn_0.3s_ease-out]">
+            <div class="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 z-10 shrink-0">
+                <h3 class="font-bold text-slate-800 dark:text-white">Precisar Ubicación</h3>
+                <button onclick="cerrarMapa()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:bg-gray-200"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <div class="p-4 bg-white dark:bg-slate-800 z-10 space-y-3 shrink-0 shadow-sm">
+                <div class="relative">
+                    <span class="material-symbols-rounded absolute left-3 top-3 text-gray-400">search</span>
+                    <input id="pac-input" type="text" placeholder="Escribe calle o coordenadas (19.x, -96.x)..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm outline-none">
+                </div>
+                <button onclick="usarMiUbicacion()" id="btn-my-location" class="w-full py-2.5 px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-sm font-bold flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors">
+                    <span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual
+                </button>
+            </div>
+
+            <div class="flex-1 relative bg-gray-100">
+                <div id="map"></div>
+                <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-4 py-2 rounded-full shadow-lg pointer-events-none z-10">
+                    <p class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                        Arrastra el pin <span class="material-symbols-rounded text-base">location_on</span> a la entrada
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 z-10 shrink-0">
+                <div class="mb-4">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Dirección Detectada:</p>
+                    <p id="direccion-texto" class="text-sm font-bold text-slate-800 dark:text-white line-clamp-2">...</p>
+                    <p id="coordenadas-texto" class="text-xs font-mono text-indigo-500 dark:text-indigo-400 mt-1">...</p>
+                </div>
+                <button onclick="confirmarUbicacion()" id="btn-confirm-map" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200/50 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">check_circle</span> Confirmar Ubicación
+                </button>
             </div>
         </div>
     </div>
@@ -141,24 +187,41 @@
             <div class="space-y-4 min-h-[300px]">
                 <div id="section-solicitante" class="tab-content fade-in space-y-3"><div id="list-solicitante" class="space-y-3"></div></div>
                 <div id="section-propietario" class="tab-content hidden fade-in space-y-3"><div id="list-propietario" class="space-y-3"></div></div>
+                
                 <div id="section-inmueble" class="tab-content hidden fade-in space-y-3">
                     
-                    <div class="bg-indigo-50 border border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center shadow-sm">
-                        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="material-symbols-rounded text-2xl">my_location</span>
+                    <div class="bg-indigo-50 border border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center shadow-sm relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                                <span class="material-symbols-rounded text-3xl">pin_drop</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-1">Ubicación del Inmueble</h3>
+                            <p class="text-xs text-slate-500 mb-5 font-medium px-4">Esta ubicación es vital para que el valuador llegue correctamente.</p>
+                            
+                            <div id="ubicacion-actions">
+                                <button onclick="abrirMapa()" id="btn-open-map" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
+                                    <span class="material-symbols-rounded">map</span> Ubicar inmueble en Google Maps
+                                </button>
+                            </div>
+                            <div id="ubicacion-success" class="hidden mt-4 bg-white/80 dark:bg-slate-800/80 rounded-lg p-3 border border-green-200">
+                                <p class="text-green-600 font-bold flex items-center justify-center gap-1 text-sm"><span class="material-symbols-rounded">check_circle</span> Ubicación Guardada</p>
+                                <p id="direccion-guardada" class="text-[10px] text-gray-500 mt-1 truncate font-bold">...</p>
+                                <p id="coordenadas-guardadas" class="text-[10px] text-indigo-500 font-mono mt-0.5">...</p>
+                                <button onclick="abrirMapa()" class="text-[10px] text-indigo-500 font-bold mt-2 underline">Cambiar ubicación</button>
+                            </div>
                         </div>
-                        <h3 class="font-bold text-slate-800 dark:text-white mb-1">Ubicación del Inmueble</h3>
-                        <p class="text-xs text-slate-500 mb-4 font-medium">Ubícate con tu celular en el acceso principal del inmueble.</p>
-                        
-                        <button onclick="obtenerGPS()" id="btn-gps" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-200/50 flex items-center justify-center gap-2 transition-all">
-                            📍 Enviar mi Ubicación Actual
-                        </button>
-                        <p id="ubicacion-status" class="text-center text-xs font-bold text-green-600 mt-4 min-h-[20px]"></p>
                     </div>
 
                     <div id="list-inmueble" class="space-y-3"></div>
                 </div>
             </div>
+        </div>
+        
+        <div class="mt-12 mb-6 text-center border-t border-gray-200 dark:border-slate-800 pt-6">
+            <button onclick="mostrarModalLegal(true)" class="text-xs text-slate-400 hover:text-teal-500 transition-colors flex items-center justify-center gap-1 mx-auto font-bold mb-2">
+                <span class="material-symbols-rounded text-sm">gavel</span> Consulta aviso de privacidad
+            </button>
+            <p class="text-[10px] text-slate-300 dark:text-slate-600">© 2025 Ingeniería Leezar</p>
         </div>
     </div>
 
@@ -171,21 +234,258 @@
         </div>
     </div>
 
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQRZGAe_RNqH49ewn2nqcZCJFtLR5vLdY&libraries=places&callback=initMap"></script>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const expedienteId = params.get('id');
         let totalRequisitos = 0; let completados = 0; let contadoresPartes = {}; 
         let currentTab = 'solicitante'; 
+        let map, marker, geocoder, autocomplete;
+        let selectedLocation = null; 
 
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
 
-        function toggleStartBtn() { const check = document.getElementById('acceptCheck'); const btn = document.getElementById('btnStart'); if (check.checked) { btn.disabled = false; btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.add('bg-teal-600', 'text-white', 'cursor-pointer'); } else { btn.disabled = true; btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.remove('bg-teal-600', 'text-white', 'cursor-pointer'); } }
-        function closePrivacyModal() { const modal = document.getElementById('privacyModal'); modal.style.opacity = '0'; setTimeout(() => { modal.style.display = 'none'; }, 300); }
-
+        // --- 3. LÓGICA LEGAL INYECTADA ---
         document.addEventListener('DOMContentLoaded', () => {
             if (!expedienteId || expedienteId === 'undefined') { alert('Liga inválida.'); return; }
+            
+            // Verificar aceptación legal
+            verificarEstadoLegal();
+            
+            // Listener para el check legal
+            const checkLegal = document.getElementById('acceptCheckDynamic');
+            if(checkLegal) {
+                checkLegal.addEventListener('change', (e) => {
+                    const btn = document.getElementById('btnStartDynamic');
+                    if (e.target.checked) {
+                        btn.disabled = false;
+                        btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none');
+                        btn.classList.add('bg-teal-600', 'text-white', 'cursor-pointer', 'shadow-lg', 'shadow-teal-200/50');
+                    } else {
+                        btn.disabled = true;
+                        btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none');
+                        btn.classList.remove('bg-teal-600', 'text-white', 'cursor-pointer', 'shadow-lg', 'shadow-teal-200/50');
+                    }
+                });
+                document.getElementById('btnStartDynamic').onclick = aceptarLegal;
+            }
+
             cargarDetalles(); 
         });
+
+        // --- FUNCIONES LEGALES NUEVAS ---
+        function verificarEstadoLegal() {
+            // Se usa el ID del expediente como clave
+            const aceptado = localStorage.getItem(`legal_accepted_${expedienteId}`); 
+            if (!aceptado) {
+                mostrarModalLegal(false); // false = modo obligatorio
+            }
+        }
+
+        function mostrarModalLegal(esConsulta) {
+            const texto = localStorage.getItem('leezar_legal_text') || "Aviso de Confidencialidad... (Texto por defecto)";
+            document.getElementById('legal-dynamic-content').textContent = texto;
+            
+            const modal = document.getElementById('dynamicPrivacyModal');
+            modal.style.display = 'flex';
+            
+            const check = document.getElementById('acceptCheckDynamic');
+            const btn = document.getElementById('btnStartDynamic');
+            const checkContainer = document.getElementById('legal-check-container');
+
+            if (esConsulta) {
+                check.checked = true;
+                check.disabled = true;
+                checkContainer.style.display = 'none';
+                btn.textContent = "Cerrar";
+                btn.disabled = false;
+                btn.className = "w-full py-3 rounded-xl font-bold text-lg bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors";
+                btn.onclick = () => { modal.style.display = 'none'; };
+            } else {
+                check.checked = false;
+                check.disabled = false;
+                checkContainer.style.display = 'flex';
+                btn.textContent = "Aceptar y Comenzar";
+                btn.disabled = true;
+                btn.className = "w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none";
+                btn.onclick = aceptarLegal;
+            }
+        }
+
+        function aceptarLegal() {
+            localStorage.setItem(`legal_accepted_${expedienteId}`, new Date().toISOString());
+            document.getElementById('dynamicPrivacyModal').style.display = 'none';
+        }
+        // ---------------------------------
+
+        // --- LÓGICA ORIGINAL (Mapa, Archivos, Renderizado) ---
+        function initMap() {
+            geocoder = new google.maps.Geocoder();
+        }
+
+        function abrirMapa() {
+            document.getElementById('mapModal').classList.remove('hidden');
+            
+            if(!map) {
+                const defaultPos = { lat: 19.4326, lng: -99.1332 }; 
+                
+                try {
+                    map = new google.maps.Map(document.getElementById("map"), {
+                        zoom: 18, 
+                        center: defaultPos,
+                        mapTypeControl: true, 
+                        mapTypeControlOptions: {
+                            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                            position: google.maps.ControlPosition.TOP_LEFT,
+                        },
+                        streetViewControl: false,
+                        fullscreenControl: true, 
+                        zoomControl: true, 
+                        mapTypeId: google.maps.MapTypeId.HYBRID 
+                    });
+
+                    const pinIcon = {
+                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+                        fillColor: "#4f46e5", 
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: "#ffffff",
+                        scale: 2,
+                        anchor: new google.maps.Point(12, 22),
+                    };
+
+                    marker = new google.maps.Marker({
+                        position: defaultPos,
+                        map: map,
+                        draggable: true,
+                        animation: google.maps.Animation.DROP,
+                        icon: pinIcon 
+                    });
+
+                    const input = document.getElementById("pac-input");
+                    
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            const val = this.value;
+                            const parts = val.split(',');
+                            if(parts.length === 2) {
+                                const lat = parseFloat(parts[0]);
+                                const lng = parseFloat(parts[1]);
+                                if(!isNaN(lat) && !isNaN(lng)) {
+                                    const pos = new google.maps.LatLng(lat, lng);
+                                    actualizarMapa(pos);
+                                    document.querySelectorAll('.pac-container').forEach(el => el.style.display = 'none');
+                                }
+                            }
+                        }
+                    });
+
+                    autocomplete = new google.maps.places.Autocomplete(input);
+                    autocomplete.bindTo("bounds", map);
+
+                    autocomplete.addListener("place_changed", () => {
+                        const place = autocomplete.getPlace();
+                        if (!place.geometry || !place.geometry.location) return;
+                        actualizarMapa(place.geometry.location);
+                    });
+
+                    marker.addListener("dragend", () => {
+                        decodificarPosicion(marker.getPosition());
+                    });
+
+                    map.addListener("click", (e) => {
+                        marker.setPosition(e.latLng);
+                        decodificarPosicion(e.latLng);
+                    });
+
+                    usarMiUbicacion(true);
+                } catch(e) {
+                    console.error("Error mapa", e);
+                }
+            }
+        }
+
+        function usarMiUbicacion(silencioso = false) {
+            const btn = document.getElementById('btn-my-location');
+            if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Obteniendo...';
+            
+            if (navigator.geolocation) {
+                const opcionesGPS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        actualizarMapa(pos);
+                        if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual';
+                    },
+                    (error) => {
+                        console.log("Error GPS", error);
+                        if(!silencioso) {
+                            alert("No pudimos obtener tu ubicación. Por favor escribe la dirección manualmente.");
+                            btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Reintentar GPS';
+                        }
+                    },
+                    opcionesGPS
+                );
+            } else {
+                if(!silencioso) alert("Tu navegador no soporta geolocalización.");
+            }
+        }
+
+        function actualizarMapa(location) {
+            const pos = (location.lat && typeof location.lat === 'function') ? location : new google.maps.LatLng(location.lat, location.lng);
+            map.setCenter(pos);
+            map.setZoom(19); 
+            marker.setPosition(pos);
+            decodificarPosicion(pos);
+        }
+
+        function cerrarMapa() {
+            document.getElementById('mapModal').classList.add('hidden');
+        }
+
+        function decodificarPosicion(latLng) {
+            const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+            const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+            
+            document.getElementById('coordenadas-texto').textContent = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
+
+            geocoder.geocode({ location: latLng }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    const address = results[0].formatted_address;
+                    document.getElementById('direccion-texto').textContent = address;
+                    selectedLocation = { lat, lng, address };
+                } else {
+                    document.getElementById('direccion-texto').textContent = "Ubicación marcada (Sin dirección postal exacta)";
+                    selectedLocation = { lat, lng, address: "Ubicación por Coordenadas" };
+                }
+            });
+        }
+
+        async function confirmarUbicacion() {
+            if(!selectedLocation) { alert("Primero selecciona una ubicación"); return; }
+            const btn = document.getElementById('btn-confirm-map');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
+            btn.disabled = true;
+
+            const mapLink = `http://googleusercontent.com/maps.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}`;
+            const contenido = `DIRECCIÓN: ${selectedLocation.address}\n\nCOORDENADAS: ${selectedLocation.lat}, ${selectedLocation.lng}\n\nLIGA GOOGLE MAPS:\n${mapLink}`;
+            const base64Content = btoa(unescape(encodeURIComponent(contenido)));
+
+            await enviarAlBackend('UBICACION_MAPS', base64Content, 'UBICACION_CONFIRMADA.txt', 'text/plain', 'inmueble');
+            cerrarMapa();
+            
+            // Force UI Update here - Fixes issue of not showing review state immediately
+            document.getElementById('ubicacion-actions').classList.add('hidden');
+            document.getElementById('ubicacion-success').classList.remove('hidden');
+            document.getElementById('direccion-guardada').textContent = selectedLocation.address;
+            document.getElementById('coordenadas-guardadas').textContent = `Lat: ${selectedLocation.lat.toFixed(5)}, Lon: ${selectedLocation.lng.toFixed(5)}`;
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
 
         async function cargarDetalles() {
             try {
@@ -248,7 +548,6 @@
             itemsArray.forEach(([key, item]) => {
                 if (key !== 'UBICACION_MAPS') { 
                     if (!key.includes('_EXTRA_')) totalRequisitos++;
-                    
                     if (item.estado !== 'pendiente') {
                         if (!key.includes('_EXTRA_')) completados++;
                         if (item.estado === 'en_revision') enRevision++;
@@ -260,9 +559,10 @@
                     if (!containers[destino]) destino = 'solicitante';
                     containers[destino].insertAdjacentHTML('beforeend', generarTarjetaItem(key, item));
                 } else if (key === 'UBICACION_MAPS' && item.estado !== 'pendiente') {
-                    document.getElementById('ubicacion-status').innerHTML = `<span class="text-green-600 font-bold flex items-center justify-center gap-1"><span class="material-symbols-rounded">check_circle</span> Ubicación recibida</span>`;
-                    document.getElementById('btn-gps').disabled = true;
-                    document.getElementById('btn-gps').classList.add('opacity-50');
+                    // Logic to show successful location map state
+                    document.getElementById('ubicacion-actions').classList.add('hidden');
+                    document.getElementById('ubicacion-success').classList.remove('hidden');
+                    document.getElementById('direccion-guardada').textContent = "Ubicación confirmada."; 
                 }
             });
 
@@ -289,28 +589,15 @@
 
         function generarTarjetaItem(key, item) {
             const acceptType = 'image/*,application/pdf';
-            
-            // --- AQUÍ ESTÁ EL CAMBIO PARA LOS COLORES ---
-            // Definimos el color base según la categoría
-            let bgClass = "bg-white border-gray-200"; // Por defecto
-            
-            if (item.categoria === 'solicitante') {
-                bgClass = "bg-teal-50 border-teal-100"; // Verde muy tenue
-            } else if (item.categoria === 'propietario') {
-                bgClass = "bg-orange-50 border-orange-100"; // Naranja muy tenue
-            } else if (item.categoria === 'inmueble') {
-                bgClass = "bg-indigo-50 border-indigo-100"; // Azul muy tenue
-            }
+            let bgClass = "bg-white border-gray-200"; 
+            if (item.categoria === 'solicitante') bgClass = "bg-teal-50 border-teal-100";
+            else if (item.categoria === 'propietario') bgClass = "bg-orange-50 border-orange-100";
+            else if (item.categoria === 'inmueble') bgClass = "bg-indigo-50 border-indigo-100";
 
-            // Mantenemos la lógica de la "sangría" para los items extra
-            const borderClass = key.includes('_EXTRA_') 
-                ? 'border-l-4 border-l-slate-300 ml-6 ' + bgClass 
-                : 'border shadow-sm ' + bgClass;
-            // ---------------------------------------------
+            const borderClass = key.includes('_EXTRA_') ? 'border-l-4 border-l-slate-300 ml-6 ' + bgClass : 'border shadow-sm ' + bgClass;
 
             let controlHtml = '';
             if (item.estado === 'pendiente') {
-                // Botones blancos para que resalten sobre el fondo de color tenue
                 controlHtml = `<div class="flex gap-2 w-full sm:w-auto">
                     <label class="btn-action btn-camera flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-teal-400"><span class="material-symbols-rounded text-xl">photo_camera</span> Foto<input type="file" class="hidden" accept="image/*" capture="environment" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
                     <label class="btn-action btn-file flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300"><span class="material-symbols-rounded text-xl">upload_file</span> Archivo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
@@ -338,35 +625,18 @@
 
         async function subirArchivo(itemKey, nombreRequisito, categoria, input) {
             const archivo = input.files[0]; if(!archivo) return;
-            
-            if (archivo.size > 6 * 1024 * 1024) { 
-                alert(`⚠️ ARCHIVO PESADO (${(archivo.size / 1024 / 1024).toFixed(2)} MB)\nMáximo 6MB.`);
-                input.value = '';
-                return;
-            }
-
+            if (archivo.size > 6 * 1024 * 1024) { alert(`⚠️ ARCHIVO PESADO`); input.value = ''; return; }
             let container = input.closest('label') || input.closest('div.flex');
             const originalHtml = container.innerHTML;
             container.innerHTML = `<span class="material-symbols-rounded animate-spin text-current text-2xl">sync</span>`; 
-
             try {
                 const base64Full = await toBase64(archivo);
                 const base64Data = base64Full.split(',')[1];
                 const extension = archivo.name.split('.').pop();
                 const nombreFinal = `${nombreRequisito.toUpperCase().replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`;
-
-                const response = await fetch('/.netlify/functions/subir-archivo', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Data, nombreArchivo: nombreFinal, mimeType: archivo.type, categoriaItem: categoria })
-                });
-
-                if(!response.ok) throw new Error('Error al subir');
+                await fetch('/.netlify/functions/subir-archivo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Data, nombreArchivo: nombreFinal, mimeType: archivo.type, categoriaItem: categoria }) });
                 await cargarDetalles(); 
-
-            } catch (error) {
-                alert('Error al subir. Intenta de nuevo.');
-                container.innerHTML = originalHtml;
-            }
+            } catch (error) { alert('Error al subir.'); container.innerHTML = originalHtml; }
         }
         
         function actualizarBarraProgreso(lanzarFestejo) {
@@ -376,38 +646,26 @@
             if (porcentaje === 100 && lanzarFestejo) lanzarJack("¡Felicidades!", "Expediente Completado.");
         }
 
-        function obtenerGPS() {
-            const btn = document.getElementById('btn-gps');
-            if (!navigator.geolocation) { alert("GPS no disponible."); return; }
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Obteniendo...';
-            navigator.geolocation.getCurrentPosition(pos => {
-                 const link = `http://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                 enviarAlBackend('UBICACION_MAPS', btoa(link), "UBICACION_GPS.txt", 'text/plain', 'inmueble');
-            }, err => { alert("Error: Activa tu GPS."); btn.innerHTML = '📍 Reintentar'; });
-        }
- 
         async function enviarAlBackend(itemKey, base64Data, nombre, mime, categoria) {
             try {
                await fetch('/.netlify/functions/subir-archivo', {
                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Data, nombreArchivo: nombre, mimeType: mime, categoriaItem: categoria })
                });
+               // Force UI Update here so map updates immediately
                await cargarDetalles();
             } catch(e) { alert("Error al guardar"); }
         }
         
         function switchTab(categoria) {
             currentTab = categoria; 
-            
             const allBtns = document.querySelectorAll('.tab-btn');
             allBtns.forEach(btn => {
                 btn.className = 'tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 bg-white border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500';
             });
-            
             document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
             const section = document.getElementById(`section-${categoria}`);
             if(section) section.classList.remove('hidden');
-
             const btn = document.getElementById(`tab-btn-${categoria}`);
             if(btn) {
                 let activeClasses = "tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 border-b-4 shadow-sm transform scale-[1.02] transition-all ";

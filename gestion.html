@@ -16,30 +16,30 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
     <script src="js/layout.js"></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Estilos para cabeceras ordenables */
+        /* Estilos específicos de tu tabla */
         th[onclick] { cursor: pointer; user-select: none; transition: background-color 0.2s; }
         th[onclick]:hover { background-color: rgba(13, 148, 136, 0.05); color: #0d9488; }
         .dark th[onclick]:hover { background-color: rgba(13, 148, 136, 0.2); color: #2dd4bf; }
         
-        /* Select deshabilitado (cuando ya está asignado) */
         select:disabled { 
             background-color: #f3f4f6; color: #64748b; 
             border-color: transparent; cursor: not-allowed; appearance: none; text-align: center; font-weight: 800;
         }
         .dark select:disabled { background-color: #1e293b; color: #94a3b8; }
         
-        /* Animaciones suaves */
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
     
-    <main class="w-full p-6 transition-all duration-300">
+    <main class="p-6 transition-all duration-300 flex-1">
         
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
@@ -192,11 +192,11 @@
 
                     return {
                         id: doc.id || '---',
-                        cliente: (doc.cliente || doc.nombre || 'Sin Nombre').toUpperCase(),
+                        cliente: (doc.cliente || doc.nombre || doc.nombreCliente || 'Sin Nombre').toUpperCase(),
                         tramite: (doc.tramite || doc.tipoTramite || 'General').toUpperCase(),
                         timestamp: timestamp,
                         fechaDisplay: fechaDisplay,
-                        status: (doc.status || doc.estatus || 'PENDIENTE').toUpperCase(),
+                        status: (doc.status || doc.estatus || doc.estado || 'PENDIENTE').toUpperCase(),
                         
                         // LECTURA DE LOS 3 ROLES
                         capturista: doc.capturista || null,
