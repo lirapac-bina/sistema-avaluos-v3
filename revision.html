@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesa de Control - Revisión de Expedientes Avalúos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        leezar: { 500: '#0d9488', 600: '#0f766e' },
+                        primary: '#0f4c81' 
+                    },
+                    cursor: { 'zoom-in': 'zoom-in' }
+                } 
+            } 
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <script src="js/layout.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .doc-bg { background-color: #f1f5f9; }
+        .dark .doc-bg { background-color: #0f172a; }
+        .workspace-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .dark .workspace-pattern {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+        }
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .dark .thin-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
+        .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
+        @keyframes fadeInSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 h-screen flex flex-col overflow-hidden">
+
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden">
+        
+        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 shrink-0 z-20 shadow-sm">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                
+                <div class="flex flex-col gap-1">
+                    <h1 class="text-xl font-extrabold text-[#0f4c81] dark:text-white leading-none">
+                        Revisión de Expedientes Avalúos
+                    </h1>
+                    
+                    <div class="mt-2 pl-2 border-l-4 border-teal-500">
+                        <div class="flex items-center gap-2 text-slate-400 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
+                            <span class="material-symbols-rounded text-sm">person</span> Solicitante
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300 animate-pulse leading-tight" id="header-client-name">
+                            Cargando...
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-1 text-xs font-medium text-slate-500 dark:text-slate-400 ml-3">
+                        <span id="header-date">--/--/----</span>
+                        <span class="text-slate-300">|</span>
+                        <span class="text-teal-600 dark:text-teal-400 font-bold" id="header-folio">...</span>
+                        <span class="text-slate-300">|</span>
+                        <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] uppercase" id="header-tramite">...</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 items-center self-start md:self-center">
+                    <button onclick="reenviarLiga()" class="h-10 flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-blue-900" title="Reenviar acceso al cliente por WhatsApp">
+                        <span class="material-symbols-rounded text-lg">send</span>
+                        <span>Reenviar Liga</span>
+                    </button>
+
+                    <button onclick="location.reload()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" title="Recargar datos">
+                        <span class="material-symbols-rounded text-xl">refresh</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden" id="workspace-container">
+            
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+                
+                <div class="w-full md:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shrink-0 shadow-lg">
+                    
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center select-none">
+                        <button onclick="prevGroup()" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                        </button>
+                        
+                        <div class="text-center">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-0.5">GRUPO</span>
+                            <span id="carousel-title" class="text-xs font-black text-slate-700 dark:text-white uppercase">---</span>
+                        </div>
+
+                        <button onclick="nextGroup()" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </button>
+                    </div>
+                    
+                    <div class="h-1 bg-slate-100 dark:bg-slate-700 w-full">
+                        <div id="group-progress-bar" class="h-full bg-teal-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="px-3 py-1 bg-slate-50 dark:bg-slate-900 text-[9px] font-bold text-slate-400 text-right border-b border-slate-100 dark:border-slate-800">
+                        <span id="group-counter">0/0</span> Validado
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto thin-scroll p-0 relative" id="checklist-container">
+                        <div class="text-center py-10"><span class="material-symbols-rounded animate-spin text-slate-400">sync</span></div>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-slate-100 dark:bg-[#0b1121] flex flex-col relative workspace-pattern">
+                    <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
+                        <div id="preview-card" class="bg-white dark:bg-slate-800 shadow-2xl rounded-lg w-full max-w-[600px] aspect-[4/5] md:aspect-[3/4] flex flex-col border border-slate-200 dark:border-slate-700 relative overflow-hidden transition-all duration-300 group">
+                            <div class="h-10 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase" id="preview-type">Vista Previa</span>
+                            </div>
+
+                            <div class="flex-1 flex items-center justify-center bg-slate-200 dark:bg-slate-900 relative overflow-hidden">
+                                
+                                <div id="preview-placeholder" class="text-center p-6">
+                                    <span class="material-symbols-rounded text-5xl text-slate-300 mb-2">description</span>
+                                    <p class="text-xs text-slate-400">Selecciona un documento</p>
+                                    
+                                    <div id="error-fallback" class="hidden mt-6">
+                                        <p class="text-red-400 text-xs mb-3 font-bold flex items-center justify-center gap-1">
+                                            <span class="material-symbols-rounded text-sm">warning</span> No se pudo cargar el mapa automático
+                                        </p>
+                                        <a id="download-fallback-link" href="#" target="_blank" class="px-4 py-2 bg-slate-700 text-white rounded-lg text-xs hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 border border-slate-600">
+                                            <span class="material-symbols-rounded text-sm">download</span> Descargar Coordenadas (TXT)
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <img id="real-image" class="hidden w-full h-full object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in" onclick="abrirZoom()">
+                                <iframe id="real-pdf" class="hidden w-full h-full bg-white"></iframe>
+                                
+                                <div id="map-container" class="hidden w-full h-full flex flex-col absolute inset-0 bg-white dark:bg-slate-800 z-20">
+                                    <div class="flex-1 bg-slate-100 relative">
+                                        <iframe id="google-map-embed" class="w-full h-full border-0" allowfullscreen loading="lazy"></iframe>
+                                    </div>
+                                    <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                                        <div class="flex items-start gap-3">
+                                            <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                <span class="material-symbols-rounded text-2xl">location_on</span>
+                                            </div>
+                                            <div class="overflow-hidden w-full">
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dirección Registrada:</p>
+                                                <p id="map-address-text" class="text-sm font-bold text-slate-800 dark:text-white leading-tight mb-2 break-words">...</p>
+                                                
+                                                <div class="flex justify-between items-center mt-2">
+                                                    <div class="flex items-center gap-2" onclick="copiarCoords()" title="Copiar coordenadas">
+                                                        <span class="material-symbols-rounded text-xs text-indigo-500">my_location</span>
+                                                        <p id="map-coords-text" class="text-[10px] font-mono text-indigo-500 dark:text-indigo-400 cursor-pointer hover:underline">...</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="zoom-overlay" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px] pointer-events-none hidden">
+                                    <span class="text-white font-bold text-xs flex items-center gap-1">
+                                        <span class="material-symbols-rounded">zoom_in</span> Ampliar
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate text-center" id="card-filename">---</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="decision-bar" class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-transform duration-300 translate-y-full z-20 absolute bottom-0 w-full">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Validando:</p>
+                            <p class="font-bold text-slate-800 dark:text-white text-xs truncate w-48" id="selected-doc-name">--</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="abrirRechazo()" class="flex items-center gap-1 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs transition-all dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20">
+                                <span class="material-symbols-rounded text-sm">thumb_down</span> Descartar
+                            </button>
+                            <button onclick="validarDocumento()" id="btn-validar" class="flex items-center gap-1 px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs shadow-md active:scale-95 transition-all">
+                                <span class="material-symbols-rounded text-sm">check_circle</span> Validar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="staff-panel" class="bg-white dark:bg-slate-800 shrink-0 overflow-y-auto border-t border-slate-200 dark:border-slate-700" style="height: 180px;">
+                <div class="p-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 font-bold text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide flex justify-between items-center sticky top-0 z-10">
+                    <span>Entregables Internos (Staff)</span>
+                    <div id="success-banner" class="hidden items-center gap-2 text-green-600 dark:text-green-400 font-bold animate-pulse">
+                        <span class="material-symbols-rounded text-sm">send</span>
+                        <span>¡Expediente Completo!</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
+                    <div class="flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">photo_camera</span></div>
+                            <div>
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Visita de Campo</p>
+                                <p class="text-[9px] text-slate-400">Luis (Visitador)</p>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900">15 Fotos</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">architecture</span></div>
+                            <div>
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Gabinete</p>
+                                <p class="text-[9px] text-slate-400">Sofía (Arq)</p>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900">
+                            <span class="material-symbols-rounded text-[10px] animate-spin">sync</span> DWG Pendiente
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="zoom-modal" class="fixed inset-0 z-[60] hidden bg-black/90 backdrop-blur-md flex items-center justify-center animate-fade-in" onclick="cerrarZoom()">
+        <button class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+            <span class="material-symbols-rounded text-4xl">close</span>
+        </button>
+        <img id="zoom-image" class="max-w-[90%] max-h-[90%] object-contain shadow-2xl rounded-lg transform transition-transform duration-300 scale-95" onclick="event.stopPropagation()">
+        <div class="absolute bottom-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm">
+            Vista Ampliada
+        </div>
+    </div>
+
+    <div id="reject-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-600 transform scale-95 transition-transform">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
+                <span class="material-symbols-rounded text-red-500">warning</span>
+                Descartar Documento
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Selecciona un error común o escribe uno específico.</p>
+            
+            <div class="flex justify-between items-end mb-2">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Catálogo de Errores Comunes:</label>
+                <button onclick="agregarError()" class="text-[10px] text-teal-500 hover:text-teal-400 font-bold flex items-center gap-1 bg-teal-500/10 px-2 py-1 rounded transition-colors"><span class="material-symbols-rounded text-sm">add</span> Nuevo</button>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-2 mb-4" id="lista-errores">
+                </div>
+
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Retroalimentación Específica:</label>
+            <textarea id="reject-reason" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-red-500 mb-4 dark:text-white placeholder:text-slate-400" placeholder="Detalles adicionales para el cliente..."></textarea>
+            
+            <div class="flex justify-end gap-2">
+                <button onclick="cerrarRechazo()" class="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700 dark:hover:text-slate-300">Cancelar</button>
+                <button onclick="confirmarRechazo()" id="btn-confirm-reject" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm shadow-lg shadow-red-500/30 hover:bg-red-700 transition-transform active:scale-95">Confirmar Descarte</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- VARIABLES GLOBALES ---
+        let expediente = { grupos: { solicitante: [], propietario: [], inmueble: [] } };
+        const groupKeys = ['solicitante', 'propietario', 'inmueble'];
+        let activeGroupIndex = 0;
+        let selectedReqKey = null;
+        let expedienteId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const datosLocal = localStorage.getItem('expediente_activo');
+            if (!datosLocal) {
+                alert("Debes seleccionar un expediente desde la Gestión.");
+                window.location.href = 'gestion.html';
+                return;
+            }
+
+            const infoBasica = JSON.parse(datosLocal);
+            expedienteId = infoBasica.id; 
+            document.getElementById('header-client-name').innerText = infoBasica.cliente || "Sin Nombre";
+            document.getElementById('header-client-name').classList.remove('animate-pulse');
+            document.getElementById('header-date').innerText = infoBasica.fechaDisplay || "--/--/----";
+            document.getElementById('header-folio').innerText = infoBasica.id.substring(0, 8);
+            document.getElementById('header-tramite').innerText = infoBasica.tramite || "TRÁMITE";
+
+            fetchDetalles(infoBasica.id);
+        });
+
+        async function fetchDetalles(id) {
+            try {
+                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}`);
+                const data = await res.json();
+                transformarDatos(id, data);
+                renderCurrentGroup();
+            } catch (e) {
+                console.error("Error cargando detalles:", e);
+                alert("No se pudieron cargar los requisitos.");
+            }
+        }
+
+        // --- CEREBRO: COMPATIBILIDAD CON BD ---
+        function transformarDatos(id, data) {
+            expediente = {
+                id: id,
+                cliente: data.nombreCliente,
+                telefono: data.telefono,
+                grupos: { solicitante: [], propietario: [], inmueble: [] }
+            };
+
+            const checklist = data.checklist || {};
+            
+            Object.keys(checklist).forEach(key => {
+                const item = checklist[key];
+                let cat = item.categoria || 'solicitante';
+                
+                // LÓGICA DE MAPA: FORZAR A INMUEBLE
+                if (key === 'UBICACION_MAPS') {
+                    cat = 'inmueble';
+                    // FORZAR EL NOMBRE SI VIENE VACÍO O UNDEFINED
+                    item.nombre = 'Ubicación Inmueble'; 
+                }
+
+                // Url del archivo
+                const urlReal = item.archivoUrl || item.driveLink || item.url;
+
+                let uiStatus = 'pending';
+                if(item.estado === 'validado' || item.estatus === 'validado') uiStatus = 'valid';
+                if(item.estado === 'rechazado' || item.estatus === 'rechazado') uiStatus = 'rejected';
+                if(item.estado === 'en_revision' || item.estatus === 'revision') uiStatus = 'review';
+
+                let tipoArchivo = '---';
+                if(key === 'UBICACION_MAPS') {
+                    tipoArchivo = 'MAPA';
+                } else if (urlReal) {
+                    const urlLower = urlReal.toLowerCase();
+                    const mime = (item.mimeType || '').toLowerCase();
+                    if (mime.includes('pdf') || urlLower.includes('.pdf')) {
+                        tipoArchivo = 'PDF';
+                    } else {
+                        tipoArchivo = 'IMG'; 
+                    }
+                }
+
+                if(expediente.grupos[cat]) {
+                    expediente.grupos[cat].push({
+                        key: key,
+                        nombre: item.nombre || 'Sin nombre',
+                        tipo: tipoArchivo,
+                        status: uiStatus,
+                        url: urlReal,
+                        // --- CLAVE: LEEMOS COORDENADAS DIRECTAS ---
+                        coordenadas: item.coordenadas,
+                        direccion: item.direccion
+                    });
+                }
+            });
+        }
+
+        function renderCurrentGroup() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            
+            const currentKey = groupKeys[activeGroupIndex];
+            const items = expediente.grupos[currentKey];
+            
+            const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
+            document.getElementById('carousel-title').innerText = titles[currentKey];
+
+            let valid = items.filter(i => i.status === 'valid').length;
+            let total = items.length;
+            let percent = total > 0 ? (valid / total) * 100 : 0;
+            
+            document.getElementById('group-progress-bar').style.width = `${percent}%`;
+            document.getElementById('group-counter').innerText = `${valid}/${total}`;
+
+            if(items.length === 0) {
+                container.innerHTML = '<div class="p-4 text-xs text-center text-slate-400">No hay requisitos en este grupo.</div>';
+                return;
+            }
+
+            items.forEach((req, index) => {
+                let icon = '';
+                let statusClass = '';
+                let statusText = '';
+
+                if(req.status === 'pending') {
+                    statusText = 'PENDIENTE';
+                    icon = '<span class="material-symbols-rounded text-slate-300">radio_button_unchecked</span>';
+                    statusClass = 'border-l-4 border-slate-300 opacity-60';
+                } else if(req.status === 'review') {
+                    statusText = 'POR REVISAR';
+                    icon = '<span class="material-symbols-rounded text-orange-500 animate-pulse">hourglass_top</span>';
+                    statusClass = 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10';
+                } else if(req.status === 'valid') {
+                    statusText = 'VALIDADO';
+                    icon = '<span class="material-symbols-rounded text-green-500">check_circle</span>';
+                    statusClass = 'border-l-4 border-green-500 bg-green-50/50 dark:bg-green-900/10'; 
+                } else if(req.status === 'rejected') {
+                    statusText = 'RECHAZADO';
+                    icon = '<span class="material-symbols-rounded text-red-500">error</span>';
+                    statusClass = 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20';
+                }
+
+                if (selectedReqKey === req.key) {
+                    statusClass += ' bg-white dark:bg-slate-700 shadow-md transform scale-[1.02] z-10 border-y border-r my-2 mx-1 rounded-lg';
+                } else {
+                    statusClass += ' hover:bg-white dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700';
+                }
+
+                // ICONO MAPA
+                let displayIcon = icon;
+                if (req.key === 'UBICACION_MAPS') {
+                    displayIcon = `<span class="material-symbols-rounded ${req.status === 'pending' ? 'text-slate-300' : 'text-indigo-500'}">map</span>`;
+                }
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
+                itemDiv.style.animationDelay = `${index * 0.05}s`;
+                
+                if(req.url || req.coordenadas || req.status === 'review' || req.status === 'valid' || req.status === 'rejected') {
+                    itemDiv.onclick = () => seleccionarRequisito(req);
+                } else {
+                    itemDiv.classList.add('cursor-not-allowed');
+                    itemDiv.title = "Aún no suben este archivo";
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            ${displayIcon}
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px]">${req.nombre}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function nextGroup() {
+            activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0;
+            renderCurrentGroup();
+        }
+
+        function prevGroup() {
+            activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1;
+            renderCurrentGroup();
+        }
+
+        async function seleccionarRequisito(req) {
+            selectedReqKey = req.key;
+            renderCurrentGroup();
+            
+            document.getElementById('selected-doc-name').innerText = req.nombre;
+            document.getElementById('card-filename').innerText = req.nombre;
+            
+            // Reset Views
+            document.getElementById('preview-placeholder').classList.add('hidden');
+            document.getElementById('error-fallback').classList.add('hidden');
+            
+            const img = document.getElementById('real-image');
+            const pdf = document.getElementById('real-pdf');
+            const mapDiv = document.getElementById('map-container');
+            const placeholder = document.getElementById('preview-placeholder');
+            const zoomOverlay = document.getElementById('zoom-overlay');
+            const fallbackLink = document.getElementById('download-fallback-link');
+            
+            img.classList.add('hidden');
+            pdf.classList.add('hidden');
+            mapDiv.classList.add('hidden');
+            zoomOverlay.classList.add('hidden');
+
+            if (!req.url && !req.coordenadas) {
+                placeholder.classList.remove('hidden');
+                return;
+            }
+
+            // --- LÓGICA MAPA INTELIGENTE (DIRECTA + FALLBACK) ---
+            if (req.key === 'UBICACION_MAPS') {
+                
+                // 1. INTENTO DIRECTO (Si existen coordenadas en BD)
+                if (req.coordenadas) {
+                    document.getElementById('map-address-text').innerText = req.direccion || 'Sin dirección registrada';
+                    document.getElementById('map-coords-text').innerText = req.coordenadas;
+                    
+                    const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&z=19&output=embed`;
+                    document.getElementById('google-map-embed').src = embedUrl;
+                    mapDiv.classList.remove('hidden');
+                } 
+                // 2. INTENTO LECTURA TXT (Si es expediente viejo)
+                else if (req.url) {
+                    try {
+                        const response = await fetch(req.url);
+                        if(response.ok) {
+                            const text = await response.text();
+                            const coordsMatch = text.match(/COORDENADAS: (.*)/);
+                            const addrMatch = text.match(/DIRECCIÓN: (.*)/);
+                            
+                            if(coordsMatch) {
+                                const coords = coordsMatch[1].trim();
+                                const addr = addrMatch ? addrMatch[1].trim() : 'Dirección no disponible';
+                                
+                                document.getElementById('map-address-text').innerText = addr;
+                                document.getElementById('map-coords-text').innerText = coords;
+                                document.getElementById('google-map-embed').src = `https://maps.google.com/maps?q=${coords}&z=19&output=embed`;
+                                mapDiv.classList.remove('hidden');
+                            } else { throw new Error("Formato inválido"); }
+                        } else { throw new Error("Bloqueo CORS"); }
+                    } catch(e) {
+                        // 3. FALLBACK MANUAL (Si todo falla)
+                        console.warn("Fallo carga auto mapa:", e);
+                        placeholder.classList.remove('hidden');
+                        document.getElementById('error-fallback').classList.remove('hidden');
+                        fallbackLink.href = req.url;
+                    }
+                }
+            } 
+            // --- LÓGICA NORMAL (IMG/PDF) ---
+            else if (req.tipo === 'PDF') {
+                pdf.src = req.url;
+                pdf.classList.remove('hidden');
+            } else {
+                img.src = req.url;
+                img.classList.remove('hidden');
+                zoomOverlay.classList.remove('hidden'); 
+            }
+            
+            const bar = document.getElementById('decision-bar');
+            if (req.status === 'review' || req.status === 'rejected' || req.status === 'pending') {
+                bar.classList.remove('translate-y-full');
+            } else {
+                bar.classList.add('translate-y-full');
+            }
+        }
+
+        async function actualizarEstadoBackend(nuevoEstado, motivo = null) {
+            const btnConfirm = document.getElementById('btn-confirm-reject');
+            const btnValid = document.getElementById('btn-validar');
+            
+            try {
+                if(nuevoEstado === 'rechazado') {
+                    btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>';
+                    btnConfirm.disabled = true;
+                } else {
+                    btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>';
+                    btnValid.disabled = true;
+                }
+
+                const res = await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        expedienteId: expediente.id, 
+                        itemKey: selectedReqKey, 
+                        nuevoEstado: nuevoEstado, 
+                        retroalimentacion: motivo 
+                    })
+                });
+
+                if(!res.ok) throw new Error("Error en servidor");
+
+                const currentKey = groupKeys[activeGroupIndex];
+                const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
+                if(item) item.status = nuevoEstado === 'rechazado' ? 'rejected' : 'valid';
+
+                renderCurrentGroup();
+                document.getElementById('decision-bar').classList.add('translate-y-full');
+                
+                if(nuevoEstado === 'rechazado') cerrarRechazo();
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error al guardar estado: " + e.message);
+            } finally {
+                btnConfirm.innerHTML = 'Confirmar Descarte'; btnConfirm.disabled = false;
+                btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; btnValid.disabled = false;
+            }
+        }
+
+        function validarDocumento() {
+            if(!selectedReqKey) return;
+            if(!confirm("¿Aprobar documento?")) return;
+            actualizarEstadoBackend('validado');
+        }
+
+        function confirmarRechazo() {
+            if(!selectedReqKey) return;
+            const motivo = document.getElementById('reject-reason').value;
+            if(!motivo) { alert("Escribe un motivo"); return; }
+            actualizarEstadoBackend('rechazado', motivo);
+        }
+
+        function abrirRechazo() { 
+            document.getElementById('reject-modal').classList.remove('hidden'); 
+            document.getElementById('reject-modal').classList.add('flex');
+            
+            const container = document.getElementById('lista-errores');
+            container.innerHTML = ''; 
+
+            if (selectedReqKey === 'UBICACION_MAPS') {
+                const btn = document.createElement('button');
+                btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
+                btn.innerHTML = `📍 <b>Ubicación Incorrecta:</b> El pin no coincide con el inmueble.`;
+                btn.onclick = () => usarError('Ubicación no coincide');
+                container.appendChild(btn);
+            } else {
+                const errores = [
+                    { t: 'Ilegible', d: 'Imagen borrosa o con reflejo.' },
+                    { t: 'Incompleto', d: 'Faltan páginas o reversos.' },
+                    { t: 'Vencido', d: 'El documento perdió vigencia.' },
+                    { t: 'Sin Firma', d: 'Falta firma autógrafa en tinta azul.' }
+                ];
+                errores.forEach(e => {
+                    const btn = document.createElement('button');
+                    btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
+                    btn.innerHTML = `⚠️ <b>${e.t}:</b> ${e.d}`;
+                    btn.onclick = () => usarError(`${e.t}: ${e.d}`);
+                    container.appendChild(btn);
+                });
+            }
+        }
+
+        function cerrarRechazo() { document.getElementById('reject-modal').classList.add('hidden'); document.getElementById('reject-modal').classList.remove('flex'); }
+        function usarError(texto) { document.getElementById('reject-reason').value = texto; }
+        
+        function agregarError() {
+            const nuevo = prompt("Escribe el nuevo motivo de rechazo:");
+            if(nuevo) {
+                const container = document.getElementById('lista-errores');
+                const btn = document.createElement('button');
+                btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
+                btn.innerHTML = `⚠️ <b>Personalizado:</b> ${nuevo}`;
+                btn.onclick = () => usarError(nuevo);
+                container.appendChild(btn);
+                usarError(nuevo); 
+            }
+        }
+
+        function reenviarLiga() {
+            const msg = `Hola ${expediente.cliente}, te reenvío la liga de tu expediente ${expediente.id}.`;
+            window.open(`https://wa.me/${expediente.telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function abrirZoom() {
+            if(selectedReqKey === 'UBICACION_MAPS') return; // No zoom en mapa
+            const src = document.getElementById('real-image').src;
+            if(!src || document.getElementById('real-image').classList.contains('hidden')) return;
+            const modal = document.getElementById('zoom-modal');
+            const img = document.getElementById('zoom-image');
+            img.src = src;
+            modal.classList.remove('hidden');
+            setTimeout(() => { img.classList.remove('scale-95'); img.classList.add('scale-100'); }, 10);
+        }
+        function cerrarZoom() {
+            const modal = document.getElementById('zoom-modal');
+            const img = document.getElementById('zoom-image');
+            img.classList.remove('scale-100');
+            img.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 200);
+        }
+        
+        function copiarCoords() {
+            const txt = document.getElementById('map-coords-text').innerText;
+            navigator.clipboard.writeText(txt).then(() => alert("Coordenadas copiadas"));
+        }
+    </script>
+</body>
+</html>

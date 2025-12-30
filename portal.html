@@ -6,95 +6,111 @@
     <title>Portal Cliente - Ing. Leezar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' } },
+                    animation: { 'bounce-slow': 'bounce 3s infinite' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                } 
+            } 
+        }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .dark body { background-color: #0f172a; }
-        
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .fade-in { animation: popIn 0.3s ease-out forwards; }
-        .jack-bounce { animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        
-        .btn-pulse { animation: pulse-blue 2s infinite; }
-        @keyframes pulse-blue { 
-            0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.7); } 
-            70% { box-shadow: 0 0 0 10px rgba(13, 148, 136, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); } 
-        }
-
-        .privacy-backdrop { background-color: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); }
-        
-        .tab-btn { transition: all 0.2s ease-in-out; border-bottom-width: 3px; }
-        .tab-btn:hover { background-color: #f8fafc; }
-        .dark .tab-btn:hover { background-color: #1e293b; }
-
-        /* Estilos Mapa */
         #map { height: 100%; width: 100%; }
-        /* Ajuste para que el autocompletado de Google no quede oculto por el modal */
-        .pac-container { z-index: 10000 !important; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: 'Roboto', sans-serif; }
+        .pac-container { z-index: 10000 !important; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: 'Inter', sans-serif; }
+        .btn-upload { transition: all 0.2s ease; cursor: pointer; user-select: none; }
+        .btn-upload:active { transform: scale(0.98); }
+        input[type="file"] { display: none; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="pb-32 bg-slate-50 dark:bg-slate-900 transition-colors">
+<body class="pb-32 bg-gray-50 dark:bg-slate-900 transition-colors text-gray-800 dark:text-gray-200">
 
-    <div id="dynamicPrivacyModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 privacy-backdrop">
+    <div id="securityLock" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900 transition-opacity duration-500">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm p-8 rounded-3xl shadow-2xl text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-leezar-500 to-indigo-500"></div>
+            
+            <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-rounded text-3xl text-slate-600 dark:text-slate-300">lock</span>
+            </div>
+
+            <h2 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">Verificación de Seguridad</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Para proteger tus datos personales, confirma tu identidad.
+            </p>
+
+            <div class="space-y-4">
+                <div class="text-left">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Últimos 4 dígitos de tu celular</label>
+                    <input type="password" id="security-input" maxlength="20" placeholder="****" class="w-full text-center text-2xl font-bold tracking-widest py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors">
+                </div>
+                
+                <button onclick="validarIdentidad()" class="w-full bg-leezar-500 hover:bg-leezar-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200/50 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">key</span> Desbloquear Expediente
+                </button>
+                <p id="security-error" class="text-red-500 text-xs font-bold hidden animate-bounce">❌ Incorrecto. Intenta de nuevo.</p>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                <p class="text-[10px] text-slate-400">Ingeniería Leezar • Sistema Seguro</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="dynamicPrivacyModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-[popIn_0.3s_ease-out] flex flex-col max-h-[90vh]">
-            <div class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-teal-600">
+            <div class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-leezar-600">
                 <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span class="material-symbols-rounded text-white text-3xl">verified_user</span>
                 </div>
                 <h2 class="text-2xl font-bold text-white">Aviso de Privacidad</h2>
-                <p class="text-teal-100 text-xs mt-1">Por favor lee y acepta para continuar.</p>
+                <p class="text-blue-200 text-xs mt-1">Por favor lee y acepta para continuar.</p>
             </div>
-            
             <div class="p-6 overflow-y-auto flex-1 bg-gray-50 dark:bg-slate-900/50">
-                <div id="legal-dynamic-content" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-justify whitespace-pre-line">
-                    Cargando...
-                </div>
+                <div id="legal-dynamic-content" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-justify whitespace-pre-line">Cargando...</div>
             </div>
-
             <div class="p-6 border-t border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
                 <label class="flex gap-3 items-start mb-6 cursor-pointer group select-none" id="legal-check-container">
-                    <input type="checkbox" id="acceptCheckDynamic" class="mt-1 w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500 bg-gray-100 dark:bg-slate-700">
-                    <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">He leído, entiendo y acepto los términos de privacidad y el tratamiento exclusivo de mis documentos.</span>
+                    <input type="checkbox" id="acceptCheckDynamic" class="mt-1 w-5 h-5 text-leezar-600 rounded border-gray-300 focus:ring-leezar-500 bg-gray-100 dark:bg-slate-700">
+                    <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">He leído, entiendo y acepto los términos.</span>
                 </label>
-                <button id="btnStartDynamic" disabled class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none">
-                    Aceptar y Comenzar
-                </button>
+                <button id="btnStartDynamic" disabled class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none">Aceptar y Comenzar</button>
             </div>
         </div>
     </div>
+
     <div id="mapModal" class="fixed inset-0 z-[90] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-lg h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-[popIn_0.3s_ease-out]">
             <div class="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 z-10 shrink-0">
                 <h3 class="font-bold text-slate-800 dark:text-white">Precisar Ubicación</h3>
                 <button onclick="cerrarMapa()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:bg-gray-200"><span class="material-symbols-rounded">close</span></button>
             </div>
-            
             <div class="p-4 bg-white dark:bg-slate-800 z-10 space-y-3 shrink-0 shadow-sm">
                 <div class="relative">
                     <span class="material-symbols-rounded absolute left-3 top-3 text-gray-400">search</span>
-                    <input id="pac-input" type="text" placeholder="Escribe calle o coordenadas (19.x, -96.x)..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm outline-none">
+                    <input id="pac-input" type="text" placeholder="Calle o coordenadas..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm outline-none">
                 </div>
                 <button onclick="usarMiUbicacion()" id="btn-my-location" class="w-full py-2.5 px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-sm font-bold flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors">
                     <span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual
                 </button>
             </div>
-
             <div class="flex-1 relative bg-gray-100">
                 <div id="map"></div>
                 <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-4 py-2 rounded-full shadow-lg pointer-events-none z-10">
-                    <p class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
-                        Arrastra el pin <span class="material-symbols-rounded text-base">location_on</span> a la entrada
-                    </p>
+                    <p class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">Arrastra el pin <span class="material-symbols-rounded text-base">location_on</span></p>
                 </div>
             </div>
-
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 z-10 shrink-0">
                 <div class="mb-4">
                     <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Dirección Detectada:</p>
@@ -108,577 +124,634 @@
         </div>
     </div>
 
-    <div class="fixed top-0 left-0 w-full bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-sm z-40 h-16 flex items-center border-b border-gray-100 dark:border-slate-700">
-        <div class="max-w-3xl w-full mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">L</div>
-                <span class="font-bold text-gray-700 dark:text-gray-200 text-lg tracking-tight">Expediente</span>
+    <div id="descModal" class="fixed inset-0 z-[95] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-[popIn_0.3s_ease-out] max-h-[90vh]">
+            <div class="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 z-10 shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <span class="material-symbols-rounded text-lg">edit_note</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 dark:text-white">Descripción del Inmueble</h3>
+                </div>
+                <button onclick="cerrarDescripcion()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:bg-gray-200"><span class="material-symbols-rounded">close</span></button>
             </div>
-            <div class="flex flex-col items-end w-1/2">
-                <span class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-1" id="progress-text">0% Completado</span>
-                <div class="w-full h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-teal-500 rounded-full progress-bar" style="width: 0%"></div></div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-800 space-y-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-400 uppercase mb-2 tracking-wide">Estado de Conservación</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="estado_inmueble" value="Nuevo" class="peer sr-only">
+                            <div class="rounded-xl border-2 border-slate-200 dark:border-slate-600 p-3 text-center peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 peer-checked:text-indigo-600 transition-all hover:bg-slate-50 dark:hover:bg-slate-700">
+                                <span class="material-symbols-rounded text-2xl block mb-1">grade</span>
+                                <span class="text-xs font-bold">Nuevo</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="estado_inmueble" value="Usado" class="peer sr-only" checked>
+                            <div class="rounded-xl border-2 border-slate-200 dark:border-slate-600 p-3 text-center peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 peer-checked:text-indigo-600 transition-all hover:bg-slate-50 dark:hover:bg-slate-700">
+                                <span class="material-symbols-rounded text-2xl block mb-1">home_work</span>
+                                <span class="text-xs font-bold">Usado</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-400 uppercase mb-2 tracking-wide">Superficies (m²)</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="relative">
+                            <span class="material-symbols-rounded absolute left-3 top-3.5 text-slate-400">crop_square</span>
+                            <input type="number" id="desc-terreno" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="Terreno">
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-rounded absolute left-3 top-3.5 text-slate-400">domain</span>
+                            <input type="number" id="desc-construccion" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="Construcción">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-400 uppercase mb-2 tracking-wide">Distribución</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-col items-center bg-slate-50 dark:bg-slate-700/50">
+                            <span class="material-symbols-rounded text-indigo-500 mb-1">bed</span>
+                            <input type="number" id="desc-recamaras" class="w-20 text-center font-black text-lg bg-transparent outline-none text-slate-800 dark:text-white" placeholder="0">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Recámaras</span>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-col items-center bg-slate-50 dark:bg-slate-700/50">
+                            <span class="material-symbols-rounded text-indigo-500 mb-1">bathtub</span>
+                            <input type="number" id="desc-banos" class="w-20 text-center font-black text-lg bg-transparent outline-none text-slate-800 dark:text-white" placeholder="0">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Baños Comp.</span>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-col items-center bg-slate-50 dark:bg-slate-700/50">
+                            <span class="material-symbols-rounded text-indigo-500 mb-1">wash</span>
+                            <input type="number" id="desc-medios-banos" class="w-20 text-center font-black text-lg bg-transparent outline-none text-slate-800 dark:text-white" placeholder="0">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">1/2 Baños</span>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-col items-center bg-slate-50 dark:bg-slate-700/50">
+                            <span class="material-symbols-rounded text-indigo-500 mb-1">garage</span>
+                            <input type="number" id="desc-autos" class="w-20 text-center font-black text-lg bg-transparent outline-none text-slate-800 dark:text-white" placeholder="0">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Estacionamientos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <label class="block text-xs font-extrabold text-slate-400 uppercase mb-3 tracking-wide">Fotografías Adicionales</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-indigo-100 transition-colors border border-indigo-100 dark:border-indigo-800 active:scale-95">
+                            <span class="material-symbols-rounded">photo_camera</span> Cámara
+                            <input type="file" accept="image/*" capture="environment" class="hidden" onchange="subirFotoDescripcion(this)">
+                        </label>
+                        <label class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors active:scale-95">
+                            <span class="material-symbols-rounded">image</span> Galería (Múltiple)
+                            <input type="file" accept="image/*" multiple class="hidden" onchange="subirFotoDescripcion(this)">
+                        </label>
+                    </div>
+                    <div id="desc-fotos-status" class="mt-3 space-y-1 max-h-32 overflow-y-auto thin-scroll"></div>
+                </div>
+
+            </div>
+            
+            <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 z-10 shrink-0">
+                <button onclick="guardarDescripcion()" id="btn-save-desc" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200/50 transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <span class="material-symbols-rounded">save</span> Enviar / Guardar Avance
+                </button>
+                <p class="text-[10px] text-center text-slate-400 mt-2">Puedes guardar parcialmente y continuar después.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed top-0 left-0 w-full bg-leezar-500 text-white shadow-lg z-40 h-16 flex items-center">
+        <div class="max-w-3xl w-full mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-white/10 rounded flex items-center justify-center text-white font-bold text-xl">L</div>
+                <span class="font-semibold text-lg tracking-tight">Expediente Digital</span>
+            </div>
+            <div class="text-xs sm:text-sm bg-leezar-600 px-3 py-1 rounded-full border border-leezar-500/50 flex items-center">
+                <span class="material-symbols-rounded text-sm mr-1">lock</span> Seguro
             </div>
         </div>
     </div>
 
     <div class="max-w-3xl mx-auto px-4 pt-24 pb-12">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 mb-8 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-500"></div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white mb-2 tracking-tight" id="cliente-nombre">Cargando...</h1>
-            <div id="header-info" class="flex justify-center flex-wrap gap-2 mt-2">
-                <span id="tipo-tramite" class="uppercase font-bold tracking-wider text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full">...</span>
-            </div>
-            <div class="mt-4 flex justify-center" id="estado-badge"></div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 mb-8 relative overflow-hidden">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2" id="cliente-nombre">Cargando...</h1>
+            <div id="header-info" class="flex flex-wrap gap-2 mt-2"></div>
+            <div class="mt-4" id="estado-badge"></div>
         </div>
 
         <div id="loading-card" class="text-center py-20">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-teal-100 border-t-teal-600 mx-auto mb-4"></div>
-            <p class="text-gray-500 dark:text-gray-400 font-medium">Sincronizando con base de datos...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-leezar-500 border-t-transparent mx-auto mb-4"></div>
+            <p class="text-gray-500 dark:text-gray-400 font-medium">Sincronizando expediente...</p>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden">⚠️ Error de conexión. Intenta recargar la página.</p>
         </div>
 
         <div id="main-container" class="hidden fade-in">
-            
-            <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div class="bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/50 rounded-xl p-5 shadow-sm relative overflow-hidden">
-                    <div class="relative z-10">
-                        <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-1">
-                            <span class="material-symbols-rounded text-blue-600">description</span> Solicitud Infonavit
-                        </h4>
-                        <p class="text-xs text-slate-500 mb-4">Imprimir a color y firmar en azul.</p>
-                        
-                        <div class="flex gap-2" id="box-infonavit">
-                            <a href="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf" target="_blank" class="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
-                                <span class="material-symbols-rounded text-base">download</span> Descargar
-                            </a>
-                            <label class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md btn-pulse transition-all" id="btn-info-upload">
-                                <span class="material-symbols-rounded text-base">upload_file</span> Subir Firmada
-                                <input type="file" class="hidden" accept="application/pdf, image/*" onchange="subirArchivo('SOLICITUD_INFONAVIT_FIRMADA', 'Solicitud Infonavit Firmada', 'solicitante', this)">
-                            </label>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Avance (Obligatorios)</h3>
+                    <span class="text-xs text-gray-400">*Opcionales no bloquean</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos Aprobados</span>
+                            <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400" id="counter-aprobados">0/0</span>
+                        </div>
+                        <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                            <div id="bar-aprobados" class="bg-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
                         </div>
                     </div>
-                 </div>
-                 
-                 <div class="bg-white dark:bg-slate-800 border border-indigo-100 dark:border-indigo-900/50 rounded-xl p-5 shadow-sm relative overflow-hidden">
-                    <div class="relative z-10">
-                        <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-1">
-                            <span class="material-symbols-rounded text-indigo-600">home_work</span> Solicitud Avalúo
-                        </h4>
-                        <p class="text-xs text-slate-500 mb-4">Imprimir a color y firmar en azul.</p>
-                        
-                        <div class="flex gap-2" id="box-avaluo">
-                            <a href="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf" target="_blank" class="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
-                                <span class="material-symbols-rounded text-base">download</span> Descargar
-                            </a>
-                            <label class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md btn-pulse transition-all" id="btn-avaluo-upload">
-                                <span class="material-symbols-rounded text-base">upload_file</span> Subir Firmada
-                                <input type="file" class="hidden" accept="application/pdf, image/*" onchange="subirArchivo('SOLICITUD_AVALUO_FIRMADA', 'Solicitud Avalúo Firmada', 'solicitante', this)">
-                            </label>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">En Revisión / Pendientes</span>
+                            <span class="text-xl font-bold text-amber-500" id="counter-revision">0</span>
+                        </div>
+                        <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                            <div id="bar-revision" class="bg-amber-400 h-3 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
                         </div>
                     </div>
-                 </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl">
-                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">person</span> <span class="text-xs font-bold">Solicitante</span></button>
-                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">group</span> <span class="text-xs font-bold">Propietario</span></button>
-                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1"><span class="material-symbols-rounded text-2xl">home</span> <span class="text-xs font-bold">Inmueble</span></button>
+            <div class="grid grid-cols-3 gap-2 mb-8 bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-xl">
+                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">person</span> <span class="text-xs font-bold">Solicitante</span></button>
+                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">group</span> <span class="text-xs font-bold">Propietario</span></button>
+                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all"><span class="material-symbols-rounded text-2xl">home</span> <span class="text-xs font-bold">Inmueble</span></button>
             </div>
 
-            <div class="space-y-4 min-h-[300px]">
-                <div id="section-solicitante" class="tab-content fade-in space-y-3"><div id="list-solicitante" class="space-y-3"></div></div>
-                <div id="section-propietario" class="tab-content hidden fade-in space-y-3"><div id="list-propietario" class="space-y-3"></div></div>
-                
-                <div id="section-inmueble" class="tab-content hidden fade-in space-y-3">
+            <div class="min-h-[300px]">
+                <div id="section-solicitante" class="tab-content fade-in space-y-4"><div id="list-solicitante" class="space-y-4"></div></div>
+                <div id="section-propietario" class="tab-content hidden fade-in space-y-4"><div id="list-propietario" class="space-y-4"></div></div>
+                <div id="section-inmueble" class="tab-content hidden fade-in space-y-4">
                     
-                    <div class="bg-indigo-50 border border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
-                                <span class="material-symbols-rounded text-3xl">pin_drop</span>
-                            </div>
-                            <h3 class="font-bold text-slate-800 dark:text-white mb-1">Ubicación del Inmueble</h3>
-                            <p class="text-xs text-slate-500 mb-5 font-medium px-4">Esta ubicación es vital para que el valuador llegue correctamente.</p>
-                            
-                            <div id="ubicacion-actions">
-                                <button onclick="abrirMapa()" id="btn-open-map" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
-                                    <span class="material-symbols-rounded">map</span> Ubicar inmueble en Google Maps
-                                </button>
-                            </div>
-                            <div id="ubicacion-success" class="hidden mt-4 bg-white/80 dark:bg-slate-800/80 rounded-lg p-3 border border-green-200">
-                                <p class="text-green-600 font-bold flex items-center justify-center gap-1 text-sm"><span class="material-symbols-rounded">check_circle</span> Ubicación Guardada</p>
-                                <p id="direccion-guardada" class="text-[10px] text-gray-500 mt-1 truncate font-bold">...</p>
-                                <p id="coordenadas-guardadas" class="text-[10px] text-indigo-500 font-mono mt-0.5">...</p>
-                                <button onclick="abrirMapa()" class="text-[10px] text-indigo-500 font-bold mt-2 underline">Cambiar ubicación</button>
-                            </div>
+                    <div class="bg-indigo-50 border border-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800 rounded-xl p-6 mb-4 text-center shadow-sm relative overflow-hidden">
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm"><span class="material-symbols-rounded text-2xl">pin_drop</span></div>
+                        <h3 class="font-bold text-slate-800 dark:text-white mb-1">Ubicación del Inmueble<span class="text-red-500 text-lg ml-1">*</span></h3>
+                        <p class="text-xs text-slate-500 mb-5 font-medium px-4">Necesaria para que el valuador localice la propiedad.</p>
+                        <div id="ubicacion-actions">
+                            <button onclick="abrirMapa()" id="btn-open-map" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-lg font-bold shadow-lg shadow-indigo-200/50 flex items-center justify-center gap-2 transition-all active:scale-95 animate-pulse">
+                                <span class="material-symbols-rounded">map</span> Ubicar inmueble en Google Maps
+                            </button>
+                        </div>
+                        <div id="ubicacion-success" class="hidden mt-4 bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 border border-emerald-200">
+                            <p class="text-emerald-600 font-bold flex items-center justify-center gap-1 text-sm"><span class="material-symbols-rounded">lock</span> Ubicación Enviada</p>
+                            <p id="direccion-guardada" class="text-[10px] text-gray-500 mt-1 truncate font-bold">...</p>
+                            <p class="text-[9px] text-slate-400 mt-2 italic">En espera de validación</p>
                         </div>
                     </div>
 
-                    <div id="list-inmueble" class="space-y-3"></div>
+                    <div id="list-inmueble" class="space-y-4"></div>
+
+                    <div id="card-descripcion-inmueble" class="bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 mt-4 shadow-sm flex items-center justify-between gap-4 hidden">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-rounded">edit_note</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 dark:text-white text-sm">Detalles del Inmueble</h4>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Recámaras, m² y características.</p>
+                            </div>
+                        </div>
+                        <button onclick="abrirDescripcion()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold transition-colors">
+                            Editar
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>
         
         <div class="mt-12 mb-6 text-center border-t border-gray-200 dark:border-slate-800 pt-6">
-            <button onclick="mostrarModalLegal(true)" class="text-xs text-slate-400 hover:text-teal-500 transition-colors flex items-center justify-center gap-1 mx-auto font-bold mb-2">
+            <button onclick="mostrarModalLegal(true)" class="text-xs text-gray-400 hover:text-leezar-500 transition-colors flex items-center justify-center gap-1 mx-auto font-bold mb-2">
                 <span class="material-symbols-rounded text-sm">gavel</span> Consulta aviso de privacidad
             </button>
-            <p class="text-[10px] text-slate-300 dark:text-slate-600">© 2025 Ingeniería Leezar</p>
+            <p class="text-[10px] text-gray-300 dark:text-gray-600">© 2025 Ingeniería Leezar</p>
         </div>
     </div>
 
     <div id="successModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex justify-center items-center p-4 backdrop-blur-md">
         <div class="bg-white dark:bg-slate-800 w-full max-w-sm p-8 rounded-3xl text-center shadow-2xl animate-[popIn_0.5s_ease-out]">
-            <div class="flex justify-center -mt-20 mb-6"><img src="jack.png" class="w-32 h-32 rounded-full border-4 border-white dark:border-slate-700 shadow-xl object-cover bg-gray-100 jack-bounce"></div>
+            <div class="flex justify-center -mt-20 mb-6"><div class="w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center shadow-xl animate-bounce-slow text-4xl">🎉</div></div>
             <h3 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-2" id="jack-titulo">¡Excelente!</h3>
             <p class="text-slate-500 dark:text-slate-300 text-base mb-8" id="jack-frase">Has completado todo el expediente.</p>
-            <button onclick="cerrarModalJack()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-teal-200/50 active:scale-95 transition-all">¡Finalizar! 👍</button>
+            <button onclick="cerrarModalJack()" class="w-full bg-leezar-500 hover:bg-leezar-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg active:scale-95 transition-all">¡Entendido! 👍</button>
         </div>
     </div>
 
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQRZGAe_RNqH49ewn2nqcZCJFtLR5vLdY&libraries=places&callback=initMap"></script>
 
     <script>
+        // Variables Globales
         const params = new URLSearchParams(window.location.search);
         const expedienteId = params.get('id');
-        let totalRequisitos = 0; let completados = 0; let contadoresPartes = {}; 
+        let expedienteGlobal = null; 
+        let totalRequisitos = 0; let completados = 0; 
         let currentTab = 'solicitante'; 
         let map, marker, geocoder, autocomplete;
         let selectedLocation = null; 
+        let secretPhone = "";
+
+        const DOWNLOAD_LINKS = {
+            'INFONAVIT': 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf',
+            'AVALUO': 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
+        };
 
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
 
-        // --- 3. LÓGICA LEGAL INYECTADA ---
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!expedienteId || expedienteId === 'undefined') { alert('Liga inválida.'); return; }
-            
-            // Verificar aceptación legal
-            verificarEstadoLegal();
-            
-            // Listener para el check legal
-            const checkLegal = document.getElementById('acceptCheckDynamic');
-            if(checkLegal) {
-                checkLegal.addEventListener('change', (e) => {
-                    const btn = document.getElementById('btnStartDynamic');
-                    if (e.target.checked) {
-                        btn.disabled = false;
-                        btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none');
-                        btn.classList.add('bg-teal-600', 'text-white', 'cursor-pointer', 'shadow-lg', 'shadow-teal-200/50');
-                    } else {
-                        btn.disabled = true;
-                        btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none');
-                        btn.classList.remove('bg-teal-600', 'text-white', 'cursor-pointer', 'shadow-lg', 'shadow-teal-200/50');
-                    }
-                });
-                document.getElementById('btnStartDynamic').onclick = aceptarLegal;
-            }
-
-            cargarDetalles(); 
-        });
-
-        // --- FUNCIONES LEGALES NUEVAS ---
-        function verificarEstadoLegal() {
-            // Se usa el ID del expediente como clave
-            const aceptado = localStorage.getItem(`legal_accepted_${expedienteId}`); 
-            if (!aceptado) {
-                mostrarModalLegal(false); // false = modo obligatorio
-            }
-        }
-
-        function mostrarModalLegal(esConsulta) {
-            const texto = localStorage.getItem('leezar_legal_text') || "Aviso de Confidencialidad... (Texto por defecto)";
-            document.getElementById('legal-dynamic-content').textContent = texto;
-            
-            const modal = document.getElementById('dynamicPrivacyModal');
-            modal.style.display = 'flex';
-            
-            const check = document.getElementById('acceptCheckDynamic');
-            const btn = document.getElementById('btnStartDynamic');
-            const checkContainer = document.getElementById('legal-check-container');
-
-            if (esConsulta) {
-                check.checked = true;
-                check.disabled = true;
-                checkContainer.style.display = 'none';
-                btn.textContent = "Cerrar";
-                btn.disabled = false;
-                btn.className = "w-full py-3 rounded-xl font-bold text-lg bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors";
-                btn.onclick = () => { modal.style.display = 'none'; };
-            } else {
-                check.checked = false;
-                check.disabled = false;
-                checkContainer.style.display = 'flex';
-                btn.textContent = "Aceptar y Comenzar";
-                btn.disabled = true;
-                btn.className = "w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none";
-                btn.onclick = aceptarLegal;
-            }
-        }
-
-        function aceptarLegal() {
-            localStorage.setItem(`legal_accepted_${expedienteId}`, new Date().toISOString());
-            document.getElementById('dynamicPrivacyModal').style.display = 'none';
-        }
-        // ---------------------------------
-
-        // --- LÓGICA ORIGINAL (Mapa, Archivos, Renderizado) ---
-        function initMap() {
-            geocoder = new google.maps.Geocoder();
-        }
+        // --- DEFINICIÓN DE FUNCIONES ---
+        window.initMap = function() { geocoder = new google.maps.Geocoder(); };
 
         function abrirMapa() {
             document.getElementById('mapModal').classList.remove('hidden');
-            
             if(!map) {
                 const defaultPos = { lat: 19.4326, lng: -99.1332 }; 
-                
-                try {
-                    map = new google.maps.Map(document.getElementById("map"), {
-                        zoom: 18, 
-                        center: defaultPos,
-                        mapTypeControl: true, 
-                        mapTypeControlOptions: {
-                            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                            position: google.maps.ControlPosition.TOP_LEFT,
-                        },
-                        streetViewControl: false,
-                        fullscreenControl: true, 
-                        zoomControl: true, 
-                        mapTypeId: google.maps.MapTypeId.HYBRID 
-                    });
-
-                    const pinIcon = {
-                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-                        fillColor: "#4f46e5", 
-                        fillOpacity: 1,
-                        strokeWeight: 2,
-                        strokeColor: "#ffffff",
-                        scale: 2,
-                        anchor: new google.maps.Point(12, 22),
-                    };
-
-                    marker = new google.maps.Marker({
-                        position: defaultPos,
-                        map: map,
-                        draggable: true,
-                        animation: google.maps.Animation.DROP,
-                        icon: pinIcon 
-                    });
-
-                    const input = document.getElementById("pac-input");
-                    
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            const val = this.value;
-                            const parts = val.split(',');
-                            if(parts.length === 2) {
-                                const lat = parseFloat(parts[0]);
-                                const lng = parseFloat(parts[1]);
-                                if(!isNaN(lat) && !isNaN(lng)) {
-                                    const pos = new google.maps.LatLng(lat, lng);
-                                    actualizarMapa(pos);
-                                    document.querySelectorAll('.pac-container').forEach(el => el.style.display = 'none');
-                                }
-                            }
-                        }
-                    });
-
-                    autocomplete = new google.maps.places.Autocomplete(input);
-                    autocomplete.bindTo("bounds", map);
-
-                    autocomplete.addListener("place_changed", () => {
-                        const place = autocomplete.getPlace();
-                        if (!place.geometry || !place.geometry.location) return;
-                        actualizarMapa(place.geometry.location);
-                    });
-
-                    marker.addListener("dragend", () => {
-                        decodificarPosicion(marker.getPosition());
-                    });
-
-                    map.addListener("click", (e) => {
-                        marker.setPosition(e.latLng);
-                        decodificarPosicion(e.latLng);
-                    });
-
-                    usarMiUbicacion(true);
-                } catch(e) {
-                    console.error("Error mapa", e);
-                }
+                map = new google.maps.Map(document.getElementById("map"), { zoom: 18, center: defaultPos, mapTypeControl: false, streetViewControl: false, fullscreenControl: true, zoomControl: true, mapTypeId: google.maps.MapTypeId.HYBRID });
+                marker = new google.maps.Marker({ position: defaultPos, map: map, draggable: true, animation: google.maps.Animation.DROP });
+                const input = document.getElementById("pac-input");
+                autocomplete = new google.maps.places.Autocomplete(input);
+                autocomplete.bindTo("bounds", map);
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace(); if (!place.geometry || !place.geometry.location) return; actualizarMapa(place.geometry.location);
+                });
+                marker.addListener("dragend", () => decodificarPosicion(marker.getPosition()));
+                map.addListener("click", (e) => { marker.setPosition(e.latLng); decodificarPosicion(e.latLng); });
+                usarMiUbicacion(true);
             }
         }
 
         function usarMiUbicacion(silencioso = false) {
             const btn = document.getElementById('btn-my-location');
             if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Obteniendo...';
-            
             if (navigator.geolocation) {
-                const opcionesGPS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
-
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                        actualizarMapa(pos);
-                        if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual';
-                    },
-                    (error) => {
-                        console.log("Error GPS", error);
-                        if(!silencioso) {
-                            alert("No pudimos obtener tu ubicación. Por favor escribe la dirección manualmente.");
-                            btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Reintentar GPS';
-                        }
-                    },
-                    opcionesGPS
-                );
-            } else {
-                if(!silencioso) alert("Tu navegador no soporta geolocalización.");
-            }
+                navigator.geolocation.getCurrentPosition((p) => { actualizarMapa({ lat: p.coords.latitude, lng: p.coords.longitude }); if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual'; }, (e) => { if(!silencioso) { alert("Error GPS"); btn.innerHTML = 'Reintentar GPS'; } });
+            } else if(!silencioso) alert("Navegador sin GPS");
         }
 
-        function actualizarMapa(location) {
-            const pos = (location.lat && typeof location.lat === 'function') ? location : new google.maps.LatLng(location.lat, location.lng);
-            map.setCenter(pos);
-            map.setZoom(19); 
-            marker.setPosition(pos);
-            decodificarPosicion(pos);
-        }
-
-        function cerrarMapa() {
-            document.getElementById('mapModal').classList.add('hidden');
-        }
-
+        function actualizarMapa(loc) { const pos = (loc.lat && typeof loc.lat === 'function') ? loc : new google.maps.LatLng(loc.lat, loc.lng); map.setCenter(pos); map.setZoom(19); marker.setPosition(pos); decodificarPosicion(pos); }
+        function cerrarMapa() { document.getElementById('mapModal').classList.add('hidden'); }
         function decodificarPosicion(latLng) {
             const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
             const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
-            
             document.getElementById('coordenadas-texto').textContent = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
-
-            geocoder.geocode({ location: latLng }, (results, status) => {
-                if (status === "OK" && results[0]) {
-                    const address = results[0].formatted_address;
-                    document.getElementById('direccion-texto').textContent = address;
-                    selectedLocation = { lat, lng, address };
-                } else {
-                    document.getElementById('direccion-texto').textContent = "Ubicación marcada (Sin dirección postal exacta)";
-                    selectedLocation = { lat, lng, address: "Ubicación por Coordenadas" };
-                }
+            geocoder.geocode({ location: latLng }, (r, s) => {
+                if (s === "OK" && r[0]) { document.getElementById('direccion-texto').textContent = r[0].formatted_address; selectedLocation = { lat, lng, address: r[0].formatted_address }; }
+                else { selectedLocation = { lat, lng, address: "Ubicación Coordenadas" }; }
             });
         }
 
         async function confirmarUbicacion() {
-            if(!selectedLocation) { alert("Primero selecciona una ubicación"); return; }
+            if(!selectedLocation) { alert("Selecciona ubicación"); return; }
             const btn = document.getElementById('btn-confirm-map');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
-            btn.disabled = true;
-
-            const mapLink = `http://googleusercontent.com/maps.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}`;
-            const contenido = `DIRECCIÓN: ${selectedLocation.address}\n\nCOORDENADAS: ${selectedLocation.lat}, ${selectedLocation.lng}\n\nLIGA GOOGLE MAPS:\n${mapLink}`;
-            const base64Content = btoa(unescape(encodeURIComponent(contenido)));
-
-            await enviarAlBackend('UBICACION_MAPS', base64Content, 'UBICACION_CONFIRMADA.txt', 'text/plain', 'inmueble');
-            cerrarMapa();
-            
-            // Force UI Update here - Fixes issue of not showing review state immediately
-            document.getElementById('ubicacion-actions').classList.add('hidden');
-            document.getElementById('ubicacion-success').classList.remove('hidden');
-            document.getElementById('direccion-guardada').textContent = selectedLocation.address;
-            document.getElementById('coordenadas-guardadas').textContent = `Lat: ${selectedLocation.lat.toFixed(5)}, Lon: ${selectedLocation.lng.toFixed(5)}`;
-
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-
-        async function cargarDetalles() {
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...'; btn.disabled = true;
             try {
-                const response = await fetch(`/.netlify/functions/get-expediente-details?id=${expedienteId}`);
-                if (!response.ok) throw new Error('No encontrado');
-                const data = await response.json();
+                const res = await fetch('/.netlify/functions/save-coords', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, lat: selectedLocation.lat, lng: selectedLocation.lng, direccion: selectedLocation.address })
+                });
+                if (!res.ok) throw new Error("Error guardando coordenadas");
+                const mapLink = `http://googleusercontent.com/maps.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}`;
+                const contenido = `\uFEFFDIRECCIÓN: ${selectedLocation.address}\nCOORDENADAS: ${selectedLocation.lat}, ${selectedLocation.lng}\nLINK: ${mapLink}`;
+                const utf8Bytes = new TextEncoder().encode(contenido);
+                const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
+                enviarAlBackend('UBICACION_MAPS', btoa(binaryString), 'UBICACION.txt', 'text/plain; charset=utf-8', 'inmueble');
+                document.getElementById('ubicacion-actions').classList.add('hidden');
+                document.getElementById('ubicacion-success').classList.remove('hidden');
+                document.getElementById('direccion-guardada').textContent = selectedLocation.address;
+                if (expedienteGlobal) {
+                    if (!expedienteGlobal.checklist) expedienteGlobal.checklist = {};
+                    expedienteGlobal.checklist['UBICACION_MAPS'] = { estatus: 'revision', nombre: 'Ubicación Inmueble', categoria: 'inmueble', opcional: false, coordenadas: `${selectedLocation.lat},${selectedLocation.lng}`, direccion: selectedLocation.address };
+                    renderizarExpediente(expedienteGlobal);
+                }
+                cerrarMapa();
+            } catch (error) { console.error(error); alert("No se pudo guardar la ubicación."); } finally { btn.innerHTML = 'Confirmar Ubicación'; btn.disabled = false; }
+        }
+
+        // --- FUNCIONES SEGURIDAD ---
+        function validarIdentidad() {
+            const input = document.getElementById('security-input').value;
+            const errorMsg = document.getElementById('security-error');
+            
+            // Validamos "wana" (clave maestra) o últimos 4 dígitos
+            if (input.toLowerCase() === "wana" || input === secretPhone) {
+                // GUARDAR EN SESIÓN PARA NO PEDIR DE NUEVO
+                sessionStorage.setItem('unlocked_' + expedienteId, 'true');
                 
-                const plantillaBase = {
-                    'INE_SOLICITANTE': { nombre: 'INE Solicitante (Frente y Vuelta)', estado: 'pendiente', categoria: 'solicitante' },
-                    'CURP_SOLICITANTE': { nombre: 'CURP', estado: 'pendiente', categoria: 'solicitante' },
-                    'RFC_SOLICITANTE': { nombre: 'Constancia Situación Fiscal', estado: 'pendiente', categoria: 'solicitante' },
-                    'ACTA_NAC_SOLICITANTE': { nombre: 'Acta de Nacimiento', estado: 'pendiente', categoria: 'solicitante' },
-                    'NSS_SOLICITANTE': { nombre: 'Número de Seguro Social', estado: 'pendiente', categoria: 'solicitante' },
-                    'INE_PROPIETARIO': { nombre: 'INE Propietario', estado: 'pendiente', categoria: 'propietario' },
-                    'ACTA_MAT_PROPIETARIO': { nombre: 'Acta de Matrimonio', estado: 'pendiente', categoria: 'propietario' },
-                    'ESCRITURA': { nombre: 'Escritura Pública', estado: 'pendiente', categoria: 'inmueble', permitirExtras: true },
-                    'PREDIAL': { nombre: 'Boleta Predial 2025', estado: 'pendiente', categoria: 'inmueble' },
-                    'AGUA': { nombre: 'Recibo de Agua', estado: 'pendiente', categoria: 'inmueble' },
-                    'LUZ': { nombre: 'Recibo de Luz (CFE)', estado: 'pendiente', categoria: 'inmueble' },
-                    'PLANO': { nombre: 'Plano Arquitectónico', estado: 'pendiente', categoria: 'inmueble' }
-                };
-
-                data.checklist = { ...plantillaBase, ...(data.checklist || {}) };
-                renderizarExpediente(data);
-                switchTab(currentTab);
-            } catch (error) { console.error(error); }
-        }
-
-        function renderizarExpediente(data) {
-            document.getElementById('loading-card').classList.add('hidden');
-            document.getElementById('main-container').classList.remove('hidden');
-            document.getElementById('cliente-nombre').textContent = data.nombreCliente;
-            
-            let fechaHtml = '';
-            if (data.fechaCreacion) {
-                try {
-                    const fechaObj = data.fechaCreacion._seconds ? new Date(data.fechaCreacion._seconds * 1000) : new Date(data.fechaCreacion);
-                    const opciones = { day: 'numeric', month: 'short', year: 'numeric' };
-                    const fechaStr = fechaObj.toLocaleDateString('es-MX', opciones).toUpperCase();
-                    fechaHtml = `<span class="uppercase font-bold tracking-wide text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">${fechaStr}</span>`;
-                } catch(e) { console.log("Error fecha", e); }
-            }
-
-            document.getElementById('header-info').innerHTML = `
-                <span class="uppercase font-bold tracking-wide text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full">${data.tipoTramite}</span>
-                ${fechaHtml}
-            `;
-
-            const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
-            Object.values(containers).forEach(c => c.innerHTML = '');
-
-            actualizarBotonSolicitud('SOLICITUD_INFONAVIT_FIRMADA', data.checklist, 'box-infonavit');
-            actualizarBotonSolicitud('SOLICITUD_AVALUO_FIRMADA', data.checklist, 'box-avaluo');
-
-            let itemsArray = Object.entries(data.checklist || {});
-            itemsArray.sort((a, b) => (a[1].estado === 'pendiente' ? -1 : 1));
-
-            totalRequisitos = 0; completados = 0; let enRevision = 0;
-
-            itemsArray.forEach(([key, item]) => {
-                if (key !== 'UBICACION_MAPS') { 
-                    if (!key.includes('_EXTRA_')) totalRequisitos++;
-                    if (item.estado !== 'pendiente') {
-                        if (!key.includes('_EXTRA_')) completados++;
-                        if (item.estado === 'en_revision') enRevision++;
-                    }
-                }
-
-                if (key !== 'UBICACION_MAPS' && !key.includes('SOLICITUD_')) {
-                    let destino = item.categoria || 'solicitante';
-                    if (!containers[destino]) destino = 'solicitante';
-                    containers[destino].insertAdjacentHTML('beforeend', generarTarjetaItem(key, item));
-                } else if (key === 'UBICACION_MAPS' && item.estado !== 'pendiente') {
-                    // Logic to show successful location map state
-                    document.getElementById('ubicacion-actions').classList.add('hidden');
-                    document.getElementById('ubicacion-success').classList.remove('hidden');
-                    document.getElementById('direccion-guardada').textContent = "Ubicación confirmada."; 
-                }
-            });
-
-            actualizarBarraProgreso(false);
-            
-            const badgeColor = enRevision > 0 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200';
-            const badgeText = enRevision > 0 ? `${enRevision} EN REVISIÓN` : 'PENDIENTE';
-            document.getElementById('estado-badge').innerHTML = `<span class="${badgeColor} text-[10px] font-extrabold px-3 py-1 rounded-full border uppercase tracking-wide shadow-sm">${badgeText}</span>`;
-        }
-
-        function actualizarBotonSolicitud(key, checklist, containerId) {
-            const item = checklist[key];
-            if (item && item.estado !== 'pendiente') {
-                const container = document.getElementById(containerId);
-                const btnUpload = container.querySelector('label'); 
-                if(btnUpload) {
-                    btnUpload.className = "flex-1 bg-amber-100 text-amber-700 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-default border border-amber-200";
-                    btnUpload.innerHTML = `<span class="material-symbols-rounded text-base">hourglass_top</span> En Revisión`;
-                    const input = btnUpload.querySelector('input');
-                    if(input) input.disabled = true;
-                }
-            }
-        }
-
-        function generarTarjetaItem(key, item) {
-            const acceptType = 'image/*,application/pdf';
-            let bgClass = "bg-white border-gray-200"; 
-            if (item.categoria === 'solicitante') bgClass = "bg-teal-50 border-teal-100";
-            else if (item.categoria === 'propietario') bgClass = "bg-orange-50 border-orange-100";
-            else if (item.categoria === 'inmueble') bgClass = "bg-indigo-50 border-indigo-100";
-
-            const borderClass = key.includes('_EXTRA_') ? 'border-l-4 border-l-slate-300 ml-6 ' + bgClass : 'border shadow-sm ' + bgClass;
-
-            let controlHtml = '';
-            if (item.estado === 'pendiente') {
-                controlHtml = `<div class="flex gap-2 w-full sm:w-auto">
-                    <label class="btn-action btn-camera flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-teal-400"><span class="material-symbols-rounded text-xl">photo_camera</span> Foto<input type="file" class="hidden" accept="image/*" capture="environment" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
-                    <label class="btn-action btn-file flex-1 sm:flex-none justify-center bg-white border border-gray-200 shadow-sm text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300"><span class="material-symbols-rounded text-xl">upload_file</span> Archivo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label>
-                </div>`;
+                const lockScreen = document.getElementById('securityLock');
+                lockScreen.style.opacity = '0';
+                setTimeout(() => { lockScreen.classList.add('hidden'); }, 500);
             } else {
-                let color = item.estado === 'validado' ? 'text-green-600 bg-green-100 border-green-200' : 'text-amber-600 bg-amber-100 border-amber-200';
-                let icon = item.estado === 'validado' ? 'verified' : 'hourglass_top';
-                let text = item.estado === 'validado' ? 'Validado' : 'En Revisión';
-                controlHtml = `<div class="flex items-center gap-1 ${color} px-4 py-2 rounded-lg border text-xs font-bold w-full sm:w-auto justify-center uppercase tracking-wide"><span class="material-symbols-rounded text-lg">${icon}</span> ${text}</div>`;
+                errorMsg.classList.remove('hidden');
+                document.getElementById('security-input').classList.add('border-red-500');
+                setTimeout(() => document.getElementById('security-input').classList.remove('border-red-500'), 500);
             }
-
-            let extraBtn = (item.permitirExtras && item.estado !== 'pendiente') ? 
-                `<button onclick="clonarItem('${key}', '${item.nombre.replace(/'/g, "\\'")}', '${item.categoria}')" class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-bold flex items-center gap-1 transition-colors"><span class="material-symbols-rounded text-sm">add_circle</span> Agregar otra página</button>` : '';
-
-            return `<div class="${borderClass} p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all" id="card-${key}">
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5 text-slate-400 dark:text-slate-500"><span class="material-symbols-rounded text-2xl">${item.estado === 'pendiente' ? 'radio_button_unchecked' : 'check_circle'}</span></div>
-                    <div><p class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">${item.nombre}</p>${extraBtn}</div>
-                </div>
-                <div class="ml-9 sm:ml-0 w-full sm:w-auto">${controlHtml}</div>
-            </div>`;
         }
+
+        // --- FUNCIONES MODAL DESCRIPCIÓN ---
+        function abrirDescripcion() { document.getElementById('descModal').classList.remove('hidden'); }
+        function cerrarDescripcion() { document.getElementById('descModal').classList.add('hidden'); }
 
         const toBase64 = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); });
 
-        async function subirArchivo(itemKey, nombreRequisito, categoria, input) {
-            const archivo = input.files[0]; if(!archivo) return;
-            if (archivo.size > 6 * 1024 * 1024) { alert(`⚠️ ARCHIVO PESADO`); input.value = ''; return; }
-            let container = input.closest('label') || input.closest('div.flex');
-            const originalHtml = container.innerHTML;
-            container.innerHTML = `<span class="material-symbols-rounded animate-spin text-current text-2xl">sync</span>`; 
-            try {
-                const base64Full = await toBase64(archivo);
-                const base64Data = base64Full.split(',')[1];
-                const extension = archivo.name.split('.').pop();
-                const nombreFinal = `${nombreRequisito.toUpperCase().replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`;
-                await fetch('/.netlify/functions/subir-archivo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Data, nombreArchivo: nombreFinal, mimeType: archivo.type, categoriaItem: categoria }) });
-                await cargarDetalles(); 
-            } catch (error) { alert('Error al subir.'); container.innerHTML = originalHtml; }
-        }
-        
-        function actualizarBarraProgreso(lanzarFestejo) {
-            const porcentaje = totalRequisitos > 0 ? Math.round((completados / totalRequisitos) * 100) : 0;
-            document.getElementById('progress-bar').style.width = `${porcentaje}%`;
-            document.getElementById('progress-text').textContent = `${porcentaje}% Completado`;
-            if (porcentaje === 100 && lanzarFestejo) lanzarJack("¡Felicidades!", "Expediente Completado.");
+        async function guardarDescripcion() {
+            const btn = document.getElementById('btn-save-desc');
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...'; btn.disabled = true;
+            const estadoEl = document.querySelector('input[name="estado_inmueble"]:checked');
+            const estado = estadoEl ? estadoEl.value : 'No especificado';
+            const datos = {
+                Estado: estado,
+                Terreno: document.getElementById('desc-terreno').value + ' m²',
+                Construccion: document.getElementById('desc-construccion').value + ' m²',
+                Recamaras: document.getElementById('desc-recamaras').value,
+                Banos: document.getElementById('desc-banos').value,
+                MediosBanos: document.getElementById('desc-medios-banos').value,
+                Autos: document.getElementById('desc-autos').value
+            };
+            const contenido = `\uFEFFESTADO: ${datos.Estado}\nTERRENO: ${datos.Terreno}\nCONSTRUCCIÓN: ${datos.Construccion}\nRECÁMARAS: ${datos.Recamaras}\nBAÑOS: ${datos.Banos}\nMEDIOS BAÑOS: ${datos.MediosBanos}\nESTACIONAMIENTOS: ${datos.Autos}`;
+            const utf8Bytes = new TextEncoder().encode(contenido);
+            const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
+            try { await enviarAlBackend('DETALLES_INMUEBLE', btoa(binaryString), 'DETALLES_INMUEBLE.txt', 'text/plain; charset=utf-8', 'inmueble'); cerrarDescripcion(); alert('¡Información guardada correctamente!'); } catch (e) { alert('Error al guardar. Intenta de nuevo.'); } finally { btn.innerHTML = '<span class="material-symbols-rounded">save</span> Enviar / Guardar Avance'; btn.disabled = false; }
         }
 
-        async function enviarAlBackend(itemKey, base64Data, nombre, mime, categoria) {
-            try {
-               await fetch('/.netlify/functions/subir-archivo', {
-                   method: 'POST', headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Data, nombreArchivo: nombre, mimeType: mime, categoriaItem: categoria })
-               });
-               // Force UI Update here so map updates immediately
-               await cargarDetalles();
-            } catch(e) { alert("Error al guardar"); }
-        }
-        
-        function switchTab(categoria) {
-            currentTab = categoria; 
-            const allBtns = document.querySelectorAll('.tab-btn');
-            allBtns.forEach(btn => {
-                btn.className = 'tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 bg-white border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500';
-            });
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-            const section = document.getElementById(`section-${categoria}`);
-            if(section) section.classList.remove('hidden');
-            const btn = document.getElementById(`tab-btn-${categoria}`);
-            if(btn) {
-                let activeClasses = "tab-btn py-3 rounded-xl flex flex-col items-center justify-center gap-1 border-b-4 shadow-sm transform scale-[1.02] transition-all ";
-                if(categoria === 'solicitante') activeClasses += "bg-teal-50 border-teal-500 text-teal-700 dark:bg-teal-900/20 dark:border-teal-400 dark:text-teal-300";
-                if(categoria === 'propietario') activeClasses += "bg-orange-50 border-orange-500 text-orange-700 dark:bg-orange-900/20 dark:border-orange-400 dark:text-orange-300";
-                if(categoria === 'inmueble')    activeClasses += "bg-indigo-50 border-indigo-500 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-400 dark:text-indigo-300";
-                btn.className = activeClasses;
+        async function subirFotoDescripcion(input) {
+            const archivos = input.files; 
+            if (!archivos || archivos.length === 0) return;
+            const statusDiv = document.getElementById('desc-fotos-status');
+            
+            for (let i = 0; i < archivos.length; i++) {
+                const archivo = archivos[i];
+                const img = document.createElement('div');
+                img.className = 'flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs animate-pulse mb-1';
+                img.innerHTML = `<span class="truncate max-w-[150px]">Subiendo ${archivo.name}...</span> <span class="material-symbols-rounded animate-spin">sync</span>`;
+                statusDiv.appendChild(img);
+                
+                const nombreFoto = `FOTO_DESC_${Date.now()}_${i}.jpg`;
+                try {
+                    const base64 = await toBase64(archivo);
+                    const res = await fetch('/.netlify/functions/subir-archivo', { 
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ expedienteId, itemKey: 'FOTOS_EXTRA', archivoBase64: base64.split(',')[1], nombreArchivo: nombreFoto, mimeType: archivo.type, categoriaItem: 'inmueble' }) 
+                    });
+                    if(res.ok) {
+                        img.className = 'flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-xs mb-1';
+                        img.innerHTML = `<span class="truncate max-w-[150px]">Foto guardada</span> <span class="material-symbols-rounded">check</span>`;
+                    } else { img.remove(); }
+                } catch(e) { img.remove(); }
             }
         }
 
-        function clonarItem(key, name, cat) { alert("Usa un compresor de PDF por ahora."); }
+        // --- SUBIDA ARCHIVO PRINCIPAL ---
+        async function subirArchivo(itemKey, nombreRequisito, categoria, input) {
+            const archivo = input.files[0]; if(!archivo) return;
+            if (archivo.size > 8 * 1024 * 1024) { alert(`⚠️ El archivo es muy pesado (Max 8MB).`); input.value = ''; return; }
+            
+            if (itemKey.includes('INE') || itemKey.includes('SOLICITUD_')) {
+                if (archivo.type.includes('image')) {
+                    const btnContainer = input.closest('label');
+                    btnContainer.classList.add('bg-indigo-50', 'text-indigo-600', 'animate-pulse', 'pointer-events-none');
+                    const esColor = await analizarImagen(archivo);
+                    btnContainer.classList.remove('bg-indigo-50', 'text-indigo-600', 'animate-pulse', 'pointer-events-none');
+                    if (!esColor) { alert("⚠️ ALERTA DE CALIDAD:\n\nEl sistema detectó que la imagen está en BLANCO Y NEGRO o es una fotocopia.\n\nPor favor sube el original A COLOR (Escaneo o Foto)."); input.value = ''; return; }
+                } else if (archivo.type.includes('pdf')) {
+                    const confirmacion = confirm(`🎨 Verificación Rápida\n\nPara evitar que tu trámite se detenga por una corrección, necesitamos que este documento sea el original a COLOR (no fotocopia).\n\n¿Confirmas que el archivo es a color?`);
+                    if (!confirmacion) { input.value = ''; return; }
+                }
+            }
+
+            let container = input.closest('label'); const originalHtml = container.innerHTML;
+            container.classList.add('bg-gray-100', 'cursor-wait'); container.innerHTML = `<span class="material-symbols-rounded animate-spin text-xl">sync</span>`; 
+            try {
+                const base64Full = await toBase64(archivo);
+                const nombreFinal = `${nombreRequisito.toUpperCase().replace(/[^a-zA-Z0-9]/g, '_')}.${archivo.name.split('.').pop()}`;
+                const response = await fetch('/.netlify/functions/subir-archivo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expedienteId, itemKey, archivoBase64: base64Full.split(',')[1], nombreArchivo: nombreFinal, mimeType: archivo.type, categoriaItem: categoria }) });
+                if(!response.ok) throw new Error("Error en servidor");
+                if (expedienteGlobal && expedienteGlobal.checklist && expedienteGlobal.checklist[itemKey]) { expedienteGlobal.checklist[itemKey].estatus = 'revision'; renderizarExpediente(expedienteGlobal); switchTab(categoria); }
+                setTimeout(() => { cargarDetalles(Date.now()); }, 2000);
+            } catch (error) { alert('Error al subir. Intenta de nuevo.'); container.innerHTML = originalHtml; container.classList.remove('bg-gray-100', 'cursor-wait'); }
+        }
+
+        function analizarImagen(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image(); const url = URL.createObjectURL(file); img.src = url;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const scale = 300 / Math.max(img.width, img.height); canvas.width = img.width * scale; canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let colorScore = 0;
+                    for (let i = 0; i < data.length; i += 40) {
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        if (Math.max(Math.abs(r-g), Math.abs(r-b), Math.abs(g-b)) > 20) colorScore++;
+                    }
+                    URL.revokeObjectURL(url);
+                    if ((colorScore * 10 / (data.length/4) * 100) < 0.5) resolve(false); else resolve(true);
+                };
+                img.onerror = () => resolve(true);
+            });
+        }
+
+        async function enviarAlBackend(k, b, n, m, c) { await fetch('/.netlify/functions/subir-archivo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expedienteId, itemKey: k, archivoBase64: b, nombreArchivo: n, mimeType: m, categoriaItem: c }) }); await cargarDetalles(Date.now()); }
+        
+        function switchTab(categoria) {
+            currentTab = categoria; 
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-transparent text-gray-500 hover:bg-gray-200 transition-colors opacity-70');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`section-${categoria}`).classList.remove('hidden');
+            const btn = document.getElementById(`tab-btn-${categoria}`);
+            if(btn) btn.className = 'tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-white shadow-sm text-leezar-600 font-bold opacity-100 ring-1 ring-black/5';
+        }
         function lanzarJack(t, m) { document.getElementById('jack-titulo').innerText = t; document.getElementById('jack-frase').innerText = m; document.getElementById('successModal').classList.remove('hidden'); confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 }); }
         function cerrarModalJack() { document.getElementById('successModal').classList.add('hidden'); }
+
+        // DOM READY
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!expedienteId || expedienteId === 'undefined') { alert('ID de expediente inválido.'); return; }
+            verificarEstadoLegal();
+            const checkLegal = document.getElementById('acceptCheckDynamic');
+            if(checkLegal) {
+                checkLegal.addEventListener('change', (e) => {
+                    const btn = document.getElementById('btnStartDynamic');
+                    if (e.target.checked) { btn.disabled = false; btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none'); btn.classList.add('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); } 
+                    else { btn.disabled = true; btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed', 'shadow-none'); btn.classList.remove('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); }
+                });
+                document.getElementById('btnStartDynamic').onclick = aceptarLegal;
+            }
+            try { cargarDetalles(); } catch(e) { console.error("Crash:", e); document.getElementById('loading-card').classList.add('hidden'); document.getElementById('error-msg').classList.remove('hidden'); }
+        });
+
+        function verificarEstadoLegal() { if (!localStorage.getItem(`legal_accepted_${expedienteId}`)) mostrarModalLegal(false); }
+        function mostrarModalLegal(esConsulta) {
+            const texto = localStorage.getItem('leezar_legal_text') || "Aviso de Confidencialidad: La información cargada será utilizada exclusivamente para el trámite...";
+            document.getElementById('legal-dynamic-content').textContent = texto;
+            const modal = document.getElementById('dynamicPrivacyModal');
+            modal.style.display = 'flex';
+            const check = document.getElementById('acceptCheckDynamic');
+            const btn = document.getElementById('btnStartDynamic');
+            const checkContainer = document.getElementById('legal-check-container');
+            if (esConsulta) {
+                check.checked = true; check.disabled = true; checkContainer.style.display = 'none';
+                btn.textContent = "Cerrar"; btn.disabled = false;
+                btn.className = "w-full py-3 rounded-xl font-bold text-lg bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors";
+                btn.onclick = () => { modal.style.display = 'none'; };
+            } else {
+                check.checked = false; check.disabled = false; checkContainer.style.display = 'flex';
+                btn.textContent = "Aceptar y Comenzar"; btn.disabled = true;
+                btn.className = "w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 bg-gray-200 text-gray-400 cursor-not-allowed shadow-none";
+                btn.onclick = aceptarLegal;
+            }
+        }
+        function aceptarLegal() { localStorage.setItem(`legal_accepted_${expedienteId}`, new Date().toISOString()); document.getElementById('dynamicPrivacyModal').style.display = 'none'; }
+
+        async function cargarDetalles(timestamp = null) {
+            try {
+                const url = `/.netlify/functions/get-expediente-details?id=${expedienteId}${timestamp ? '&t='+timestamp : ''}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('No encontrado');
+                const data = await response.json();
+                if (!data.checklist) data.checklist = {};
+                expedienteGlobal = data; 
+                renderizarExpediente(data);
+                switchTab(currentTab);
+            } catch (error) { console.error(error); document.getElementById('error-msg').classList.remove('hidden'); }
+        }
+
+        function renderizarExpediente(data) {
+            // LOGICA SEGURIDAD: EXTRAER TELEFONO + DEBUGGING
+            if (data.telefono) {
+                // Limpiamos todo lo que no sea número
+                const cleanPhone = data.telefono.replace(/\D/g, ''); 
+                secretPhone = cleanPhone.slice(-4);
+                // DEBUG: Muestra la clave en la consola para que tú sepas qué espera el sistema
+                console.log("🤫 CLAVE SECRETA (Últimos 4):", secretPhone);
+                
+                // CHECK SESSION: Si ya se validó antes, no pedir de nuevo
+                if (sessionStorage.getItem('unlocked_' + expedienteId) === 'true') {
+                    document.getElementById('securityLock').classList.add('hidden');
+                }
+            } else { 
+                // MODO ESTRICTO: Si no hay teléfono, bloqueamos con clave maestra por defecto
+                secretPhone = "NO_PHONE_DATA";
+                console.warn("⚠️ ALERTA: Este expediente NO tiene teléfono. Solo entra con 'wana'.");
+            }
+            
+            document.getElementById('loading-card').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
+            document.getElementById('cliente-nombre').textContent = data.nombreCliente || "Sin Nombre";
+            const tipoTramite = (data.tipoTramite || 'Tramite').toUpperCase();
+            
+            // LÓGICA DE VISIBILIDAD TARJETA DETALLES
+            const cardDetalles = document.getElementById('card-descripcion-inmueble');
+            if (tipoTramite.includes('INFONAVIT') || tipoTramite.includes('AVALUO') || tipoTramite.includes('MASTER')) {
+                cardDetalles.classList.remove('hidden');
+            } else {
+                cardDetalles.classList.add('hidden');
+            }
+
+            if (data.fechaCreacion) {
+                const f = data.fechaCreacion._seconds ? new Date(data.fechaCreacion._seconds * 1000) : new Date(data.fechaCreacion);
+                document.getElementById('header-info').innerHTML = `<span class="uppercase font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full">${data.tipoTramite}</span><span class="uppercase font-bold text-xs bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full ml-1">${f.toLocaleDateString('es-MX')}</span>`;
+            }
+            const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
+            Object.values(containers).forEach(c => c.innerHTML = '');
+            let itemsArray = Object.entries(data.checklist || {});
+            itemsArray.forEach(entry => {
+                const item = entry[1];
+                let finalStatus = 'pendiente';
+                const st = (item.estatus || item.estado || '').toLowerCase();
+                if (st === 'validado') finalStatus = 'validado';
+                else if (st === 'rechazado') finalStatus = 'rechazado';
+                else if (st === 'revision' || st === 'en_revision') finalStatus = 'revision';
+                item._calculatedStatus = finalStatus;
+            });
+            itemsArray.sort((a, b) => { const prio = { 'rechazado': 0, 'pendiente': 1, 'revision': 2, 'validado': 3 }; return (prio[a[1]._calculatedStatus] || 1) - (prio[b[1]._calculatedStatus] || 1); });
+            totalRequisitos = 0; completados = 0; let rechazados = 0; let barCountAprobados = 0; let barCountRevision = 0; let barTotalDocs = 0;
+            const esInfonavit = tipoTramite.includes('INFONAVIT');
+            itemsArray.forEach(([key, item]) => {
+                if (key.includes('SOLICITUD_') && !esInfonavit) return;
+                const estatus = item._calculatedStatus;
+                const esMapa = (key === 'UBICACION_MAPS');
+                const esOpcional = item.opcional === true;
+                if (!esOpcional && !key.includes('_EXTRA_')) { totalRequisitos++; barTotalDocs++; }
+                if (!esOpcional && (estatus === 'validado' || estatus === 'revision')) completados++;
+                if (estatus === 'rechazado') rechazados++;
+                if (!esOpcional) { if (estatus === 'validado') barCountAprobados++; if (estatus === 'revision') barCountRevision++; }
+                if (esMapa) {
+                    if (estatus === 'revision' || estatus === 'validado') {
+                        document.getElementById('ubicacion-actions').classList.add('hidden');
+                        document.getElementById('ubicacion-success').classList.remove('hidden');
+                        document.getElementById('direccion-guardada').textContent = "Ubicación Confirmada";
+                    } else {
+                        document.getElementById('ubicacion-actions').classList.remove('hidden');
+                        document.getElementById('ubicacion-success').classList.add('hidden');
+                    }
+                } else {
+                    let destino = item.categoria || 'solicitante';
+                    if (key.includes('SOLICITUD_')) destino = 'solicitante';
+                    if (!containers[destino]) destino = 'solicitante';
+                    containers[destino].insertAdjacentHTML('beforeend', generarTarjetaItem(key, item, estatus));
+                }
+            });
+            updateProgressBars(barCountAprobados, barCountRevision, barTotalDocs);
+            let badgeHtml = '<span class="bg-slate-100 text-slate-600 text-[10px] font-extrabold px-3 py-1 rounded-full border uppercase tracking-wider">PENDIENTE</span>';
+            if(rechazados > 0) badgeHtml = '<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-3 py-1 rounded-full border border-amber-200 uppercase tracking-wider animate-pulse">⚠️ ATENCIÓN REQUERIDA</span>';
+            else if(completados > 0 && completados < totalRequisitos) badgeHtml = '<span class="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-3 py-1 rounded-full border border-blue-200 uppercase tracking-wider">EN PROCESO</span>';
+            else if(totalRequisitos > 0 && completados === totalRequisitos) badgeHtml = '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-full border border-emerald-200 uppercase tracking-wider">COMPLETO</span>';
+            document.getElementById('estado-badge').innerHTML = badgeHtml;
+        }
+
+        function updateProgressBars(aprobados, revision, total) {
+            if (total === 0) total = 1;
+            const pctAprobados = Math.round((aprobados / total) * 100);
+            const pctRevision = Math.round((revision / total) * 100);
+            document.getElementById('counter-aprobados').innerText = `${aprobados}/${total}`;
+            document.getElementById('counter-revision').innerText = revision;
+            document.getElementById('bar-aprobados').style.width = `${pctAprobados}%`;
+            document.getElementById('bar-revision').style.width = `${pctRevision}%`;
+            if (aprobados === total && total > 0) lanzarJack("¡Felicidades!", "Has completado todos los requisitos obligatorios.");
+        }
+
+        function generarTarjetaItem(key, item, estatus) {
+            const acceptType = 'image/*,application/pdf';
+            let retroHtml = ''; let controlHtml = '';
+            let cardClass = "bg-white border border-gray-200 p-6"; 
+            let iconStatus = 'radio_button_unchecked';
+            const esOpcional = item.opcional === true;
+            const badgeOpcional = esOpcional ? `<span class="ml-2 px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-gray-100 text-gray-500 border border-gray-200">Opcional</span>` : `<span class="text-red-500 text-lg ml-1" title="Obligatorio">*</span>`;
+            const feedbackText = item.retroalimentacion || item.observaciones || item.mensaje || item.comentarios || 'El documento no es legible o correcto.';
+            if (estatus === 'rechazado') {
+                cardClass = "bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 shadow-sm relative overflow-hidden p-6";
+                iconStatus = 'warning'; 
+                retroHtml = `<div class="mt-4 p-4 bg-orange-100 dark:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-800/50 flex items-start gap-3"><span class="material-symbols-rounded text-orange-500 shrink-0 mt-0.5">info</span><div><p class="font-bold text-orange-800 dark:text-orange-300 text-sm">Corrección necesaria:</p><p class="text-orange-700 dark:text-orange-200 text-sm leading-relaxed mt-1">${feedbackText}</p></div></div>`;
+                if (key.includes('SOLICITUD_')) {
+                    let downloadLink = '#'; if(key.includes('INFONAVIT')) downloadLink = DOWNLOAD_LINKS['INFONAVIT']; else if(key.includes('AVALUO')) downloadLink = DOWNLOAD_LINKS['AVALUO'];
+                    controlHtml = `<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-4 sm:mt-0"><a href="${downloadLink}" target="_blank" class="w-full sm:w-auto px-6 py-4 bg-white border border-orange-300 text-orange-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors whitespace-nowrap"><span class="material-symbols-rounded text-base">download</span> Descargar</a><label class="w-full sm:w-auto px-6 py-4 flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-orange-50 btn-upload transition-all whitespace-nowrap"><span class="material-symbols-rounded text-lg">upload_file</span> Subir de nuevo<input type="file" class="hidden" accept="application/pdf, image/*" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label></div>`;
+                } else {
+                    controlHtml = `<div class="mt-4 w-full sm:w-auto"><label class="w-full sm:w-auto px-6 py-3 flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-orange-50 btn-upload transition-all whitespace-nowrap"><span class="material-symbols-rounded text-lg">upload_file</span> Subir de nuevo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label></div>`;
+                }
+            } else if (estatus === 'pendiente') {
+                if (key.includes('SOLICITUD_')) {
+                    let downloadLink = '#'; if(key.includes('INFONAVIT')) downloadLink = DOWNLOAD_LINKS['INFONAVIT']; else if(key.includes('AVALUO')) downloadLink = DOWNLOAD_LINKS['AVALUO'];
+                    const color = key.includes('INFONAVIT') ? 'blue' : 'indigo';
+                    cardClass = `bg-white dark:bg-slate-800 border border-${color}-100 dark:border-${color}-900/50 shadow-sm p-6 relative overflow-hidden`;
+                    controlHtml = `<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-4 sm:mt-0"><a href="${downloadLink}" target="_blank" class="w-full sm:w-auto px-6 py-4 bg-gray-50 border border-gray-200 text-gray-600 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors whitespace-nowrap"><span class="material-symbols-rounded text-base">download</span> Descargar Formato</a><label class="w-full sm:w-auto px-6 py-4 bg-${color}-600 hover:bg-${color}-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md btn-upload animate-pulse whitespace-nowrap"><span class="material-symbols-rounded text-base">upload_file</span> Subir Firmada<input type="file" class="hidden" accept="application/pdf, image/*" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label></div>`;
+                    retroHtml = `<div class="mt-3 flex items-center gap-2 text-${color}-600 bg-${color}-50 px-3 py-1.5 rounded-md w-fit"><span class="material-symbols-rounded text-sm">ink_pen</span><p class="text-[11px] font-bold">⚠️ Subir a color y firmada con tinta azul.</p></div>`;
+                } else {
+                    controlHtml = `<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-4 sm:mt-0"><label class="w-full sm:w-32 px-6 py-3 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 btn-upload"><span class="material-symbols-rounded text-lg">photo_camera</span> Foto<input type="file" class="hidden" accept="image/*" capture="environment" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label><label class="w-full sm:w-32 px-6 py-3 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 btn-upload"><span class="material-symbols-rounded text-lg">upload_file</span> Archivo<input type="file" class="hidden" accept="${acceptType}" onchange="subirArchivo('${key}', '${item.nombre}', '${item.categoria}', this)"></label></div>`;
+                }
+            } else {
+                const color = estatus === 'validado' ? 'emerald' : 'blue'; 
+                const texto = estatus === 'validado' ? 'VALIDADO' : 'EN REVISIÓN';
+                const icono = estatus === 'validado' ? 'verified' : 'hourglass_top';
+                cardClass = `bg-${color}-50 dark:bg-${color}-900/10 border border-${color}-200 dark:border-${color}-800 p-6`;
+                iconStatus = estatus === 'validado' ? 'check_circle' : 'radio_button_checked';
+                controlHtml = `<div class="mt-4 sm:mt-0 px-6 py-3 bg-${color}-100 dark:bg-${color}-900/30 text-${color}-700 dark:text-${color}-300 border border-${color}-200 dark:border-${color}-800 rounded-lg text-xs font-bold uppercase flex items-center justify-center gap-1 w-full sm:w-auto"><span class="material-symbols-rounded text-lg">${icono}</span> ${texto}</div>`;
+            }
+            let iconColorClass = "text-gray-400 dark:text-gray-500";
+            if (estatus === 'rechazado') iconColorClass = "text-orange-500"; else if (estatus === 'validado') iconColorClass = "text-emerald-500"; else if (key.includes('SOLICITUD_')) iconColorClass = key.includes('INFONAVIT') ? "text-blue-600" : "text-indigo-600";
+            return `<div class="${cardClass} rounded-xl flex flex-col sm:flex-row sm:items-start justify-between gap-4 transition-all mb-4 shadow-sm hover:shadow-md"><div class="flex-1"><div class="flex items-start gap-4"><div class="mt-1 ${iconColorClass} shrink-0"><span class="material-symbols-rounded text-2xl">${iconStatus}</span></div><div class="w-full"><div class="flex flex-wrap items-center gap-2"><p class="font-bold text-gray-800 dark:text-gray-200 text-base leading-tight">${item.nombre}</p>${badgeOpcional}</div><p class="text-xs text-gray-500 mt-1 leading-relaxed">${item.texto || ''}</p>${retroHtml}</div></div></div><div class="flex flex-col items-end justify-center shrink-0 w-full sm:w-auto">${controlHtml}</div></div>`;
+        }
     </script>
 </body>
 </html>

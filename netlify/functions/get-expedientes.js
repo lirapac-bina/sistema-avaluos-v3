@@ -42,6 +42,8 @@ exports.handler = async (event, context) => {
                 expedientes.push({
                     id: doc.id,
                     cliente: d.nombreCliente || d.nombre || 'Sin Nombre',
+                    // AGREGADO: Recuperamos el teléfono para la edición
+                    telefono: d.telefono || '', 
                     tramite: d.tipoTramite || 'Avalúo',
                     
                     // Fechas
