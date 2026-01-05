@@ -141,12 +141,16 @@
                                     </div>
                                 </div>
                                 
-                                <img id="real-image" class="hidden w-full h-full object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in" onclick="abrirZoom()">
+                                <img id="real-image" class="hidden w-full h-full object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in" onclick="abrirZoom(null, true)">
                                 <iframe id="real-pdf" class="hidden w-full h-full bg-white"></iframe>
                                 
+                                <textarea id="text-viewer" readonly 
+                                    class="hidden w-full h-full p-8 absolute inset-0 z-30 font-mono text-base leading-relaxed resize-none focus:outline-none" 
+                                    style="background-color: #ffffff !important; color: #000000 !important; border: none !important;"></textarea>
+
                                 <div id="map-container" class="hidden w-full h-full flex flex-col absolute inset-0 bg-white dark:bg-slate-800 z-20">
                                     <div class="flex-1 bg-slate-100 relative">
-                                        <iframe id="google-map-embed" class="w-full h-full border-0" allowfullscreen loading="lazy"></iframe>
+                                        <iframe id="google-map-embed" class="w-full h-full border-0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                                     </div>
                                     <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
                                         <div class="flex items-start gap-3">
@@ -166,6 +170,15 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div id="gallery-container" class="hidden w-full h-full absolute inset-0 bg-white dark:bg-slate-900 z-30 overflow-y-auto p-4 custom-scroll">
+                                    <div class="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 py-2 z-10 border-b dark:border-slate-700">
+                                        <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Galería de Imágenes</h3>
+                                        <span id="gallery-count" class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">0 fotos</span>
+                                    </div>
+                                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
+                                        </div>
                                 </div>
 
                                 <div id="zoom-overlay" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px] pointer-events-none hidden">
@@ -237,13 +250,24 @@
         </div>
     </main>
 
-    <div id="zoom-modal" class="fixed inset-0 z-[60] hidden bg-black/90 backdrop-blur-md flex items-center justify-center animate-fade-in" onclick="cerrarZoom()">
-        <button class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+    <div id="zoom-modal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-center justify-center animate-fade-in" onclick="cerrarZoom()">
+        
+        <button class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-50 p-2">
             <span class="material-symbols-rounded text-4xl">close</span>
         </button>
-        <img id="zoom-image" class="max-w-[90%] max-h-[90%] object-contain shadow-2xl rounded-lg transform transition-transform duration-300 scale-95" onclick="event.stopPropagation()">
-        <div class="absolute bottom-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm">
-            Vista Ampliada
+
+        <button id="btn-prev-photo" class="absolute left-2 md:left-8 text-white/50 hover:text-white bg-black/20 hover:bg-black/50 rounded-full p-2 transition-all z-50 hidden" onclick="event.stopPropagation(); navGaleria(-1)">
+            <span class="material-symbols-rounded text-4xl md:text-5xl">chevron_left</span>
+        </button>
+
+        <img id="zoom-image" class="max-w-[95%] max-h-[85%] object-contain shadow-2xl rounded-sm transform transition-transform duration-300" onclick="event.stopPropagation()">
+
+        <button id="btn-next-photo" class="absolute right-2 md:right-8 text-white/50 hover:text-white bg-black/20 hover:bg-black/50 rounded-full p-2 transition-all z-50 hidden" onclick="event.stopPropagation(); navGaleria(1)">
+            <span class="material-symbols-rounded text-4xl md:text-5xl">chevron_right</span>
+        </button>
+
+        <div id="zoom-counter" class="absolute bottom-6 bg-black/60 text-white/90 px-4 py-2 rounded-full text-xs font-mono font-bold backdrop-blur-sm hidden">
+            1 / 1
         </div>
     </div>
 
@@ -274,12 +298,15 @@
     </div>
 
     <script>
-        // --- VARIABLES GLOBALES ---
         let expediente = { grupos: { solicitante: [], propietario: [], inmueble: [] } };
         const groupKeys = ['solicitante', 'propietario', 'inmueble'];
         let activeGroupIndex = 0;
         let selectedReqKey = null;
         let expedienteId = null;
+        
+        // --- VARIABLES DE GALERÍA ---
+        let galleryImages = []; // Almacena URLs de la galería actual
+        let currentPhotoIndex = 0; // Índice de la foto visible
 
         document.addEventListener('DOMContentLoaded', () => {
             const datosLocal = localStorage.getItem('expediente_activo');
@@ -298,11 +325,21 @@
             document.getElementById('header-tramite').innerText = infoBasica.tramite || "TRÁMITE";
 
             fetchDetalles(infoBasica.id);
+
+            // EVENTO DE TECLADO PARA NAVEGACIÓN
+            document.addEventListener('keydown', (e) => {
+                const modal = document.getElementById('zoom-modal');
+                if (!modal.classList.contains('hidden')) {
+                    if (e.key === 'ArrowLeft') navGaleria(-1);
+                    if (e.key === 'ArrowRight') navGaleria(1);
+                    if (e.key === 'Escape') cerrarZoom();
+                }
+            });
         });
 
         async function fetchDetalles(id) {
             try {
-                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}`);
+                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}&t=${Date.now()}`); // Cache-buster agregado
                 const data = await res.json();
                 transformarDatos(id, data);
                 renderCurrentGroup();
@@ -312,7 +349,6 @@
             }
         }
 
-        // --- CEREBRO: COMPATIBILIDAD CON BD ---
         function transformarDatos(id, data) {
             expediente = {
                 id: id,
@@ -323,36 +359,48 @@
 
             const checklist = data.checklist || {};
             
+            // 1. RECOLECTAR FOTOS EXTRA "AGRESIVAMENTE"
+            let fotosExtras = [];
+            Object.keys(checklist).forEach(k => {
+                if(k.includes('FOTO_EXTRA_')) {
+                    const item = checklist[k];
+                    const url = item.archivoUrl || item.url || item.driveLink || item.link;
+                    if(url) {
+                        fotosExtras.push({ url: url, nombre: item.nombre || 'Foto Extra' });
+                    }
+                }
+            });
+
+            // 2. PROCESAR RESTO DE ITEMS
             Object.keys(checklist).forEach(key => {
+                if(key.includes('FOTO_EXTRA_')) return; 
+
                 const item = checklist[key];
                 let cat = item.categoria || 'solicitante';
-                
-                // LÓGICA DE MAPA: FORZAR A INMUEBLE
-                if (key === 'UBICACION_MAPS') {
-                    cat = 'inmueble';
-                    // FORZAR EL NOMBRE SI VIENE VACÍO O UNDEFINED
-                    item.nombre = 'Ubicación Inmueble'; 
-                }
+                if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
 
-                // Url del archivo
                 const urlReal = item.archivoUrl || item.driveLink || item.url;
-
                 let uiStatus = 'pending';
-                if(item.estado === 'validado' || item.estatus === 'validado') uiStatus = 'valid';
-                if(item.estado === 'rechazado' || item.estatus === 'rechazado') uiStatus = 'rejected';
-                if(item.estado === 'en_revision' || item.estatus === 'revision') uiStatus = 'review';
+                if(item.estatus === 'validado') uiStatus = 'valid';
+                if(item.estatus === 'rechazado') uiStatus = 'rejected';
+                if(item.estatus === 'revision' || item.estatus === 'en_revision') uiStatus = 'review';
 
                 let tipoArchivo = '---';
-                if(key === 'UBICACION_MAPS') {
-                    tipoArchivo = 'MAPA';
-                } else if (urlReal) {
-                    const urlLower = urlReal.toLowerCase();
-                    const mime = (item.mimeType || '').toLowerCase();
-                    if (mime.includes('pdf') || urlLower.includes('.pdf')) {
-                        tipoArchivo = 'PDF';
-                    } else {
-                        tipoArchivo = 'IMG'; 
+                let fotosGaleria = null;
+
+                if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
+                else if (item.textoPreview) tipoArchivo = 'TXT';
+                else if (key === 'FOTOS_INTERIORES_GENERAL') {
+                    tipoArchivo = 'GALERIA';
+                    fotosGaleria = fotosExtras; 
+                    if(fotosExtras.length > 0) {
+                        if(uiStatus === 'pending') uiStatus = 'review'; 
                     }
+                }
+                else if (urlReal) {
+                    if (urlReal.toLowerCase().includes('.pdf') || (item.mimeType && item.mimeType.includes('pdf'))) tipoArchivo = 'PDF';
+                    else if (key.includes('CORREO') || item.mimeType === 'text/plain') tipoArchivo = 'TXT';
+                    else tipoArchivo = 'IMG';
                 }
 
                 if(expediente.grupos[cat]) {
@@ -362,9 +410,10 @@
                         tipo: tipoArchivo,
                         status: uiStatus,
                         url: urlReal,
-                        // --- CLAVE: LEEMOS COORDENADAS DIRECTAS ---
                         coordenadas: item.coordenadas,
-                        direccion: item.direccion
+                        direccion: item.direccion,
+                        textoPreview: item.textoPreview,
+                        fotos: fotosGaleria
                     });
                 }
             });
@@ -398,70 +447,41 @@
                 let statusText = '';
 
                 if(req.status === 'pending') {
-                    statusText = 'PENDIENTE';
-                    icon = '<span class="material-symbols-rounded text-slate-300">radio_button_unchecked</span>';
-                    statusClass = 'border-l-4 border-slate-300 opacity-60';
+                    statusText = 'PENDIENTE'; icon = '<span class="material-symbols-rounded text-slate-300">radio_button_unchecked</span>'; statusClass = 'border-l-4 border-slate-300 opacity-60';
                 } else if(req.status === 'review') {
-                    statusText = 'POR REVISAR';
-                    icon = '<span class="material-symbols-rounded text-orange-500 animate-pulse">hourglass_top</span>';
-                    statusClass = 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10';
+                    statusText = 'POR REVISAR'; icon = '<span class="material-symbols-rounded text-orange-500 animate-pulse">hourglass_top</span>'; statusClass = 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10';
                 } else if(req.status === 'valid') {
-                    statusText = 'VALIDADO';
-                    icon = '<span class="material-symbols-rounded text-green-500">check_circle</span>';
-                    statusClass = 'border-l-4 border-green-500 bg-green-50/50 dark:bg-green-900/10'; 
+                    statusText = 'VALIDADO'; icon = '<span class="material-symbols-rounded text-green-500">check_circle</span>'; statusClass = 'border-l-4 border-green-500 bg-green-50/50 dark:bg-green-900/10'; 
                 } else if(req.status === 'rejected') {
-                    statusText = 'RECHAZADO';
-                    icon = '<span class="material-symbols-rounded text-red-500">error</span>';
-                    statusClass = 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20';
+                    statusText = 'RECHAZADO'; icon = '<span class="material-symbols-rounded text-red-500">error</span>'; statusClass = 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20';
                 }
 
-                if (selectedReqKey === req.key) {
-                    statusClass += ' bg-white dark:bg-slate-700 shadow-md transform scale-[1.02] z-10 border-y border-r my-2 mx-1 rounded-lg';
-                } else {
-                    statusClass += ' hover:bg-white dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700';
-                }
+                if (selectedReqKey === req.key) { statusClass += ' bg-white dark:bg-slate-700 shadow-md transform scale-[1.02] z-10 border-y border-r my-2 mx-1 rounded-lg'; } 
+                else { statusClass += ' hover:bg-white dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700'; }
 
-                // ICONO MAPA
                 let displayIcon = icon;
-                if (req.key === 'UBICACION_MAPS') {
-                    displayIcon = `<span class="material-symbols-rounded ${req.status === 'pending' ? 'text-slate-300' : 'text-indigo-500'}">map</span>`;
-                }
+                if (req.key === 'UBICACION_MAPS') displayIcon = `<span class="material-symbols-rounded ${req.status === 'pending' ? 'text-slate-300' : 'text-indigo-500'}">map</span>`;
+                if (req.tipo === 'TXT') displayIcon = `<span class="material-symbols-rounded ${req.status === 'pending' ? 'text-slate-300' : 'text-blue-500'}">article</span>`;
+                if (req.tipo === 'GALERIA') displayIcon = `<span class="material-symbols-rounded ${req.status === 'pending' ? 'text-slate-300' : 'text-teal-500'}">photo_library</span>`;
 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
                 itemDiv.style.animationDelay = `${index * 0.05}s`;
                 
-                if(req.url || req.coordenadas || req.status === 'review' || req.status === 'valid' || req.status === 'rejected') {
+                // HABILITAR CLICK SI HAY FOTOS EN GALERÍA
+                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending') {
                     itemDiv.onclick = () => seleccionarRequisito(req);
                 } else {
-                    itemDiv.classList.add('cursor-not-allowed');
-                    itemDiv.title = "Aún no suben este archivo";
+                    itemDiv.classList.add('cursor-not-allowed'); itemDiv.title = "Aún no suben este archivo";
                 }
 
-                itemDiv.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            ${displayIcon}
-                            <div class="overflow-hidden">
-                                <p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px]">${req.nombre}</p>
-                                <p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px]">${req.nombre}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
                 container.appendChild(itemDiv);
             });
         }
 
-        function nextGroup() {
-            activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0;
-            renderCurrentGroup();
-        }
-
-        function prevGroup() {
-            activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1;
-            renderCurrentGroup();
-        }
+        function nextGroup() { activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0; renderCurrentGroup(); }
+        function prevGroup() { activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1; renderCurrentGroup(); }
 
         async function seleccionarRequisito(req) {
             selectedReqKey = req.key;
@@ -470,79 +490,80 @@
             document.getElementById('selected-doc-name').innerText = req.nombre;
             document.getElementById('card-filename').innerText = req.nombre;
             
-            // Reset Views
-            document.getElementById('preview-placeholder').classList.add('hidden');
-            document.getElementById('error-fallback').classList.add('hidden');
-            
-            const img = document.getElementById('real-image');
-            const pdf = document.getElementById('real-pdf');
-            const mapDiv = document.getElementById('map-container');
-            const placeholder = document.getElementById('preview-placeholder');
-            const zoomOverlay = document.getElementById('zoom-overlay');
-            const fallbackLink = document.getElementById('download-fallback-link');
-            
-            img.classList.add('hidden');
-            pdf.classList.add('hidden');
-            mapDiv.classList.add('hidden');
-            zoomOverlay.classList.add('hidden');
+            ['preview-placeholder', 'error-fallback', 'real-image', 'real-pdf', 'map-container', 'text-viewer', 'zoom-overlay', 'gallery-container'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
 
-            if (!req.url && !req.coordenadas) {
-                placeholder.classList.remove('hidden');
-                return;
+            // --- CASO 1: MAPA ---
+            if (req.key === 'UBICACION_MAPS') {
+                if (req.coordenadas) {
+                    document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
+                    document.getElementById('map-coords-text').innerText = req.coordenadas;
+                    const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
+                    document.getElementById('google-map-embed').src = embedUrl;
+                    document.getElementById('map-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('preview-placeholder').classList.remove('hidden');
+                }
+            }
+            
+            // --- CASO 2: GALERÍA DE FOTOS (GRID) ---
+            else if (req.tipo === 'GALERIA') {
+                const grid = document.getElementById('gallery-grid');
+                const count = document.getElementById('gallery-count');
+                
+                // GUARDAR REFERENCIA GLOBAL DE ESTA GALERÍA
+                galleryImages = req.fotos || [];
+
+                if (req.fotos && req.fotos.length > 0) {
+                    count.innerText = `${req.fotos.length} fotos`;
+                    grid.innerHTML = '';
+                    
+                    req.fotos.forEach((foto, index) => {
+                        grid.innerHTML += `
+                            <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
+                                <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                                <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre}</div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('gallery-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('preview-placeholder').classList.remove('hidden');
+                }
             }
 
-            // --- LÓGICA MAPA INTELIGENTE (DIRECTA + FALLBACK) ---
-            if (req.key === 'UBICACION_MAPS') {
-                
-                // 1. INTENTO DIRECTO (Si existen coordenadas en BD)
-                if (req.coordenadas) {
-                    document.getElementById('map-address-text').innerText = req.direccion || 'Sin dirección registrada';
-                    document.getElementById('map-coords-text').innerText = req.coordenadas;
-                    
-                    const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&z=19&output=embed`;
-                    document.getElementById('google-map-embed').src = embedUrl;
-                    mapDiv.classList.remove('hidden');
-                } 
-                // 2. INTENTO LECTURA TXT (Si es expediente viejo)
-                else if (req.url) {
-                    try {
-                        const response = await fetch(req.url);
-                        if(response.ok) {
-                            const text = await response.text();
-                            const coordsMatch = text.match(/COORDENADAS: (.*)/);
-                            const addrMatch = text.match(/DIRECCIÓN: (.*)/);
-                            
-                            if(coordsMatch) {
-                                const coords = coordsMatch[1].trim();
-                                const addr = addrMatch ? addrMatch[1].trim() : 'Dirección no disponible';
-                                
-                                document.getElementById('map-address-text').innerText = addr;
-                                document.getElementById('map-coords-text').innerText = coords;
-                                document.getElementById('google-map-embed').src = `https://maps.google.com/maps?q=${coords}&z=19&output=embed`;
-                                mapDiv.classList.remove('hidden');
-                            } else { throw new Error("Formato inválido"); }
-                        } else { throw new Error("Bloqueo CORS"); }
-                    } catch(e) {
-                        // 3. FALLBACK MANUAL (Si todo falla)
-                        console.warn("Fallo carga auto mapa:", e);
-                        placeholder.classList.remove('hidden');
-                        document.getElementById('error-fallback').classList.remove('hidden');
-                        fallbackLink.href = req.url;
-                    }
-                }
-            } 
-            // --- LÓGICA NORMAL (IMG/PDF) ---
-            else if (req.tipo === 'PDF') {
+            // --- CASO 3: TEXTO PURO ---
+            else if (req.tipo === 'TXT') {
+                const txtArea = document.getElementById('text-viewer');
+                const contenido = req.textoPreview || (req.url ? "Cargando contenido..." : "Sin texto registrado");
+                txtArea.value = contenido.replace('CORREO: ', '');
+                txtArea.classList.remove('hidden');
+            }
+
+            // --- CASO 4: PDF ---
+            else if (req.tipo === 'PDF' && req.url) {
+                const pdf = document.getElementById('real-pdf');
                 pdf.src = req.url;
                 pdf.classList.remove('hidden');
-            } else {
+            }
+            
+            // --- CASO 5: IMAGEN ÚNICA ---
+            else if (req.url) {
+                const img = document.getElementById('real-image');
                 img.src = req.url;
                 img.classList.remove('hidden');
-                zoomOverlay.classList.remove('hidden'); 
+                document.getElementById('zoom-overlay').classList.remove('hidden');
+                // Almacenar como galería de 1 sola foto para que zoom funcione
+                galleryImages = [{ url: req.url, nombre: req.nombre }];
+            } 
+            
+            else {
+                document.getElementById('preview-placeholder').classList.remove('hidden');
             }
             
             const bar = document.getElementById('decision-bar');
-            if (req.status === 'review' || req.status === 'rejected' || req.status === 'pending') {
+            if (['review', 'rejected', 'valid'].includes(req.status)) {
                 bar.classList.remove('translate-y-full');
             } else {
                 bar.classList.add('translate-y-full');
@@ -552,133 +573,85 @@
         async function actualizarEstadoBackend(nuevoEstado, motivo = null) {
             const btnConfirm = document.getElementById('btn-confirm-reject');
             const btnValid = document.getElementById('btn-validar');
-            
             try {
-                if(nuevoEstado === 'rechazado') {
-                    btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>';
-                    btnConfirm.disabled = true;
-                } else {
-                    btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>';
-                    btnValid.disabled = true;
-                }
-
-                const res = await fetch('/.netlify/functions/update-status', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        expedienteId: expediente.id, 
-                        itemKey: selectedReqKey, 
-                        nuevoEstado: nuevoEstado, 
-                        retroalimentacion: motivo 
-                    })
-                });
-
+                if(nuevoEstado === 'rechazado') { btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnConfirm.disabled = true; } 
+                else { btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnValid.disabled = true; }
+                const res = await fetch('/.netlify/functions/update-status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ expedienteId: expediente.id, itemKey: selectedReqKey, nuevoEstado: nuevoEstado, motivo: motivo }) });
                 if(!res.ok) throw new Error("Error en servidor");
-
                 const currentKey = groupKeys[activeGroupIndex];
                 const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
                 if(item) item.status = nuevoEstado === 'rechazado' ? 'rejected' : 'valid';
-
                 renderCurrentGroup();
                 document.getElementById('decision-bar').classList.add('translate-y-full');
-                
                 if(nuevoEstado === 'rechazado') cerrarRechazo();
-                
-            } catch(e) {
-                console.error(e);
-                alert("Error al guardar estado: " + e.message);
-            } finally {
-                btnConfirm.innerHTML = 'Confirmar Descarte'; btnConfirm.disabled = false;
-                btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; btnValid.disabled = false;
-            }
+            } catch(e) { console.error(e); alert("Error al guardar estado: " + e.message); } 
+            finally { btnConfirm.innerHTML = 'Confirmar Descarte'; btnConfirm.disabled = false; btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; btnValid.disabled = false; }
         }
-
-        function validarDocumento() {
-            if(!selectedReqKey) return;
-            if(!confirm("¿Aprobar documento?")) return;
-            actualizarEstadoBackend('validado');
-        }
-
-        function confirmarRechazo() {
-            if(!selectedReqKey) return;
-            const motivo = document.getElementById('reject-reason').value;
-            if(!motivo) { alert("Escribe un motivo"); return; }
-            actualizarEstadoBackend('rechazado', motivo);
-        }
-
-        function abrirRechazo() { 
-            document.getElementById('reject-modal').classList.remove('hidden'); 
-            document.getElementById('reject-modal').classList.add('flex');
-            
-            const container = document.getElementById('lista-errores');
-            container.innerHTML = ''; 
-
-            if (selectedReqKey === 'UBICACION_MAPS') {
-                const btn = document.createElement('button');
-                btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
-                btn.innerHTML = `📍 <b>Ubicación Incorrecta:</b> El pin no coincide con el inmueble.`;
-                btn.onclick = () => usarError('Ubicación no coincide');
-                container.appendChild(btn);
-            } else {
-                const errores = [
-                    { t: 'Ilegible', d: 'Imagen borrosa o con reflejo.' },
-                    { t: 'Incompleto', d: 'Faltan páginas o reversos.' },
-                    { t: 'Vencido', d: 'El documento perdió vigencia.' },
-                    { t: 'Sin Firma', d: 'Falta firma autógrafa en tinta azul.' }
-                ];
-                errores.forEach(e => {
-                    const btn = document.createElement('button');
-                    btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
-                    btn.innerHTML = `⚠️ <b>${e.t}:</b> ${e.d}`;
-                    btn.onclick = () => usarError(`${e.t}: ${e.d}`);
-                    container.appendChild(btn);
-                });
-            }
-        }
-
+        function validarDocumento() { if(selectedReqKey && confirm("¿Aprobar documento?")) actualizarEstadoBackend('validado'); }
+        function confirmarRechazo() { if(selectedReqKey) { const motivo = document.getElementById('reject-reason').value; if(motivo) actualizarEstadoBackend('rechazado', motivo); else alert("Escribe un motivo"); } }
+        function abrirRechazo() { document.getElementById('reject-modal').classList.remove('hidden'); document.getElementById('reject-modal').classList.add('flex'); const container = document.getElementById('lista-errores'); container.innerHTML = ''; const errores = selectedReqKey === 'UBICACION_MAPS' ? [{ t: 'Ubicación Incorrecta', d: 'El pin no coincide con el inmueble.' }] : [{ t: 'Ilegible', d: 'Imagen borrosa.' }, { t: 'Incompleto', d: 'Faltan páginas.' }, { t: 'Vencido', d: 'Documento caducado.' }]; errores.forEach(e => { const btn = document.createElement('button'); btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2"; btn.innerHTML = `⚠️ <b>${e.t}:</b> ${e.d}`; btn.onclick = () => usarError(`${e.t}: ${e.d}`); container.appendChild(btn); }); }
         function cerrarRechazo() { document.getElementById('reject-modal').classList.add('hidden'); document.getElementById('reject-modal').classList.remove('flex'); }
         function usarError(texto) { document.getElementById('reject-reason').value = texto; }
+        function agregarError() { const nuevo = prompt("Escribe el nuevo motivo:"); if(nuevo) { usarError(nuevo); } }
+        function reenviarLiga() { const msg = `Hola ${expediente.cliente}, te reenvío la liga de tu expediente ${expediente.id}.`; window.open(`https://wa.me/${expediente.telefono}?text=${encodeURIComponent(msg)}`, '_blank'); }
         
-        function agregarError() {
-            const nuevo = prompt("Escribe el nuevo motivo de rechazo:");
-            if(nuevo) {
-                const container = document.getElementById('lista-errores');
-                const btn = document.createElement('button');
-                btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2";
-                btn.innerHTML = `⚠️ <b>Personalizado:</b> ${nuevo}`;
-                btn.onclick = () => usarError(nuevo);
-                container.appendChild(btn);
-                usarError(nuevo); 
+        // --- FUNCIONES DE ZOOM Y NAVEGACIÓN ---
+        
+        // Abre el zoom desde la vista previa (imagen única)
+        function abrirZoom(url = null, isSingle = false) { 
+            if(selectedReqKey === 'UBICACION_MAPS') return;
+            if(isSingle) {
+                // Si viene de la vista previa, usamos la imagen que ya está ahí
+                const src = document.getElementById('real-image').src;
+                if(src && !document.getElementById('real-image').classList.contains('hidden')) {
+                    galleryImages = [{url: src}];
+                    abrirGaleriaIndex(0);
+                }
             }
         }
 
-        function reenviarLiga() {
-            const msg = `Hola ${expediente.cliente}, te reenvío la liga de tu expediente ${expediente.id}.`;
-            window.open(`https://wa.me/${expediente.telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+        function abrirGaleriaIndex(index) {
+            currentPhotoIndex = index;
+            updateModalImage();
+            document.getElementById('zoom-modal').classList.remove('hidden');
         }
 
-        function abrirZoom() {
-            if(selectedReqKey === 'UBICACION_MAPS') return; // No zoom en mapa
-            const src = document.getElementById('real-image').src;
-            if(!src || document.getElementById('real-image').classList.contains('hidden')) return;
-            const modal = document.getElementById('zoom-modal');
-            const img = document.getElementById('zoom-image');
-            img.src = src;
-            modal.classList.remove('hidden');
-            setTimeout(() => { img.classList.remove('scale-95'); img.classList.add('scale-100'); }, 10);
+        function updateModalImage() {
+            if(galleryImages.length === 0) return;
+            const photo = galleryImages[currentPhotoIndex];
+            document.getElementById('zoom-image').src = photo.url;
+            
+            // Actualizar botones
+            const btnPrev = document.getElementById('btn-prev-photo');
+            const btnNext = document.getElementById('btn-next-photo');
+            const counter = document.getElementById('zoom-counter');
+
+            if (galleryImages.length > 1) {
+                btnPrev.classList.remove('hidden');
+                btnNext.classList.remove('hidden');
+                counter.classList.remove('hidden');
+                counter.innerText = `${currentPhotoIndex + 1} / ${galleryImages.length}`;
+                
+                // Opacidad si es inicio/fin (opcional, aquí los oculto si se prefiere ciclo infinito o tope)
+                btnPrev.style.opacity = currentPhotoIndex === 0 ? '0.3' : '1';
+                btnNext.style.opacity = currentPhotoIndex === galleryImages.length - 1 ? '0.3' : '1';
+            } else {
+                btnPrev.classList.add('hidden');
+                btnNext.classList.add('hidden');
+                counter.classList.add('hidden');
+            }
         }
-        function cerrarZoom() {
-            const modal = document.getElementById('zoom-modal');
-            const img = document.getElementById('zoom-image');
-            img.classList.remove('scale-100');
-            img.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); }, 200);
+
+        function navGaleria(direction) {
+            const newIndex = currentPhotoIndex + direction;
+            if(newIndex >= 0 && newIndex < galleryImages.length) {
+                currentPhotoIndex = newIndex;
+                updateModalImage();
+            }
         }
-        
-        function copiarCoords() {
-            const txt = document.getElementById('map-coords-text').innerText;
-            navigator.clipboard.writeText(txt).then(() => alert("Coordenadas copiadas"));
-        }
+
+        function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
+        function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
     </script>
 </body>
 </html>

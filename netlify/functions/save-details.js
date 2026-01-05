@@ -25,48 +25,50 @@ exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
     try {
-        const { expedienteId, itemKey, nuevoEstado, motivo } = JSON.parse(event.body);
+        const { expedienteId, itemKey, datos, textoDirecto } = JSON.parse(event.body);
 
-        if (!expedienteId || !itemKey || !nuevoEstado) {
+        if (!expedienteId || !itemKey) {
             return { statusCode: 400, body: 'Faltan datos' };
         }
 
-        console.log(`Actualizando ${itemKey} a ${nuevoEstado}`);
-
-        // 1. Buscar expediente (Avalúo o Hipoteca)
+        // Buscar en colecciones
         let docRef = db.collection('expedientes_avaluos').doc(expedienteId);
         let doc = await docRef.get();
-        
         if (!doc.exists) {
             docRef = db.collection('expedientes_hipotecas').doc(expedienteId);
-            doc = await docRef.get();
         }
 
-        if (!doc.exists) {
-            return { statusCode: 404, body: 'Expediente no encontrado' };
-        }
-
-        // 2. Preparar actualización
         const updateData = {};
-        updateData[`checklist.${itemKey}.estatus`] = nuevoEstado; // Usamos 'estatus' para consistencia
         
-        // CORRECCIÓN CLAVE: Usamos 'retroalimentacion' para que coincida con el frontend (portal.html)
-        if (nuevoEstado === 'rechazado') {
-            updateData[`checklist.${itemKey}.retroalimentacion`] = motivo || 'Documento ilegible o incorrecto.';
-        } else if (nuevoEstado === 'validado') {
-            // Limpiamos la retroalimentación si se aprueba
-            updateData[`checklist.${itemKey}.retroalimentacion`] = admin.firestore.FieldValue.delete();
+        // Estado a revisión automáticamente
+        updateData[`checklist.${itemKey}.estatus`] = 'revision';
+        updateData[`checklist.${itemKey}.fechaCarga`] = new Date().toISOString();
+        updateData[`checklist.${itemKey}.retroalimentacion`] = null; // Limpiar rechazos previos
+
+        // Si mandamos datos estructurados (Formulario Detalles)
+        if (datos) {
+            updateData[`checklist.${itemKey}.metaData`] = datos; // Guardamos el JSON del form
+            // Creamos un resumen de texto para visualización rápida
+            let resumen = "DETALLES DEL INMUEBLE:\n";
+            for (const [k, v] of Object.entries(datos)) {
+                resumen += `${k.toUpperCase()}: ${v}\n`;
+            }
+            updateData[`checklist.${itemKey}.textoPreview`] = resumen;
+            updateData[`checklist.${itemKey}.tipo`] = 'TXT'; // Forzamos tipo texto para el visor
+        }
+
+        // Si mandamos texto directo (Correo)
+        if (textoDirecto) {
+            updateData[`checklist.${itemKey}.textoPreview`] = textoDirecto;
+            updateData[`checklist.${itemKey}.tipo`] = 'TXT';
         }
 
         await docRef.update(updateData);
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: 'Estatus actualizado', estado: nuevoEstado })
-        };
+        return { statusCode: 200, body: JSON.stringify({ message: "Detalles guardados" }) };
 
     } catch (error) {
-        console.error("Error update-status:", error);
+        console.error(error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };

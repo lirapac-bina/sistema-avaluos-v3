@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIALIZACIÓN BLINDADA ---
+// --- 1. INICIALIZACIÓN BLINDADA ---
 if (admin.apps.length === 0) {
     let serviceAccount;
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -21,102 +21,216 @@ if (admin.apps.length === 0) {
 }
 const db = admin.firestore();
 
+function normalizar(texto) {
+    if (!texto) return "";
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+}
+
+// --- PLANTILLA DE RESPALDO (LIGAS CORRECTAS FIJAS) ---
+const PLANTILLA_RESPALDO = {
+    solicitante: [
+        { nombre: 'Identificación Oficial (INE/Pasaporte)', id: 'INE', obligatorio: true },
+        { nombre: 'CURP', id: 'CURP', obligatorio: true },
+        { nombre: 'Constancia de Situación Fiscal', id: 'RFC', obligatorio: true },
+        { nombre: 'Número de Seguridad Social', id: 'NSS', obligatorio: true },
+        // Ligas fijas aquí por seguridad
+        { 
+            nombre: 'Solicitud Avalúo', 
+            id: 'SOL_AVALUO', 
+            obligatorio: true,
+            urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
+        },
+        { 
+            nombre: 'Solicitud Infonavit', 
+            id: 'SOL_INFONAVIT', 
+            obligatorio: true,
+            urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
+        }
+    ],
+    propietario: [
+        { nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true },
+        { nombre: 'Identificación Oficial Propietario', id: 'INE_PROP', obligatorio: true }
+    ],
+    inmueble: [
+        { nombre: 'Boleta Predial', id: 'PREDIAL', obligatorio: true },
+        { nombre: 'Recibo de Agua', id: 'AGUA', obligatorio: true }
+    ]
+};
+
 exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
     try {
         const data = JSON.parse(event.body);
         
-        if (!data.nombre || !data.tipoTramite) {
-            return { statusCode: 400, body: JSON.stringify({ error: "Faltan datos obligatorios" }) };
-        }
+        const entidad = normalizar(data.entidad || 'GLOBAL'); 
+        const tramite = normalizar(data.tipoTramite || 'AVALUO');
+        
+        const numSol = parseInt(data.numSolicitantes) || 1;
+        const numProp = parseInt(data.numPropietarios) || 1;
 
-        const coleccion = data.tipoServicio === 'hipoteca' ? 'expedientes_hipotecas' : 'expedientes_avaluos';
-        
-        // --- LÓGICA DE BÚSQUEDA "SABUESO" ---
-        let checklistInicial = {};
-        
-        // Normalizamos el nombre del trámite para búsqueda
-        const tramiteOriginal = data.tipoTramite.trim(); // Ej: "Infonavit"
-        const tramiteUpper = tramiteOriginal.toUpperCase(); // Ej: "INFONAVIT"
-        const tramiteLower = tramiteOriginal.toLowerCase(); // Ej: "infonavit"
-        
-        console.log(`Buscando plantilla para: ${tramiteOriginal}...`);
+        console.log(`🔨 Creando Expediente: ${entidad} - ${tramite} (${numSol} Sol / ${numProp} Prop)`);
 
+        // --- 2. INTENTAR LEER DE FIREBASE ---
+        let plantilla = null;
         try {
-            // Intentamos buscar el documento de configuración en varios formatos posibles
-            // El Admin suele guardar como 'plantilla_INFONAVIT' o a veces directo el ID
+            const configRef = db.collection('configuracion').doc('plantilla_maestra');
+            const docSnap = await configRef.get();
             
-            let configDoc = await db.collection('configuracion').doc(`plantilla_${tramiteUpper}`).get(); // 1. plantilla_INFONAVIT
-            
-            if (!configDoc.exists) {
-                configDoc = await db.collection('configuracion').doc(`plantilla_${tramiteLower}`).get(); // 2. plantilla_infonavit
+            if (docSnap.exists) {
+                const todo = docSnap.data().requisitos || docSnap.data();
+                if (todo[entidad] && todo[entidad][tramite]) {
+                    plantilla = todo[entidad][tramite];
+                } else if (todo['GLOBAL'] && todo['GLOBAL'][tramite]) {
+                    plantilla = todo['GLOBAL'][tramite];
+                }
             }
-            if (!configDoc.exists) {
-                // Intento directo por si acaso
-                configDoc = await db.collection('configuracion').doc(tramiteUpper).get(); 
-            }
+        } catch (e) { console.error("Error leyendo config:", e); }
 
-            // Si después de buscar por todos lados no existe, usamos la MAESTRA
-            if (!configDoc.exists) {
-                console.warn(`⚠️ No se encontró plantilla específica. Usando MAESTRA.`);
-                configDoc = await db.collection('configuracion').doc('plantilla_maestra').get();
-            } else {
-                console.log(`✅ ¡Plantilla específica encontrada! Usando: ${configDoc.id}`);
-            }
+        if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
-            if (configDoc.exists) {
-                const requisitos = configDoc.data().requisitos || {};
-                
-                Object.keys(requisitos).forEach(key => {
-                    const req = requisitos[key];
-                    if (req.activo) {
-                        checklistInicial[key] = {
-                            nombre: req.nombre,
-                            descripcion: req.texto || '',
-                            categoria: req.categoria || 'solicitante',
-                            estado: 'pendiente', // Minúsculas, crucial para el Portal
-                            archivoUrl: null,
-                            archivoNombre: null,
-                            fechaSubida: null,
-                            mensajeRechazo: null
-                        };
+        // --- 3. CONSTRUIR CHECKLIST ---
+        let checklistFinal = {};
+
+        const procesarLista = (origen, cantidad, rol) => {
+            if (!origen) return;
+            // Soporte híbrido para Arrays y Mapas de Firebase
+            let items = Array.isArray(origen) ? origen : Object.values(origen);
+
+            const loop = cantidad > 0 ? cantidad : 1;
+            for (let i = 1; i <= loop; i++) {
+                items.forEach(item => {
+                    if (!item.nombre) return;
+                    
+                    const suffixID = loop > 1 ? `_${i}` : '';
+                    const cleanID = item.id ? normalizar(item.id).replace(/\s+/g, '_') : `DOC_${Math.floor(Math.random()*99999)}`;
+                    const key = `${cleanID}_${rol.toUpperCase()}${suffixID}`;
+                    const suffixNombre = loop > 1 ? ` (${rol} ${i})` : '';
+                    
+                    // Inyectar URL si es solicitud y no la trae (Fallback inteligente)
+                    let urlFinal = item.urlFormato || null;
+                    if (!urlFinal) {
+                        const n = item.nombre.toUpperCase();
+                        // Solo asignamos si coincide nombre Y trámite
+                        if (n.includes('SOLICITUD AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
+                        if (n.includes('SOLICITUD INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
                     }
+
+                    // Detectar si es correo para asignarle tipo TXT
+                    const esCorreo = item.nombre.toLowerCase().includes('correo');
+                    
+                    checklistFinal[key] = {
+                        id: item.id || cleanID,
+                        nombre: item.nombre + suffixNombre,
+                        categoria: rol.toLowerCase(), 
+                        obligatorio: item.obligatorio !== false, 
+                        estatus: 'PENDIENTE',
+                        tipo: esCorreo ? 'TXT' : 'documento',
+                        urlFormato: urlFinal,
+                        fecha: new Date().toISOString()
+                    };
                 });
             }
-        } catch (e) { console.error("Error en lógica de plantillas:", e); }
+        };
 
-        // --- CREAR DOCUMENTO ---
-        const fechaMexico = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+        procesarLista(plantilla.solicitante, numSol, 'Solicitante');
+        procesarLista(plantilla.propietario, numProp, 'Propietario');
+        procesarLista(plantilla.inmueble, 1, 'Inmueble');
 
-        const nuevoDoc = await db.collection(coleccion).add({
-            nombreCliente: data.nombre,
-            telefono: data.telefono || '',
-            email: data.email || '',
-            tipoTramite: data.tipoTramite,
-            ubicacion: data.ubicacion || 'Veracruz',
-            estado: data.estado, 
-            estatus: 'ACTIVO',
+        // --- 4. INYECCIONES DE SISTEMA (SOLO SI FALTAN O SON OBLIGATORIAS DE SISTEMA) ---
+
+        // A) Mapa (Siempre va)
+        checklistFinal['UBICACION_MAPS'] = { 
+            nombre: 'Ubicación del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa' 
+        };
+
+        // B) Correo (Solo si NO existe ya en la lista traída de Firebase)
+        const yaExisteCorreo = Object.values(checklistFinal).some(item => 
+            item.nombre.toUpperCase().includes('CORREO')
+        );
+        
+        if (!yaExisteCorreo) {
+            checklistFinal['CORREO_ELECTRONICO_AUTO'] = { 
+                nombre: 'Correo electrónico', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT' 
+            };
+        }
+
+        // C) FOTOS (NUEVA ESTRUCTURA)
+        // 1. Fachada (Obligatoria, única)
+        checklistFinal['FOTO_FACHADA'] = {
+            nombre: 'Foto de Fachada',
+            categoria: 'inmueble',
+            estatus: 'PENDIENTE',
+            obligatorio: true,
+            tipo: 'imagen',
+            seccion: 'FOTOS' // Marcador para agrupar visualmente en portal
+        };
+        
+        // 2. Interiores (Opcional, Contenedor Lógico para múltiples)
+        checklistFinal['FOTOS_INTERIORES_GENERAL'] = {
+            nombre: 'Fotografías Interiores y Entorno',
+            categoria: 'inmueble',
+            estatus: 'PENDIENTE',
+            obligatorio: false,
+            tipo: 'galeria', // Tipo especial
+            seccion: 'FOTOS'
+        };
+
+        // D) Detalles (Solo ciertos trámites)
+        if (tramite.includes('INFONAVIT') || tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
+            checklistFinal['DETALLES_INMUEBLE'] = { 
+                nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form' 
+            };
+        }
+        
+        // E) SOLICITUDES EXTRA (Si no vinieron del admin y son necesarias)
+        // Verificamos si ya existen por nombre clave antes de inyectar
+        const tieneSolAvaluo = Object.values(checklistFinal).some(i => i.nombre.toUpperCase().includes('SOLICITUD AVAL'));
+        const tieneSolInfo = Object.values(checklistFinal).some(i => i.nombre.toUpperCase().includes('SOLICITUD INFO'));
+
+        if (tramite.includes('AVALUO') && !tieneSolAvaluo) {
+             checklistFinal['SOLICITUD_AVALUO_SYS'] = { 
+                nombre: 'Solicitud Avalúo', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
+                urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
+            };
+        }
+        
+        if (tramite.includes('INFONAVIT') && !tieneSolInfo) {
+             checklistFinal['SOLICITUD_INFONAVIT_SYS'] = { 
+                nombre: 'Solicitud Infonavit', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
+                urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
+            };
+        }
+
+        // --- 5. GUARDAR ---
+        const nombreClienteFinal = data.nombre || "Cliente Nuevo";
+        
+        const nuevoExpediente = {
+            ...data,
+            nombreCliente: nombreClienteFinal, 
+            cliente: nombreClienteFinal,
+            checklist: checklistFinal,
+            estatus: 'PENDIENTE',
+            entidad: entidad, 
             fechaCreacion: new Date().toISOString(),
-            fecha: fechaMexico,
-            checklist: checklistInicial, // Lista inyectada
-            capturista: null,
-            visitador: null,
-            dibujante: null
-        });
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        };
 
-        return {
-            statusCode: 200,
+        const coleccionDestino = tramite.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
+        const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
+
+        return { 
+            statusCode: 200, 
+            headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ 
-                message: "Creado con éxito", 
-                id: nuevoDoc.id, 
-                url: `/portal.html?id=${nuevoDoc.id}`,
-                requisitosCargados: Object.keys(checklistInicial).length
-            })
+                id: ref.id, 
+                message: "Expediente Creado",
+                url: `/portal.html?id=${ref.id}`
+            }) 
         };
 
     } catch (error) {
-        console.error("Error general:", error);
+        console.error("Error Create:", error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };

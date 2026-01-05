@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo Expediente - Ing. Leezar</title>
+    <title>Nuevo Avalúo - Ing. Leezar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    
     <script src="js/layout.js"></script>
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    
+    <style> body { font-family: 'Inter', sans-serif; } .counter-btn:active { transform: scale(0.95); } </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex items-center justify-center p-4">
 
@@ -20,9 +22,9 @@
         <div class="bg-white dark:bg-slate-800 p-8 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
             <div>
                 <h1 class="text-gray-800 dark:text-white text-2xl font-extrabold flex items-center gap-2 tracking-tight">
-                    <span class="material-symbols-rounded text-teal-600 dark:text-teal-400 text-3xl">folder_open</span> Nuevo Expediente
+                    <span class="material-symbols-rounded text-teal-600 dark:text-teal-400 text-3xl">home_work</span> Nuevo Avalúo
                 </h1>
-                <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Crea un espacio seguro en la nube.</p>
+                <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Sistema EME - Gestión de Avalúos</p>
             </div>
             <a href="gestion.html" class="text-gray-400 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 text-sm font-bold bg-gray-50 dark:bg-slate-700 px-4 py-2 rounded-full hover:bg-teal-50 dark:hover:bg-teal-900/30">
                 <span class="material-symbols-rounded text-lg">arrow_back</span> Cancelar
@@ -32,50 +34,57 @@
         <div class="p-8 md:p-10 bg-slate-50 dark:bg-slate-900/50">
             <form id="form-nuevo" onsubmit="crearExpediente(event)">
                 
-                <div class="mb-8">
-                    <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 ml-1">1. Tipo de Servicio</label>
-                    <div class="flex gap-4">
-                        <label class="flex-1 cursor-pointer group">
-                            <input type="radio" name="tipoServicio" value="avaluo" checked onclick="actualizarTramites()" class="peer sr-only">
-                            <div class="p-4 text-center rounded-2xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 peer-checked:border-teal-500 peer-checked:text-teal-700 dark:peer-checked:text-teal-400 peer-checked:bg-teal-50/30 dark:peer-checked:bg-teal-900/20 peer-checked:font-bold transition-all group-hover:border-teal-200 dark:group-hover:border-teal-700 shadow-sm">
-                                <span class="material-symbols-rounded block text-2xl mb-1">home_work</span> Avalúo
-                            </div>
-                        </label>
-                        <label class="flex-1 cursor-pointer group">
-                            <input type="radio" name="tipoServicio" value="hipoteca" onclick="actualizarTramites()" class="peer sr-only">
-                            <div class="p-4 text-center rounded-2xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 peer-checked:border-blue-500 peer-checked:text-blue-700 dark:peer-checked:text-blue-400 peer-checked:bg-blue-50/30 dark:peer-checked:bg-blue-900/20 peer-checked:font-bold transition-all group-hover:border-blue-200 dark:group-hover:border-blue-700 shadow-sm">
-                                <span class="material-symbols-rounded block text-2xl mb-1">real_estate_agent</span> Hipoteca
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">CLIENTE</label>
-                        <input type="text" id="nombre" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all uppercase outline-none font-semibold text-gray-700 dark:text-gray-200 placeholder-gray-300 dark:placeholder-slate-600" placeholder="NOMBRE COMPLETO">
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">CLIENTE / SOLICITANTE</label>
+                        <input type="text" id="nombre" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-semibold text-gray-700 dark:text-gray-200 uppercase placeholder-gray-300" placeholder="NOMBRE COMPLETO">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">WHATSAPP</label>
-                        <input type="tel" id="telefono" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none font-semibold text-gray-700 dark:text-gray-200 placeholder-gray-300 dark:placeholder-slate-600" placeholder="10 DÍGITOS">
+                        <input type="tel" id="telefono" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-semibold text-gray-700 dark:text-gray-200" placeholder="10 DÍGITOS">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 mb-6 shadow-sm">
+                    <h3 class="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-100 dark:border-slate-700 pb-2">Configuración del Expediente</h3>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs font-bold text-slate-400 mb-2">SOLICITANTES</span>
+                            <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-600">
+                                <button type="button" onclick="cambiarCantidad('solicitantes', -1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-teal-600 font-bold text-lg disabled:opacity-50 transition-all">-</button>
+                                <span id="num-solicitantes" class="text-lg font-extrabold text-slate-700 dark:text-white w-4 text-center">1</span>
+                                <button type="button" onclick="cambiarCantidad('solicitantes', 1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-teal-600 font-bold text-lg transition-all">+</button>
+                            </div>
+                            <p class="text-[9px] text-slate-400 mt-1.5 text-center leading-tight">Se pedirán documentos por c/u</p>
+                        </div>
+                        <div class="flex flex-col items-center border-l border-slate-100 dark:border-slate-700 pl-4">
+                            <span class="text-xs font-bold text-slate-400 mb-2">PROPIETARIOS</span>
+                            <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-600">
+                                <button type="button" onclick="cambiarCantidad('propietarios', -1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-indigo-600 font-bold text-lg disabled:opacity-50 transition-all">-</button>
+                                <span id="num-propietarios" class="text-lg font-extrabold text-slate-700 dark:text-white w-4 text-center">1</span>
+                                <button type="button" onclick="cambiarCantidad('propietarios', 1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-indigo-600 font-bold text-lg transition-all">+</button>
+                            </div>
+                            <p class="text-[9px] text-slate-400 mt-1.5 text-center leading-tight">Se pedirán documentos por c/u</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">TRÁMITE</label>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">UBICACIÓN DEL INMUEBLE</label>
                         <div class="relative">
-                            <select id="tipoTramite" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200"></select>
+                            <select id="estado" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200">
+                                <option value="">Cargando catálogo...</option>
+                            </select>
                             <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
                         </div>
                     </div>
+                    
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">UBICACIÓN</label>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">TIPO DE AVALÚO</label>
                         <div class="relative">
-                            <select id="estado" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200">
-                                <option value="VER">Veracruz</option>
-                                <option value="PUE">Puebla</option>
-                                <option value="CDMX">CDMX</option>
+                            <select id="tipoTramite" disabled class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="">Esperando ubicación...</option>
                             </select>
                             <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
                         </div>
@@ -94,7 +103,7 @@
                         <span class="material-symbols-rounded text-3xl text-teal-600 dark:text-teal-400">check</span>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">¡Listo!</h3>
-                    <p class="text-gray-400 dark:text-slate-400 text-sm mb-6">Expediente creado y sincronizado con Drive.</p>
+                    <p class="text-gray-400 dark:text-slate-400 text-sm mb-6">Expediente creado y sincronizado.</p>
                     
                     <div class="text-left bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                         <label class="text-xs font-bold text-slate-400 ml-1 mb-2 block uppercase">Liga Segura (Solo ID):</label>
@@ -125,96 +134,137 @@
     </div>
 
     <script>
-        const listaAvaluo = ['Infonavit', 'Fovissste', 'Fiscal', 'Estimación de Valor', 'INSEJUPY'];
-        const listaHipoteca = ['Adquisición', 'Mejora', 'Liquidez', 'Terreno'];
+        // --- LÓGICA DE NEGOCIO (IGUAL, PERO LIMPIA) ---
+        let catalogoGlobal = {}; 
 
-        function actualizarTramites() {
-            const tipo = document.querySelector('input[name="tipoServicio"]:checked').value;
-            const select = document.getElementById('tipoTramite');
-            select.innerHTML = '';
-            const lista = tipo === 'avaluo' ? listaAvaluo : listaHipoteca;
-            lista.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t; opt.textContent = t; select.appendChild(opt);
-            });
+        document.addEventListener('DOMContentLoaded', cargarCatalogo);
+
+        async function cargarCatalogo() {
+            const selectEstado = document.getElementById('estado');
+            try {
+                const res = await fetch('/.netlify/functions/admin-catalog');
+                if(!res.ok) throw new Error("Error en la red");
+                catalogoGlobal = await res.json();
+                
+                selectEstado.innerHTML = '<option value="">Selecciona Ubicación</option>';
+                const ubicaciones = Object.keys(catalogoGlobal).sort();
+
+                if (ubicaciones.length === 0) {
+                    selectEstado.innerHTML = '<option value="">Sin datos configurados</option>';
+                    return;
+                }
+
+                ubicaciones.forEach(ub => {
+                    const option = document.createElement('option');
+                    option.value = ub; option.textContent = ub; 
+                    selectEstado.appendChild(option);
+                });
+
+                if (ubicaciones.length === 1) {
+                    selectEstado.value = ubicaciones[0];
+                    actualizarTramites(ubicaciones[0]); 
+                }
+            } catch (e) {
+                console.error("Error:", e);
+                selectEstado.innerHTML = '<option value="">Error de conexión</option>';
+            }
         }
-        
+
+        document.getElementById('estado').addEventListener('change', (e) => actualizarTramites(e.target.value));
+
+        function actualizarTramites(ubicacion) {
+            const selectTramite = document.getElementById('tipoTramite');
+            selectTramite.innerHTML = '<option value="">Selecciona trámite</option>';
+            selectTramite.disabled = true;
+
+            if (!ubicacion || !catalogoGlobal[ubicacion]) return;
+
+            const servicios = Object.keys(catalogoGlobal[ubicacion]);
+            if (servicios.length === 0) {
+                selectTramite.innerHTML = '<option>Sin servicios configurados</option>';
+                return;
+            }
+
+            servicios.forEach(serv => {
+                const option = document.createElement('option');
+                option.value = serv;
+                option.textContent = serv.charAt(0).toUpperCase() + serv.slice(1).toLowerCase();
+                selectTramite.appendChild(option);
+            });
+            selectTramite.disabled = false;
+        }
+
+        let solicitantes = 1; let propietarios = 1;
+
+        function cambiarCantidad(tipo, delta) {
+            const el = document.getElementById(tipo === 'solicitantes' ? 'num-solicitantes' : 'num-propietarios');
+            let val = parseInt(el.textContent);
+            const nuevoVal = val + delta;
+            if (nuevoVal >= 1 && nuevoVal <= 5) {
+                if(tipo === 'solicitantes') solicitantes = nuevoVal;
+                else propietarios = nuevoVal;
+                el.textContent = nuevoVal;
+            }
+        }
+
         function copiarLiga() {
             const copyText = document.getElementById("liga-generada");
             copyText.select();
-            copyText.setSelectionRange(0, 99999); 
             navigator.clipboard.writeText(copyText.value);
-            
             const btn = document.getElementById('btn-copy');
-            const originalText = btn.innerText;
-            btn.innerText = "¡Listo!";
-            btn.classList.add('text-teal-600', 'border-teal-600');
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.remove('text-teal-600', 'border-teal-600');
-            }, 2000);
+            btn.innerText = "¡Copiado!";
+            setTimeout(() => { btn.innerText = "Copiar"; }, 2000);
         }
 
         async function crearExpediente(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-crear');
+            const tramite = document.getElementById('tipoTramite').value;
+            const ubicacion = document.getElementById('estado').value;
+
+            if (!tramite || !ubicacion) {
+                alert("Error: Debes seleccionar una Ubicación y un Trámite válidos.");
+                return;
+            }
+
             const originalContent = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="material-symbols-rounded animate-spin mr-2">sync</span> Generando ID...`;
-            btn.classList.add('opacity-75', 'cursor-wait');
-
-            const nombreCliente = document.getElementById('nombre').value.toUpperCase();
-            const telefonoCliente = document.getElementById('telefono').value;
-            const tramite = document.getElementById('tipoTramite').value;
-
+            
             try {
-                // INTENTO 1: Backend Real
                 let response = await fetch('/.netlify/functions/create-expediente', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        tipoServicio: document.querySelector('input[name="tipoServicio"]:checked').value,
-                        nombre: nombreCliente,
-                        telefono: telefonoCliente,
-                        tipoTramite: tramite,
-                        estado: document.getElementById('estado').value
+                        tipoServicio: 'avaluo', 
+                        nombre: document.getElementById('nombre').value.toUpperCase(),
+                        telefono: document.getElementById('telefono').value,
+                        tipoTramite: tramite, 
+                        entidad: ubicacion, 
+                        numSolicitantes: solicitantes,
+                        numPropietarios: propietarios
                     })
                 });
 
-                let json;
-                if (response.ok) {
-                    json = await response.json();
-                } else {
-                    console.warn("Backend falló, usando ID local de respaldo.");
-                    // Fallback para que no se rompa si falla la conexión DB
-                    json = { id: 'EXP-LOCAL-' + Math.floor(Math.random() * 10000) };
-                }
+                let json = await response.json();
 
-                // ÉXITO
                 document.getElementById('form-nuevo').classList.add('hidden');
                 document.getElementById('resultado').classList.remove('hidden');
                 
-                // 1. LIGA SEGURA (Solo ID)
-                // IMPORTANTE: Aquí se corrige el "undefined". Usamos el ID del backend o el local.
                 const finalId = json.id || ('EXP-' + Date.now()); 
                 const cleanUrl = `${window.location.origin}/portal.html?id=${finalId}`;
                 
                 document.getElementById('liga-generada').value = cleanUrl;
                 document.getElementById('btn-ver-portal').href = cleanUrl;
-
-                // 2. MENSAJE WHATSAPP
-                const mensaje = `Hola *${nombreCliente}*, hemos generado tu expediente digital para el trámite de *${tramite}*. \n\nPor favor sube tus documentos de manera segura en esta liga: ${cleanUrl}`;
-                const linkWhatsApp = `https://api.whatsapp.com/send?phone=52${telefonoCliente}&text=${encodeURIComponent(mensaje)}`;
-                document.getElementById('btn-whatsapp').href = linkWhatsApp;
+                const mensaje = `Hola *${document.getElementById('nombre').value}*, sube tus documentos aquí: ${cleanUrl}`;
+                document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${document.getElementById('telefono').value}&text=${encodeURIComponent(mensaje)}`;
 
             } catch (error) {
-                console.error("Error crítico:", error);
-                alert("Hubo un error de conexión, pero intentaremos generar el enlace.");
+                alert("Hubo un error de conexión.");
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
             }
         }
-        actualizarTramites();
     </script>
 </body>
 </html>

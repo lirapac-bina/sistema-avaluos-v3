@@ -1,122 +1,211 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Configuración - Ing. Leezar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { bg: '#0b1121', main: '#0f172a', card: '#1e293b', teal: '#14b8a6' } }, fontFamily: { sans: ['Inter', 'sans-serif'] } } } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: { bg: '#0b1121', card: '#1e293b' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <script src="js/layout.js"></script>
 
     <style>
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; }
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-anim { animation: scaleIn 0.2s ease-out forwards; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
-        .editor-content { min-height: 400px; outline: none; line-height: 1.6; }
-        .editor-toolbar button:hover { background-color: #f1f5f9; color: #0f172a; }
-        .dark .editor-toolbar button:hover { background-color: #334155; color: #fff; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .uppercase-input { text-transform: uppercase; }
+        
+        /* Animación de cumpleaños */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
+        }
+        .birthday-bounce { animation: bounce-slow 2s infinite; }
     </style>
 </head>
-<body class="bg-gray-50 text-slate-600 dark:bg-leezar-main dark:text-slate-300 font-sans text-sm transition-colors duration-300">
+<body class="bg-gray-50 text-slate-600 dark:bg-leezar-bg dark:text-slate-300 font-sans text-sm transition-colors duration-300 overflow-hidden">
 
-    <main class="w-full p-8 fade-in"> 
-        <header class="mb-8 flex justify-between items-end" id="main-header">
+    <div id="admin-lock" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-leezar-bg transition-all duration-500">
+        <div class="bg-white dark:bg-leezar-card w-full max-w-xs p-8 rounded-3xl shadow-2xl text-center relative overflow-hidden border border-slate-700">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-teal-500"></div>
+            
+            <div class="mb-6">
+                <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="material-symbols-rounded text-3xl text-indigo-500">shield_lock</span>
+                </div>
+                <h2 class="text-xl font-extrabold text-slate-800 dark:text-white">Acceso Administrativo</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="lock-status">Identifícate para continuar</p>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">PIN de Seguridad</label>
+                    <div class="relative">
+                        <input type="password" id="login-pin" maxlength="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-4 text-center text-2xl font-extrabold tracking-[0.5em] text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:tracking-normal shadow-inner" placeholder="••••">
+                    </div>
+                </div>
+
+                <button onclick="validarAdmin()" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">lock_open</span> Desbloquear
+                </button>
+                <p id="login-error" class="text-red-500 text-xs font-bold hidden animate-bounce">❌ PIN Incorrecto</p>
+            </div>
+        </div>
+    </div>
+
+    <main class="w-full h-screen flex flex-col p-4 md:p-8 overflow-hidden filter blur-sm transition-all duration-500" id="main-content"> 
+        <header class="mb-6 flex justify-between items-end shrink-0" id="main-header">
             <div>
                 <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Configuración del Sistema</h1>
-                <p class="text-slate-400 text-sm mt-1">Control maestro, seguridad y auditoría.</p>
+                <p class="text-slate-400 text-sm mt-1">Control maestro de catálogos y usuarios.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="text-right mr-2">
+                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Usuario Activo</p>
+                    <p class="text-xs font-bold text-indigo-500 dark:text-indigo-400" id="user-display">...</p>
+                </div>
+                <button onclick="cerrarSesion()" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition"><span class="material-symbols-rounded">logout</span></button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="config-grid">
-            <div onclick="abrirVista('catalogo')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-indigo-500 group">
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">checklist</span></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 shrink-0" id="config-grid">
+            
+            <div onclick="abrirVista('catalogo')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-indigo-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">checklist</span>
+                </div>
                 <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Catálogo de Requisitos</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Administra documentos por Entidad y Tipo de Trámite.</p>
-                <span class="text-xs font-bold text-indigo-500 flex items-center gap-1 group-hover:gap-2 transition-all">Administrar <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Entidades Federativas y Trámites.</p>
+                <span class="text-xs font-bold text-indigo-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Administrar <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
             </div>
             
-            <div onclick="abrirVista('legal')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-teal-500 group">
-                <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center mb-4 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">gavel</span></div>
+            <div onclick="abrirVista('legal')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-teal-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center mb-4 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">gavel</span>
+                </div>
                 <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Legal y Privacidad</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Edita el Aviso de Privacidad del portal.</p>
-                <span class="text-xs font-bold text-teal-500 flex items-center gap-1 group-hover:gap-2 transition-all">Editar Contenido <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Avisos de privacidad y términos.</p>
+                <span class="text-xs font-bold text-teal-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Editar <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
             </div>
 
-            <div onclick="abrirVista('usuarios')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-rose-500 group">
-                <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">group_add</span></div>
+            <div onclick="abrirVista('usuarios')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-rose-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">group_add</span>
+                </div>
                 <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Usuarios y Seguridad</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Gestiona accesos, roles y datos personales.</p>
-                <span class="text-xs font-bold text-rose-500 flex items-center gap-1 group-hover:gap-2 transition-all">Gestionar <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Roles, Avatares, Cumpleaños y PINs.</p>
+                <span class="text-xs font-bold text-rose-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Gestionar <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
             </div>
             
-            <div onclick="abrirVista('bitacora')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-amber-500 group">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform"><span class="material-symbols-rounded text-3xl">history_edu</span></div>
+            <div onclick="abrirVista('bitacora')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-amber-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">history_edu</span>
+                </div>
                 <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Bitácora de Cambios</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Auditoría de movimientos en la configuración.</p>
-                <span class="text-xs font-bold text-amber-500 flex items-center gap-1 group-hover:gap-2 transition-all">Ver Historial <span class="material-symbols-rounded text-sm">arrow_forward</span></span>
-            </div>
-
-            <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed group">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400"><span class="material-symbols-rounded text-3xl">label</span></div>
-                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Nomenclatura</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Próximamente: Configuración de folios.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Auditoría de movimientos.</p>
+                <span class="text-xs font-bold text-amber-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Ver Historial <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
             </div>
         </div>
 
-        <div id="dynamic-view" class="hidden h-full flex flex-col"></div>
+        <div id="dynamic-view" class="hidden flex-1 flex flex-col min-h-0 mt-6"></div>
 
-        <div id="modal-usuario-v2" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-[#1e293b] w-full max-w-2xl rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 modal-anim custom-scroll overflow-y-auto max-h-[90vh]">
+        <div id="modal-editor" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative overflow-hidden fade-in">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6" id="modal-title">Nuevo Requisito</h3>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Nombre Visual (Portal)</label>
+                        <input type="text" id="input-nombre" oninput="normalizarInput(this); generarIDAuto()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 uppercase-input" placeholder="EJ. RECIBO DE LUZ">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">ID Base Datos (Automático)</label>
+                        <input type="text" id="input-id" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono text-slate-500 dark:text-slate-400 outline-none uppercase-input" readonly>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <input type="checkbox" id="input-obligatorio" class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                        <div>
+                            <p class="text-sm font-bold text-slate-700 dark:text-white">Marcar como Obligatorio</p>
+                            <p class="text-xs text-slate-400">Si se desmarca, el usuario puede omitirlo.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button onclick="cerrarModalEditor()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
+                    <button onclick="confirmarGuardado()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-usuario" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-2xl rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 relative overflow-hidden fade-in overflow-y-auto max-h-[90vh] custom-scroll">
                 
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Perfil de Usuario</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Configuración de acceso y funciones operativas.</p>
                     </div>
-                    
                     <div class="flex flex-col items-center gap-2">
                         <div onclick="document.getElementById('input-avatar').click()" class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden relative group cursor-pointer hover:border-rose-500 transition-colors">
                             <img id="preview-avatar" class="w-full h-full object-cover hidden">
                             <span class="material-symbols-rounded text-slate-400 text-3xl group-hover:text-rose-500 transition-colors" id="icon-avatar">add_a_photo</span>
                         </div>
                         <input type="file" id="input-avatar" accept="image/png, image/jpeg" class="hidden" onchange="cargarAvatar(event)">
-                        <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wide">400x400px | Max 1MB</span>
+                        <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wide">400x400px</span>
                     </div>
                 </div>
 
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Correo Electrónico (ID Único)</label>
-                            <input type="email" id="user-correo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed">
-                            <p class="text-[9px] text-slate-400 mt-1 pl-1">* Para cambiar el correo, elimine y cree un nuevo usuario.</p>
+                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Correo Electrónico (ID)</label>
+                            <input type="email" id="user-email-edit" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 outline-none cursor-not-allowed" readonly>
                         </div>
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Nombre Completo</label>
-                                <input type="text" id="user-nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500">
+                                <input type="text" id="user-name-edit" oninput="normalizarInput(this)" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500 uppercase-input">
                             </div>
                             <div class="flex gap-4">
                                 <div class="w-1/3">
                                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Iniciales</label>
-                                    <input type="text" id="user-iniciales" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-center font-bold text-slate-700 dark:text-white outline-none uppercase" maxlength="3">
+                                    <input type="text" id="user-iniciales-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-center font-bold text-slate-700 dark:text-white outline-none uppercase" maxlength="3">
                                 </div>
                                 <div class="w-2/3">
                                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Fecha Nacimiento 🎂</label>
-                                    <input type="date" id="user-fecha" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none">
+                                    <input type="date" id="user-fecha-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none">
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Teléfono Celular</label>
-                                <input type="tel" id="user-celular" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-rose-500">
+                                <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Celular</label>
+                                <input type="tel" id="user-celular-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none">
                             </div>
                         </div>
                     </div>
@@ -126,18 +215,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
                             <label class="block text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">security</span> Nivel de Acceso</label>
-                            <select id="user-rol" onchange="togglePinInput()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                            <select id="user-rol-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
                                 <option value="CAPTURISTA">CAPTURISTA (Básico)</option>
-                                <option value="TÉCNICO">TÉCNICO (Operativo)</option>
+                                <option value="TECNICO">TÉCNICO (Operativo)</option>
                                 <option value="GESTOR">GESTOR (Intermedio)</option>
                                 <option value="ADMIN">ADMINISTRADOR</option>
                                 <option value="SUPER ADMIN">SUPER ADMIN</option>
                             </select>
                             
-                            <div id="pin-container" class="mt-4 hidden animate-[fadeIn_0.3s]">
-                                <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">PIN de Seguridad</label>
-                                <input type="text" id="user-pin" class="w-full bg-slate-50 dark:bg-slate-900 border border-red-200 dark:border-red-900/30 rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-red-500" maxlength="4">
-                                <p class="text-[9px] text-red-400 mt-1">* Requerido para Admins.</p>
+                            <div class="mt-4">
+                                <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">PIN de Seguridad (4 Dígitos)</label>
+                                <input type="text" id="user-pin-edit" maxlength="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-red-200 dark:border-red-900/30 rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-red-500" placeholder="0000">
                             </div>
                         </div>
 
@@ -162,82 +250,369 @@
                 </div>
 
                 <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
-                    <button onclick="document.getElementById('modal-usuario-v2').classList.add('hidden')" class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
-                    <button onclick="guardarUsuarioReal()" class="bg-rose-600 hover:bg-rose-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-rose-500/30 transition-transform active:scale-95 flex items-center gap-2">
+                    <button onclick="document.getElementById('modal-usuario').classList.add('hidden')" class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+                    <button onclick="guardarUsuario()" class="bg-rose-600 hover:bg-rose-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-rose-500/30 transition-transform active:scale-95 flex items-center gap-2">
                         <span class="material-symbols-rounded text-lg">save</span> Guardar Perfil
                     </button>
                 </div>
             </div>
         </div>
 
-        <div id="modal-editor" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
-            <div class="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 modal-anim relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6 relative z-10" id="modal-title">Nuevo Requisito</h3>
-                <div class="space-y-5 relative z-10">
-                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Nombre Visual (Portal)</label><input type="text" id="input-nombre" oninput="generarIDAuto()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></div>
-                    <div><label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">ID Base Datos (Único)</label><input type="text" id="input-id" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono text-slate-500 dark:text-slate-400 outline-none cursor-not-allowed"></div>
-                </div>
-                <div class="flex justify-end gap-3 mt-8 relative z-10">
-                    <button onclick="cerrarModalEditor()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
-                    <button onclick="confirmarGuardado()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-transform active:scale-95">Guardar</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="modal-config-listas" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
-            <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 modal-anim relative flex flex-col max-h-[80vh]">
-                <div class="flex justify-between items-center mb-6 shrink-0">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2" id="modal-config-title">Configuración</h3>
-                    <button onclick="cerrarModalConfigListas()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded text-2xl">close</span></button>
-                </div>
-                <div class="flex gap-2 mb-4 shrink-0">
-                    <input type="text" id="nuevo-config-input" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-bold" placeholder="Nuevo...">
-                    <button onclick="agregarConfigItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-bold text-sm shadow-md"><span class="material-symbols-rounded">add</span></button>
-                </div>
-                <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scroll" id="lista-config-modal"></div>
-            </div>
-        </div>
-
     </main>
 
     <script>
-        // CONFIGURACIÓN Y DATOS BASE
-        const CONFIG_DEFAULT = { entidades: ['VERACRUZ', 'CDMX', 'PUEBLA'], servicios: ['INFONAVIT', 'FOVISSSTE', 'ESTIMACIÓN DE VALOR'] };
-        const INIT_CATALOGO = { "GLOBAL": { "INFONAVIT": { "solicitante": [{ id: "INE", nombre: "Identificación Oficial (INE) vigente", obligatorio: true }], "propietario": [], "inmueble": [] } } };
-        const TEXTO_LEGAL_DEFAULT = `AVISO DE PRIVACIDAD\n\nEn cumplimiento con la Ley Federal de Protección de Datos Personales...`;
+        // --- PLANTILLA MAESTRA ---
+        const PLANTILLA_MAESTRA = {
+            "solicitante": [
+                { "id": "INE_SOLICITANTE", "nombre": "INE / IDENTIFICACION OFICIAL", "obligatorio": true },
+                { "id": "CURP_SOLICITANTE", "nombre": "CURP", "obligatorio": true },
+                { "id": "CONSTANCIA_SITUACION_FISCAL", "nombre": "CONSTANCIA SITUACION FISCAL (RFC)", "obligatorio": true },
+                { "id": "NUMERO_SEGURO_SOCIAL", "nombre": "NUMERO DE SEGURIDAD SOCIAL (NSS)", "obligatorio": true },
+                { "id": "CORREO_ELECTRONICO", "nombre": "CORREO ELECTRONICO", "obligatorio": true, "textoPreview": "CORREO: " },
+                { "id": "SOLICITUD_AVALUO", "nombre": "SOLICITUD AVALUO (FIRMADA)", "obligatorio": true }
+            ],
+            "propietario": [
+                { "id": "INE_PROPIETARIO", "nombre": "INE PROPIETARIO", "obligatorio": false },
+                { "id": "CURP_PROPIETARIO", "nombre": "CURP PROPIETARIO", "obligatorio": false }
+            ],
+            "inmueble": [
+                { "id": "ESCRITURAS", "nombre": "ESCRITURA PUBLICA COMPLETA", "obligatorio": true },
+                { "id": "PREDIAL", "nombre": "BOLETA PREDIAL (RECIENTE)", "obligatorio": true },
+                { "id": "AGUA", "nombre": "RECIBO(S) AGUA", "obligatorio": true },
+                { "id": "LUZ", "nombre": "RECIBO(S) DE LUZ (CFE)", "obligatorio": true },
+                { "id": "ALINEAMIENTO_NUMERO_OFICIAL", "nombre": "ALINEAMIENTO Y NUMERO OFICIAL", "obligatorio": true },
+                { "id": "UBICACION_MAPS", "nombre": "UBICACION INMUEBLE", "obligatorio": true },
+                { "id": "DETALLES_INMUEBLE", "nombre": "DETALLES DEL INMUEBLE", "obligatorio": true },
+                { "id": "FOTO_FACHADA", "nombre": "FOTO DE FACHADA", "obligatorio": true },
+                { "id": "FOTOS_INTERIORES_GENERAL", "nombre": "FOTOGRAFIAS INTERIORES Y ENTORNO", "obligatorio": false }
+            ]
+        };
 
-        let configGlobal = JSON.parse(localStorage.getItem('leezar_config_v2')) || CONFIG_DEFAULT;
-        let catalogoData = JSON.parse(localStorage.getItem('leezar_catalogo_v2')) || INIT_CATALOGO;
-        let bitacora = JSON.parse(localStorage.getItem('leezar_logs')) || [];
-        let usuariosDB = [];
-        
-        let currentEntidad = 'GLOBAL', currentServicio = 'INFONAVIT';
+        let catalogoData = null;
+        let currentEntidad = null, currentServicio = null;
         let editMode = false, activeCategory = '', activeIndex = -1;
-        let activeConfigType = '';
-        let currentSort = { key: 'fecha', order: 'desc' };
-        let avatarBase64 = ''; // Variable temporal para la foto
+        let activeUser = null;
+        let avatarBase64 = ''; 
 
-        // --- SISTEMA DE LOGS Y NAVEGACIÓN ---
-        function registrarLog(accion, detalle) {
-            const userActive = JSON.parse(sessionStorage.getItem('leezar_user_active')) || { nombre: 'SISTEMA' };
-            const nuevoLog = { timestamp: Date.now(), fecha: new Date().toLocaleString('es-MX'), usuario: userActive.nombre || 'Admin', accion: accion, detalle: detalle };
-            bitacora.unshift(nuevoLog);
-            if(bitacora.length > 200) bitacora.pop();
-            localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = localStorage.getItem('leezar_user_active');
+            if(userData) {
+                try {
+                    activeUser = JSON.parse(userData);
+                    document.getElementById('lock-status').innerText = `Hola, ${activeUser.nombre || 'Usuario'}. Confirma tu PIN.`;
+                    document.getElementById('user-display').innerText = activeUser.email;
+                    
+                    if(activeUser.fechaNacimiento) {
+                        const today = new Date().toISOString().slice(5,10);
+                        if(activeUser.fechaNacimiento.slice(5,10) === today) {
+                            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                            document.getElementById('user-display').innerHTML = `🎂 ¡Feliz Cumpleaños!`;
+                        }
+                    }
+                } catch(e) { }
+            }
+            document.getElementById('login-pin').focus();
+        });
+
+        // --- SEGURIDAD INTELIGENTE (SIN BACKDOOR) ---
+        async function validarAdmin() {
+            const pinInput = document.getElementById('login-pin').value;
+            const btn = document.getElementById('btn-login');
+            const errorMsg = document.getElementById('login-error');
+
+            if(pinInput.length !== 4) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Validando...';
+            errorMsg.classList.add('hidden');
+
+            try {
+                const res = await fetch('/.netlify/functions/get-users');
+                const users = await res.json();
+                
+                let foundUser = null;
+
+                if (activeUser) {
+                    foundUser = users.find(u => u.email === activeUser.email && u.pin === pinInput);
+                } else {
+                    const matches = users.filter(u => u.pin === pinInput);
+                    if (matches.length === 1) foundUser = matches[0];
+                }
+
+                if (foundUser) {
+                    activeUser = foundUser;
+                    localStorage.setItem('leezar_user_active', JSON.stringify(foundUser)); 
+                    document.getElementById('user-display').innerText = foundUser.email;
+                    desbloquearPantalla();
+                    registrarLog('LOGIN_ADMIN', `Acceso a configuración: ${foundUser.email}`);
+                } else {
+                    throw new Error("PIN Incorrecto");
+                }
+            } catch (e) {
+                console.error(e);
+                errorMsg.classList.remove('hidden');
+                document.getElementById('login-pin').value = '';
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-rounded">lock_open</span> Desbloquear';
+            }
         }
 
-        function abrirVista(vista) {
+        function desbloquearPantalla() {
+            document.getElementById('admin-lock').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('main-content').classList.remove('filter', 'blur-sm');
+            setTimeout(() => { document.getElementById('admin-lock').remove(); }, 500);
+        }
+
+        function normalizarInput(input) {
+            let val = input.value;
+            val = val.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            input.value = val;
+        }
+
+        // --- GESTIÓN DE USUARIOS VISUAL (Estilo Cards) ---
+        async function renderUsuarios(container) {
+            container.innerHTML = '<div class="flex h-full items-center justify-center"><span class="material-symbols-rounded animate-spin text-4xl text-rose-500">sync</span></div>';
+            
+            try {
+                const res = await fetch('/.netlify/functions/get-users');
+                const users = await res.json();
+
+                // FILTRADO INTELIGENTE (Case Insensitive)
+                const admins = users.filter(u => (u.rol || '').toUpperCase() === 'ADMIN');
+                const gestores = users.filter(u => (u.rol || '').toUpperCase() === 'GESTOR');
+                // Operativos son CAPTURISTA, TECNICO o los que no tengan rol definido
+                const operativos = users.filter(u => {
+                    const r = (u.rol || 'CAPTURISTA').toUpperCase();
+                    return r === 'CAPTURISTA' || r === 'TECNICO';
+                });
+
+                let html = `
+                <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
+                    <div class="flex justify-between items-center mb-6 bg-white dark:bg-leezar-card p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shrink-0">
+                        <div class="flex items-center gap-4">
+                            <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><span class="material-symbols-rounded text-2xl text-slate-500">arrow_back</span></button>
+                            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Equipo de Trabajo</h2>
+                        </div>
+                        <button onclick="cargarUsuarioModal(null)" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold shadow text-xs flex items-center gap-2"><span class="material-symbols-rounded">add</span> Nuevo</button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-8">
+                        
+                        ${renderUserSection('Administradores', admins, 'indigo')}
+                        ${renderUserSection('Gestión', gestores, 'teal')}
+                        ${renderUserSection('Operativos', operativos, 'slate')}
+
+                    </div>
+                </div>`;
+                container.innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `<div class="p-10 text-center text-red-500">Error al cargar usuarios.</div>`;
+            }
+        }
+
+        function renderUserSection(titulo, lista, color) {
+            if(lista.length === 0) return '';
+            
+            let cards = '';
+            const today = new Date().toISOString().slice(5,10); // MM-DD
+
+            lista.forEach(u => {
+                const userData = encodeURIComponent(JSON.stringify(u));
+                const iniciales = u.iniciales || (u.nombre ? u.nombre.substring(0,2) : 'XX');
+                
+                // INSIGNIAS
+                let badges = '';
+                let isMulti = false;
+                const f = u.funciones || [];
+                if(f.includes('visita')) { badges += '<span title="Visita" class="text-xs cursor-help">🚗</span>'; isMulti = true; }
+                if(f.includes('dibuja')) { badges += '<span title="Dibuja" class="text-xs cursor-help">📐</span>'; isMulti = true; }
+                
+                // Si es capturista y hace algo más, lleva estrella
+                const star = isMulti ? '<span class="text-amber-400 drop-shadow-sm text-sm" title="Multifuncional">⭐</span>' : '';
+                
+                // CUMPLEAÑOS
+                let birthdayIcon = '';
+                if(u.fechaNacimiento && u.fechaNacimiento.slice(5,10) === today) {
+                    birthdayIcon = '<div class="absolute -top-3 -right-3 text-2xl birthday-bounce drop-shadow-md">🎂</div>';
+                }
+
+                // AVATAR
+                let avatarHtml = `<div class="w-12 h-12 rounded-full bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 flex items-center justify-center font-bold text-lg border-2 border-white dark:border-slate-700 shadow-sm relative shrink-0">
+                    ${iniciales}
+                    ${birthdayIcon}
+                </div>`;
+                
+                if(u.fotoUrl) {
+                    avatarHtml = `<div class="w-12 h-12 rounded-full border-2 border-white dark:border-slate-700 shadow-sm relative shrink-0">
+                        <img src="${u.fotoUrl}" class="w-full h-full rounded-full object-cover">
+                        ${birthdayIcon}
+                    </div>`;
+                }
+
+                cards += `
+                <div class="bg-white dark:bg-leezar-card border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                    <div class="flex items-center gap-4">
+                        ${avatarHtml}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1">
+                                <h4 class="font-bold text-slate-800 dark:text-white truncate text-sm">${u.nombre || 'Sin Nombre'}</h4>
+                                ${star}
+                            </div>
+                            <p class="text-[10px] text-slate-400 font-mono truncate">${u.email}</p>
+                            <div class="flex gap-2 mt-1.5 opacity-80">${badges}</div>
+                        </div>
+                        <button onclick="cargarUsuarioModal('${userData}')" class="p-2 text-slate-300 hover:text-indigo-500 transition-colors"><span class="material-symbols-rounded">edit</span></button>
+                    </div>
+                </div>`;
+            });
+
+            return `
+                <div>
+                    <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3 ml-1 border-l-4 border-${color}-500 pl-2">${titulo}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${cards}</div>
+                </div>
+            `;
+        }
+
+        // --- MANEJO DE AVATAR ---
+        function cargarAvatar(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview-avatar').src = e.target.result;
+                document.getElementById('preview-avatar').classList.remove('hidden');
+                document.getElementById('icon-avatar').classList.add('hidden');
+                avatarBase64 = e.target.result; // Guardar base64 para envío
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cargarUsuarioModal(encodedData) {
+            // Reset
+            avatarBase64 = '';
+            document.getElementById('preview-avatar').classList.add('hidden');
+            document.getElementById('icon-avatar').classList.remove('hidden');
+            
+            if(encodedData) {
+                const u = JSON.parse(decodeURIComponent(encodedData));
+                document.getElementById('user-email-edit').value = u.email;
+                document.getElementById('user-email-edit').disabled = true;
+                document.getElementById('user-name-edit').value = u.nombre || '';
+                document.getElementById('user-iniciales-edit').value = u.iniciales || '';
+                document.getElementById('user-celular-edit').value = u.celular || '';
+                document.getElementById('user-rol-edit').value = u.rol || 'CAPTURISTA';
+                document.getElementById('user-pin-edit').value = u.pin || '';
+                document.getElementById('user-fecha-edit').value = u.fechaNacimiento || '';
+                
+                if(u.fotoUrl) {
+                    document.getElementById('preview-avatar').src = u.fotoUrl;
+                    document.getElementById('preview-avatar').classList.remove('hidden');
+                    document.getElementById('icon-avatar').classList.add('hidden');
+                    avatarBase64 = u.fotoUrl; // Mantener foto existente
+                }
+
+                const funciones = u.funciones || [];
+                document.getElementById('check-captura').checked = funciones.includes('captura');
+                document.getElementById('check-visita').checked = funciones.includes('visita');
+                document.getElementById('check-dibuja').checked = funciones.includes('dibuja');
+            } else {
+                // NUEVO USUARIO
+                document.getElementById('user-email-edit').value = '';
+                document.getElementById('user-email-edit').disabled = false;
+                document.getElementById('user-email-edit').classList.remove('cursor-not-allowed');
+                document.getElementById('user-name-edit').value = '';
+                document.getElementById('user-pin-edit').value = '';
+                // Limpiar resto...
+            }
+
+            document.getElementById('modal-usuario').classList.remove('hidden');
+        }
+
+        async function guardarUsuario() {
+            const email = document.getElementById('user-email-edit').value;
+            const nombre = document.getElementById('user-name-edit').value;
+            const iniciales = document.getElementById('user-iniciales-edit').value;
+            const celular = document.getElementById('user-celular-edit').value;
+            const rol = document.getElementById('user-rol-edit').value;
+            const pin = document.getElementById('user-pin-edit').value;
+            const fechaNacimiento = document.getElementById('user-fecha-edit').value;
+
+            const funciones = [];
+            if(document.getElementById('check-captura').checked) funciones.push('captura');
+            if(document.getElementById('check-visita').checked) funciones.push('visita');
+            if(document.getElementById('check-dibuja').checked) funciones.push('dibuja');
+
+            if(!pin || pin.length !== 4) return alert("El PIN debe ser de 4 dígitos.");
+
+            try {
+                await fetch('/.netlify/functions/manage-users', {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        email, nombre, iniciales, celular, rol, pin, funciones, fechaNacimiento, 
+                        fotoUrl: avatarBase64 // Enviamos la foto en base64
+                    })
+                });
+                
+                alert("Perfil actualizado correctamente.");
+                document.getElementById('modal-usuario').classList.add('hidden');
+                renderUsuarios(document.getElementById('dynamic-view')); 
+                registrarLog('USER_UPDATE', `Actualización de perfil: ${email}`);
+
+            } catch(e) {
+                alert("Error al guardar usuario.");
+                console.error(e);
+            }
+        }
+
+        // --- DEMÁS FUNCIONES DEL SISTEMA ---
+        async function fetchCatalogo() {
+            try {
+                const res = await fetch('/.netlify/functions/admin-catalog');
+                if (!res.ok) throw new Error("Error fetching catalog");
+                const data = await res.json();
+                catalogoData = (data && Object.keys(data).length > 0) ? data : {};
+            } catch (e) { console.error(e); alert("Error cargando configuración."); }
+        }
+
+        async function saveCatalogo() {
+            try {
+                const res = await fetch('/.netlify/functions/admin-catalog', { method: 'POST', body: JSON.stringify({ requisitos: catalogoData }) });
+                if (!res.ok) throw new Error("Error saving");
+                registrarLog('CATALOGO', `Actualización estructura: ${currentEntidad}/${currentServicio}`);
+                return true;
+            } catch (e) { alert("Error al guardar cambios."); return false; }
+        }
+
+        async function registrarLog(accion, detalle) {
+            try {
+                if(!activeUser) return;
+                await fetch('/.netlify/functions/admin-logs', { 
+                    method: 'POST', 
+                    body: JSON.stringify({ usuario: activeUser.email, accion, detalle }) 
+                });
+            } catch(e) { }
+        }
+
+        async function abrirVista(vista) {
             document.getElementById('config-grid').classList.add('hidden');
             document.getElementById('main-header').classList.add('hidden');
             const container = document.getElementById('dynamic-view');
             container.classList.remove('hidden');
-            container.innerHTML = ''; 
+            container.innerHTML = '<div class="flex h-full items-center justify-center"><span class="material-symbols-rounded animate-spin text-4xl text-indigo-500">progress_activity</span></div>';
             
-            if (vista === 'catalogo') renderCatalogo(container);
-            if (vista === 'legal') renderLegal(container);
-            if (vista === 'usuarios') renderUsuarios(container); 
-            if (vista === 'bitacora') renderBitacora(container);
+            if (vista === 'catalogo') {
+                if (!catalogoData) await fetchCatalogo();
+                renderCatalogo(container);
+            } else if (vista === 'legal') {
+                renderLegal(container);
+            } else if (vista === 'usuarios') {
+                renderUsuarios(container); // <--- AQUI LLAMA AL CRUD REAL
+            } else if (vista === 'bitacora') {
+                renderBitacora(container);
+            }
         }
 
         function cerrarVista() {
@@ -246,308 +621,188 @@
             document.getElementById('main-header').classList.remove('hidden');
         }
 
-        // --- LÓGICA DE AVATAR ---
-        function cargarAvatar(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // Validación de Peso (1MB)
-            if (file.size > 1024 * 1024) {
-                alert("La imagen es muy pesada. Máximo 1MB.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                avatarBase64 = e.target.result; // Guardamos en memoria para enviar al guardar
-                const img = document.getElementById('preview-avatar');
-                img.src = avatarBase64;
-                img.classList.remove('hidden');
-                document.getElementById('icon-avatar').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // --- GESTIÓN DE USUARIOS MEJORADA (ORDENAMIENTO + AVATAR) ---
-        function renderUsuarios(container) {
-            container.innerHTML = `
-                <div class="flex items-center gap-4 mb-6 animate-[fadeIn_0.3s]">
-                    <button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button>
-                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Gestión de Usuarios</h2>
-                    <div class="flex-1"></div>
-                    <button onclick="abrirModalUsuario(-1)" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md flex items-center gap-2"><span class="material-symbols-rounded">person_add</span> Nuevo Usuario</button>
-                </div>
-                <div class="space-y-8" id="grid-usuarios">
-                    <p class="text-center text-slate-500 py-10">Cargando usuarios...</p>
-                </div>
-            `;
-            cargarUsuariosDesdeBackend();
-        }
-
-        async function cargarUsuariosDesdeBackend() {
-            try {
-                const res = await fetch('/.netlify/functions/manage-users');
-                if(!res.ok) throw new Error("Error conexión");
-                usuariosDB = await res.json();
-                pintarUsuariosUI();
-            } catch (e) {
-                document.getElementById('grid-usuarios').innerHTML = `<p class="text-center text-red-500">Error: ${e.message}</p>`;
-            }
-        }
-
-        function pintarUsuariosUI() {
-            const container = document.getElementById('grid-usuarios');
-            container.innerHTML = '';
-            
-            if(usuariosDB.length === 0) { container.innerHTML = `<div class="text-center text-slate-500">No hay usuarios.</div>`; return; }
-
-            // Lógica de Agrupamiento
-            const grupos = {
-                'ADMIN': [],
-                'GESTOR': [],
-                'CAPTURISTA': [],
-                'TECNICO': [] 
-            };
-
-            usuariosDB.forEach(u => {
-                const rol = (u.rol || 'CAPTURISTA').toUpperCase();
-                // Omitir Super Admin de la lista
-                if(rol === 'SUPER ADMIN') return;
-
-                // Asignar al grupo correcto
-                if(rol === 'ADMIN' || rol.includes('ADMIN')) grupos['ADMIN'].push(u);
-                else if(rol === 'GESTOR') grupos['GESTOR'].push(u);
-                else if(rol === 'CAPTURISTA') grupos['CAPTURISTA'].push(u);
-                else if(rol.includes('TECNICO') || rol.includes('TÉCNICO')) grupos['TECNICO'].push(u);
-                else grupos['CAPTURISTA'].push(u); // Default
-            });
-
-            // Función para renderizar un grupo completo
-            const renderGrupo = (titulo, listaUsuarios, colorTitulo) => {
-                if(listaUsuarios.length === 0) return '';
-                
-                let html = `<div class="animate-[fadeIn_0.3s]">
-                    <h3 class="text-xs font-extrabold ${colorTitulo} uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">${titulo} (${listaUsuarios.length})</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
-                
-                listaUsuarios.forEach(u => {
-                    // Generar badges de funciones
-                    let badges = '';
-                    if(u.funciones && u.funciones.length > 0) {
-                        badges = u.funciones.map(f => `<span class="text-[8px] bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">${f.substring(0,3)}</span>`).join(' ');
-                    }
-
-                    // Estrella Hombre Orquesta (si tiene más de 1 función)
-                    const estrella = (u.funciones && u.funciones.length > 1) ? '<span class="text-yellow-400 material-symbols-rounded text-sm ml-1" title="Multifunción">star</span>' : '';
-
-                    // Indice original para editar
-                    const idx = usuariosDB.findIndex(x => x.email === u.email);
-
-                    html += `
-                    <div class="bg-white dark:bg-leezar-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between group hover:border-rose-300 dark:hover:border-rose-700 transition relative overflow-hidden">
-                        <div class="flex items-center gap-3 relative z-10 w-full overflow-hidden">
-                            <div class="w-10 h-10 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-400 shadow-sm uppercase border border-slate-200 dark:border-slate-600 overflow-hidden">
-                                ${u.fotoUrl ? `<img src="${u.fotoUrl}" class="w-full h-full object-cover">` : (u.iniciales || u.nombre.substring(0,2))}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center">
-                                    <p class="font-bold text-slate-800 dark:text-white text-sm uppercase truncate" title="${u.nombre}">${u.nombre}</p>
-                                    ${estrella}
-                                </div>
-                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span class="text-[9px] bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider">${u.rol}</span>
-                                    ${badges}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-1 relative z-10 pl-2">
-                            <button onclick="abrirModalUsuario(${idx})" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-blue-500 transition"><span class="material-symbols-rounded">edit</span></button>
-                            <button onclick="borrarUsuarioReal('${u.email}')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-red-500 transition"><span class="material-symbols-rounded">delete</span></button>
-                        </div>
-                    </div>`;
-                });
-                
-                html += `</div></div>`;
-                return html;
-            };
-
-            // Renderizado en orden
-            let finalHTML = '';
-            finalHTML += renderGrupo('👑 Administradores', grupos['ADMIN'], 'text-indigo-500');
-            finalHTML += renderGrupo('💼 Gestores', grupos['GESTOR'], 'text-teal-500');
-            finalHTML += renderGrupo('👷 Técnicos & Operativos', grupos['TECNICO'], 'text-amber-500');
-            finalHTML += renderGrupo('📝 Capturistas', grupos['CAPTURISTA'], 'text-slate-400');
-
-            container.innerHTML = finalHTML;
-        }
-
-        function abrirModalUsuario(idx) {
-            document.getElementById('modal-usuario-v2').classList.remove('hidden');
-            
-            // Reset de inputs y foto
-            const img = document.getElementById('preview-avatar');
-            const icon = document.getElementById('icon-avatar');
-            const inpNombre = document.getElementById('user-nombre');
-            const inpEmail = document.getElementById('user-correo');
-            const inpRol = document.getElementById('user-rol');
-            const inpPin = document.getElementById('user-pin');
-            const inpIniciales = document.getElementById('user-iniciales');
-            const inpFecha = document.getElementById('user-fecha');
-            const inpCelular = document.getElementById('user-celular');
-            const chkCaptura = document.getElementById('check-captura');
-            const chkVisita = document.getElementById('check-visita');
-            const chkDibuja = document.getElementById('check-dibuja');
-
-            // Limpiar foto visualmente
-            img.src = ''; img.classList.add('hidden'); icon.classList.remove('hidden');
-            avatarBase64 = ''; // Reset variable global
-
-            if(idx === -1) {
-                // MODO CREAR
-                [inpNombre, inpEmail, inpPin, inpIniciales, inpFecha, inpCelular].forEach(i => i.value = '');
-                inpRol.value = 'CAPTURISTA';
-                inpEmail.disabled = false;
-                [chkCaptura, chkVisita, chkDibuja].forEach(c => c.checked = false);
-            } else {
-                // MODO EDITAR
-                const u = usuariosDB[idx];
-                inpNombre.value = u.nombre || '';
-                inpEmail.value = u.email || u.id || ''; 
-                inpEmail.disabled = true;
-                
-                // Mapeo seguro del rol (por si viene algo raro de BD)
-                let dbRol = (u.rol || 'CAPTURISTA').toUpperCase();
-                // Si el rol en BD no existe en el select, forzamos uno visualmente o agregamos logica extra
-                // Aquí asumimos que los valores coinciden con los option values
-                if(dbRol.includes('TECNICO')) dbRol = 'TÉCNICO'; 
-                
-                inpRol.value = dbRol;
-                inpPin.value = u.pin || '';
-                inpIniciales.value = u.iniciales || '';
-                inpFecha.value = u.fechaNacimiento || '';
-                inpCelular.value = u.celular || '';
-
-                const funcs = u.funciones || [];
-                chkCaptura.checked = funcs.includes('CAPTURA');
-                chkVisita.checked = funcs.includes('VISITA');
-                chkDibuja.checked = funcs.includes('DIBUJA');
-
-                // Cargar foto si existe
-                if(u.fotoUrl) {
-                    img.src = u.fotoUrl;
-                    img.classList.remove('hidden');
-                    icon.classList.add('hidden');
-                    avatarBase64 = u.fotoUrl; // Mantenemos la actual si no sube otra
-                }
-            }
-            togglePinInput();
-        }
-
-        function togglePinInput() {
-            const rol = document.getElementById('user-rol').value;
-            const pinContainer = document.getElementById('pin-container');
-            if(rol === 'ADMIN' || rol === 'SUPER ADMIN') {
-                pinContainer.classList.remove('hidden');
-            } else {
-                pinContainer.classList.add('hidden');
-                document.getElementById('user-pin').value = ''; 
-            }
-        }
-
-        async function guardarUsuarioReal() {
-            const btn = document.querySelector('button[onclick="guardarUsuarioReal()"]');
-            const txtOriginal = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">refresh</span> Guardando...';
-            btn.disabled = true;
-
-            const funciones = [];
-            if(document.getElementById('check-captura').checked) funciones.push('CAPTURA');
-            if(document.getElementById('check-visita').checked) funciones.push('VISITA');
-            if(document.getElementById('check-dibuja').checked) funciones.push('DIBUJA');
-
-            const datos = {
-                nombre: document.getElementById('user-nombre').value.trim(),
-                email: document.getElementById('user-correo').value.trim(),
-                rol: document.getElementById('user-rol').value,
-                pin: document.getElementById('user-pin').value.trim(),
-                iniciales: document.getElementById('user-iniciales').value.trim(),
-                fechaNacimiento: document.getElementById('user-fecha').value,
-                celular: document.getElementById('user-celular').value.trim(),
-                funciones: funciones,
-                fotoUrl: avatarBase64, // Enviamos la foto en Base64
-                activo: true
-            };
-
-            if(!datos.nombre || !datos.email) {
-                alert("Nombre y Correo son obligatorios.");
-                btn.innerHTML = txtOriginal; btn.disabled = false;
-                return;
-            }
-
-            try {
-                const res = await fetch('/.netlify/functions/manage-users', {
-                    method: 'POST',
-                    body: JSON.stringify(datos)
-                });
-
-                if(res.ok) {
-                    registrarLog("USUARIO", `Perfil actualizado: ${datos.nombre} (${datos.rol})`);
-                    document.getElementById('modal-usuario-v2').classList.add('hidden');
-                    cargarUsuariosDesdeBackend();
-                } else {
-                    const err = await res.json();
-                    alert("Error: " + (err.error || "Fallo al guardar"));
-                }
-            } catch(e) {
-                console.error(e);
-                alert("Error de conexión con el servidor.");
-            }
-            btn.innerHTML = txtOriginal; btn.disabled = false;
-        }
-
-        async function borrarUsuarioReal(email) {
-            if(!confirm("¿Realmente deseas eliminar este usuario de la base de datos?")) return;
-
-            try {
-                const res = await fetch(`/.netlify/functions/manage-users?email=${encodeURIComponent(email)}`, {
-                    method: 'DELETE'
-                });
-                if(res.ok) {
-                    registrarLog("USUARIO", `Se eliminó usuario: ${email}`);
-                    cargarUsuariosDesdeBackend();
-                } else {
-                    alert("Error al eliminar.");
-                }
-            } catch(e) {
-                alert("Error de conexión.");
-            }
-        }
-
-        // --- VISTA CATÁLOGO ---
         function renderCatalogo(container) {
-             const isGlobal = currentEntidad === 'GLOBAL'; const badgeEntidad = isGlobal ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-500 text-white'; const badgeServicio = 'bg-teal-100 text-teal-700'; let optEntidades = `<option value="GLOBAL" class="dark:bg-slate-800 font-bold text-indigo-400">GLOBAL</option><option disabled>─────</option>`; configGlobal.entidades.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800">${ent}</option>`); let optServicios = ``; configGlobal.servicios.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800">${ser}</option>`); container.innerHTML = `<div class="flex flex-col h-full animate-[fadeIn_0.3s]"><div class="flex flex-col xl:flex-row xl:items-center gap-4 mb-6 justify-between"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button><div><h2 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2 flex-wrap">Catálogo <span class="text-[10px] ${badgeEntidad} px-2 py-0.5 rounded font-extrabold uppercase shadow-sm">${currentEntidad}</span><span class="text-slate-300 dark:text-slate-600">/</span><span class="text-[10px] ${badgeServicio} px-2 py-0.5 rounded font-extrabold uppercase shadow-sm">${currentServicio}</span></h2><p class="text-xs text-slate-400 mt-0.5">Configuración activa.</p></div></div><div class="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl shadow-sm self-start"><div class="flex items-center gap-1 border-r border-slate-200 dark:border-slate-600 pr-2"><span class="material-symbols-rounded text-indigo-500 text-lg">map</span><select id="entidad-selector" onchange="cambiarContexto('entidad', this.value)" class="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer w-28 md:w-auto">${optEntidades}</select><button onclick="abrirModalConfig('entidades')" class="text-slate-300 hover:text-indigo-500"><span class="material-symbols-rounded text-base">settings</span></button></div><div class="flex items-center gap-1 pl-2"><span class="material-symbols-rounded text-teal-500 text-lg">folder_managed</span><select id="servicio-selector" onchange="cambiarContexto('servicio', this.value)" class="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer w-32 md:w-auto">${optServicios}</select><button onclick="abrirModalConfig('servicios')" class="text-slate-300 hover:text-teal-500"><span class="material-symbols-rounded text-base">settings</span></button></div></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">${renderColumna('solicitante', 'Del Solicitante', 'person', 'teal')}${renderColumna('propietario', 'Del Propietario', 'group', 'orange')}${renderColumna('inmueble', 'Del Inmueble', 'home', 'indigo')}</div></div>`; document.getElementById('entidad-selector').value = currentEntidad; document.getElementById('servicio-selector').value = currentServicio; cargarRequisitosUI();
-        }
-        function renderColumna(id, titulo, icono, color) { const colors = { teal: 'bg-teal-50 text-teal-700 dark:text-teal-300', orange: 'bg-orange-50 text-orange-700 dark:text-orange-300', indigo: 'bg-indigo-50 text-indigo-700 dark:text-indigo-300' }; return `<div class="bg-white dark:bg-leezar-card border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50"><div class="flex gap-2 items-center"><div class="p-1.5 rounded-lg ${colors[color]} shadow-sm"><span class="material-symbols-rounded text-lg">${icono}</span></div><h3 class="font-bold text-slate-700 dark:text-white text-sm uppercase tracking-wide">${titulo}</h3></div><button onclick="abrirModalEditor('${id}', -1)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition shadow-sm font-bold flex items-center gap-1 text-[10px] uppercase border border-indigo-100 dark:border-indigo-800"><span class="material-symbols-rounded text-sm">add</span> Agregar</button></div><div id="list-${id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll"></div></div>`; }
-        function cambiarContexto(tipo, valor) { if(tipo === 'entidad') currentEntidad = valor; if(tipo === 'servicio') currentServicio = valor; if (!catalogoData[currentEntidad]) catalogoData[currentEntidad] = {}; if (!catalogoData[currentEntidad][currentServicio]) { let source = catalogoData['GLOBAL'] && catalogoData['GLOBAL']['INFONAVIT'] ? catalogoData['GLOBAL']['INFONAVIT'] : null; catalogoData[currentEntidad][currentServicio] = source ? JSON.parse(JSON.stringify(source)) : { solicitante: [], propietario: [], inmueble: [] }; localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData)); } renderCatalogo(document.getElementById('dynamic-view')); }
-        function cargarRequisitosUI() { const datos = catalogoData[currentEntidad] && catalogoData[currentEntidad][currentServicio] ? catalogoData[currentEntidad][currentServicio] : { solicitante: [], propietario: [], inmueble: [] }; ['solicitante', 'propietario', 'inmueble'].forEach(cat => { const list = document.getElementById(`list-${cat}`); list.innerHTML = ''; if(!datos[cat] || datos[cat].length === 0) { list.innerHTML = `<div class="text-center py-10 opacity-30 select-none"><span class="material-symbols-rounded text-4xl block mb-2">folder_off</span><p class="text-xs font-medium">Sin requisitos</p></div>`; return; } datos[cat].forEach((req, idx) => { list.insertAdjacentHTML('beforeend', `<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex justify-between items-start hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer shadow-sm hover:shadow-md"><div onclick="abrirModalEditor('${cat}', ${idx})" class="flex-1"><p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${req.nombre}</p><p class="text-[9px] text-slate-400 font-mono mt-1.5 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded inline-block tracking-wider border border-slate-200 dark:border-slate-700">${req.id}</p></div><div class="flex gap-1"><button onclick="abrirModalEditor('${cat}', ${idx})" class="p-1.5 text-slate-400 hover:text-indigo-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-rounded text-sm">edit</span></button><button onclick="borrarRequisito('${cat}', ${idx})" class="p-1.5 text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-rounded text-sm">delete</span></button></div></div>`); }); }); }
-        
-        // --- MODALES EXTRA ---
-        function abrirModalConfig(tipo) { activeConfigType = tipo; document.getElementById('modal-config-title').textContent = tipo.toUpperCase(); document.getElementById('modal-config-listas').classList.remove('hidden'); renderListaConfig(tipo); }
-        function cerrarModalConfigListas() { document.getElementById('modal-config-listas').classList.add('hidden'); renderCatalogo(document.getElementById('dynamic-view')); }
-        function renderListaConfig(tipo) { const lista = document.getElementById('lista-config-modal'); lista.innerHTML = ''; if(configGlobal[tipo].length === 0) { lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Lista vacía.</p>'; return; } configGlobal[tipo].forEach((item, idx) => { lista.insertAdjacentHTML('beforeend', `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"><span class="text-sm font-bold text-slate-700 dark:text-slate-300 pl-2">${item}</span><button onclick="borrarConfig('${tipo}', ${idx})" class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center"><span class="material-symbols-rounded text-lg">delete</span></button></div>`); }); }
-        function agregarConfigItem() { const input = document.getElementById('nuevo-config-input'); const val = input.value.trim().toUpperCase(); if(val && !configGlobal[activeConfigType].includes(val)) { configGlobal[activeConfigType].push(val); localStorage.setItem('leezar_config_v2', JSON.stringify(configGlobal)); input.value = ''; renderListaConfig(activeConfigType); } else if(configGlobal[activeConfigType].includes(val)) { alert("Ya existe."); } }
-        function borrarConfig(tipo, idx) { if(confirm("¿Eliminar?")) { configGlobal[tipo].splice(idx, 1); localStorage.setItem('leezar_config_v2', JSON.stringify(configGlobal)); renderListaConfig(tipo); } }
-        function abrirModalEditor(categoria, indice) { activeCategory = categoria; activeIndex = indice; document.getElementById('modal-editor').classList.remove('hidden'); const inputNom = document.getElementById('input-nombre'); const inputID = document.getElementById('input-id'); const title = document.getElementById('modal-title'); if (indice === -1) { editMode = false; title.textContent = `Agregar a ${categoria.toUpperCase()}`; inputNom.value = ''; inputID.value = ''; inputID.disabled = false; inputNom.focus(); } else { editMode = true; const item = catalogoData[currentEntidad][currentServicio][categoria][indice]; title.textContent = `Editar Requisito`; inputNom.value = item.nombre; inputID.value = item.id; inputID.disabled = true; inputNom.focus(); } }
-        function cerrarModalEditor() { document.getElementById('modal-editor').classList.add('hidden'); }
-        function generarIDAuto() { if (editMode) return; const nombre = document.getElementById('input-nombre').value; const idLimpio = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 25); document.getElementById('input-id').value = idLimpio; }
-        function confirmarGuardado() { const nombre = document.getElementById('input-nombre').value.trim(); const id = document.getElementById('input-id').value.trim(); if (!nombre || !id) { alert("Datos incompletos"); return; } const listaActual = catalogoData[currentEntidad][currentServicio][activeCategory]; if (editMode) { listaActual[activeIndex].nombre = nombre; } else { if (listaActual.some(i => i.id === id)) { alert("ID duplicado"); return; } listaActual.push({ id: id, nombre: nombre, obligatorio: true }); } localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData)); cargarRequisitosUI(); cerrarModalEditor(); }
-        function borrarRequisito(categoria, indice) { if(confirm("¿Eliminar?")) { catalogoData[currentEntidad][currentServicio][categoria].splice(indice, 1); localStorage.setItem('leezar_catalogo_v2', JSON.stringify(catalogoData)); cargarRequisitosUI(); } }
-        
-        // BITÁCORA VIEW
-        function renderBitacora(container) { container.innerHTML = `<div class="flex flex-col md:flex-row md:items-center gap-4 mb-6 animate-[fadeIn_0.3s] justify-between"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-xl">arrow_back</span></button><h2 class="text-2xl font-bold text-slate-800 dark:text-white">Bitácora de Cambios</h2></div><div class="relative w-full md:w-64"><span class="material-symbols-rounded absolute left-3 top-2.5 text-slate-400 text-sm">search</span><input type="text" id="log-search" oninput="filtrarBitacora()" placeholder="Buscar en logs..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 dark:text-white"></div></div><div class="bg-white dark:bg-leezar-card rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm"><table class="w-full text-sm text-left text-slate-500 dark:text-slate-400"><thead class="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-800 dark:text-slate-300"><tr><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('timestamp')">Fecha <span id="sort-timestamp"></span></th><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('usuario')">Usuario <span id="sort-usuario"></span></th><th class="px-6 py-3 th-sortable" onclick="ordenarLogs('accion')">Acción <span id="sort-accion"></span></th><th class="px-6 py-3">Detalle</th></tr></thead><tbody id="tabla-logs"></tbody></table></div>`; filtrarBitacora(); }
-        function filtrarBitacora() { const query = document.getElementById('log-search') ? document.getElementById('log-search').value.toLowerCase() : ''; const tbody = document.getElementById('tabla-logs'); tbody.innerHTML = ''; let logsFiltrados = bitacora.filter(log => log.usuario.toLowerCase().includes(query) || log.accion.toLowerCase().includes(query) || log.detalle.toLowerCase().includes(query) || log.fecha.toLowerCase().includes(query)); logsFiltrados.sort((a, b) => { let valA = a[currentSort.key], valB = b[currentSort.key]; if (typeof valA === 'string') valA = valA.toLowerCase(); if (typeof valB === 'string') valB = valB.toLowerCase(); if(currentSort.key === 'timestamp') { valA = a.timestamp || 0; valB = b.timestamp || 0; } if (valA < valB) return currentSort.order === 'asc' ? -1 : 1; if (valA > valB) return currentSort.order === 'asc' ? 1 : -1; return 0; }); if(logsFiltrados.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">No se encontraron registros.</td></tr>`; return; } logsFiltrados.forEach(log => { tbody.insertAdjacentHTML('beforeend', `<tr class="bg-white border-b dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><td class="px-6 py-4 font-mono text-xs text-slate-500 whitespace-nowrap">${log.fecha}</td><td class="px-6 py-4 font-bold text-slate-800 dark:text-white">${log.usuario}</td><td class="px-6 py-4"><span class="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">${log.accion}</span></td><td class="px-6 py-4 truncate max-w-xs" title="${log.detalle}">${log.detalle}</td></tr>`); }); }
-        function ordenarLogs(key) { currentSort.key === key ? currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc' : (currentSort.key = key, currentSort.order = 'asc'); filtrarBitacora(); }
+             const entidadesReales = Object.keys(catalogoData).sort();
+             if (!catalogoData[currentEntidad] && entidadesReales.length > 0) currentEntidad = entidadesReales[0];
+             
+             let optEntidades = ``;
+             entidadesReales.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800" ${ent === currentEntidad ? 'selected' : ''}>${ent}</option>`);
 
+             let serviciosReales = [];
+             if(currentEntidad && catalogoData[currentEntidad]) {
+                 serviciosReales = Object.keys(catalogoData[currentEntidad] || {});
+                 if (!catalogoData[currentEntidad][currentServicio] && serviciosReales.length > 0) currentServicio = serviciosReales[0];
+             }
+             
+             let optServicios = ``;
+             serviciosReales.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800" ${ser === currentServicio ? 'selected' : ''}>${ser}</option>`);
+             
+             container.innerHTML = `
+             <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
+                <div class="flex flex-col xl:flex-row gap-4 mb-6 justify-between bg-white dark:bg-leezar-card p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
+                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Catálogo Maestro</h2><p class="text-xs text-slate-400">Estructura de expedientes</p></div>
+                    </div>
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex flex-col gap-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Entidad Federativa</span>
+                            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <select onchange="cambiarContexto('entidad', this.value)" class="bg-transparent text-slate-700 dark:text-white text-sm font-bold outline-none px-2 py-1 min-w-[120px]">${optEntidades || '<option>Sin Entidades</option>'}</select>
+                                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                                <button onclick="nuevaEntidad()" class="p-1 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded" title="Nueva Entidad"><span class="material-symbols-rounded text-lg">add</span></button>
+                                <button onclick="eliminarEntidad()" class="p-1 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" title="Eliminar Entidad"><span class="material-symbols-rounded text-lg">delete</span></button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trámite / Servicio</span>
+                            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <select onchange="cambiarContexto('servicio', this.value)" class="bg-transparent text-slate-700 dark:text-white text-sm font-bold outline-none px-2 py-1 min-w-[120px]">${optServicios || '<option>Sin Trámites</option>'}</select>
+                                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                                <button onclick="nuevoServicio()" class="p-1 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded" title="Nuevo Trámite"><span class="material-symbols-rounded text-lg">add</span></button>
+                                <button onclick="eliminarServicio()" class="p-1 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" title="Eliminar Trámite"><span class="material-symbols-rounded text-lg">delete</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+                    ${renderColumna('solicitante', 'Solicitante', 'bg-teal-50 text-teal-700', 'person')}
+                    ${renderColumna('propietario', 'Propietario', 'bg-blue-50 text-blue-700', 'group')}
+                    ${renderColumna('inmueble', 'Inmueble', 'bg-indigo-50 text-indigo-700', 'home')}
+                </div>
+            </div>`; 
+            cargarRequisitosUI();
+        }
+
+        async function nuevaEntidad() {
+            const nombre = prompt("Nombre de la nueva Entidad Federativa (ej. VERACRUZ):");
+            if(!nombre) return;
+            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            if(catalogoData[key]) return alert("Esa entidad ya existe.");
+            
+            catalogoData[key] = {};
+            currentEntidad = key;
+            currentServicio = null;
+            await saveCatalogo();
+            renderCatalogo(document.getElementById('dynamic-view'));
+        }
+
+        async function eliminarEntidad() {
+            if(!currentEntidad) return;
+            if(!confirm(`¿ELIMINAR ENTIDAD ${currentEntidad}?\nSe borrarán todos sus trámites.`)) return;
+            delete catalogoData[currentEntidad];
+            const keys = Object.keys(catalogoData);
+            currentEntidad = keys.length > 0 ? keys[0] : null;
+            await saveCatalogo();
+            renderCatalogo(document.getElementById('dynamic-view'));
+        }
+
+        async function nuevoServicio() {
+            if(!currentEntidad) return alert("Selecciona una Entidad primero.");
+            const nombre = prompt(`Nuevo trámite para ${currentEntidad} (ej. HIPOTECARIO):`);
+            if(!nombre) return;
+            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            if(catalogoData[currentEntidad][key]) return alert("Este trámite ya existe.");
+
+            // --- HERENCIA DE PLANTILLA MAESTRA ---
+            catalogoData[currentEntidad][key] = JSON.parse(JSON.stringify(PLANTILLA_MAESTRA));
+            
+            currentServicio = key;
+            await saveCatalogo();
+            renderCatalogo(document.getElementById('dynamic-view'));
+        }
+
+        async function eliminarServicio() {
+            if(!currentServicio || !currentEntidad) return;
+            if(!confirm(`¿Eliminar trámite ${currentServicio}?`)) return;
+            delete catalogoData[currentEntidad][currentServicio];
+            const skeys = Object.keys(catalogoData[currentEntidad]);
+            currentServicio = skeys.length > 0 ? skeys[0] : null;
+            await saveCatalogo();
+            renderCatalogo(document.getElementById('dynamic-view'));
+        }
+
+        function renderColumna(id, titulo, color, icon) { 
+            return `<div class="bg-white dark:bg-leezar-card border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50"><div class="flex gap-2 items-center"><div class="p-1.5 rounded-lg ${color} shadow-sm"><span class="material-symbols-rounded text-lg">${icon}</span></div><h3 class="font-bold text-slate-700 dark:text-white text-sm uppercase tracking-wide">${titulo}</h3></div><button onclick="abrirModalEditor('${id}', -1)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 hover:bg-indigo-100 rounded-lg transition font-bold flex items-center gap-1 text-[10px] border border-indigo-100 dark:border-indigo-800"><span class="material-symbols-rounded text-sm">add</span></button></div><div id="list-${id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll"></div></div>`; 
+        }
+
+        function cambiarContexto(tipo, valor) { 
+            if(tipo === 'entidad') { currentEntidad = valor; const s = Object.keys(catalogoData[currentEntidad] || {}); currentServicio = s.length > 0 ? s[0] : null; }
+            if(tipo === 'servicio') currentServicio = valor; 
+            renderCatalogo(document.getElementById('dynamic-view')); 
+        }
+
+        function cargarRequisitosUI() { 
+            if (!currentEntidad || !currentServicio || !catalogoData[currentEntidad] || !catalogoData[currentEntidad][currentServicio]) {
+                ['solicitante', 'propietario', 'inmueble'].forEach(cat => document.getElementById(`list-${cat}`).innerHTML = `<div class="text-center py-10 opacity-30 select-none"><p class="text-xs font-medium">Selecciona Entidad/Trámite</p></div>`); return;
+            }
+            const datos = catalogoData[currentEntidad][currentServicio]; 
+            ['solicitante', 'propietario', 'inmueble'].forEach(cat => { 
+                const list = document.getElementById(`list-${cat}`); list.innerHTML = ''; 
+                if(!datos[cat] || datos[cat].length === 0) { list.innerHTML = `<div class="text-center py-10 opacity-30 select-none"><span class="material-symbols-rounded text-4xl block mb-2">folder_off</span><p class="text-xs font-medium">Vacío</p></div>`; return; } 
+                datos[cat].forEach((req, idx) => { 
+                    list.insertAdjacentHTML('beforeend', `<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex justify-between items-start hover:border-indigo-400 transition-all cursor-pointer shadow-sm"><div onclick="abrirModalEditor('${cat}', ${idx})" class="flex-1"><p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${req.nombre} ${req.obligatorio?'<span class="text-red-500">*</span>':''}</p><p class="text-[9px] text-slate-400 font-mono mt-1">${req.id}</p></div><div class="flex gap-1"><button onclick="abrirModalEditor('${cat}', ${idx})" class="p-1 text-slate-400 hover:text-indigo-500"><span class="material-symbols-rounded text-sm">edit</span></button><button onclick="borrarRequisito('${cat}', ${idx})" class="p-1 text-slate-400 hover:text-red-500"><span class="material-symbols-rounded text-sm">delete</span></button></div></div>`); 
+                }); 
+            }); 
+        }
+
+        function abrirModalEditor(categoria, indice) { 
+            activeCategory = categoria; activeIndex = indice; 
+            document.getElementById('modal-editor').classList.remove('hidden'); 
+            const inputNom = document.getElementById('input-nombre'); 
+            const inputID = document.getElementById('input-id'); 
+            const inputOblig = document.getElementById('input-obligatorio');
+            
+            if (indice === -1) { 
+                editMode = false; inputNom.value = ''; inputID.value = ''; inputID.disabled = false; inputOblig.checked = true; inputNom.focus(); 
+            } else { 
+                editMode = true; const item = catalogoData[currentEntidad][currentServicio][categoria][indice]; 
+                inputNom.value = item.nombre; inputID.value = item.id; inputID.disabled = true; inputOblig.checked = item.obligatorio !== false; inputNom.focus(); 
+            } 
+        }
+        function cerrarModalEditor() { document.getElementById('modal-editor').classList.add('hidden'); }
+        function generarIDAuto() { if (editMode) return; const nombre = document.getElementById('input-nombre').value; const idLimpio = nombre ? nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, '_') : ""; document.getElementById('input-id').value = idLimpio; }
+
+        async function confirmarGuardado() { 
+            const nombre = document.getElementById('input-nombre').value.trim(); const id = document.getElementById('input-id').value.trim(); const esObligatorio = document.getElementById('input-obligatorio').checked; if (!nombre || !id) return; 
+            const listaActual = catalogoData[currentEntidad][currentServicio][activeCategory]; 
+            if (editMode) { listaActual[activeIndex].nombre = nombre; listaActual[activeIndex].obligatorio = esObligatorio; } 
+            else { listaActual.push({ id: id, nombre: nombre, obligatorio: esObligatorio }); } 
+            await saveCatalogo(); cargarRequisitosUI(); cerrarModalEditor(); 
+        }
+        async function borrarRequisito(cat, idx) { if(confirm("¿Borrar requisito?")) { catalogoData[currentEntidad][currentServicio][cat].splice(idx, 1); await saveCatalogo(); cargarRequisitosUI(); } }
+
+        function renderLegal(container) {
+            container.innerHTML = `<div class="h-full flex flex-col animate-[fadeIn_0.3s]"><div class="flex justify-between mb-4"><button onclick="cerrarVista()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-slate-800 dark:text-white">Aviso de Privacidad</h2></div><textarea id="legal-editor" class="flex-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-4 rounded-xl border border-slate-200 dark:border-slate-700 outline-none resize-none font-mono text-sm shadow-inner"></textarea><button onclick="guardarLegal()" id="btn-save-legal" class="mt-4 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 flex justify-center items-center gap-2"><span class="material-symbols-rounded">save</span> Guardar Cambios</button></div>`;
+            fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ if(d.htmlContent) document.getElementById('legal-editor').value = d.htmlContent; });
+        }
+        async function guardarLegal() {
+            const btn = document.getElementById('btn-save-legal'); btn.disabled = true; btn.innerText = "Guardando...";
+            await fetch('/.netlify/functions/save-legal', { method: 'POST', body: JSON.stringify({ contenido: document.getElementById('legal-editor').value }) });
+            registrarLog('LEGAL', 'Actualización de Aviso de Privacidad');
+            alert("Términos actualizados."); btn.disabled = false; btn.innerHTML = '<span class="material-symbols-rounded">save</span> Guardar Cambios';
+        }
+
+        function renderBitacora(container) {
+             container.innerHTML = `<div class="h-full flex flex-col animate-[fadeIn_0.3s]"><div class="flex justify-between mb-4 items-center"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-slate-800 dark:text-white">Bitácora Global</h2></div><button onclick="cargarLogs()" class="text-indigo-500 hover:text-indigo-400"><span class="material-symbols-rounded">refresh</span></button></div><div class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"><table class="w-full text-left border-collapse"><thead class="bg-slate-50 dark:bg-slate-900 sticky top-0"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700"><th class="p-3">Fecha</th><th class="p-3">Usuario</th><th class="p-3">Acción</th><th class="p-3">Detalle</th></tr></thead><tbody id="logs-body" class="text-xs text-slate-600 dark:text-slate-300 font-mono"><tr><td colspan="4" class="p-8 text-center text-slate-400">Cargando...</td></tr></tbody></table></div></div>`;
+            cargarLogs();
+        }
+
+        async function cargarLogs() {
+            try {
+                const res = await fetch('/.netlify/functions/admin-logs');
+                const logs = await res.json();
+                const tbody = document.getElementById('logs-body');
+                tbody.innerHTML = '';
+                if(logs.length === 0) tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros recientes.</td></tr>';
+                logs.forEach(log => {
+                    let color = 'text-slate-500';
+                    if(log.accion === 'LEGAL') color = 'text-teal-500 font-bold';
+                    if(log.accion === 'CATALOGO') color = 'text-indigo-500 font-bold';
+                    tbody.insertAdjacentHTML('beforeend', `<tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"><td class="p-3 whitespace-nowrap">${log.fecha}</td><td class="p-3 font-bold">${log.usuario}</td><td class="p-3 ${color}">${log.accion}</td><td class="p-3">${log.detalle}</td></tr>`);
+                });
+            } catch(e) { }
+        }
+
+        function cerrarSesion() { localStorage.removeItem('leezar_user_active'); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>

@@ -2,24 +2,24 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- INICIO DEL BLOQUE BLINDADO ---
+// --- INICIALIZACIÓN BLINDADA ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-    // Intenta leer de variable de entorno (Producción)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { console.error("Error ENV:", e); }
+        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+        catch (e) { console.error("Error ENV:", e); }
     }
-    // Si no, intenta leer archivo local (Desarrollo)
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
-            if (fs.existsSync(keyPath)) { serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8')); }
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
         } catch (e) { }
     }
-    if (serviceAccount) { admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }); }
+    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-// --- FIN DEL BLOQUE BLINDADO ---
 
 exports.handler = async (event, context) => {
   try {
@@ -54,13 +54,10 @@ exports.handler = async (event, context) => {
     let docRef = db.collection('expedientes_avaluos').doc(id);
     let doc = await docRef.get();
     
-    // 2. Si no, buscar en Hipotecas
     if (!doc.exists) {
         docRef = db.collection('expedientes_hipotecas').doc(id);
         doc = await docRef.get();
     }
-
-    // 3. Si no, buscar en Colección Genérica
     if (!doc.exists) {
         docRef = db.collection('Expedientes').doc(id);
         doc = await docRef.get();
@@ -72,53 +69,40 @@ exports.handler = async (event, context) => {
 
     let data = doc.data();
     
-    // --- 2. LÓGICA DE AUTO-REPARACIÓN (SELF-HEALING) ---
+    // --- 2. LÓGICA DE AUTO-REPARACIÓN (CONSERVADA) ---
     let updates = {};
     let needsUpdate = false;
     const tramite = (data.tipoTramite || '').toUpperCase();
 
     if (tramite.includes('INFONAVIT')) {
-        // Asegurar checklist
         if (!data.checklist) { 
             updates['checklist'] = {}; 
             data.checklist = {}; 
             needsUpdate = true; 
         }
-        // Solicitud Infonavit
         if (!data.checklist['SOLICITUD_INFONAVIT']) {
             updates['checklist.SOLICITUD_INFONAVIT'] = {
-                nombre: 'Solicitud Infonavit',
-                estatus: 'pendiente',
-                categoria: 'solicitante',
-                opcional: false,
-                fechaCreacionAuto: new Date().toISOString()
+                nombre: 'Solicitud Infonavit', estatus: 'pendiente', categoria: 'solicitante', opcional: false, fechaCreacionAuto: new Date().toISOString()
             };
             needsUpdate = true;
         }
-        // Solicitud Avalúo
         if (!data.checklist['SOLICITUD_AVALUO']) {
             updates['checklist.SOLICITUD_AVALUO'] = {
-                nombre: 'Solicitud Avalúo',
-                estatus: 'pendiente',
-                categoria: 'solicitante',
-                opcional: false,
-                fechaCreacionAuto: new Date().toISOString()
+                nombre: 'Solicitud Avalúo', estatus: 'pendiente', categoria: 'solicitante', opcional: false, fechaCreacionAuto: new Date().toISOString()
             };
             needsUpdate = true;
         }
     }
 
-    // Aplicar cambios si es necesario
     if (needsUpdate) {
         console.log(`[Auto-Repair] Reparando expediente ${id}`);
         await docRef.update(updates);
-        // Recargar datos frescos
+        // Recargar para tener lo último
         const newDoc = await docRef.get();
         data = newDoc.data();
     }
-    // ----------------------------------------------------
 
-    // RESPUESTA FINAL AL FRONTEND
+    // --- RESPUESTA FINAL (AQUÍ ESTÁ EL CAMBIO CLAVE) ---
     return {
       statusCode: 200,
       headers: { 
@@ -126,14 +110,16 @@ exports.handler = async (event, context) => {
           "Access-Control-Allow-Origin": "*" 
       },
       body: JSON.stringify({
-        id: doc.id, // Enviar ID por si acaso
+        id: doc.id,
         nombreCliente: data.nombreCliente || data.cliente || '',
         tipoTramite: data.tipoTramite || data.tramite || '',
         fechaCreacion: data.fechaCreacion,
         checklist: data.checklist || {},
-        // IMPORTANTE: Aquí enviamos el teléfono para la seguridad
-        telefono: data.telefono || "", 
-        ubicacion: data.ubicacion || ""
+        telefono: data.telefono || "",
+        
+        // ¡ESTA ES LA LÍNEA MÁGICA!
+        // Le mandamos 'entidad' al portal. Si no existe, usamos 'GLOBAL' por seguridad.
+        entidad: data.entidad || data.ubicacion || 'GLOBAL' 
       })
     };
 

@@ -20,27 +20,35 @@ if (admin.apps.length === 0) {
     if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-// ------------------------------
 
 exports.handler = async (event, context) => {
-    if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Método no permitido" };
+    // Solo POST
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
         const data = JSON.parse(event.body);
         
-        await db.collection('config').doc('legal').set({
-            htmlContent: data.htmlContent,
-            updatedAt: new Date().toISOString()
-        });
+        // CORRECCIÓN: Usar 'configuracion' para coincidir con get-legal.js
+        // Y usamos el campo 'htmlContent' que es lo que espera get-legal
+        await db.collection('configuracion').doc('legal').set({
+            htmlContent: data.contenido, 
+            texto: data.contenido, // Guardamos copia en texto por si acaso
+            ultimaActualizacion: new Date().toISOString()
+        }, { merge: true });
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: "¡Guardado con éxito!" })
+            headers: { 
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*" 
+            },
+            body: JSON.stringify({ message: "Guardado correctamente" })
         };
 
     } catch (error) {
+        console.error("Error saving legal:", error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message })

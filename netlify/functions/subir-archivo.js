@@ -1,5 +1,4 @@
 const { google } = require('googleapis');
-const busboy = require('busboy');
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +22,7 @@ if (admin.apps.length === 0) {
     if (serviceAccount) {
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            storageBucket: 'leezar-expedientes-prod'
+            storageBucket: 'leezar-expedientes-prod' // Asegúrate que este bucket exista o quítalo si usas links firmados manuales
         });
     }
 }
@@ -58,34 +57,9 @@ exports.handler = async (event, context) => {
     if (!doc.exists) throw new Error("Expediente no encontrado");
     const data = doc.data();
 
-    // --- CORRECCIÓN MÁGICA: INICIALIZAR CHECKLIST SI ESTÁ VACÍO ---
-    // Esto evita que se "borren" los campos visualmente al subir el primer archivo
-    if (!data.checklist || Object.keys(data.checklist).length === 0) {
-        const plantillaBase = {
-            'INE_SOLICITANTE': { nombre: 'INE Solicitante (Frente y Vuelta)', estado: 'pendiente', categoria: 'solicitante' },
-            'CURP_SOLICITANTE': { nombre: 'CURP', estado: 'pendiente', categoria: 'solicitante' },
-            'RFC_SOLICITANTE': { nombre: 'Constancia Situación Fiscal', estado: 'pendiente', categoria: 'solicitante' },
-            'ACTA_NAC_SOLICITANTE': { nombre: 'Acta de Nacimiento', estado: 'pendiente', categoria: 'solicitante' },
-            'NSS_SOLICITANTE': { nombre: 'Número de Seguro Social', estado: 'pendiente', categoria: 'solicitante' },
-            'INE_PROPIETARIO': { nombre: 'INE Propietario', estado: 'pendiente', categoria: 'propietario' },
-            'ACTA_MAT_PROPIETARIO': { nombre: 'Acta de Matrimonio', estado: 'pendiente', categoria: 'propietario' },
-            'ESCRITURA': { nombre: 'Escritura Pública', estado: 'pendiente', categoria: 'inmueble', permitirExtras: true },
-            'PREDIAL': { nombre: 'Boleta Predial 2025', estado: 'pendiente', categoria: 'inmueble' },
-            'AGUA': { nombre: 'Recibo de Agua', estado: 'pendiente', categoria: 'inmueble' },
-            'LUZ': { nombre: 'Recibo de Luz (CFE)', estado: 'pendiente', categoria: 'inmueble' },
-            'PLANO': { nombre: 'Plano Arquitectónico', estado: 'pendiente', categoria: 'inmueble' }
-        };
-        // Guardamos la plantilla base en la BD para que sea permanente
-        await docRef.set({ checklist: plantillaBase }, { merge: true });
-    }
-    // -------------------------------------------------------------
-
-    // 2. DEFINIR RUTA Y SUBIR
-    // Volvemos a leer 'checklist' por si acabamos de crearlo, para obtener la categoría correcta
-    // Nota: Si el itemKey es nuevo (ej. SOLICITUD_INFONAVIT), la categoría vendrá del frontend en el futuro, 
-    // pero por seguridad usamos un fallback
+    // 2. DEFINIR RUTA Y SUBIR A STORAGE
     const checklistActual = (data.checklist && Object.keys(data.checklist).length > 0) ? data.checklist : {};
-    const categoriaItem = checklistActual[itemKey]?.categoria || 'general'; // Fallback a 'general' si es nuevo
+    const categoriaItem = checklistActual[itemKey]?.categoria || 'general';
 
     const safeFileName = nombreArchivo.replace(/[^a-zA-Z0-9.-]/g, '_'); 
     const rutaArchivo = `${tipoTramite}/${expedienteId}/${categoriaItem}/${safeFileName}`;
@@ -101,13 +75,14 @@ exports.handler = async (event, context) => {
 
     const [signedUrl] = await file.getSignedUrl({ action: 'read', expires: '01-01-2030' });
 
-    // 3. ACTUALIZAR BD (Solo el campo específico)
+    // 3. ACTUALIZAR BD (CORRECCIÓN CRÍTICA: USAR 'estatus' NO 'estado')
     await docRef.update({
-      [`checklist.${itemKey}.estado`]: 'en_revision',
+      [`checklist.${itemKey}.estatus`]: 'revision', // UNIFICADO A 'estatus'
       [`checklist.${itemKey}.driveLink`]: signedUrl, 
       [`checklist.${itemKey}.fileId`]: rutaArchivo, 
       [`checklist.${itemKey}.storageType`]: 'gcs_v1',
-      // Aseguramos que la categoría se guarde también por si es un item nuevo
+      [`checklist.${itemKey}.fechaCarga`]: new Date().toISOString(),
+      // Aseguramos la categoría
       [`checklist.${itemKey}.categoria`]: categoriaItem !== 'general' ? categoriaItem : 'solicitante' 
     });
 
