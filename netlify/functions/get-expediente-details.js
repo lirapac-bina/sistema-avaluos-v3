@@ -23,7 +23,6 @@ const db = admin.firestore();
 
 exports.handler = async (event, context) => {
   try {
-    // Permitir CORS preflight (OPTIONS)
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -50,7 +49,7 @@ exports.handler = async (event, context) => {
 
     if (!id) return { statusCode: 400, body: 'Falta ID' };
 
-    // 1. Buscar Documento (Prioridad Avaluos)
+    // 1. Buscar Documento
     let docRef = db.collection('expedientes_avaluos').doc(id);
     let doc = await docRef.get();
     
@@ -69,40 +68,24 @@ exports.handler = async (event, context) => {
 
     let data = doc.data();
     
-    // --- 2. LÓGICA DE AUTO-REPARACIÓN (CONSERVADA) ---
-    let updates = {};
+    // --- 2. LÓGICA DE AUTO-REPARACIÓN (DESACTIVADA POR SEGURIDAD) ---
+    // Esta lógica estaba causando duplicados al inyectar documentos viejos.
+    // El sistema de creación ya se encarga de esto.
+    /* let updates = {};
     let needsUpdate = false;
     const tramite = (data.tipoTramite || '').toUpperCase();
 
     if (tramite.includes('INFONAVIT')) {
-        if (!data.checklist) { 
-            updates['checklist'] = {}; 
-            data.checklist = {}; 
-            needsUpdate = true; 
-        }
-        if (!data.checklist['SOLICITUD_INFONAVIT']) {
-            updates['checklist.SOLICITUD_INFONAVIT'] = {
-                nombre: 'Solicitud Infonavit', estatus: 'pendiente', categoria: 'solicitante', opcional: false, fechaCreacionAuto: new Date().toISOString()
-            };
-            needsUpdate = true;
-        }
-        if (!data.checklist['SOLICITUD_AVALUO']) {
-            updates['checklist.SOLICITUD_AVALUO'] = {
-                nombre: 'Solicitud Avalúo', estatus: 'pendiente', categoria: 'solicitante', opcional: false, fechaCreacionAuto: new Date().toISOString()
-            };
-            needsUpdate = true;
-        }
+        // ... Código comentado para evitar inyección zombie ...
     }
 
     if (needsUpdate) {
-        console.log(`[Auto-Repair] Reparando expediente ${id}`);
         await docRef.update(updates);
-        // Recargar para tener lo último
         const newDoc = await docRef.get();
         data = newDoc.data();
     }
+    */
 
-    // --- RESPUESTA FINAL (AQUÍ ESTÁ EL CAMBIO CLAVE) ---
     return {
       statusCode: 200,
       headers: { 
@@ -116,9 +99,6 @@ exports.handler = async (event, context) => {
         fechaCreacion: data.fechaCreacion,
         checklist: data.checklist || {},
         telefono: data.telefono || "",
-        
-        // ¡ESTA ES LA LÍNEA MÁGICA!
-        // Le mandamos 'entidad' al portal. Si no existe, usamos 'GLOBAL' por seguridad.
         entidad: data.entidad || data.ubicacion || 'GLOBAL' 
       })
     };

@@ -626,7 +626,8 @@
              if (!catalogoData[currentEntidad] && entidadesReales.length > 0) currentEntidad = entidadesReales[0];
              
              let optEntidades = ``;
-             entidadesReales.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800" ${ent === currentEntidad ? 'selected' : ''}>${ent}</option>`);
+             // CORRECCIÓN 1: Quitamos guiones bajos visualmente en la lista de Entidades
+             entidadesReales.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800" ${ent === currentEntidad ? 'selected' : ''}>${ent.replace(/_/g, ' ')}</option>`);
 
              let serviciosReales = [];
              if(currentEntidad && catalogoData[currentEntidad]) {
@@ -635,7 +636,8 @@
              }
              
              let optServicios = ``;
-             serviciosReales.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800" ${ser === currentServicio ? 'selected' : ''}>${ser}</option>`);
+             // CORRECCIÓN 2: Quitamos guiones bajos visualmente en la lista de Trámites
+             serviciosReales.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800" ${ser === currentServicio ? 'selected' : ''}>${ser.replace(/_/g, ' ')}</option>`);
              
              container.innerHTML = `
              <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
@@ -673,7 +675,7 @@
         }
 
         async function nuevaEntidad() {
-            const nombre = prompt("Nombre de la nueva Entidad Federativa (ej. VERACRUZ):");
+            const nombre = prompt("Nombre de la nueva Entidad Federativa:");
             if(!nombre) return;
             const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
             if(catalogoData[key]) return alert("Esa entidad ya existe.");
@@ -697,7 +699,7 @@
 
         async function nuevoServicio() {
             if(!currentEntidad) return alert("Selecciona una Entidad primero.");
-            const nombre = prompt(`Nuevo trámite para ${currentEntidad} (ej. HIPOTECARIO):`);
+            const nombre = prompt(`Nuevo trámite para ${currentEntidad} (Nombre del trámite/servicio:)`);
             if(!nombre) return;
             const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
             if(catalogoData[currentEntidad][key]) return alert("Este trámite ya existe.");

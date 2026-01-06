@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// --- 1. INICIALIZACIÓN BLINDADA ---
+// --- 1. INICIALIZACIÓN ---
 if (admin.apps.length === 0) {
     let serviceAccount;
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -26,35 +26,16 @@ function normalizar(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
 }
 
-// --- PLANTILLA DE RESPALDO (LIGAS CORRECTAS FIJAS) ---
+// Función segura para leer listas
+function obtenerListaSegura(obj, key) {
+    if (!obj) return [];
+    return obj[key] || obj[key.toUpperCase()] || obj[key.charAt(0).toUpperCase() + key.slice(1)] || [];
+}
+
 const PLANTILLA_RESPALDO = {
-    solicitante: [
-        { nombre: 'Identificación Oficial (INE/Pasaporte)', id: 'INE', obligatorio: true },
-        { nombre: 'CURP', id: 'CURP', obligatorio: true },
-        { nombre: 'Constancia de Situación Fiscal', id: 'RFC', obligatorio: true },
-        { nombre: 'Número de Seguridad Social', id: 'NSS', obligatorio: true },
-        // Ligas fijas aquí por seguridad
-        { 
-            nombre: 'Solicitud Avalúo', 
-            id: 'SOL_AVALUO', 
-            obligatorio: true,
-            urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
-        },
-        { 
-            nombre: 'Solicitud Infonavit', 
-            id: 'SOL_INFONAVIT', 
-            obligatorio: true,
-            urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
-        }
-    ],
-    propietario: [
-        { nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true },
-        { nombre: 'Identificación Oficial Propietario', id: 'INE_PROP', obligatorio: true }
-    ],
-    inmueble: [
-        { nombre: 'Boleta Predial', id: 'PREDIAL', obligatorio: true },
-        { nombre: 'Recibo de Agua', id: 'AGUA', obligatorio: true }
-    ]
+    solicitante: [{ nombre: 'Identificación Oficial', id: 'INE', obligatorio: true }],
+    propietario: [{ nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true }],
+    inmueble: [{ nombre: 'Boleta Predial', id: 'PREDIAL', obligatorio: true }]
 };
 
 exports.handler = async (event, context) => {
@@ -65,146 +46,136 @@ exports.handler = async (event, context) => {
         
         const entidad = normalizar(data.entidad || 'GLOBAL'); 
         const tramite = normalizar(data.tipoTramite || 'AVALUO');
-        
         const numSol = parseInt(data.numSolicitantes) || 1;
         const numProp = parseInt(data.numPropietarios) || 1;
 
-        console.log(`🔨 Creando Expediente: ${entidad} - ${tramite} (${numSol} Sol / ${numProp} Prop)`);
+        console.log(`🔨 Creando Expediente: ${entidad} - ${tramite}`);
 
-        // --- 2. INTENTAR LEER DE FIREBASE ---
+        // --- 2. LEER DE FIREBASE ---
         let plantilla = null;
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
             const docSnap = await configRef.get();
-            
             if (docSnap.exists) {
                 const todo = docSnap.data().requisitos || docSnap.data();
-                if (todo[entidad] && todo[entidad][tramite]) {
-                    plantilla = todo[entidad][tramite];
-                } else if (todo['GLOBAL'] && todo['GLOBAL'][tramite]) {
-                    plantilla = todo['GLOBAL'][tramite];
+                let plantillaEntidad = todo[entidad] || todo[Object.keys(todo).find(k => normalizar(k) === entidad)];
+                if (!plantillaEntidad) {
+                    plantillaEntidad = todo['GLOBAL'] || todo[Object.keys(todo).find(k => normalizar(k) === 'GLOBAL')];
+                }
+                if (plantillaEntidad) {
+                    plantilla = plantillaEntidad[tramite] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramite)];
                 }
             }
-        } catch (e) { console.error("Error leyendo config:", e); }
+        } catch (e) { console.error("Error config:", e); }
 
         if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
         // --- 3. CONSTRUIR CHECKLIST ---
         let checklistFinal = {};
-
+        
         const procesarLista = (origen, cantidad, rol) => {
             if (!origen) return;
-            // Soporte híbrido para Arrays y Mapas de Firebase
             let items = Array.isArray(origen) ? origen : Object.values(origen);
-
             const loop = cantidad > 0 ? cantidad : 1;
+
             for (let i = 1; i <= loop; i++) {
                 items.forEach(item => {
                     if (!item.nombre) return;
                     
                     const suffixID = loop > 1 ? `_${i}` : '';
-                    const cleanID = item.id ? normalizar(item.id).replace(/\s+/g, '_') : `DOC_${Math.floor(Math.random()*99999)}`;
-                    const key = `${cleanID}_${rol.toUpperCase()}${suffixID}`;
-                    const suffixNombre = loop > 1 ? ` (${rol} ${i})` : '';
+                    let cleanID = item.id ? normalizar(item.id).replace(/\s+/g, '_') : `DOC_${Math.floor(Math.random()*99999)}`;
+                    const nNorm = normalizar(item.nombre);
+                    let esDeSistema = false; 
                     
-                    // Inyectar URL si es solicitud y no la trae (Fallback inteligente)
-                    let urlFinal = item.urlFormato || null;
-                    if (!urlFinal) {
-                        const n = item.nombre.toUpperCase();
-                        // Solo asignamos si coincide nombre Y trámite
-                        if (n.includes('SOLICITUD AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
-                        if (n.includes('SOLICITUD INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
+                    // --- DETECCIÓN DE SISTEMA ---
+                    
+                    if (nNorm.includes('SOLICITUD') && nNorm.includes('AVAL')) {
+                        cleanID = 'SOLICITUD_AVALUO_SYS'; 
+                        esDeSistema = true;
+                    }
+                    else if (nNorm.includes('SOLICITUD') && nNorm.includes('INFONAVIT')) {
+                        cleanID = 'SOLICITUD_INFONAVIT_SYS';
+                        esDeSistema = true;
+                    }
+                    // CORRECCIÓN MAESTRA: SOLO SI ES SOLICITANTE ASIGNAMOS LA LLAVE MAESTRA
+                    else if (nNorm.includes('CORREO') && rol.toLowerCase() === 'solicitante') {
+                        cleanID = 'CORREO_ELECTRONICO_AUTO';
+                        esDeSistema = true;
                     }
 
-                    // Detectar si es correo para asignarle tipo TXT
-                    const esCorreo = item.nombre.toLowerCase().includes('correo');
-                    
-                    checklistFinal[key] = {
-                        id: item.id || cleanID,
-                        nombre: item.nombre + suffixNombre,
+                    // --- LLAVE EXACTA PARA SISTEMA, DINÁMICA PARA EL RESTO ---
+                    let finalKey = esDeSistema ? cleanID : `${cleanID}_${rol.toUpperCase()}${suffixID}`;
+
+                    // Caso borde: Múltiples solicitantes con correo
+                    if (esDeSistema && cleanID === 'CORREO_ELECTRONICO_AUTO' && i > 1) {
+                         finalKey = `${cleanID}_${i}`; 
+                    }
+
+                    checklistFinal[finalKey] = {
+                        id: cleanID,
+                        nombre: item.nombre + (loop > 1 && !esDeSistema ? ` (${rol} ${i})` : ''),
                         categoria: rol.toLowerCase(), 
                         obligatorio: item.obligatorio !== false, 
                         estatus: 'PENDIENTE',
-                        tipo: esCorreo ? 'TXT' : 'documento',
-                        urlFormato: urlFinal,
+                        tipo: nNorm.includes('CORREO') ? 'TXT' : 'documento',
+                        urlFormato: item.urlFormato || null, 
                         fecha: new Date().toISOString()
                     };
                 });
             }
         };
 
-        procesarLista(plantilla.solicitante, numSol, 'Solicitante');
-        procesarLista(plantilla.propietario, numProp, 'Propietario');
-        procesarLista(plantilla.inmueble, 1, 'Inmueble');
+        procesarLista(obtenerListaSegura(plantilla, 'solicitante'), numSol, 'Solicitante');
+        procesarLista(obtenerListaSegura(plantilla, 'propietario'), numProp, 'Propietario');
+        procesarLista(obtenerListaSegura(plantilla, 'inmueble'), 1, 'Inmueble');
 
-        // --- 4. INYECCIONES DE SISTEMA (SOLO SI FALTAN O SON OBLIGATORIAS DE SISTEMA) ---
+        // --- 4. INYECCIONES DE SISTEMA (Solo si faltan) ---
 
-        // A) Mapa (Siempre va)
+        const existeKey = (key) => !!checklistFinal[key];
+
+        // A) Mapa
         checklistFinal['UBICACION_MAPS'] = { 
-            nombre: 'Ubicación del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa' 
+            nombre: 'Ubicación del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' 
         };
 
-        // B) Correo (Solo si NO existe ya en la lista traída de Firebase)
-        const yaExisteCorreo = Object.values(checklistFinal).some(item => 
-            item.nombre.toUpperCase().includes('CORREO')
-        );
-        
-        if (!yaExisteCorreo) {
+        // B) Correo (Si no venía en la BD del solicitante)
+        if (!existeKey('CORREO_ELECTRONICO_AUTO')) {
             checklistFinal['CORREO_ELECTRONICO_AUTO'] = { 
-                nombre: 'Correo electrónico', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT' 
+                nombre: 'Correo electrónico', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT', id: 'CORREO_ELECTRONICO_AUTO' 
             };
         }
 
-        // C) FOTOS (NUEVA ESTRUCTURA)
-        // 1. Fachada (Obligatoria, única)
-        checklistFinal['FOTO_FACHADA'] = {
-            nombre: 'Foto de Fachada',
-            categoria: 'inmueble',
-            estatus: 'PENDIENTE',
-            obligatorio: true,
-            tipo: 'imagen',
-            seccion: 'FOTOS' // Marcador para agrupar visualmente en portal
+        // C) Fotos
+        checklistFinal['FOTO_FACHADA'] = { 
+            nombre: 'Foto de Fachada', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'imagen', seccion: 'FOTOS', id: 'FOTO_FACHADA' 
         };
-        
-        // 2. Interiores (Opcional, Contenedor Lógico para múltiples)
-        checklistFinal['FOTOS_INTERIORES_GENERAL'] = {
-            nombre: 'Fotografías Interiores y Entorno',
-            categoria: 'inmueble',
-            estatus: 'PENDIENTE',
-            obligatorio: false,
-            tipo: 'galeria', // Tipo especial
-            seccion: 'FOTOS'
+        checklistFinal['FOTOS_INTERIORES_GENERAL'] = { 
+            nombre: 'Fotografías Interiores y Entorno', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: false, tipo: 'galeria', seccion: 'FOTOS', id: 'FOTOS_INTERIORES_GENERAL' 
         };
 
-        // D) Detalles (Solo ciertos trámites)
-        if (tramite.includes('INFONAVIT') || tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
-            checklistFinal['DETALLES_INMUEBLE'] = { 
-                nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form' 
-            };
-        }
-        
-        // E) SOLICITUDES EXTRA (Si no vinieron del admin y son necesarias)
-        // Verificamos si ya existen por nombre clave antes de inyectar
-        const tieneSolAvaluo = Object.values(checklistFinal).some(i => i.nombre.toUpperCase().includes('SOLICITUD AVAL'));
-        const tieneSolInfo = Object.values(checklistFinal).some(i => i.nombre.toUpperCase().includes('SOLICITUD INFO'));
-
-        if (tramite.includes('AVALUO') && !tieneSolAvaluo) {
-             checklistFinal['SOLICITUD_AVALUO_SYS'] = { 
-                nombre: 'Solicitud Avalúo', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
-                urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
-            };
-        }
-        
-        if (tramite.includes('INFONAVIT') && !tieneSolInfo) {
-             checklistFinal['SOLICITUD_INFONAVIT_SYS'] = { 
-                nombre: 'Solicitud Infonavit', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
-                urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
-            };
+        // D) Solicitudes Faltantes (Si la BD no las tenía)
+        if (tramite.includes('INFONAVIT')) {
+            if (!existeKey('SOLICITUD_AVALUO_SYS')) {
+                checklistFinal['SOLICITUD_AVALUO_SYS'] = {
+                    id: 'SOLICITUD_AVALUO_SYS',
+                    nombre: 'Solicitud Avalúo', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
+                    urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
+                };
+            }
+            if (!existeKey('SOLICITUD_INFONAVIT_SYS')) {
+                checklistFinal['SOLICITUD_INFONAVIT_SYS'] = {
+                    id: 'SOLICITUD_INFONAVIT_SYS',
+                    nombre: 'Solicitud Infonavit', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
+                    urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
+                };
+            }
+            checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
+        } else if (tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
+             checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
         }
 
         // --- 5. GUARDAR ---
         const nombreClienteFinal = data.nombre || "Cliente Nuevo";
-        
         const nuevoExpediente = {
             ...data,
             nombreCliente: nombreClienteFinal, 

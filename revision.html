@@ -304,9 +304,8 @@
         let selectedReqKey = null;
         let expedienteId = null;
         
-        // --- VARIABLES DE GALERÍA ---
-        let galleryImages = []; // Almacena URLs de la galería actual
-        let currentPhotoIndex = 0; // Índice de la foto visible
+        let galleryImages = []; 
+        let currentPhotoIndex = 0; 
 
         document.addEventListener('DOMContentLoaded', () => {
             const datosLocal = localStorage.getItem('expediente_activo');
@@ -318,15 +317,17 @@
 
             const infoBasica = JSON.parse(datosLocal);
             expedienteId = infoBasica.id; 
+            
             document.getElementById('header-client-name').innerText = infoBasica.cliente || "Sin Nombre";
             document.getElementById('header-client-name').classList.remove('animate-pulse');
             document.getElementById('header-date').innerText = infoBasica.fechaDisplay || "--/--/----";
             document.getElementById('header-folio').innerText = infoBasica.id.substring(0, 8);
-            document.getElementById('header-tramite').innerText = infoBasica.tramite || "TRÁMITE";
+            
+            // CORRECCIÓN CONFIRMADA: Reemplaza guiones bajos por espacios
+            document.getElementById('header-tramite').innerText = (infoBasica.tramite || "TRÁMITE").replace(/_/g, ' ');
 
             fetchDetalles(infoBasica.id);
 
-            // EVENTO DE TECLADO PARA NAVEGACIÓN
             document.addEventListener('keydown', (e) => {
                 const modal = document.getElementById('zoom-modal');
                 if (!modal.classList.contains('hidden')) {
@@ -336,10 +337,10 @@
                 }
             });
         });
-
+        
         async function fetchDetalles(id) {
             try {
-                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}&t=${Date.now()}`); // Cache-buster agregado
+                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}&t=${Date.now()}`); 
                 const data = await res.json();
                 transformarDatos(id, data);
                 renderCurrentGroup();
@@ -359,7 +360,6 @@
 
             const checklist = data.checklist || {};
             
-            // 1. RECOLECTAR FOTOS EXTRA "AGRESIVAMENTE"
             let fotosExtras = [];
             Object.keys(checklist).forEach(k => {
                 if(k.includes('FOTO_EXTRA_')) {
@@ -371,11 +371,11 @@
                 }
             });
 
-            // 2. PROCESAR RESTO DE ITEMS
             Object.keys(checklist).forEach(key => {
                 if(key.includes('FOTO_EXTRA_')) return; 
 
                 const item = checklist[key];
+                
                 let cat = item.categoria || 'solicitante';
                 if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
 
@@ -389,7 +389,7 @@
                 let fotosGaleria = null;
 
                 if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
-                else if (item.textoPreview) tipoArchivo = 'TXT';
+                else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (key === 'FOTOS_INTERIORES_GENERAL') {
                     tipoArchivo = 'GALERIA';
                     fotosGaleria = fotosExtras; 
@@ -468,8 +468,7 @@
                 itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
                 itemDiv.style.animationDelay = `${index * 0.05}s`;
                 
-                // HABILITAR CLICK SI HAY FOTOS EN GALERÍA
-                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending') {
+                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT') { // CORRECCIÓN: TXT siempre clickeable
                     itemDiv.onclick = () => seleccionarRequisito(req);
                 } else {
                     itemDiv.classList.add('cursor-not-allowed'); itemDiv.title = "Aún no suben este archivo";
@@ -494,7 +493,6 @@
                 document.getElementById(id)?.classList.add('hidden');
             });
 
-            // --- CASO 1: MAPA ---
             if (req.key === 'UBICACION_MAPS') {
                 if (req.coordenadas) {
                     document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
@@ -507,12 +505,9 @@
                 }
             }
             
-            // --- CASO 2: GALERÍA DE FOTOS (GRID) ---
             else if (req.tipo === 'GALERIA') {
                 const grid = document.getElementById('gallery-grid');
                 const count = document.getElementById('gallery-count');
-                
-                // GUARDAR REFERENCIA GLOBAL DE ESTA GALERÍA
                 galleryImages = req.fotos || [];
 
                 if (req.fotos && req.fotos.length > 0) {
@@ -533,7 +528,6 @@
                 }
             }
 
-            // --- CASO 3: TEXTO PURO ---
             else if (req.tipo === 'TXT') {
                 const txtArea = document.getElementById('text-viewer');
                 const contenido = req.textoPreview || (req.url ? "Cargando contenido..." : "Sin texto registrado");
@@ -541,20 +535,17 @@
                 txtArea.classList.remove('hidden');
             }
 
-            // --- CASO 4: PDF ---
             else if (req.tipo === 'PDF' && req.url) {
                 const pdf = document.getElementById('real-pdf');
                 pdf.src = req.url;
                 pdf.classList.remove('hidden');
             }
             
-            // --- CASO 5: IMAGEN ÚNICA ---
             else if (req.url) {
                 const img = document.getElementById('real-image');
                 img.src = req.url;
                 img.classList.remove('hidden');
                 document.getElementById('zoom-overlay').classList.remove('hidden');
-                // Almacenar como galería de 1 sola foto para que zoom funcione
                 galleryImages = [{ url: req.url, nombre: req.nombre }];
             } 
             
@@ -576,17 +567,23 @@
             try {
                 if(nuevoEstado === 'rechazado') { btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnConfirm.disabled = true; } 
                 else { btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnValid.disabled = true; }
+                
                 const res = await fetch('/.netlify/functions/update-status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ expedienteId: expediente.id, itemKey: selectedReqKey, nuevoEstado: nuevoEstado, motivo: motivo }) });
                 if(!res.ok) throw new Error("Error en servidor");
+                
                 const currentKey = groupKeys[activeGroupIndex];
                 const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
+                
                 if(item) item.status = nuevoEstado === 'rechazado' ? 'rejected' : 'valid';
-                renderCurrentGroup();
-                document.getElementById('decision-bar').classList.add('translate-y-full');
+                
+                renderCurrentGroup(); 
+                document.getElementById('decision-bar').classList.add('translate-y-full'); 
                 if(nuevoEstado === 'rechazado') cerrarRechazo();
+
             } catch(e) { console.error(e); alert("Error al guardar estado: " + e.message); } 
             finally { btnConfirm.innerHTML = 'Confirmar Descarte'; btnConfirm.disabled = false; btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; btnValid.disabled = false; }
         }
+        
         function validarDocumento() { if(selectedReqKey && confirm("¿Aprobar documento?")) actualizarEstadoBackend('validado'); }
         function confirmarRechazo() { if(selectedReqKey) { const motivo = document.getElementById('reject-reason').value; if(motivo) actualizarEstadoBackend('rechazado', motivo); else alert("Escribe un motivo"); } }
         function abrirRechazo() { document.getElementById('reject-modal').classList.remove('hidden'); document.getElementById('reject-modal').classList.add('flex'); const container = document.getElementById('lista-errores'); container.innerHTML = ''; const errores = selectedReqKey === 'UBICACION_MAPS' ? [{ t: 'Ubicación Incorrecta', d: 'El pin no coincide con el inmueble.' }] : [{ t: 'Ilegible', d: 'Imagen borrosa.' }, { t: 'Incompleto', d: 'Faltan páginas.' }, { t: 'Vencido', d: 'Documento caducado.' }]; errores.forEach(e => { const btn = document.createElement('button'); btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2"; btn.innerHTML = `⚠️ <b>${e.t}:</b> ${e.d}`; btn.onclick = () => usarError(`${e.t}: ${e.d}`); container.appendChild(btn); }); }
@@ -595,13 +592,9 @@
         function agregarError() { const nuevo = prompt("Escribe el nuevo motivo:"); if(nuevo) { usarError(nuevo); } }
         function reenviarLiga() { const msg = `Hola ${expediente.cliente}, te reenvío la liga de tu expediente ${expediente.id}.`; window.open(`https://wa.me/${expediente.telefono}?text=${encodeURIComponent(msg)}`, '_blank'); }
         
-        // --- FUNCIONES DE ZOOM Y NAVEGACIÓN ---
-        
-        // Abre el zoom desde la vista previa (imagen única)
         function abrirZoom(url = null, isSingle = false) { 
             if(selectedReqKey === 'UBICACION_MAPS') return;
             if(isSingle) {
-                // Si viene de la vista previa, usamos la imagen que ya está ahí
                 const src = document.getElementById('real-image').src;
                 if(src && !document.getElementById('real-image').classList.contains('hidden')) {
                     galleryImages = [{url: src}];
@@ -609,47 +602,9 @@
                 }
             }
         }
-
-        function abrirGaleriaIndex(index) {
-            currentPhotoIndex = index;
-            updateModalImage();
-            document.getElementById('zoom-modal').classList.remove('hidden');
-        }
-
-        function updateModalImage() {
-            if(galleryImages.length === 0) return;
-            const photo = galleryImages[currentPhotoIndex];
-            document.getElementById('zoom-image').src = photo.url;
-            
-            // Actualizar botones
-            const btnPrev = document.getElementById('btn-prev-photo');
-            const btnNext = document.getElementById('btn-next-photo');
-            const counter = document.getElementById('zoom-counter');
-
-            if (galleryImages.length > 1) {
-                btnPrev.classList.remove('hidden');
-                btnNext.classList.remove('hidden');
-                counter.classList.remove('hidden');
-                counter.innerText = `${currentPhotoIndex + 1} / ${galleryImages.length}`;
-                
-                // Opacidad si es inicio/fin (opcional, aquí los oculto si se prefiere ciclo infinito o tope)
-                btnPrev.style.opacity = currentPhotoIndex === 0 ? '0.3' : '1';
-                btnNext.style.opacity = currentPhotoIndex === galleryImages.length - 1 ? '0.3' : '1';
-            } else {
-                btnPrev.classList.add('hidden');
-                btnNext.classList.add('hidden');
-                counter.classList.add('hidden');
-            }
-        }
-
-        function navGaleria(direction) {
-            const newIndex = currentPhotoIndex + direction;
-            if(newIndex >= 0 && newIndex < galleryImages.length) {
-                currentPhotoIndex = newIndex;
-                updateModalImage();
-            }
-        }
-
+        function abrirGaleriaIndex(index) { currentPhotoIndex = index; updateModalImage(); document.getElementById('zoom-modal').classList.remove('hidden'); }
+        function updateModalImage() { if(galleryImages.length === 0) return; const photo = galleryImages[currentPhotoIndex]; document.getElementById('zoom-image').src = photo.url; const btnPrev = document.getElementById('btn-prev-photo'); const btnNext = document.getElementById('btn-next-photo'); const counter = document.getElementById('zoom-counter'); if (galleryImages.length > 1) { btnPrev.classList.remove('hidden'); btnNext.classList.remove('hidden'); counter.classList.remove('hidden'); counter.innerText = `${currentPhotoIndex + 1} / ${galleryImages.length}`; btnPrev.style.opacity = currentPhotoIndex === 0 ? '0.3' : '1'; btnNext.style.opacity = currentPhotoIndex === galleryImages.length - 1 ? '0.3' : '1'; } else { btnPrev.classList.add('hidden'); btnNext.classList.add('hidden'); counter.classList.add('hidden'); } }
+        function navGaleria(direction) { const newIndex = currentPhotoIndex + direction; if(newIndex >= 0 && newIndex < galleryImages.length) { currentPhotoIndex = newIndex; updateModalImage(); } }
         function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
         function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
     </script>
