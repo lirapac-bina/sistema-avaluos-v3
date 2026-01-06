@@ -442,14 +442,54 @@
             document.getElementById('loading-card').classList.add('hidden');
             document.getElementById('main-container').classList.remove('hidden');
             document.getElementById('cliente-nombre').textContent = data.nombreCliente || data.cliente || "Cliente Leezar";
-            
             const fecha = data.fechaCreacion ? new Date(data.fechaCreacion).toLocaleDateString('es-MX') : 'Hoy';
-            
-            // CORRECCIÓN APLICADA AQUÍ ABAJO (Faltaban los ${ })
-            document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${(data.tipoTramite || 'Trámite').replace(/_/g, ' ')}</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
+            document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">(data.tipoTramite || 'Trámite').replace(/_/g, ' ')</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
 
             const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
-            // ... resto de la función sigue igual
+            Object.values(containers).forEach(c => c.innerHTML = '');
+            const fotoContainer = document.getElementById('list-fotos'); fotoContainer.innerHTML = ''; 
+
+            let itemsArray = Object.entries(data.checklist || {});
+            itemsArray.forEach(entry => { 
+                let score = 2;
+                if(entry[1].estatus === 'rechazado') score = 0;
+                else if(entry[1].estatus === 'pendiente') score = 1;
+                entry[1]._sortVal = score;
+            });
+            itemsArray.sort((a, b) => a[1]._sortVal - b[1]._sortVal);
+
+            totalRequisitos = 0; completados = 0; let revisionCount = 0; let rechazados = 0;
+            let hasExtraPhotos = false;
+            
+            itemsArray.forEach(([key, item]) => {
+                const nombreMostrar = item.nombre || key.replace(/_/g, ' '); 
+                const estatus = (item.estatus || 'pendiente').toLowerCase();
+                const categoria = item.categoria || 'solicitante';
+                const esOpcional = item.obligatorio === false; 
+
+                if (key.toUpperCase().includes('COORDENADAS') && key !== 'UBICACION_MAPS') return;
+
+                if (key === 'UBICACION_MAPS') {
+                    document.getElementById('card-ubicacion').classList.remove('hidden');
+                    const btnEditar = document.getElementById('btn-editar-mapa');
+                    const msgValidado = document.getElementById('msg-mapa-validado');
+                    const actionsDiv = document.getElementById('ubicacion-actions');
+                    const successDiv = document.getElementById('ubicacion-success');
+
+                    if(estatus === 'revision' || estatus === 'validado') {
+                         actionsDiv.classList.add('hidden');
+                         successDiv.classList.remove('hidden');
+                         document.getElementById('coordenadas-display').textContent = "Ubicación Registrada";
+                         if (estatus === 'validado') { btnEditar.classList.add('hidden'); msgValidado.classList.remove('hidden'); } 
+                         else { btnEditar.classList.remove('hidden'); msgValidado.classList.add('hidden'); }
+                    } else {
+                        actionsDiv.classList.remove('hidden');
+                        successDiv.classList.add('hidden');
+                    }
+                    if(!esOpcional) { totalRequisitos++; if(estatus==='validado') completados++; if(estatus==='revision') revisionCount++; }
+                    if(estatus==='rechazado') rechazados++;
+                    return; 
+                }
 
                 if (key === 'DETALLES_INMUEBLE' || key.includes('DETALLES')) {
                     document.getElementById('card-detalles').classList.remove('hidden');
