@@ -81,6 +81,13 @@
                     <button onclick="location.reload()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" title="Recargar datos">
                         <span class="material-symbols-rounded text-xl">refresh</span>
                     </button>
+
+                    <div id="action-container" class="hidden ml-4">
+                    <button onclick="abrirModalAsignacion()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center gap-2 animate-bounce">
+                    <span class="material-symbols-rounded">assignment_ind</span>
+                    ASIGNAR A CAPTURA
+                    </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -429,9 +436,29 @@
             const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
             document.getElementById('carousel-title').innerText = titles[currentKey];
 
-            let valid = items.filter(i => i.status === 'valid').length;
+// --- BLOQUE CORREGIDO DE PROGRESO ---
+            
+            // 1. Contar documentos válidos (Acepta 'valid' Y 'validado')
+            let valid = items.filter(i => i.status === 'valid' || i.estatus === 'validado').length;
             let total = items.length;
             let percent = total > 0 ? (valid / total) * 100 : 0;
+            
+            // 2. Actualizar Barra
+            const progressBar = document.getElementById('group-progress-bar');
+            progressBar.style.width = `${percent}%`;
+            document.getElementById('group-counter').innerText = `${valid}/${total}`;
+
+            // 3. Color Verde si está completo
+            if (percent === 100) {
+                progressBar.classList.remove('bg-teal-500');
+                progressBar.classList.add('bg-green-500');
+            } else {
+                progressBar.classList.add('bg-teal-500');
+                progressBar.classList.remove('bg-green-500');
+            }
+
+            // 4. VERIFICACIÓN GLOBAL (¿Ya acabamos todo el expediente?)
+            verificarProgresoGlobal();
             
             document.getElementById('group-progress-bar').style.width = `${percent}%`;
             document.getElementById('group-counter').innerText = `${valid}/${total}`;
@@ -607,6 +634,148 @@
         function navGaleria(direction) { const newIndex = currentPhotoIndex + direction; if(newIndex >= 0 && newIndex < galleryImages.length) { currentPhotoIndex = newIndex; updateModalImage(); } }
         function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
         function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
+
+// --- FUNCIONES DE ASIGNACIÓN (NUEVAS) ---
+
+        function verificarProgresoGlobal() {
+            if (!expediente || !expediente.grupos) return;
+
+            let totalGlobal = 0;
+            let validGlobal = 0;
+
+            // Recorrer todos los grupos para ver si falta algo
+            Object.values(expediente.grupos).forEach(grupo => {
+                grupo.forEach(doc => {
+                    totalGlobal++;
+                    // Checa ambos posibles valores de estatus
+                    if (doc.status === 'valid' || doc.estatus === 'validado') {
+                        validGlobal++;
+                    }
+                });
+            });
+
+            const btnContainer = document.getElementById('action-container');
+            if (btnContainer) {
+                // Si hay documentos y todos están validados -> Mostrar botón
+                if (totalGlobal > 0 && validGlobal === totalGlobal) {
+                    btnContainer.classList.remove('hidden');
+                } else {
+                    btnContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        let capturistaSeleccionado = null;
+
+        function abrirModalAsignacion() {
+            document.getElementById('modal-asignar').classList.remove('hidden');
+            cargarCapturistasReales();
+        }
+
+        async function cargarCapturistasReales() {
+            const lista = document.getElementById('lista-capturistas');
+            lista.innerHTML = '<div class="text-center p-4"><span class="material-symbols-rounded animate-spin text-indigo-500">sync</span></div>';
+
+            try {
+                // Buscar usuarios con rol CAPTURISTA
+                const snapshot = await db.collection('usuarios').where('rol', '==', 'CAPTURISTA').get();
+                lista.innerHTML = '';
+
+                if (snapshot.empty) {
+                    lista.innerHTML = '<p class="text-xs text-red-400 text-center py-2">No hay capturistas registrados.</p>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    const inicial = (u.nombre || 'U').charAt(0).toUpperCase();
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-3 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg cursor-pointer transition-colors border border-transparent';
+                    div.onclick = () => {
+                        capturistaSeleccionado = doc.id;
+                        // Limpiar selección visual previa
+                        Array.from(lista.children).forEach(c => c.classList.remove('border-indigo-500', 'bg-indigo-50'));
+                        // Marcar actual
+                        div.classList.add('border-indigo-500', 'bg-indigo-50');
+                    };
+
+                    div.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600">${inicial}</div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">${u.nombre || 'Usuario'}</p>
+                            <p class="text-[10px] text-slate-400">${u.email}</p>
+                        </div>
+                    `;
+                    lista.appendChild(div);
+                });
+
+            } catch (e) {
+                console.error(e);
+                lista.innerHTML = '<p class="text-xs text-red-400 text-center">Error cargando lista.</p>';
+            }
+        }
+
+        async function confirmarAsignacion() {
+            if (!capturistaSeleccionado) {
+                alert("Selecciona un capturista primero.");
+                return;
+            }
+
+            const btn = document.querySelector('#modal-asignar button:last-child');
+            btn.innerText = "Asignando...";
+            btn.disabled = true;
+
+            try {
+                // CAMBIO DE ESTATUS Y ASIGNACIÓN
+                await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                    estatus: 'EN CAPTURA',
+                    capturista_asignado: capturistaSeleccionado,
+                    fecha_asignacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("Expediente asignado correctamente.");
+                window.location.href = 'dashboard.html';
+
+            } catch (e) {
+                console.error(e);
+                alert("Error al asignar.");
+                btn.innerText = "Confirmar";
+                btn.disabled = false;
+            }
+        }
+
+    
+
     </script>
+
+    <div id="modal-asignar" class="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 transform scale-100 transition-transform">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-rounded text-indigo-500">engineering</span>
+                Asignar Responsable
+            </h3>
+            <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><span class="material-symbols-rounded">close</span></button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+            Expediente validado al 100%. Selecciona quién realizará el levantamiento.
+        </p>
+
+        <div class="mb-6">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Capturistas Disponibles</label>
+            <div id="lista-capturistas" class="space-y-2 max-h-48 overflow-y-auto custom-scroll border border-slate-100 dark:border-slate-700 rounded-lg p-1">
+                <p class="text-xs text-slate-400 text-center py-4">Cargando usuarios...</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
+            <button onclick="confirmarAsignacion()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

@@ -443,7 +443,12 @@
             document.getElementById('main-container').classList.remove('hidden');
             document.getElementById('cliente-nombre').textContent = data.nombreCliente || data.cliente || "Cliente Leezar";
             const fecha = data.fechaCreacion ? new Date(data.fechaCreacion).toLocaleDateString('es-MX') : 'Hoy';
-            document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">(data.tipoTramite || 'Trámite').replace(/_/g, ' ')</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
+            document.getElementById('header-info').innerHTML = `
+            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+            ${ (data.tipoTramite || 'Trámite').replace(/_/g, ' ') }
+             </span> 
+            <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>
+            `;
 
             const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
             Object.values(containers).forEach(c => c.innerHTML = '');
@@ -773,7 +778,7 @@
 
         function cerrarModalJack() { document.getElementById('successModal').classList.add('hidden'); }
         function mostrarModalLegal(bool) { document.getElementById('dynamicPrivacyModal').style.display = bool ? 'flex' : 'none'; if(bool) cargarLegal(); }
-        function cargarLegal() { fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ document.getElementById('legal-dynamic-content').textContent = d.texto || "Cargando..."; }); }
+        function cargarLegal() { fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ document.getElementById('legal-dynamic-content').innerHTML = d.texto || "Cargando..."; }); }
         function verificarEstadoLegal() { if (!localStorage.getItem(`legal_accepted_${expedienteId}`)) { document.getElementById('dynamicPrivacyModal').style.display = 'flex'; cargarLegal(); const check = document.getElementById('acceptCheckDynamic'); const btn = document.getElementById('btnStartDynamic'); check.addEventListener('change', (e) => { btn.disabled = !e.target.checked; if(e.target.checked) { btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.add('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); } else { btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.remove('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); } }); btn.onclick = () => { localStorage.setItem(`legal_accepted_${expedienteId}`, 'true'); document.getElementById('dynamicPrivacyModal').style.display = 'none'; }; } }
 
         function cerrarDetalles() { document.getElementById('detailsModal').classList.add('hidden'); }

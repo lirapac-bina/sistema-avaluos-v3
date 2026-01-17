@@ -2,7 +2,29 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración - Ing. Leezar</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4",
+            authDomain: "sistema-hipoteca-facil.firebaseapp.com",
+            projectId: "sistema-hipoteca-facil",
+            storageBucket: "sistema-hipoteca-facil.firebasestorage.app",
+            messagingSenderId: "880781885603",
+            appId: "1:880781885603:web:8a74a7f811974940ccbf16"
+        };
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(); 
+        
+        console.log("Firebase reconectado y listo.");
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -19,9 +41,9 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <script src="js/layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -31,12 +53,11 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .uppercase-input { text-transform: uppercase; }
         
-        /* Animación de cumpleaños */
+        .birthday-bounce { animation: bounce-slow 2s infinite; }
         @keyframes bounce-slow {
             0%, 100% { transform: translateY(-5%); }
             50% { transform: translateY(5%); }
         }
-        .birthday-bounce { animation: bounce-slow 2s infinite; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-600 dark:bg-leezar-bg dark:text-slate-300 font-sans text-sm transition-colors duration-300 overflow-hidden">
@@ -186,7 +207,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Correo Electrónico (ID)</label>
-                            <input type="email" id="user-email-edit" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 outline-none cursor-not-allowed" readonly>
+                           <input type="email" id="user-email-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400" placeholder="ejemplo@ingleezar.com">
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -205,7 +226,12 @@
                             </div>
                             <div>
                                 <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Celular</label>
-                                <input type="tel" id="user-celular-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none">
+                                <input type="tel" 
+                                id="user-celular-edit" 
+                                maxlength="10" 
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" 
+                                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                placeholder="Ej: 5512345678">
                             </div>
                         </div>
                     </div>
@@ -215,16 +241,16 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
                             <label class="block text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">security</span> Nivel de Acceso</label>
-                            <select id="user-rol-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-                                <option value="CAPTURISTA">CAPTURISTA (Básico)</option>
-                                <option value="TECNICO">TÉCNICO (Operativo)</option>
-                                <option value="GESTOR">GESTOR (Intermedio)</option>
-                                <option value="ADMIN">ADMINISTRADOR</option>
-                                <option value="SUPER ADMIN">SUPER ADMIN</option>
+                            <select id="user-rol-edit" onchange="togglePinField()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none">
+                            <option value="CAPTURISTA" class="text-slate-800 dark:text-white">CAPTURISTA (Básico)</option>
+                            <option value="TECNICO" class="text-slate-800 dark:text-white">TÉCNICO (Operativo)</option>
+                            <option value="GESTOR" class="text-slate-800 dark:text-white">GESTOR (Intermedio)</option>
+                            <option value="ADMIN" class="text-slate-800 dark:text-white">ADMINISTRADOR</option>
+                            <option value="SUPER ADMIN" class="text-slate-800 dark:text-white">SUPER ADMIN</option>
                             </select>
                             
                             <div class="mt-4">
-                                <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">PIN de Seguridad (4 Dígitos)</label>
+                                <label id="label-pin" class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">PIN de Seguridad (4 Dígitos)</label>
                                 <input type="text" id="user-pin-edit" maxlength="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-red-200 dark:border-red-900/30 rounded-xl px-4 py-3 text-lg font-mono text-center tracking-[0.5em] text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-red-500" placeholder="0000">
                             </div>
                         </div>
@@ -302,11 +328,34 @@
                     document.getElementById('lock-status').innerText = `Hola, ${activeUser.nombre || 'Usuario'}. Confirma tu PIN.`;
                     document.getElementById('user-display').innerText = activeUser.email;
                     
-                    if(activeUser.fechaNacimiento) {
-                        const today = new Date().toISOString().slice(5,10);
-                        if(activeUser.fechaNacimiento.slice(5,10) === today) {
-                            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                            document.getElementById('user-display').innerHTML = `🎂 ¡Feliz Cumpleaños!`;
+                    // --- CUMPLEAÑOS CORREGIDO (HORA LOCAL) ---
+                    if (activeUser.fechaNacimiento) {
+                        const hoy = new Date();
+                        // Ajustamos a 2 dígitos (01, 02... 10, 11)
+                        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                        const dia = String(hoy.getDate()).padStart(2, '0');
+                        const fechaHoy = `${mes}-${dia}`; // Ejemplo: "01-10" para 10 de Enero
+
+                        // La fecha en BD viene como YYYY-MM-DD, tomamos los últimos 5 chars (MM-DD)
+                        const cumpleUsuario = activeUser.fechaNacimiento.slice(5, 10);
+
+                        console.log("Revisando cumple:", fechaHoy, "vs", cumpleUsuario);
+
+                        if (cumpleUsuario === fechaHoy) {
+                            // ¡Es hoy!
+                            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+                            
+                            const saludo = document.getElementById('user-display');
+                            if(saludo) {
+                                // Mensaje especial
+                                saludo.innerHTML = `
+                                    <div class="flex flex-col items-center animate-bounce">
+                                        <span class="text-4xl">🎂</span>
+                                        <span class="text-indigo-500 font-black text-lg">¡FELIZ CUMPLEAÑOS!</span>
+                                        <span class="text-xs text-slate-400">Hoy celebramos a ${activeUser.nombre ? activeUser.nombre.split(' ')[0] : 'ti'}</span>
+                                    </div>
+                                `;
+                            }
                         }
                     }
                 } catch(e) { }
@@ -491,79 +540,176 @@
         }
 
         function cargarUsuarioModal(encodedData) {
-            // Reset
+            // 1. Reset visual
             avatarBase64 = '';
             document.getElementById('preview-avatar').classList.add('hidden');
             document.getElementById('icon-avatar').classList.remove('hidden');
             
+            // 2. Elementos
+            const elEmail = document.getElementById('user-email-edit');
+            const elRol = document.getElementById('user-rol-edit');
+            const elPin = document.getElementById('user-pin-edit');
+
+            // --- FUERZA BRUTA: DESBLOQUEO VISUAL ---
+            // Esto sobrescribe cualquier clase CSS que lo ponga gris
+            elEmail.style.backgroundColor = '#ffffff'; 
+            elEmail.style.opacity = '1';
+            elEmail.style.cursor = 'text';
+            elEmail.style.color = '#1e293b'; // Texto oscuro
+            elEmail.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+
             if(encodedData) {
+                // --- MODO EDICIÓN ---
                 const u = JSON.parse(decodeURIComponent(encodedData));
-                document.getElementById('user-email-edit').value = u.email;
-                document.getElementById('user-email-edit').disabled = true;
+                
+                elEmail.value = u.email;
+                
+                // Aquí SÍ bloqueamos (porque no se puede cambiar el ID/Email de un usuario existente)
+                elEmail.disabled = true;
+                elEmail.style.backgroundColor = '#f1f5f9'; // Volvemos a ponerlo gris
+                elEmail.style.cursor = 'not-allowed';
+                
                 document.getElementById('user-name-edit').value = u.nombre || '';
                 document.getElementById('user-iniciales-edit').value = u.iniciales || '';
                 document.getElementById('user-celular-edit').value = u.celular || '';
-                document.getElementById('user-rol-edit').value = u.rol || 'CAPTURISTA';
-                document.getElementById('user-pin-edit').value = u.pin || '';
-                document.getElementById('user-fecha-edit').value = u.fechaNacimiento || '';
+                elRol.value = u.rol || 'CAPTURISTA';
+                elPin.value = u.pin || ''; 
                 
-                if(u.fotoUrl) {
-                    document.getElementById('preview-avatar').src = u.fotoUrl;
+                if (u.fechaNacimiento) document.getElementById('user-fecha-edit').value = u.fechaNacimiento;
+                if (u.photoUrl) {
+                    document.getElementById('preview-avatar').src = u.photoUrl;
                     document.getElementById('preview-avatar').classList.remove('hidden');
                     document.getElementById('icon-avatar').classList.add('hidden');
-                    avatarBase64 = u.fotoUrl; // Mantener foto existente
                 }
 
-                const funciones = u.funciones || [];
-                document.getElementById('check-captura').checked = funciones.includes('captura');
-                document.getElementById('check-visita').checked = funciones.includes('visita');
-                document.getElementById('check-dibuja').checked = funciones.includes('dibuja');
+                // Checks
+                document.getElementById('check-captura').checked = (u.funciones || []).includes('captura');
+                document.getElementById('check-visita').checked = (u.funciones || []).includes('visita');
+                document.getElementById('check-dibuja').checked = (u.funciones || []).includes('dibuja');
+
             } else {
-                // NUEVO USUARIO
-                document.getElementById('user-email-edit').value = '';
-                document.getElementById('user-email-edit').disabled = false;
-                document.getElementById('user-email-edit').classList.remove('cursor-not-allowed');
+                // --- MODO NUEVO USUARIO ---
+                console.log("Creando usuario: Desbloqueando campos...");
+                
+                elEmail.value = '';
+                elEmail.removeAttribute('disabled'); 
+                elEmail.disabled = false; // ¡IMPORTANTE!
+                
                 document.getElementById('user-name-edit').value = '';
-                document.getElementById('user-pin-edit').value = '';
-                // Limpiar resto...
+                document.getElementById('user-iniciales-edit').value = '';
+                document.getElementById('user-celular-edit').value = '';
+                elRol.value = 'CAPTURISTA'; // Por defecto
+                
+                elPin.value = '';
+                document.getElementById('user-fecha-edit').value = '';
+                
+                document.getElementById('check-captura').checked = true;
+                document.getElementById('check-visita').checked = false;
+                document.getElementById('check-dibuja').checked = false;
             }
 
+            // Ajustar si se ve el PIN o no según el rol seleccionado
+            togglePinField();
+
+            // Mostrar modal
             document.getElementById('modal-usuario').classList.remove('hidden');
+            document.getElementById('modal-usuario').classList.add('flex');
+        }
+
+        // PEGAR AQUÍ (Entre cargarUsuarioModal y guardarUsuario)
+        
+        function togglePinField() {
+            const rolSelect = document.getElementById('user-rol-edit');
+            const pinInput = document.getElementById('user-pin-edit');
+            const pinLabel = document.getElementById('label-pin'); // ¡Ahora lo buscamos por ID directo!
+
+            const rol = rolSelect.value;
+
+            // REGLA: El PIN solo existe para ADMINS
+            if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
+                pinInput.classList.remove('hidden');
+                if(pinLabel) pinLabel.classList.remove('hidden');
+                pinInput.disabled = false;
+            } else {
+                pinInput.classList.add('hidden');
+                if(pinLabel) pinLabel.classList.add('hidden'); // Se oculta garantizado
+                pinInput.value = '';       
+                pinInput.disabled = true;  
+            }
         }
 
         async function guardarUsuario() {
-            const email = document.getElementById('user-email-edit').value;
-            const nombre = document.getElementById('user-name-edit').value;
-            const iniciales = document.getElementById('user-iniciales-edit').value;
-            const celular = document.getElementById('user-celular-edit').value;
+            const btn = document.querySelector('button[onclick="guardarUsuario()"]');
+            
+            // Obtener valores
+            const email = document.getElementById('user-email-edit').value.trim().toLowerCase();
+            const nombre = document.getElementById('user-name-edit').value.trim();
             const rol = document.getElementById('user-rol-edit').value;
-            const pin = document.getElementById('user-pin-edit').value;
-            const fechaNacimiento = document.getElementById('user-fecha-edit').value;
+            let pin = document.getElementById('user-pin-edit').value.trim();
+            
+            // --- VALIDACIONES ---
+            if (!email || !nombre) return alert("Correo y Nombre son obligatorios.");
 
-            const funciones = [];
-            if(document.getElementById('check-captura').checked) funciones.push('captura');
-            if(document.getElementById('check-visita').checked) funciones.push('visita');
-            if(document.getElementById('check-dibuja').checked) funciones.push('dibuja');
+            const celular = document.getElementById('user-celular-edit').value.trim();
+            
+            // VALIDACIÓN DE CELULAR
+            if (celular && celular.length !== 10) {
+                return alert("El celular debe tener exactamente 10 dígitos.");
+            }
 
-            if(!pin || pin.length !== 4) return alert("El PIN debe ser de 4 dígitos.");
+            // REGLA: PIN OBLIGATORIO SOLO PARA ADMINS
+            if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
+                if (!pin || pin.length !== 4) {
+                    return alert("Los Administradores requieren un PIN de 4 dígitos.");
+                }
+                // NOTA: AQUÍ QUITAMOS LA VALIDACIÓN DE "PIN REPETIDO".
+                // Ahora dos admins pueden tener el '0000' sin problema.
+            } else {
+                // Si no es admin, limpiamos el PIN por seguridad (no lo necesitan)
+                pin = ""; 
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
 
             try {
-                await fetch('/.netlify/functions/manage-users', {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        email, nombre, iniciales, celular, rol, pin, funciones, fechaNacimiento, 
-                        fotoUrl: avatarBase64 // Enviamos la foto en base64
-                    })
-                });
-                
-                alert("Perfil actualizado correctamente.");
-                document.getElementById('modal-usuario').classList.add('hidden');
-                renderUsuarios(document.getElementById('dynamic-view')); 
-                registrarLog('USER_UPDATE', `Actualización de perfil: ${email}`);
+                // Preparar objeto
+                const userData = {
+                    email,
+                    nombre,
+                    iniciales: document.getElementById('user-iniciales-edit').value.trim().toUpperCase(),
+                    celular: document.getElementById('user-celular-edit').value,
+                    rol,
+                    pin, // Se guarda vacío si es capturista
+                    fechaNacimiento: document.getElementById('user-fecha-edit').value,
+                    funciones: [],
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
-            } catch(e) {
-                alert("Error al guardar usuario.");
-                console.error(e);
+                // Funciones checkbox
+                if(document.getElementById('check-captura').checked) userData.funciones.push('captura');
+                if(document.getElementById('check-visita').checked) userData.funciones.push('visita');
+                if(document.getElementById('check-dibuja').checked) userData.funciones.push('dibuja');
+
+                // Si hay foto nueva
+                const fileInput = document.getElementById('input-avatar');
+                if (fileInput.files.length > 0) {
+                    // Aquí iría tu lógica de subir foto a Storage (si la tienes implementada)
+                    // Por ahora asumimos que usas avatarBase64 o similar si lo tienes activo
+                    if(typeof avatarBase64 !== 'undefined' && avatarBase64) userData.photoUrl = avatarBase64;
+                }
+
+                // GUARDAR EN FIREBASE (Usamos el email como ID del documento para unicidad)
+                await db.collection('usuarios').doc(email).set(userData, { merge: true });
+
+                alert("Usuario guardado correctamente.");
+                location.reload(); // Recargar para ver cambios
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al guardar: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-rounded">save</span> Guardar Perfil';
             }
         }
 
@@ -773,9 +919,95 @@
         async function borrarRequisito(cat, idx) { if(confirm("¿Borrar requisito?")) { catalogoData[currentEntidad][currentServicio][cat].splice(idx, 1); await saveCatalogo(); cargarRequisitosUI(); } }
 
         function renderLegal(container) {
-            container.innerHTML = `<div class="h-full flex flex-col animate-[fadeIn_0.3s]"><div class="flex justify-between mb-4"><button onclick="cerrarVista()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-slate-800 dark:text-white">Aviso de Privacidad</h2></div><textarea id="legal-editor" class="flex-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-4 rounded-xl border border-slate-200 dark:border-slate-700 outline-none resize-none font-mono text-sm shadow-inner"></textarea><button onclick="guardarLegal()" id="btn-save-legal" class="mt-4 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 flex justify-center items-center gap-2"><span class="material-symbols-rounded">save</span> Guardar Cambios</button></div>`;
-            fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ if(d.htmlContent) document.getElementById('legal-editor').value = d.htmlContent; });
+            container.innerHTML = `
+                <div class="h-[calc(100vh-140px)] flex flex-col animate-[fadeIn_0.3s]">
+                    
+                    <div class="flex-none flex justify-between mb-4 items-center">
+                        <div class="flex items-center gap-4">
+                            <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors">
+                                <span class="material-symbols-rounded">arrow_back</span>
+                            </button>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Aviso de Privacidad</h2>
+                                <p class="text-xs text-slate-400">Edición de términos legales</p>
+                            </div>
+                        </div>
+                        <button id="btn-save-legal" onclick="guardarLegal()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg shadow-teal-500/20 flex items-center gap-2">
+                            <span class="material-symbols-rounded">save</span> Guardar Cambios
+                        </button>
+                    </div>
+
+                    <div class="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden relative group">
+                        
+                        <div class="flex-none bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 px-4 py-2 flex items-center gap-1 text-slate-500">
+                            
+                            <button onclick="insertarFormato('b')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Negrita">
+                                <span class="material-symbols-rounded text-sm">format_bold</span>
+                            </button>
+                            <button onclick="insertarFormato('i')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Cursiva">
+                                <span class="material-symbols-rounded text-sm">format_italic</span>
+                            </button>
+                            <button onclick="insertarFormato('u')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Subrayado">
+                                <span class="material-symbols-rounded text-sm">format_underlined</span>
+                            </button>
+                            <button onclick="insertarFormato('br')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Salto de Línea">
+                                <span class="material-symbols-rounded text-sm">keyboard_return</span>
+                            </button>
+
+                            <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-2"></div>
+                            <span class="text-[10px] font-mono opacity-50">EDITOR HTML</span>
+                        </div>
+
+                        <textarea id="legal-editor" class="flex-1 w-full p-6 bg-transparent text-slate-700 dark:text-slate-300 outline-none resize-none font-mono text-sm leading-relaxed custom-scroll" placeholder="Escribe aquí el aviso de privacidad..."></textarea>
+                    </div>
+                    
+                    <p class="flex-none text-right text-[10px] text-slate-400 mt-2">Selecciona texto y usa los botones para dar formato.</p>
+                </div>
+            `;
+            
+            // Cargar contenido existente
+            fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ 
+                if(d.htmlContent) document.getElementById('legal-editor').value = d.htmlContent; 
+            }).catch(err => console.error("Error cargando legal:", err));
         }
+
+        function insertarFormato(tag) {
+            const textarea = document.getElementById('legal-editor');
+            if (!textarea) return;
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end);
+
+            let newText = '';
+
+            // Lógica para insertar etiquetas HTML
+            if (tag === 'br') {
+                // Salto de línea
+                newText = text.substring(0, start) + '<br>\n' + text.substring(end);
+                textarea.value = newText;
+                textarea.selectionStart = textarea.selectionEnd = start + 5; 
+            } else {
+                // Etiquetas dobles (b, i, u)
+                const openTag = `<${tag}>`;
+                const closeTag = `</${tag}>`;
+                newText = text.substring(0, start) + openTag + selectedText + closeTag + text.substring(end);
+                
+                textarea.value = newText;
+                
+                // Recolocar cursor
+                if (start !== end) {
+                    textarea.selectionStart = start;
+                    textarea.selectionEnd = end + openTag.length + closeTag.length;
+                } else {
+                    textarea.selectionStart = textarea.selectionEnd = start + openTag.length;
+                }
+            }
+            
+            textarea.focus();
+        }
+
         async function guardarLegal() {
             const btn = document.getElementById('btn-save-legal'); btn.disabled = true; btn.innerText = "Guardando...";
             await fetch('/.netlify/functions/save-legal', { method: 'POST', body: JSON.stringify({ contenido: document.getElementById('legal-editor').value }) });
@@ -783,25 +1015,201 @@
             alert("Términos actualizados."); btn.disabled = false; btn.innerHTML = '<span class="material-symbols-rounded">save</span> Guardar Cambios';
         }
 
+// VARIABLES PARA PAGINACIÓN (Pegar esto justo antes de renderBitacora)
+        let logsCache = [];
+        let logsPerPage = 25;
+        let currentPage = 1;
+
         function renderBitacora(container) {
-             container.innerHTML = `<div class="h-full flex flex-col animate-[fadeIn_0.3s]"><div class="flex justify-between mb-4 items-center"><div class="flex items-center gap-4"><button onclick="cerrarVista()" class="text-slate-400 hover:text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-slate-800 dark:text-white">Bitácora Global</h2></div><button onclick="cargarLogs()" class="text-indigo-500 hover:text-indigo-400"><span class="material-symbols-rounded">refresh</span></button></div><div class="flex-1 overflow-y-auto custom-scroll bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"><table class="w-full text-left border-collapse"><thead class="bg-slate-50 dark:bg-slate-900 sticky top-0"><tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700"><th class="p-3">Fecha</th><th class="p-3">Usuario</th><th class="p-3">Acción</th><th class="p-3">Detalle</th></tr></thead><tbody id="logs-body" class="text-xs text-slate-600 dark:text-slate-300 font-mono"><tr><td colspan="4" class="p-8 text-center text-slate-400">Cargando...</td></tr></tbody></table></div></div>`;
+            container.innerHTML = `
+                <div class="flex flex-col animate-[fadeIn_0.3s] h-[calc(100vh-140px)]">
+                    
+                    <div class="flex-none mb-4">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors">
+                                    <span class="material-symbols-rounded">arrow_back</span>
+                                </button>
+                                <div>
+                                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Bitácora Global</h2>
+                                    <p class="text-xs text-slate-400">Historial de movimientos</p>
+                                </div>
+                            </div>
+                            <button onclick="cargarLogs()" class="text-indigo-500 hover:text-indigo-400 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition">
+                                <span class="material-symbols-rounded">refresh</span>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-4 px-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-500 font-medium">Mostrar:</span>
+                                <select onchange="cambiarLogsPorPagina(this.value)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs p-1.5 outline-none text-slate-700 dark:text-slate-300 shadow-sm cursor-pointer hover:border-indigo-400 transition-colors">
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="9999">Todos</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
+                                <button onclick="cambiarPagina(-1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-30 transition" id="btn-prev">
+                                    <span class="material-symbols-rounded text-lg">chevron_left</span>
+                                </button>
+                                <span id="page-info" class="text-xs text-slate-600 dark:text-slate-400 font-mono font-bold px-3 border-x border-slate-100 dark:border-slate-700 min-w-[80px] text-center">Pág 1</span>
+                                <button onclick="cambiarPagina(1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-30 transition" id="btn-next">
+                                    <span class="material-symbols-rounded text-lg">chevron_right</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-0">
+                        <div class="overflow-y-auto custom-scroll flex-1 relative">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 shadow-sm">
+                                    <tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700">
+                                        <th class="p-3 w-[15%] bg-slate-50 dark:bg-slate-900">Fecha</th>
+                                        <th class="p-3 w-[20%] bg-slate-50 dark:bg-slate-900">Usuario</th>
+                                        <th class="p-3 w-[15%] bg-slate-50 dark:bg-slate-900">Acción</th>
+                                        <th class="p-3 w-[50%] bg-slate-50 dark:bg-slate-900">Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-body" class="text-xs text-slate-600 dark:text-slate-300 font-mono divide-y divide-slate-100 dark:divide-slate-700/50">
+                                    <tr><td colspan="4" class="p-8 text-center text-slate-400 animate-pulse">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-2 px-4 flex justify-between items-center flex-none">
+                            <span class="text-[9px] text-slate-400">Sistema Leezar V3</span>
+                            <span id="total-logs" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">0 Registros</span>
+                        </div>
+                    </div>
+                </div>`;
             cargarLogs();
         }
 
-        async function cargarLogs() {
+async function cargarLogs() {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400"><span class="material-symbols-rounded animate-spin text-2xl mb-2 block">sync</span>Sincronizando bitácora...</td></tr>';
+            
             try {
+                // Obtenemos TODOS los logs
                 const res = await fetch('/.netlify/functions/admin-logs');
-                const logs = await res.json();
-                const tbody = document.getElementById('logs-body');
-                tbody.innerHTML = '';
-                if(logs.length === 0) tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros recientes.</td></tr>';
-                logs.forEach(log => {
-                    let color = 'text-slate-500';
-                    if(log.accion === 'LEGAL') color = 'text-teal-500 font-bold';
-                    if(log.accion === 'CATALOGO') color = 'text-indigo-500 font-bold';
-                    tbody.insertAdjacentHTML('beforeend', `<tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"><td class="p-3 whitespace-nowrap">${log.fecha}</td><td class="p-3 font-bold">${log.usuario}</td><td class="p-3 ${color}">${log.accion}</td><td class="p-3">${log.detalle}</td></tr>`);
-                });
-            } catch(e) { }
+                if (!res.ok) throw new Error("Error de conexión");
+                
+                const data = await res.json();
+                
+                // Guardamos en memoria
+                logsCache = Array.isArray(data) ? data : [];
+                
+                // Ordenar: Lo más nuevo primero
+                logsCache.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                currentPage = 1; // Siempre volver a la página 1 al recargar
+                renderLogsTable(); // Dibujar la primera página
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400 font-bold">Error al cargar logs.<br><span class="text-[10px] font-normal opacity-70">${e.message}</span></td></tr>`;
+            }
+        }
+
+        // --- FUNCIONES DE PAGINACIÓN (NUEVAS) ---
+        
+        function renderLogsTable() {
+            const tbody = document.getElementById('logs-body');
+            const totalSpan = document.getElementById('total-logs');
+            const pageInfo = document.getElementById('page-info');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            if (!tbody) return;
+
+            const start = (currentPage - 1) * logsPerPage;
+            const end = start + parseInt(logsPerPage);
+            const paginatedItems = logsCache.slice(start, end);
+            const totalPages = Math.ceil(logsCache.length / logsPerPage);
+
+            tbody.innerHTML = '';
+            
+            if (logsCache.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros disponibles.</td></tr>';
+                pageInfo.innerText = "0/0";
+                return;
+            }
+
+            paginatedItems.forEach(log => {
+                // 1. ESTILOS DE ETIQUETAS (COLORES)
+                let color = 'text-slate-500';
+                let bg = '';
+                
+                if(log.accion === 'LEGAL') { color = 'text-teal-600 dark:text-teal-400 font-bold'; bg = 'bg-teal-50 dark:bg-teal-900/20'; }
+                if(log.accion === 'CATALOGO') { color = 'text-indigo-600 dark:text-indigo-400 font-bold'; bg = 'bg-indigo-50 dark:bg-indigo-900/20'; }
+                if(log.accion === 'SISTEMA') { color = 'text-rose-500 font-bold'; }
+                if(log.accion && log.accion.includes('LOGIN')) { color = 'text-emerald-600 font-bold'; }
+
+                // 2. DETECTOR DE FECHA UNIVERSAL (AQUÍ ESTÁ LA MAGIA) 🪄
+                let fechaObj = null;
+                // Buscamos en cualquier campo posible
+                const rawDate = log.timestamp || log.fecha || log.date || log.created_at;
+
+                if (rawDate) {
+                    // Opción A: Objeto Firebase Estándar ({ seconds: ... })
+                    if (rawDate.seconds) {
+                        fechaObj = new Date(rawDate.seconds * 1000);
+                    }
+                    // Opción B: Objeto Firebase Admin ({ _seconds: ... }) -> ¡EL CULPABLE COMÚN!
+                    else if (rawDate._seconds) {
+                        fechaObj = new Date(rawDate._seconds * 1000);
+                    }
+                    // Opción C: String ISO o Timestamp numérico directo
+                    else {
+                        fechaObj = new Date(rawDate);
+                    }
+                }
+
+                // Formatear fecha bonita
+                let fechaStr = "---";
+                if (fechaObj && !isNaN(fechaObj.getTime())) {
+                    fechaStr = fechaObj.toLocaleString('es-MX', { 
+                        day: '2-digit', month: 'short', year: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                } else {
+                    // Si falla, mostramos en consola para depurar
+                    console.warn("⚠️ Fecha inválida en log:", log);
+                }
+
+                // 3. RENDERIZADO DE FILA
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                        <td class="p-3 w-[15%] whitespace-nowrap text-slate-400 text-[10px] font-mono">${fechaStr}</td>
+                        
+                        <td class="p-3 w-[20%] font-bold text-slate-700 dark:text-slate-200 text-xs">${log.usuario || 'Sistema'}</td>
+                        
+                        <td class="p-3 w-[15%]">
+                            <span class="${color} ${bg} px-2 py-0.5 rounded text-[10px] uppercase tracking-wide border border-transparent whitespace-nowrap">${log.accion}</span>
+                        </td>
+                        
+                        <td class="p-3 w-[50%] text-slate-500 dark:text-slate-400 text-[11px] relative">
+                            <div class="truncate w-full max-w-md" title="${log.detalle}">
+                                ${log.detalle}
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            // Actualizar controles de paginación
+            pageInfo.innerText = `Pág ${currentPage} de ${totalPages || 1}`;
+            totalSpan.innerText = `${logsCache.length} REGISTROS`;
+            
+            btnPrev.disabled = currentPage === 1;
+            btnNext.disabled = currentPage >= totalPages;
+            
+            btnPrev.classList.toggle('opacity-30', currentPage === 1);
+            btnNext.classList.toggle('opacity-30', currentPage >= totalPages);
         }
 
         function cerrarSesion() { localStorage.removeItem('leezar_user_active'); window.location.href = 'index.html'; }

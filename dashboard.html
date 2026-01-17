@@ -2,87 +2,271 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - Ing. Leezar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EME Avalúos</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: { 500: '#0d9488', 600: '#0f766e', 900: '#134e4a' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    
     <script src="js/layout.js"></script> 
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 min-h-screen flex flex-col">
     
-    <main class="p-10 fade-in flex-1"> 
-        <header class="flex justify-between items-end mb-10">
+    <main class="p-6 md:p-10 fade-in flex-1 max-w-7xl mx-auto w-full"> 
+        
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Panel de Control</h1>
-                <p class="text-slate-400 dark:text-slate-500 mt-1">Resumen de actividad inmobiliaria</p>
+                <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Dashboard Ejecutivo</h1>
+                <p class="text-slate-400 dark:text-slate-500 font-medium">Métricas de rendimiento operativo</p>
             </div>
-            <span class="text-sm font-medium bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-sm text-slate-500 dark:text-slate-300 border border-slate-100 dark:border-slate-700" id="fecha-actual"></span>
+            <div class="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Monitoreo Activo</span>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">En Proceso</p>
-                        <p class="text-4xl font-extrabold text-slate-800 dark:text-white group-hover:text-teal-600 transition-colors">12</p>
-                    </div>
-                    <div class="p-3 bg-teal-50 dark:bg-teal-900/30 rounded-xl text-teal-600 dark:text-teal-400">
-                        <span class="material-symbols-rounded text-2xl">folder_open</span>
-                    </div>
-                </div>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Por Asignar</p>
-                        <p class="text-4xl font-extrabold text-slate-800 dark:text-white group-hover:text-orange-500 transition-colors">4</p>
-                    </div>
-                    <div class="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-xl text-orange-500 dark:text-orange-400">
-                        <span class="material-symbols-rounded text-2xl">assignment_ind</span>
-                    </div>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-symbols-rounded text-6xl text-blue-600">folder_special</span>
                 </div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Histórico</p>
+                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-total">...</h3>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Terminados (Mes)</p>
-                        <p class="text-4xl font-extrabold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">8</p>
-                    </div>
-                    <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
-                        <span class="material-symbols-rounded text-2xl">verified</span>
-                    </div>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-symbols-rounded text-6xl text-orange-500">pending</span>
                 </div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Por Asignar</p>
+                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-pendientes">...</h3>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group ring-1 ring-leezar-500/20">
+                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-symbols-rounded text-6xl text-leezar-500">edit_document</span>
+                </div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">En Captura</p>
+                <h3 class="text-3xl font-extrabold text-leezar-600 dark:text-leezar-400" id="count-proceso">...</h3>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-symbols-rounded text-6xl text-green-500">verified</span>
+                </div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Concluidos</p>
+                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-terminados">...</h3>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <a href="nuevo-expediente.html" class="relative overflow-hidden bg-teal-600 rounded-3xl p-8 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all group cursor-pointer">
-                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                <div class="relative z-10 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-2xl font-bold text-white mb-2">Nuevo Expediente</h3>
-                        <p class="text-teal-100 text-sm font-medium">Crear solicitud de avalúo o hipoteca</p>
-                    </div>
-                    <span class="material-symbols-rounded text-5xl text-white bg-white/20 p-3 rounded-2xl backdrop-blur-sm group-hover:rotate-90 transition-transform duration-500">add</span>
-                </div>
-            </a>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <a href="gestion.html" class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-md border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex justify-between items-center">
-                <div>
-                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">Buscador Global</h3>
-                    <p class="text-slate-400 dark:text-slate-500 text-sm font-medium">Localizar, filtrar y asignar</p>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 col-span-1 lg:col-span-2">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    <span class="material-symbols-rounded text-leezar-500">timer</span>
+                    Eficiencia de Tiempos
+                </h3>
+                
+                <div class="grid grid-cols-3 gap-4 text-center divide-x divide-slate-100 dark:divide-slate-700">
+                    <div class="p-2">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Promedio</p>
+                        <span class="text-4xl font-black text-slate-700 dark:text-white block" id="time-avg">--</span>
+                        <span class="text-xs text-slate-400">Días</span>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-[10px] text-green-500 uppercase font-bold tracking-widest mb-1">Récord (Min)</p>
+                        <span class="text-4xl font-black text-green-600 block" id="time-min">--</span>
+                        <span class="text-xs text-slate-400">Días</span>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-[10px] text-red-500 uppercase font-bold tracking-widest mb-1">Atención (Max)</p>
+                        <span class="text-4xl font-black text-red-500 block" id="time-max">--</span>
+                        <span class="text-xs text-slate-400">Días</span>
+                    </div>
                 </div>
-                <span class="material-symbols-rounded text-5xl text-slate-200 dark:text-slate-600 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">search</span>
-            </a>
+                <p class="text-center text-[10px] text-slate-400 mt-4 bg-slate-50 dark:bg-slate-700/50 py-2 rounded-lg">
+                    Calculado en base a expedientes con fecha de término registrada.
+                </p>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    <span class="material-symbols-rounded text-orange-500">traffic</span>
+                    Flujo de Trabajo
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-500 font-bold">Visita Técnica</span>
+                            <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-val">0</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div id="bar-visita" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-500 font-bold">Mesa de Captura</span>
+                            <span class="text-slate-700 dark:text-white font-bold" id="bar-captura-val">0</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div id="bar-captura" class="h-full bg-leezar-500 w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-500 font-bold">Revisión Final</span>
+                            <span class="text-slate-700 dark:text-white font-bold" id="bar-revision-val">0</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div id="bar-revision" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
+
     <script>
-        document.getElementById('fecha-actual').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        // CONFIGURACIÓN DE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4",
+            authDomain: "sistema-hipoteca-facil.firebaseapp.com",
+            projectId: "sistema-hipoteca-facil",
+            storageBucket: "sistema-hipoteca-facil.firebasestorage.app",
+            messagingSenderId: "880781885603",
+            appId: "1:880781885603:web:8a74a7f811974940ccbf16"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- MONITOREO VIVO + CÁLCULOS MATEMÁTICOS ---
+        function iniciarMonitoreoDashboard() {
+            // Elementos DOM
+            const elTotal = document.getElementById('count-total');
+            const elPendientes = document.getElementById('count-pendientes');
+            const elProceso = document.getElementById('count-proceso');
+            const elTerminados = document.getElementById('count-terminados');
+
+            // Métricas de Tiempo
+            const elTimeAvg = document.getElementById('time-avg');
+            const elTimeMin = document.getElementById('time-min');
+            const elTimeMax = document.getElementById('time-max');
+
+            // Barras
+            const barVisita = document.getElementById('bar-visita');
+            const barCaptura = document.getElementById('bar-captura');
+            const barRevision = document.getElementById('bar-revision');
+
+            db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
+                let total = 0, pendientes = 0, captura = 0, terminados = 0;
+                
+                // Contadores para barras
+                let cVisita = 0, cCaptura = 0, cRevision = 0;
+
+                // Arrays para tiempos (en días)
+                let tiemposRegistrados = [];
+
+                snapshot.forEach((doc) => {
+                    total++;
+                    const data = doc.data();
+                    const status = (data.estatus || 'PENDIENTE').toUpperCase();
+
+                    // 1. CLASIFICACIÓN GENERAL
+                    if (status.includes('PENDIENTE') || status === 'NUEVO') {
+                        pendientes++;
+                    } else if (status.includes('CONCLUIDO') || status.includes('ENTREGADO') || status.includes('TERMINADO')) {
+                        terminados++;
+                        
+                        // CÁLCULO DE TIEMPOS (Solo para terminados)
+                        // Buscamos fecha de inicio y fin
+                        let inicio = data.fecha_creacion || data.fecha_solicitud;
+                        let fin = data.fecha_conclusion || data.fecha_termino;
+
+                        if (inicio && fin) {
+                            // Convertir a objetos Date (manejando Timestamps de Firebase)
+                            const dInicio = inicio.seconds ? new Date(inicio.seconds * 1000) : new Date(inicio);
+                            const dFin = fin.seconds ? new Date(fin.seconds * 1000) : new Date(fin);
+                            
+                            // Diferencia en días
+                            const diffTime = Math.abs(dFin - dInicio);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            tiemposRegistrados.push(diffDays);
+                        }
+
+                    } else {
+                        // En Proceso (Captura)
+                        captura++;
+                        
+                        // SUB-CLASIFICACIÓN PARA BARRAS
+                        if(status.includes('VISITA')) cVisita++;
+                        else if(status.includes('REVISION')) cRevision++;
+                        else cCaptura++; // Captura general
+                    }
+                });
+
+                // 2. ACTUALIZAR TARJETAS
+                elTotal.innerText = total;
+                elPendientes.innerText = pendientes;
+                elProceso.innerText = captura;
+                elTerminados.innerText = terminados;
+
+                // 3. ACTUALIZAR MÉTRICAS DE TIEMPO
+                if (tiemposRegistrados.length > 0) {
+                    const min = Math.min(...tiemposRegistrados);
+                    const max = Math.max(...tiemposRegistrados);
+                    const sum = tiemposRegistrados.reduce((a, b) => a + b, 0);
+                    const avg = (sum / tiemposRegistrados.length).toFixed(1);
+
+                    elTimeMin.innerText = min;
+                    elTimeMax.innerText = max;
+                    elTimeAvg.innerText = avg;
+                } else {
+                    elTimeMin.innerText = "-";
+                    elTimeMax.innerText = "-";
+                    elTimeAvg.innerText = "-";
+                }
+
+                // 4. ACTUALIZAR BARRAS (Porcentajes relativos al total en proceso)
+                const totalActivos = cVisita + cCaptura + cRevision || 1; // Evitar div/0
+                
+                document.getElementById('bar-visita-val').innerText = cVisita;
+                document.getElementById('bar-captura-val').innerText = cCaptura;
+                document.getElementById('bar-revision-val').innerText = cRevision;
+
+                barVisita.style.width = `${(cVisita / totalActivos) * 100}%`;
+                barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`;
+                barRevision.style.width = `${(cRevision / totalActivos) * 100}%`;
+
+            }, (error) => {
+                console.error("Error dashboard:", error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', iniciarMonitoreoDashboard);
     </script>
+
 </body>
 </html>

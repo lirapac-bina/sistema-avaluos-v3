@@ -452,15 +452,18 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
 
+            // Paginación
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             const paginaDatos = datosFiltrados.slice(start, end);
+            
+            // Contadores
             const totalDocs = datosFiltrados.length;
             const totalPages = Math.ceil(totalDocs / rowsPerPage) || 1;
-
             document.getElementById('total-records').innerHTML = `<strong>${totalDocs}</strong> registros &bull; ${start + 1}-${Math.min(end, totalDocs)}`;
             document.getElementById('page-indicator').textContent = `${currentPage} / ${totalPages}`;
             
+            // Botones paginación
             document.getElementById('btn-prev').disabled = currentPage === 1;
             document.getElementById('btn-next').disabled = currentPage === totalPages;
             document.getElementById('btn-prev').classList.toggle('opacity-50', currentPage === 1);
@@ -472,47 +475,73 @@
             }
 
             paginaDatos.forEach(exp => {
+                // 1. ESTATUS (Badge)
                 let badgeClass = '';
-                if(exp.status === 'ACTIVO' || exp.status === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
-                else if(exp.status.includes('REVISI')) badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
-                else if(exp.status.includes('COMPLETADO') || exp.status.includes('VALIDA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
+                const st = (exp.status || '').toUpperCase();
+                if(st === 'ACTIVO' || st === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
+                else if(st.includes('REVISI')) badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
+                else if(st.includes('COMPLETADO') || st.includes('VALIDA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
 
-                const row = `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group animate-fade-in">
-                        <td class="px-4 py-3 font-bold text-slate-700 dark:text-slate-200 text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
+                // 2. PROGRESO (Cálculo que faltaba)
+                const checklist = exp.checklist || {};
+                const totalReq = Object.keys(checklist).length || 1;
+                const completados = Object.values(checklist).filter(i => i.estatus === 'validado').length;
+                const pct = Math.round((completados / totalReq) * 100) || 0;
+                
+                let colorBar = 'bg-slate-200';
+                if(pct > 0) colorBar = 'bg-blue-500';
+                if(pct === 100) colorBar = 'bg-emerald-500';
+
+                // 3. FILA HTML (Diseño Original Compacto + Botón Capturar)
+const row = `
+                    <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
+                        <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
                             ${exp.cliente}
                         </td>
+                        
                         <td class="px-4 py-3 text-center">
-                            <span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-slate-200 dark:border-slate-600">
+                            <span class="bg-slate-100 dark:bg-transparent text-slate-600 dark:text-slate-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-slate-200 dark:border-slate-600">
                                 ${exp.tramite}
                             </span>
                         </td>
+                        
                         <td class="px-4 py-3 text-center text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                             ${exp.fechaDisplay}
                         </td>
+                        
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'capturista', exp.capturista)}</td>
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'visitador', exp.visitador)}</td>
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'dibujante', exp.dibujante)}</td>
+                        
                         <td class="px-4 py-3 text-center">
                             <span class="${badgeClass} border text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
                                 ${exp.status}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right flex justify-end gap-1">
-                            <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}')" 
-                                class="text-amber-500 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-all" 
-                                title="Editar Datos">
-                                <span class="material-symbols-rounded text-lg">edit</span>
-                            </button>
+                        
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex justify-end gap-1 items-center">
+                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}')" 
+                                    class="text-amber-500 hover:text-amber-600 p-1.5 rounded transition-all hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                                    title="Editar">
+                                    <span class="material-symbols-rounded text-lg">edit</span>
+                                </button>
 
-                            <button onclick="window.open('portal.html?id=${exp.id}', '_blank')" class="text-slate-400 hover:text-teal-600 p-1.5 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-all" title="Ver Portal">
-                                <span class="material-symbols-rounded text-lg">visibility</span>
-                            </button>
-                            <button onclick="irARevision('${exp.id}')" class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-all flex items-center gap-1 group">
-                                <span class="material-symbols-rounded text-base group-hover:scale-110 transition-transform">rate_review</span>
-                                Revisar
-                            </button>
+                                <a href="portal.html?id=${exp.id}" target="_blank" class="text-slate-400 hover:text-teal-600 p-1.5 rounded transition-all hover:bg-teal-50 dark:hover:bg-teal-900/20" title="Ver Portal">
+                                    <span class="material-symbols-rounded text-lg">visibility</span>
+                                </a>
+                                
+                                <button onclick="irARevision('${exp.id}')" class="text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group">
+                                    <span class="material-symbols-rounded text-sm">fact_check</span>
+                                    <span class="hidden xl:inline">Revisar</span>
+                                </button>
+
+                               <a href="captura-avaluo.html?id=${exp.id}" target="_blank" class="text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 decoration-0 group ml-1" title="Capturar Avalúo">
+                                    <span class="material-symbols-rounded text-sm">calculate</span>
+                                    <span class="hidden xl:inline">Capturar</span>
+                                </a>
+                            </div>
                         </td>
                     </tr>`;
                 tbody.insertAdjacentHTML('beforeend', row);
