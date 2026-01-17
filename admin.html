@@ -702,8 +702,14 @@
                 // GUARDAR EN FIREBASE (Usamos el email como ID del documento para unicidad)
                 await db.collection('usuarios').doc(email).set(userData, { merge: true });
 
+                // --- AGREGAR ESTO AQUÍ ---
+                // Registramos qué pasó
+                const tipoAccion = document.getElementById('user-email-edit').disabled ? 'EDICIÓN USUARIO' : 'NUEVO USUARIO';
+                await registrarLog(tipoAccion, `Se guardó el usuario: ${email} (${rol})`);
+                // -------------------------
+
                 alert("Usuario guardado correctamente.");
-                location.reload(); // Recargar para ver cambios
+                location.reload();
 
             } catch (error) {
                 console.error(error);
@@ -732,14 +738,23 @@
             } catch (e) { alert("Error al guardar cambios."); return false; }
         }
 
+        // --- FUNCIÓN DE REGISTRO (LOGS) MEJORADA ---
         async function registrarLog(accion, detalle) {
             try {
-                if(!activeUser) return;
-                await fetch('/.netlify/functions/admin-logs', { 
-                    method: 'POST', 
-                    body: JSON.stringify({ usuario: activeUser.email, accion, detalle }) 
+                // Si no hay usuario activo, usamos "Sistema" o "Desconocido"
+                const usuario = (typeof activeUser !== 'undefined' && activeUser.email) ? activeUser.email : 'Sistema';
+                
+                await db.collection('logs').add({
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    usuario: usuario,
+                    accion: accion,
+                    detalle: detalle
                 });
-            } catch(e) { }
+                
+                console.log("Log registrado:", accion);
+            } catch (e) {
+                console.error("Error al registrar log:", e);
+            }
         }
 
         async function abrirVista(vista) {
@@ -1089,43 +1104,66 @@
             cargarLogs();
         }
 
-async function cargarLogs() {
+        // --- FUNCIONES DE PAGINACIÓN (NUEVAS) ---
+        
+        async function cargarLogs() {
             const tbody = document.getElementById('logs-body');
-            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400"><span class="material-symbols-rounded animate-spin text-2xl mb-2 block">sync</span>Sincronizando bitácora...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400"><span class="material-symbols-rounded animate-spin text-2xl mb-2 block">sync</span>Sincronizando bitácora completa...</td></tr>';
             
             try {
-                // Obtenemos TODOS los logs
-                const res = await fetch('/.netlify/functions/admin-logs');
-                if (!res.ok) throw new Error("Error de conexión");
+                // --- CAMBIO CLAVE: Leer directo de Firebase ---
+                // Traemos los últimos 500 registros (para no saturar si crece mucho)
+                // ordenados por fecha descendente (lo más nuevo arriba)
+                const snapshot = await db.collection('logs')
+                                       .orderBy('fecha', 'desc')
+                                       .limit(500) 
+                                       .get();
                 
-                const data = await res.json();
+                const logsData = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Convertir Timestamp de Firebase a fecha legible o Date objeto
+                    // para que el renderizado funcione bien
+                    let fechaProcesada = data.fecha;
+                    
+                    // Si es timestamp de Firebase
+                    if (data.fecha && data.fecha.seconds) {
+                        fechaProcesada = new Date(data.fecha.seconds * 1000); 
+                    } 
+                    // Si es string o fecha JS normal
+                    else if (data.fecha) {
+                        fechaProcesada = new Date(data.fecha);
+                    }
+
+                    logsData.push({
+                        ...data,
+                        fecha: fechaProcesada
+                    });
+                });
                 
                 // Guardamos en memoria
-                logsCache = Array.isArray(data) ? data : [];
-                
-                // Ordenar: Lo más nuevo primero
-                logsCache.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                logsCache = logsData;
 
-                currentPage = 1; // Siempre volver a la página 1 al recargar
-                renderLogsTable(); // Dibujar la primera página
+                currentPage = 1; 
+                renderLogsTable(); 
 
             } catch (e) {
                 console.error(e);
                 tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400 font-bold">Error al cargar logs.<br><span class="text-[10px] font-normal opacity-70">${e.message}</span></td></tr>`;
             }
         }
-
-        // --- FUNCIONES DE PAGINACIÓN (NUEVAS) ---
-        
+// --- FUNCIÓN RECUPERADA: DIBUJAR TABLA ---
         function renderLogsTable() {
             const tbody = document.getElementById('logs-body');
             const totalSpan = document.getElementById('total-logs');
-            const pageInfo = document.getElementById('page-info');
+            // Elementos de paginación (si existen en tu HTML)
+            const pageInfo = document.getElementById('page-info'); 
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
 
             if (!tbody) return;
 
+            // Lógica de Paginación
             const start = (currentPage - 1) * logsPerPage;
             const end = start + parseInt(logsPerPage);
             const paginatedItems = logsCache.slice(start, end);
@@ -1133,85 +1171,65 @@ async function cargarLogs() {
 
             tbody.innerHTML = '';
             
+            // Caso: Sin registros
             if (logsCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros disponibles.</td></tr>';
-                pageInfo.innerText = "0/0";
+                if(totalSpan) totalSpan.innerText = "0 REGISTROS";
                 return;
             }
 
+            // Dibujar cada fila
             paginatedItems.forEach(log => {
-                // 1. ESTILOS DE ETIQUETAS (COLORES)
-                let color = 'text-slate-500';
-                let bg = '';
+                // Formato de fecha amigable
+                let fechaStr = "Sin fecha";
+                if (log.fecha instanceof Date) {
+                    fechaStr = log.fecha.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+                }
+
+                // Colores según la acción
+                let bg = 'bg-slate-100 dark:bg-slate-700';
+                let color = 'text-slate-600 dark:text-slate-300';
                 
-                if(log.accion === 'LEGAL') { color = 'text-teal-600 dark:text-teal-400 font-bold'; bg = 'bg-teal-50 dark:bg-teal-900/20'; }
-                if(log.accion === 'CATALOGO') { color = 'text-indigo-600 dark:text-indigo-400 font-bold'; bg = 'bg-indigo-50 dark:bg-indigo-900/20'; }
-                if(log.accion === 'SISTEMA') { color = 'text-rose-500 font-bold'; }
-                if(log.accion && log.accion.includes('LOGIN')) { color = 'text-emerald-600 font-bold'; }
-
-                // 2. DETECTOR DE FECHA UNIVERSAL (AQUÍ ESTÁ LA MAGIA) 🪄
-                let fechaObj = null;
-                // Buscamos en cualquier campo posible
-                const rawDate = log.timestamp || log.fecha || log.date || log.created_at;
-
-                if (rawDate) {
-                    // Opción A: Objeto Firebase Estándar ({ seconds: ... })
-                    if (rawDate.seconds) {
-                        fechaObj = new Date(rawDate.seconds * 1000);
-                    }
-                    // Opción B: Objeto Firebase Admin ({ _seconds: ... }) -> ¡EL CULPABLE COMÚN!
-                    else if (rawDate._seconds) {
-                        fechaObj = new Date(rawDate._seconds * 1000);
-                    }
-                    // Opción C: String ISO o Timestamp numérico directo
-                    else {
-                        fechaObj = new Date(rawDate);
-                    }
+                if(log.accion) {
+                    const acc = log.accion.toUpperCase();
+                    if(acc.includes('NUEVO')) { bg = 'bg-emerald-100 dark:bg-emerald-900/30'; color = 'text-emerald-600 dark:text-emerald-400'; }
+                    if(acc.includes('EDICIÓN') || acc.includes('EDIT')) { bg = 'bg-amber-100 dark:bg-amber-900/30'; color = 'text-amber-600 dark:text-amber-400'; }
+                    if(acc.includes('ELIMINAR')) { bg = 'bg-red-100 dark:bg-red-900/30'; color = 'text-red-600 dark:text-red-400'; }
                 }
 
-                // Formatear fecha bonita
-                let fechaStr = "---";
-                if (fechaObj && !isNaN(fechaObj.getTime())) {
-                    fechaStr = fechaObj.toLocaleString('es-MX', { 
-                        day: '2-digit', month: 'short', year: '2-digit',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } else {
-                    // Si falla, mostramos en consola para depurar
-                    console.warn("⚠️ Fecha inválida en log:", log);
-                }
-
-                // 3. RENDERIZADO DE FILA
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                        <td class="p-3 w-[15%] whitespace-nowrap text-slate-400 text-[10px] font-mono">${fechaStr}</td>
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="p-3 w-[15%] text-[10px] text-slate-400 font-mono whitespace-nowrap">${fechaStr}</td>
                         
                         <td class="p-3 w-[20%] font-bold text-slate-700 dark:text-slate-200 text-xs">${log.usuario || 'Sistema'}</td>
                         
                         <td class="p-3 w-[15%]">
-                            <span class="${color} ${bg} px-2 py-0.5 rounded text-[10px] uppercase tracking-wide border border-transparent whitespace-nowrap">${log.accion}</span>
+                            <span class="${color} ${bg} px-2 py-0.5 rounded text-[10px] uppercase tracking-wide border border-transparent whitespace-nowrap">${log.accion || 'Acción'}</span>
                         </td>
                         
                         <td class="p-3 w-[50%] text-slate-500 dark:text-slate-400 text-[11px] relative">
-                            <div class="truncate w-full max-w-md" title="${log.detalle}">
-                                ${log.detalle}
+                            <div class="truncate w-full max-w-md" title="${log.detalle || ''}">
+                                ${log.detalle || ''}
                             </div>
                         </td>
                     </tr>
-                `);
+                `;
             });
 
-            // Actualizar controles de paginación
-            pageInfo.innerText = `Pág ${currentPage} de ${totalPages || 1}`;
-            totalSpan.innerText = `${logsCache.length} REGISTROS`;
+            // Actualizar contadores
+            if(totalSpan) totalSpan.innerText = `${logsCache.length} REGISTROS`;
+            if(pageInfo) pageInfo.innerText = `${currentPage} / ${totalPages || 1}`;
             
-            btnPrev.disabled = currentPage === 1;
-            btnNext.disabled = currentPage >= totalPages;
-            
-            btnPrev.classList.toggle('opacity-30', currentPage === 1);
-            btnNext.classList.toggle('opacity-30', currentPage >= totalPages);
+            // Habilitar/Deshabilitar botones
+            if(btnPrev) {
+                btnPrev.disabled = currentPage === 1;
+                btnPrev.classList.toggle('opacity-30', currentPage === 1);
+            }
+            if(btnNext) {
+                btnNext.disabled = currentPage >= totalPages;
+                btnNext.classList.toggle('opacity-30', currentPage >= totalPages);
+            }
         }
-
         function cerrarSesion() { localStorage.removeItem('leezar_user_active'); window.location.href = 'index.html'; }
     </script>
 </body>
