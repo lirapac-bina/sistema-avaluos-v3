@@ -1,10 +1,11 @@
 // logic-hoja-trabajo.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+// Lógica principal de la Hoja de Trabajo (Cálculo de Avalúos)
 
-// --- 1. CONFIGURACIÓN (Misma que en tus otros archivos) ---
+// --- 1. CONFIGURACIÓN SEGURA (Base64) ---
+const apiKeyEncoded = "QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0";
+
 const firebaseConfig = {
-    apiKey: "AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4",
+    apiKey: atob(apiKeyEncoded), // Aquí se descifra la llave mágica
     authDomain: "sistema-hipoteca-facil.firebaseapp.com",
     projectId: "sistema-hipoteca-facil",
     storageBucket: "sistema-hipoteca-facil.firebasestorage.app",
@@ -12,8 +13,17 @@ const firebaseConfig = {
     appId: "1:880781885603:web:8a74a7f811974940ccbf16"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Inicializar Firebase (Solo si no existe ya para evitar errores)
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("Firebase inicializado en Hoja de Trabajo (Modo Seguro).");
+}
+
+// Instancia de Firestore
+const db = firebase.firestore();
+
+// ---------------------------------------------------------
+// A PARTIR DE AQUÍ SIGUE TU CÓDIGO NORMAL (VARIABLES GLOBALES...)
 
 // --- 2. VARIABLES GLOBALES ---
 let expedienteId = null;

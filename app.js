@@ -1,14 +1,20 @@
 /* ==========================================
    SISTEMA LEEZAR V3 - CEREBRO CENTRAL (app.js)
-   VERSION: A PRUEBA DE FALLOS (DEBUG MAXIMO)
    ========================================== */
 
-// --- 1. CONFIGURACIÓN FIREBASE ---
-<script src="firebase-config.js"></script>
+// 1. RECUPERAR DB GLOBAL (La corrección mágica)
+// Esto conecta este archivo con la configuración que cargaste en el HTML
+const db = window.db || firebase.firestore();
 
-// --- 2. VARIABLES GLOBALES ---
+if (!db) {
+    console.error("❌ Error Crítico: app.js no encuentra la base de datos.");
+} else {
+    console.log("✅ app.js conectado a Firebase correctamente.");
+}
+
+// 2. VARIABLES GLOBALES
 let map, marker, cityCircle;
-let coordenadasInicio = null; 
+let coordenadasInicio = null;
 
 const SECCIONES = [
     { id: 1, nombre: "Dirección del Inmueble", icon: "location_on" },

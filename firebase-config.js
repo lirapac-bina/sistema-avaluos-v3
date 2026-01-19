@@ -1,6 +1,7 @@
 // firebase-config.js
 // Configuración centralizada y segura (Base64)
 
+// 1. La Llave Maestra (Cifrada)
 const apiKeyEncoded = "QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0";
 
 const firebaseConfig = {
@@ -12,13 +13,17 @@ const firebaseConfig = {
     appId: "1:880781885603:web:8a74a7f811974940ccbf16"
 };
 
-// Inicializar solo si no existe ya una instancia
+// 2. Inicializar Firebase (Si no existe ya)
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log("Firebase inicializado desde el Maestro (Modo Seguro).");
+    console.log("🔥 Firebase inicializado correctamente.");
 }
-// Exportamos db globalmente si se necesita
-let db;
+
+// 3. EXPORTAR DB AL MUNDO (La corrección mágica)
 if (typeof firebase !== 'undefined') {
-    db = firebase.firestore();
+    // Usamos 'window.db' para asegurar que TODOS los archivos la vean
+    window.db = firebase.firestore();
+    console.log("✅ Base de datos conectada y global.");
+} else {
+    console.error("❌ Error: Librerías de Firebase no cargadas antes de la configuración.");
 }

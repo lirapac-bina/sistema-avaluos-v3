@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script src="firebase-config.js"></script>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -153,8 +153,19 @@
 
         <script src="firebase-config.js"></script>
 
+        <script>
         // --- MONITOREO VIVO + CÁLCULOS MATEMÁTICOS ---
         function iniciarMonitoreoDashboard() {
+            
+            // 1. CORRECCIÓN DE SEGURIDAD: Asegurar conexión a DB
+            // Si 'db' no existe localmente, la tomamos de la ventana global (config) o la pedimos directo a Firebase
+            const db = window.db || firebase.firestore(); 
+
+            if (!db) {
+                console.error("Error crítico: No hay conexión a base de datos.");
+                return;
+            }
+
             // Elementos DOM
             const elTotal = document.getElementById('count-total');
             const elPendientes = document.getElementById('count-pendientes');
@@ -171,6 +182,7 @@
             const barCaptura = document.getElementById('bar-captura');
             const barRevision = document.getElementById('bar-revision');
 
+            // Iniciar Escucha en Tiempo Real
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 let total = 0, pendientes = 0, captura = 0, terminados = 0;
                 
