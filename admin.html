@@ -96,11 +96,18 @@
                 <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Configuración del Sistema</h1>
                 <p class="text-slate-400 text-sm mt-1">Control maestro de catálogos y usuarios.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <div class="text-right mr-2">
-                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Usuario Activo</p>
-                    <p class="text-xs font-bold text-indigo-500 dark:text-indigo-400" id="user-display">...</p>
+<div class="flex items-center gap-3">
+                <div class="flex flex-col items-end mr-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="relative flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">En Línea</span>
+                    </div>
+                    <p id="user-display" class="text-xs font-bold text-slate-700 dark:text-white mt-0.5">...</p>
                 </div>
+
                 <button onclick="cerrarSesion()" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition"><span class="material-symbols-rounded">logout</span></button>
             </div>
         </header>
@@ -152,6 +159,18 @@
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Auditoría de movimientos.</p>
                 <span class="text-xs font-bold text-amber-500 flex items-center gap-1 group-hover:gap-2 transition-all">
                     Ver Historial <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
+            </div>
+
+            <div onclick="abrirVista('unidades')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-emerald-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">domain</span>
+                </div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Unidades Valuación</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">EME, AVE y futuras unidades.</p>
+                <span class="text-xs font-bold text-emerald-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Configurar <span class="material-symbols-rounded text-sm">arrow_forward</span>
                 </span>
             </div>
         </div>
@@ -393,7 +412,7 @@
                     localStorage.setItem('leezar_user_active', JSON.stringify(foundUser)); 
                     document.getElementById('user-display').innerText = foundUser.email;
                     desbloquearPantalla();
-                    registrarLog('LOGIN_ADMIN', `Acceso a configuración: ${foundUser.email}`);
+                    // ya no es necesario: registrarLog('LOGIN_ADMIN', `Acceso a configuración: ${foundUser.email}`);
                 } else {
                     throw new Error("PIN Incorrecto");
                 }
@@ -770,10 +789,11 @@
             } else if (vista === 'legal') {
                 renderLegal(container);
             } else if (vista === 'usuarios') {
-                renderUsuarios(container); // <--- AQUI LLAMA AL CRUD REAL
+                renderUsuarios(container); 
             } else if (vista === 'bitacora') {
                 renderBitacora(container);
-            }
+            } else if (vista === 'unidades') {
+                renderUnidades(container);}
         }
 
         function cerrarVista() {
@@ -1230,6 +1250,97 @@
                 btnNext.classList.toggle('opacity-30', currentPage >= totalPages);
             }
         }
+
+// ==========================================
+        //      GESTIÓN DE UNIDADES DE VALUACIÓN
+        // ==========================================
+        async function renderUnidades(container) {
+            container.innerHTML = `
+                <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
+                    <div class="flex items-center gap-4 mb-6">
+                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Unidades de Valuación</h2>
+                            <p class="text-xs text-slate-400">Catálogo maestro de empresas.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-2xl mx-auto w-full">
+                        <div class="flex gap-2 mb-6">
+                            <input type="text" id="nueva-unidad" placeholder="Agrega solo siglas" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 uppercase">
+                            <button onclick="agregarUnidad()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2 rounded-xl transition-colors flex items-center gap-2">
+                                <span class="material-symbols-rounded">add</span> Agregar
+                            </button>
+                        </div>
+
+                        <div id="lista-unidades" class="space-y-2">
+                            <div class="text-center py-8"><span class="material-symbols-rounded animate-spin text-emerald-500">sync</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            cargarListaUnidades();
+        }
+
+async function cargarListaUnidades() {
+            const lista = document.getElementById('lista-unidades');
+            try {
+                const snapshot = await db.collection('unidades_valuacion').orderBy('nombre').get();
+                
+                if (snapshot.empty) {
+                    lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">No hay unidades. Agrega la primera.</p>';
+                    return;
+                }
+
+                lista.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // VERSIÓN SEGURA: Solo visualización, sin botón de eliminar
+                    lista.innerHTML += `
+                        <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs mr-3">
+                                ${data.nombre.substring(0,2)}
+                            </div>
+                            <span class="font-bold text-slate-700 dark:text-slate-200">${data.nombre}</span>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+                lista.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar.</p>';
+            }
+        }
+
+        async function agregarUnidad() {
+            const input = document.getElementById('nueva-unidad');
+            const nombre = input.value.trim().toUpperCase();
+            if (!nombre) return alert("Escribe un nombre.");
+
+            try {
+                // Usamos el nombre como ID para evitar duplicados exactos
+                await db.collection('unidades_valuacion').doc(nombre).set({ 
+                    nombre: nombre,
+                    creado: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                await registrarLog('CATÁLOGO', `Se agregó la unidad: ${nombre}`);
+                input.value = '';
+                cargarListaUnidades();
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
+            }
+        }
+
+        async function eliminarUnidad(id, nombre) {
+            if(!confirm(`¿Eliminar la unidad ${nombre}?`)) return;
+            try {
+                await db.collection('unidades_valuacion').doc(id).delete();
+                await registrarLog('CATÁLOGO', `Se eliminó la unidad: ${nombre}`);
+                cargarListaUnidades();
+            } catch(e) { alert(e.message); }
+        }
+
         function cerrarSesion() { localStorage.removeItem('leezar_user_active'); window.location.href = 'index.html'; }
     </script>
 </body>
