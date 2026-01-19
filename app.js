@@ -4,16 +4,7 @@
    ========================================== */
 
 // --- 1. CONFIGURACIÓN FIREBASE ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4",
-    authDomain: "sistema-hipoteca-facil.firebaseapp.com",
-    projectId: "sistema-hipoteca-facil",
-    storageBucket: "sistema-hipoteca-facil.firebasestorage.app",
-    messagingSenderId: "880781885603",
-    appId: "1:880781885603:web:8a74a7f811974940ccbf16"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+<script src="firebase-config.js"></script>
 
 // --- 2. VARIABLES GLOBALES ---
 let map, marker, cityCircle;

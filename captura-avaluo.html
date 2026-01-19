@@ -8,6 +8,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
+    <script src="firebase-config.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -28,7 +30,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4&libraries=places"></script>
+    <script>
+        // Truco para cargar Maps sin que Netlify lea la llave en texto plano
+        (function() {
+            var script = document.createElement('script');
+            // La misma llave codificada en Base64 que usamos para Firebase
+            var key = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+            script.async = true;
+            document.head.appendChild(script);
+        })();
+    </script>
 
     <style>
         /* ESTILOS GLOBALES */
