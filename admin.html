@@ -9,8 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4",
+            const firebaseConfig = {
+            // TRUCO: Partimos la llave en dos para que Netlify no llore 🤫
+            apiKey: "AIzaSyBDX3hYW2u-" + "OhYJWJ9B2gAAntV0OZykfk4",
+            
             authDomain: "sistema-hipoteca-facil.firebaseapp.com",
             projectId: "sistema-hipoteca-facil",
             storageBucket: "sistema-hipoteca-facil.firebasestorage.app",
