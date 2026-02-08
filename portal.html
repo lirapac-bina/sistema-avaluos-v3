@@ -502,28 +502,80 @@
             if(btn) btn.disabled = (evidenceImages.length === 0);
         }
 
+        // ==========================================
+        // FUNCIÓN MEJORADA: PDF OPTIMIZADO (COMPRESIÓN + DISEÑO)
+        // ==========================================
         async function guardarEvidenciaFinal() {
             if (evidenceImages.length === 0) return;
             const btn = document.getElementById('btn-pdf-ev');
-            btn.innerText = "Generando PDF..."; btn.disabled = true;
+            const txtOriginal = btn.innerText;
+            btn.innerText = "Comprimiendo y Generando..."; 
+            btn.disabled = true;
 
             try {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.setFontSize(16); doc.text(`Evidencia: ${currentDoc.label}`, 10, 20);
-                doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleString()}`, 10, 28);
+                const doc = new jsPDF(); // A4 por defecto (210 x 297 mm)
+                const pageWidth = 210;
+                const pageHeight = 297;
+                const margin = 10;
+                const imgWidth = pageWidth - (margin * 2); // 190mm (Usa todo el ancho)
+                const imgHeight = 120; // Altura fija para uniformidad (o ajustable)
 
-                let y = 35;
-                for(let img of evidenceImages) {
-                    if(y > 220) { doc.addPage(); y = 20; }
-                    doc.addImage(img, 'JPEG', 10, y, 80, 60);
-                    y += 70;
+                doc.setFontSize(14); 
+                doc.text(`Expediente: ${currentDoc.label}`, margin, 15);
+                doc.setFontSize(10); 
+                doc.text(`Fecha: ${new Date().toLocaleString()}`, margin, 22);
+
+                let y = 30; // Posición vertical inicial
+
+                // --- FUNCIÓN HELPER PARA COMPRIMIR IMÁGENES ---
+                const comprimirImagen = (base64) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.src = base64;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            // Redimensionar a máximo 1200px de ancho (Suficiente para leer texto)
+                            const maxWidth = 1200;
+                            const scale = maxWidth / img.width;
+                            canvas.width = maxWidth;
+                            canvas.height = img.height * scale;
+                            
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            // Comprimir a JPEG calidad 0.6 (Baja peso drásticamente)
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                    });
+                };
+
+                // --- PROCESO DE GENERACIÓN ---
+                for (let i = 0; i < evidenceImages.length; i++) {
+                    // 1. Comprimir la imagen actual
+                    btn.innerText = `Procesando foto ${i+1} de ${evidenceImages.length}...`;
+                    const imgComprimida = await comprimirImagen(evidenceImages[i]);
+
+                    // 2. Verificar si cabe en la página
+                    if (y + imgHeight > pageHeight - margin) {
+                        doc.addPage();
+                        y = margin; // Reiniciar Y en nueva página
+                    }
+
+                    // 3. Agregar imagen centrada y grande
+                    doc.addImage(imgComprimida, 'JPEG', margin, y, imgWidth, imgHeight);
+                    
+                    // 4. Mover Y para la siguiente
+                    y += imgHeight + 5; // 5mm de espacio entre fotos
                 }
                 
+                // --- SUBIDA ---
+                btn.innerText = "Subiendo PDF...";
                 const pdfBlob = doc.output('blob');
-                const fileName = `${currentDoc.id}_evidencia_${Date.now()}.pdf`;
                 
-                // Usamos la misma lógica de subida que ya tenías
+                // (Opcional) Log para ver cuánto bajó el peso
+                console.log(`PDF Generado: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB`);
+
+                const fileName = `${currentDoc.id}_evidencia_${Date.now()}.pdf`;
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = async () => {
@@ -532,12 +584,18 @@
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify({ expedienteId, itemKey: currentDoc.id, categoriaItem: 'solicitante', archivoBase64: base64data, nombreArchivo: fileName, mimeType: 'application/pdf' }) 
                     });
-                    alert("¡Documento guardado y subido!");
+                    alert("¡Documento guardado y subido con éxito!");
                     document.getElementById('evidenceModal').classList.add('hidden');
                     cargarDetalles();
-                }
-            } catch(e) { console.error(e); alert("Error al guardar: " + e.message); } 
-            finally { btn.innerText = "Guardar PDF y Subir"; btn.disabled = false; }
+                };
+
+            } catch(e) { 
+                console.error(e); 
+                alert("Error al generar PDF: " + e.message); 
+            } finally { 
+                btn.innerText = txtOriginal; 
+                btn.disabled = false; 
+            }
         }
 
         // ==========================================
