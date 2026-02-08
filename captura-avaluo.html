@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captura Técnica - Leezar V3</title>
+    <title>Captura de Avalúo - Leezar V3</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     
     <script src="firebase-config.js"></script>
     
+    <script src="i18n.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -26,333 +29,92 @@
             }
         }
     </script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    
-    <script>
-        // Truco para cargar Maps sin que Netlify lea la llave en texto plano
-        (function() {
-            var script = document.createElement('script');
-            // La misma llave codificada en Base64 que usamos para Firebase
-            var key = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
-            script.async = true;
-            document.head.appendChild(script);
-        })();
-    </script>
 
-    <style>
-        /* ESTILOS GLOBALES */
-        body { 
-            display: grid;
-            grid-template-rows: 60px 1fr;
-            grid-template-columns: 260px 1fr;
-            height: 100vh; overflow: hidden;
-            transition: background-color 0.3s;
-        }
-        header { grid-column: 1 / -1; }
-        aside#sidebar { grid-row: 2; grid-column: 1; }
-        main { grid-row: 2; grid-column: 2; position: relative; display: flex; flex-direction: column; }
-
-        /* VISOR DESLIZANTE */
-        #visor-panel {
-            position: absolute; top: 0; right: 0; bottom: 0; width: 450px;
-            background: #1e293b; z-index: 40; 
-            transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
-        }
-        #visor-panel.open { transform: translateX(0); }
-
-        /* JACK AI CHAT */
-        #jack-chat {
-            position: absolute; bottom: 20px; right: 20px; width: 350px;
-            z-index: 50; transform: translateY(120%); opacity: 0;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        #jack-chat.active { transform: translateY(0); opacity: 1; }
-
-        /* INPUTS PERSONALIZADOS */
-        .input-modern {
-            width: 100%; font-size: 0.8rem; padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem; transition: all 0.2s; font-weight: 500;
-            border: 1px solid #e2e8f0; background: #fff; color: #1e293b;
-        }
-        .dark .input-modern { border-color: #334155; background: #0f172a; color: #e2e8f0; }
-        .input-modern:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
-        
-        .nav-item:hover { background-color: #f1f5f9; color: #0f172a; }
-        .dark .nav-item:hover { background-color: #1e293b; color: #e2e8f0; }
-        .nav-active { background-color: #0f172a !important; color: #fff !important; font-weight: 600; }
-        .dark .nav-active { background-color: #0d9488 !important; }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        .fade-enter { animation: fadeEnter 0.3s ease-out forwards; }
-        @keyframes fadeEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
 
-    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 z-40 shadow-sm transition-colors">
-        <div class="flex items-center gap-6">
-            <a href="gestion.html" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-slate-600 dark:text-slate-200 font-bold text-xs transition active:scale-95">
-                <span class="material-symbols-rounded text-lg">dashboard</span>
-                <span class="hidden sm:inline">Dashboard</span>
+<body class="bg-slate-50 dark:bg-slate-900 h-screen flex flex-col overflow-hidden text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+    <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <a href="dashboard.html" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition text-slate-500">
+                <span class="material-symbols-rounded">arrow_back</span>
             </a>
-            <div class="h-6 w-px bg-slate-200 dark:bg-slate-600"></div>
             <div>
-                <h1 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-tight">
-                    Sistema de Valuación <span class="text-leezar-accent">V3.0</span>
-                </h1>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 rounded-full uppercase" id="header-folio">Cargando...</span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                </div>
+                <h1 class="font-bold text-sm text-leezar-600 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-leezar-500 text-base">architecture</span>
+                    Captura de Avalúo </h1>
+                <p class="text-[10px] text-slate-400">Folio: <span id="lbl-folio">Cargando...</span></p>
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-                <span class="material-symbols-rounded" id="theme-icon">dark_mode</span>
+        <div class="flex items-center gap-2">
+            <button onclick="setLanguage('es')" class="text-lg hover:scale-110 transition" title="Español">🇲🇽</button>
+            <button onclick="setLanguage('en')" class="text-lg hover:scale-110 transition" title="English">🇺🇸</button>
+            <div class="h-6 w-px bg-slate-200 dark:bg-slate-600 mx-1"></div>
+            <button onclick="toggleTheme()" class="p-2 text-slate-400 hover:text-yellow-500 transition">
+                <span class="material-symbols-rounded text-xl" id="theme-icon">light_mode</span>
             </button>
-            <div id="status-indicator" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 text-[10px] font-bold text-slate-400">
-                <span class="material-symbols-rounded text-sm">cloud_off</span> <span>Desconectado</span>
-            </div>
-            <button onclick="toggleVisor()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg active:scale-95">
-                <span class="material-symbols-rounded text-sm">dock_to_left</span> Visor
+            <button class="bg-leezar-600 hover:bg-leezar-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-leezar-500/30 flex items-center gap-2 transition-all active:scale-95" onclick="guardarProgreso()">
+                <span class="material-symbols-rounded text-sm">save</span>
+                <span data-i18n="ui_save">Guardar</span>
             </button>
         </div>
     </header>
 
-    <aside id="sidebar" class="bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto px-3 py-4 flex flex-col transition-colors">
-        <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-4 px-2">Etapas del Avalúo</h3>
-        <div id="menu-dinamico" class="space-y-1 pb-10"></div>
-    </aside>
-
-    <main class="transition-colors relative h-screen overflow-y-auto">
-        <div class="h-14 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-30 transition-colors">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-rounded text-leezar-accent text-lg">edit_note</span>
-                <span id="section-title" class="text-sm font-bold text-slate-700 dark:text-slate-200">Cargando...</span>
-            </div>
-            <button onclick="toggleJack()" class="flex items-center gap-2 px-4 py-1.5 bg-jack-50 text-jack-600 border border-jack-200 hover:bg-jack-100 dark:bg-jack-600/10 dark:text-jack-400 dark:border-jack-600/30 dark:hover:bg-jack-600/20 rounded-full transition text-xs font-bold shadow-sm group">
-                <span class="material-symbols-rounded text-lg group-hover:animate-bounce">smart_toy</span>
-                <span class="hidden sm:inline">Jack AI</span>
-            </button>
-        </div>
-
-        <div id="main-content-area" class="flex-1 overflow-y-auto p-6 md:p-10 scroll-smooth">
-            
-            <div id="section-1" class="section-wizard hidden fade-enter max-w-5xl mx-auto">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-glass border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
-                    <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                        <div>
-                            <h2 class="text-base font-bold text-slate-800 dark:text-white">Ubicación del Inmueble</h2>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Datos geográficos precisos.</p>
-                        </div>
-                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-3 py-1 rounded text-[10px] font-mono text-slate-400">ID: DIR-001</div>
-                    </div>
-
-                    <div class="p-6 md:p-8 grid grid-cols-12 gap-5">
-                        <div class="col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">C.P. <span class="text-red-500">*</span></label>
-                            <input type="text" id="dir_cp" class="input-modern text-center font-bold tracking-wider" placeholder="00000" maxlength="5">
-                        </div>
-                        <div class="col-span-5">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Colonia <span class="text-red-500">*</span></label>
-                            <select id="dir_colonia" class="input-modern"><option value="">Seleccione...</option></select>
-                        </div>
-                        <div class="col-span-5">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Municipio <span class="text-red-500">*</span></label>
-                            <input type="text" id="dir_municipio" class="input-modern">
-                        </div>
-
-                        <div class="col-span-4"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Ciudad</label><input type="text" id="dir_ciudad" class="input-modern"></div>
-                        <div class="col-span-4"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Estado</label><input type="text" id="dir_estado" class="input-modern"></div>
-                        <div class="col-span-4"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">País</label><input type="text" id="dir_pais" class="input-modern bg-slate-50 dark:bg-slate-900 text-slate-400 cursor-not-allowed" value="MÉXICO" readonly></div>
-
-                        <div class="col-span-12 h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
-
-                        <div class="col-span-3">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Tipo Vialidad</label>
-                            <select id="dir_tipo_vialidad" class="input-modern"><option value="">Seleccione</option><option value="CALLE">Calle</option><option value="AVENIDA">Avenida</option></select>
-                        </div>
-                        <div class="col-span-5"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Nombre Vialidad <span class="text-red-500">*</span></label><input type="text" id="dir_calle" class="input-modern uppercase font-bold"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5"># Ext.</label><input type="text" id="dir_num_ext" class="input-modern text-center"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5"># Int.</label><input type="text" id="dir_num_int" class="input-modern text-center"></div>
-
-                        <div class="col-span-12 mt-4">
-                            <details class="group bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                                <summary class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                                    <span>Datos Complementarios</span>
-                                    <span class="material-symbols-rounded transition group-open:rotate-180">expand_more</span>
-                                </summary>
-                                <div class="p-6 border-t border-slate-200 dark:border-slate-700 grid grid-cols-6 gap-4 bg-white dark:bg-slate-800 animate-[fadeIn_0.3s]">
-                                    <div class="col-span-3"><label class="block text-[10px] font-bold text-slate-400 mb-1">CONJUNTO</label><input type="text" class="input-modern uppercase" id="dir_conjunto"></div>
-                                    <div class="col-span-3"><label class="block text-[10px] font-bold text-slate-400 mb-1">ENTRE CALLES</label><input type="text" class="input-modern uppercase" id="dir_entre_calles"></div>
-                                </div>
-                            </details>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
-                        <button onclick="guardarYAvanzar(1)" class="bg-leezar-600 dark:bg-teal-600 hover:bg-slate-800 dark:hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
-                            <span>Guardar y Continuar</span>
-                            <span class="material-symbols-rounded text-lg">arrow_forward</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="h-20"></div>
-            </div>
-
- <div id="section-2" class="section-wizard hidden animate-fade-in h-full flex flex-col">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-                    
-                    <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center shrink-0">
-                        <div>
-                            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
-                                <span class="material-symbols-rounded text-leezar-500">satellite_alt</span>
-                                Ubicación Satelital
-                            </h3>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Radio:</span>
-                            <div class="flex items-center gap-2 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">
-                                <input type="range" min="50" max="1000" step="50" value="200" oninput="actualizarRadioMapa(this.value)" class="w-20 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-leezar-accent">
-                                <span id="radio-valor" class="text-[10px] font-bold text-leezar-600 dark:text-leezar-accent w-8 text-right">200m</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-                        
-                        <div class="relative w-full lg:w-3/4 h-full bg-slate-100 group order-2 lg:order-1">
-                            <div id="map-canvas" class="w-full h-full z-10"></div>
-                            
-                            <div class="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm rounded-lg px-3 py-1.5 border border-white/20">
-                                <div class="flex gap-4 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
-                                    <span>LAT: <span id="lat-field">-</span></span>
-                                    <span>LNG: <span id="lng-field">-</span></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="w-full lg:w-1/4 bg-slate-50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-700 p-4 flex flex-col gap-4 overflow-y-auto order-1 lg:order-2">
-                            
-                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mb-1">Capturas</div>
-
-                            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col gap-2 shrink-0">
-                                <div class="flex justify-between items-center">
-                                    <h4 class="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> MACRO
-                                    </h4>
-                                    <div id="status-macro" class="text-[9px] text-slate-400">Pendiente</div>
-                                </div>
-                                <div class="aspect-video bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden relative border border-slate-100 dark:border-slate-700" id="preview-macro">
-                                    <div class="flex flex-col items-center justify-center h-full text-slate-300">
-                                        <span class="material-symbols-rounded text-xl">image</span>
-                                    </div>
-                                </div>
-                                <button onclick="tomarSnapshot('macro')" class="w-full py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded border border-indigo-200 transition">
-                                    Capturar
-                                </button>
-                            </div>
-
-                            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col gap-2 shrink-0">
-                                <div class="flex justify-between items-center">
-                                    <h4 class="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span> MICRO
-                                    </h4>
-                                    <div id="status-micro" class="text-[9px] text-slate-400">Pendiente</div>
-                                </div>
-                                <div class="aspect-video bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden relative border border-slate-100 dark:border-slate-700" id="preview-micro">
-                                    <div class="flex flex-col items-center justify-center h-full text-slate-300">
-                                        <span class="material-symbols-rounded text-xl">image</span>
-                                    </div>
-                                </div>
-                                <button onclick="tomarSnapshot('micro')" class="w-full py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-[10px] font-bold rounded border border-teal-200 transition">
-                                    Capturar
-                                </button>
-                            </div>
-
-                            <div class="mt-auto pt-4 flex gap-2 shrink-0">
-                                <button onclick="navTo(1)" class="flex-1 py-2 text-slate-500 hover:bg-slate-100 rounded text-xs font-bold border border-transparent hover:border-slate-200 transition">
-                                    Atrás
-                                </button>
-                                <button onclick="navTo(3)" class="flex-1 py-2 bg-leezar-600 hover:bg-leezar-500 text-white rounded text-xs font-bold shadow-md transition transform active:scale-95">
-                                    Continuar
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
-
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 absolute md:relative z-10 h-full" id="sidebar-menu">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-700">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Secciones</p>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-leezar-500 h-full w-[5%]" id="progress-bar"></div>
                 </div>
             </div>
-
-            <div id="section-3" class="section-wizard hidden fade-enter max-w-5xl mx-auto">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-glass border border-slate-200 dark:border-slate-700 p-8 text-center">
-                    <span class="material-symbols-rounded text-6xl text-slate-200 dark:text-slate-700 mb-4">home_work</span>
-                    <h3 class="text-xl font-bold text-slate-400 dark:text-slate-500">Sección en Desarrollo</h3>
-                    <p class="text-sm text-slate-400 mt-2">Próximamente: Tipo y Clase del Inmueble</p>
-                </div>
-            </div>
-
-            <div id="section-generic" class="hidden text-center py-20 fade-enter">
-                <span class="material-symbols-rounded text-6xl text-slate-200 dark:text-slate-700 mb-4">construction</span>
-                <h3 class="text-xl font-bold text-slate-400 dark:text-slate-500">Sección en construcción</h3>
-            </div>
-        </div>
-
-        <aside id="visor-panel" class="border-l border-slate-700 flex flex-col">
-            <div class="h-12 bg-slate-900 border-b border-slate-700 flex items-center justify-between px-4 shrink-0">
-                <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                    <span class="material-symbols-rounded text-indigo-400">description</span> Fuente
-                </span>
-                <button onclick="toggleVisor()" class="text-slate-400 hover:text-white transition"><span class="material-symbols-rounded">close</span></button>
-            </div>
-            <div class="flex-1 bg-slate-800 flex items-center justify-center p-8 relative">
-                <div class="text-center opacity-30">
-                    <span class="material-symbols-rounded text-6xl text-slate-500 mb-2">find_in_page</span>
-                    <p class="text-xs text-slate-400">Selecciona un documento</p>
-                </div>
-            </div>
+            <nav class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1" id="secciones-lista">
+                </nav>
         </aside>
 
-        <div id="jack-chat" class="fixed bottom-6 right-6 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col z-50 h-96">
-            <div class="bg-jack-600 p-4 flex justify-between items-center shrink-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white">
+        <main class="flex-1 relative overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-900">
+            
+            <div id="dynamic-form-container" class="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full fade-in pb-24">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 animate-pulse">
+                    <span class="material-symbols-rounded text-4xl mb-2">hourglass_empty</span>
+                    <p>Iniciando sistema de captura...</p>
+                </div>
+            </div>
+
+            <div id="jack-chat" class="absolute bottom-6 right-6 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 transform translate-y-[110%] transition-transform duration-300 flex flex-col z-50 max-h-[500px]">
+                <div class="bg-jack-600 p-4 rounded-t-2xl flex justify-between items-center text-white shadow-md">
+                    <div class="flex items-center gap-2">
                         <span class="material-symbols-rounded">smart_toy</span>
+                        <h3 class="font-bold text-sm">Asistente Jack</h3>
                     </div>
-                    <div>
-                        <h4 class="text-sm font-bold text-white leading-none">Jack AI</h4>
-                        <p class="text-[10px] text-indigo-200 mt-0.5">Asistente Técnico</p>
+                    <button onclick="toggleJack()" class="hover:bg-white/20 rounded-full p-1 transition"><span class="material-symbols-rounded">expand_more</span></button>
+                </div>
+                <div class="flex-1 bg-slate-50 dark:bg-slate-900 p-4 overflow-y-auto" id="jack-messages">
+                    <div class="flex gap-3 mb-4">
+                        <div class="w-6 h-6 rounded-full bg-jack-100 dark:bg-jack-900/50 flex-shrink-0 flex items-center justify-center text-jack-600 text-xs font-bold">J</div>
+                        <div class="bg-white dark:bg-slate-800 p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+                            <p id="jack-greeting">Hola. Estoy listo para ayudarte.</p>
+                        </div>
                     </div>
                 </div>
-                <button onclick="toggleJack()" class="text-white/60 hover:text-white transition"><span class="material-symbols-rounded">expand_more</span></button>
+                <div class="p-3 border-t border-slate-100 dark:border-slate-700 flex gap-2 bg-white dark:bg-slate-800 shrink-0">
+                    <input type="text" id="jack-input" placeholder="Escribe aquí..." class="flex-1 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-jack-500 dark:text-white outline-none transition">
+                    <button onclick="preguntarAJack()" class="p-2 bg-jack-600 hover:bg-jack-700 text-white rounded-lg transition shadow-md active:scale-95"><span class="material-symbols-rounded text-lg">send</span></button>
+                </div>
             </div>
             
-            <div class="flex-1 bg-slate-50 dark:bg-slate-900 p-4 overflow-y-auto" id="jack-messages">
-                <div class="flex gap-3 mb-4">
-                    <div class="w-6 h-6 rounded-full bg-jack-100 dark:bg-jack-900/50 flex-shrink-0 flex items-center justify-center text-jack-600 text-xs font-bold">J</div>
-                    <div class="bg-white dark:bg-slate-800 p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
-                        <p id="jack-greeting">Hola. Estoy analizando la sección activa. ¿En qué te ayudo?</p>
-                    </div>
-                </div>
-            </div>
+            <button onclick="toggleJack()" class="absolute bottom-6 right-6 w-12 h-12 bg-jack-600 hover:bg-jack-500 rounded-full shadow-lg shadow-jack-600/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 z-40">
+                <span class="material-symbols-rounded text-2xl">smart_toy</span>
+            </button>
 
-            <div class="p-3 border-t border-slate-100 dark:border-slate-700 flex gap-2 bg-white dark:bg-slate-800 shrink-0">
-                <input type="text" id="jack-input" placeholder="Escribe aquí..." class="flex-1 bg-slate-100 dark:bg-slate-900 border-0 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-jack-500 dark:text-white outline-none transition">
-                <button onclick="preguntarAJack()" class="p-2 bg-jack-600 hover:bg-jack-700 text-white rounded-lg transition shadow-md active:scale-95"><span class="material-symbols-rounded text-lg">send</span></button>
-            </div>
-        </div>
-
-    </main>
+        </main>
+    </div>
 
     <script src="app.js"></script>
-
+    <script src="logic-hoja-trabajo.js"></script>
 </body>
 </html>
