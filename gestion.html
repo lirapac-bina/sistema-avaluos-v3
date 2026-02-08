@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Gestión - Ing. Leezar</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script src="firebase-config.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { 
@@ -280,71 +286,100 @@
             iniciarModoEnVivo(); 
         });
 
-        // Variable global para el listener
-        let unsubscribe;
+// ==========================================
+        // CÓDIGO CORREGIDO Y DEFINITIVO
+        // ==========================================
+        
+        let unsubscribe; // Variable de control
 
         function iniciarEscuchaRealtime() {
             const tbody = document.getElementById('table-body');
             
-            // Si ya había un listener, lo apagamos para no duplicar
-            if (unsubscribe) unsubscribe();
+            // Si ya hay una escucha activa, la detenemos
+            if (unsubscribe && typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
 
-            // 🟢 MODO AHORRO: LISTENER INTELIGENTE
+            console.log("🚀 Iniciando conexión Realtime (Versión Final)...");
+
+            // Escucha SIN filtros para traer TODO (más seguro)
             unsubscribe = db.collection('expedientes_avaluos')
-                .orderBy('fecha_creacion', 'desc')
-                .limit(50) // Solo los 50 más recientes
                 .onSnapshot((snapshot) => {
                     
-                    // Solo limpiamos si es la carga inicial
-                    if (!tbody.innerHTML.includes('tr')) tbody.innerHTML = ''; 
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-500">No hay expedientes.</td></tr>`;
+                        return;
+                    }
 
-                    // Mapeamos los datos igual que antes pero directo del snapshot
-                    dbExpedientes = [];
+                    // Limpiamos tabla si tiene mensaje de carga
+                    if (!tbody.innerHTML.includes('<tr class="hover')) tbody.innerHTML = ''; 
+
+                    dbExpedientes = []; // Reiniciamos la lista
+
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Normalización de fecha para que no falle tu tabla
+                        
+                        // 1. Lógica de Fecha (Detecta cualquier formato)
                         let fechaObj = null;
-                        if(data.fecha_creacion && data.fecha_creacion.toDate) {
-                            fechaObj = data.fecha_creacion.toDate(); 
-                        } else if(data.fechaCreacion) {
-                            fechaObj = new Date(data.fechaCreacion);
+                        let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
+
+                        if (rawDate) {
+                            if (rawDate.toDate) { fechaObj = rawDate.toDate(); } // Timestamp Firebase
+                            else if (rawDate._seconds) { fechaObj = new Date(rawDate._seconds * 1000); }
+                            else { fechaObj = new Date(rawDate); } // Texto/Num
                         }
 
-                        const timestamp = fechaObj ? fechaObj.getTime() : 0;
-                        const fechaDisplay = fechaObj 
-                            ? fechaObj.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-                            : '<span class="text-slate-300 italic">Pendiente</span>';
+                        const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
+                        const fechaDisplay = (timestamp > 0)
+                            ? fechaObj.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+                            : '<span class="text-slate-300 italic">--/--</span>';
 
+                        // 2. Agregamos al arreglo (Mapeo seguro)
                         dbExpedientes.push({
                             id: doc.id,
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
                             telefono: data.telefono || '', 
-                            tramite: (data.tipoTramite || 'General').toUpperCase(),
-                            status: (data.estatus || 'PENDIENTE').toUpperCase(),
+                            tramite: (data.tramite || data.tipoTramite || 'General').toUpperCase(),
+                            status: (data.status || data.estatus || data.estado || 'PENDIENTE').toUpperCase(),
                             fechaDisplay: fechaDisplay,
                             timestamp: timestamp,
-                            // Tus campos extra
                             capturista: data.capturista || null,
-                            visitador: data.visitador || null
+                            visitador: data.visitador || null,
+                            dibujante: data.dibujante || null,
+                            municipio: data.municipio || '', // Evita errores si faltan
+                            colonia: data.colonia || ''
                         });
                     });
 
-                    // Actualizar UI
-                    renderizarTabla(dbExpedientes); // Asegúrate que esta función exista en tu js/layout.js o abajo
+                    // 3. Ordenamos (Nuevo -> Viejo)
+                    dbExpedientes.sort((a, b) => b.timestamp - a.timestamp);
+
+                    console.log(`✅ Cargados ${dbExpedientes.length} expedientes.`);
+
+                    // 4. PINTAMOS LA TABLA (Usando tu función original)
+                    if (typeof filtrarTabla === 'function') {
+                        filtrarTabla(true); 
+                    } else {
+                        console.error("❌ ERROR: No encuentro la función 'filtrarTabla'.");
+                    }
                     
+                    // 5. Actualizamos reloj
                     const now = new Date();
-                    document.getElementById('last-update').textContent = `En vivo: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    const label = document.getElementById('last-update');
+                    if(label) label.textContent = `En vivo: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 
                 }, (error) => {
-                    console.error("Error en tiempo real:", error);
+                    console.error("❌ ERROR FIREBASE:", error);
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${error.message}</td></tr>`;
                 });
         }
 
-        // Inicializador limpio
+        // Arrancamos al cargar
         document.addEventListener('DOMContentLoaded', () => {
             iniciarEscuchaRealtime();
         });
-
+        
+        
         async function asignar(id, rol, selectElement) {
             const colaborador = selectElement.value;
             const original = selectElement.getAttribute('data-original');
