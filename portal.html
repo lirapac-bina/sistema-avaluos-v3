@@ -405,7 +405,7 @@
             const input = document.getElementById('security-input').value.trim();
             const errorMsg = document.getElementById('security-error');
             
-            // Hash 
+            // Hash "wana"
             const masterHash = "4b34eb89578033d59664f3d242f205562760f385c2759905c86c8f938d227440"; 
             
             let isMaster = false;
@@ -416,14 +416,14 @@
 
             if (!isMaster && input.length < 4) return;
 
-            // Modo Local
+            // Modo Local (Sin ID)
             if (!expedienteId) {
                 if(isMaster) { alert("⚠️ Modo Admin Local"); desbloquearUI(); } 
                 else { alert("❌ Faltan datos en la URL (?id=...)"); }
                 return;
             }
 
-            // Modo Producción
+// Modo Producción
             try {
                 const docRef = db.collection('expedientes_avaluos').doc(expedienteId);
                 const docSnap = await docRef.get();
@@ -432,12 +432,14 @@
                 
                 const data = docSnap.data();
                 docData = data; 
-                const telReal = data.telefono_cliente || "XXXXXX";
+                
+                const telReal = (data.telefono || "XXXXXX").toString();
 
                 if (isMaster || input === telReal.slice(-4)) {
                     console.log("Acceso Autorizado");
                     desbloquearUI();
-                    cargarDetalles(); // Cargar la info visual
+                    verificarEstadoLegal(); // <--- ¡AGREGA ESTA LÍNEA AQUÍ!
+                    cargarDetalles(); 
                 } else {
                     errorMsg.classList.remove('hidden');
                     if(navigator.vibrate) navigator.vibrate(200);
@@ -726,14 +728,26 @@
 
             // Lógica URL Descarga
             let downloadLink = '';
+            let alertMsg = ''; // NUEVO: Mensaje Amarillo
+            
             let urlFinal = item.urlFormato;
             if (!urlFinal) {
                 const n = nombre.toUpperCase();
                 if (n.includes('SOLICITUD') && n.includes('AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
                 else if (n.includes('SOLICITUD') && n.includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
             }
+            
             if (urlFinal) {
                 downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Formato</a>`;
+            }
+
+            // NUEVO: Si es Solicitud Pendiente -> Poner Aviso Amarillo Latente
+            if (nombre.toUpperCase().includes('SOLICITUD') && estatus === 'pendiente') {
+                alertMsg = `
+                <div class="mt-3 w-full bg-amber-50 border border-amber-100 rounded-lg p-2 flex items-start gap-2 animate-pulse">
+                    <span class="material-symbols-rounded text-amber-500 text-sm mt-0.5">info</span>
+                    <p class="text-[10px] text-amber-700 font-bold leading-tight">IMPORTANTE: Descarga, imprime a color, firma con tinta azul y sube la solicitud.</p>
+                </div>`;
             }
 
             let controlHtml = '';
@@ -746,7 +760,7 @@
                             <span class="material-symbols-rounded text-lg">photo_camera</span> Escanear
                         </button>
                         <label class="px-4 py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 btn-upload transition-all active:scale-95">
-                            <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> Archivo
+                            <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> PDF
                             <input type="file" accept="image/*,application/pdf" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
                         </label>
                     </div>
@@ -755,7 +769,7 @@
                 controlHtml = `<div class="mt-4 sm:mt-0 px-4 py-2 bg-${color}-100 text-${color}-700 border border-${color}-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1 w-full sm:w-auto shadow-sm"><span class="material-symbols-rounded text-lg">${icon}</span> ${texto}</div>`;
             }
 
-            return `<div class="${bgClass} border ${borderClass} rounded-xl p-5 mb-3 transition-all shadow-sm hover:shadow-md relative overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div class="flex items-start gap-3 flex-1"><span class="material-symbols-rounded text-${color}-500 text-2xl mt-0.5">${icon}</span><div><div class="flex items-center flex-wrap gap-1"><p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>${badgeOpcional}</div></div></div><div class="shrink-0 w-full sm:w-auto flex justify-end">${controlHtml}</div></div></div>`;
+            return `<div class="${bgClass} border ${borderClass} rounded-xl p-5 mb-3 transition-all shadow-sm hover:shadow-md relative overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div class="flex items-start gap-3 flex-1"><span class="material-symbols-rounded text-${color}-500 text-2xl mt-0.5">${icon}</span><div><div class="flex items-center flex-wrap gap-1"><p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>${badgeOpcional}</div></div></div><div class="shrink-0 w-full sm:w-auto flex justify-end">${controlHtml}</div></div>${alertMsg}</div>`;
         }
 
         // --- FUNCIONES AUXILIARES ORIGINALES (MAPA, UBICACIÓN, ETC) ---
