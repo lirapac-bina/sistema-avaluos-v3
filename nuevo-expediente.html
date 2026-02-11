@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo Avalúo - Ing. Leezar</title>
+    <title>Nuevo Avalúo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
@@ -24,7 +24,7 @@
                 <h1 class="text-gray-800 dark:text-white text-2xl font-extrabold flex items-center gap-2 tracking-tight">
                     <span class="material-symbols-rounded text-teal-600 dark:text-teal-400 text-3xl">home_work</span> Nuevo Avalúo
                 </h1>
-                <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Sistema EME - Gestión de Avalúos</p>
+                <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Sistema de Gestión de Avalúos</p>
             </div>
             <a href="gestion.html" class="text-gray-400 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 text-sm font-bold bg-gray-50 dark:bg-slate-700 px-4 py-2 rounded-full hover:bg-teal-50 dark:hover:bg-teal-900/30">
                 <span class="material-symbols-rounded text-lg">arrow_back</span> Cancelar
@@ -33,7 +33,34 @@
 
         <div class="p-8 md:p-10 bg-slate-50 dark:bg-slate-900/50">
             <form id="form-nuevo" onsubmit="crearExpediente(event)">
-                
+
+                <div class="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-4 ml-1 uppercase tracking-widest text-center">Selecciona la Unidad de Valuación</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="unidad" value="AVE" checked class="peer hidden">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-teal-500 peer-checked:text-teal-600 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-teal-300">
+                                <span class="material-symbols-rounded text-3xl">apartment</span>
+                                <span class="text-[10px] md:text-xs uppercase">Leezar (AVE)</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="unidad" value="EME" class="peer hidden">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-indigo-500 peer-checked:text-indigo-600 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-indigo-300">
+                                <span class="material-symbols-rounded text-3xl">domain</span>
+                                <span class="text-[10px] md:text-xs uppercase">Unidad EME</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="unidad" value="PNA" class="peer hidden">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-blue-500 peer-checked:text-blue-600 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-blue-300">
+                                <span class="material-symbols-rounded text-3xl">corporate_fare</span>
+                                <span class="text-[10px] md:text-xs uppercase">Unidad PNA</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">CLIENTE / SOLICITANTE</label>
@@ -222,32 +249,47 @@
             const tramite = document.getElementById('tipoTramite').value;
             const ubicacion = document.getElementById('estado').value;
 
+            // 1. Validación de campos básicos
             if (!tramite || !ubicacion) {
-                alert("Error: Debes seleccionar una Ubicación y un Trámite válidos.");
+                alert("⚠️ Error: Debes seleccionar una Ubicación y un Trámite válidos.");
                 return;
             }
 
+            // 2. Validación de Unidad (Blindaje)
+            const unidadSeleccionada = document.querySelector('input[name="unidad"]:checked');
+            if (!unidadSeleccionada) {
+                alert("⚠️ Error: Por favor selecciona una Unidad de Valuación (Leezar, EME o PNA).");
+                return;
+            }
+            const valorUnidad = unidadSeleccionada.value;
+
+            // 3. Preparación UI
             const originalContent = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="material-symbols-rounded animate-spin mr-2">sync</span> Generando ID...`;
             
             try {
+                // 4. Envío de datos
                 let response = await fetch('/.netlify/functions/create-expediente', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         tipoServicio: 'avaluo', 
-                        nombre: document.getElementById('nombre').value.toUpperCase(),
-                        telefono: document.getElementById('telefono').value,
+                        nombre: document.getElementById('nombre').value.toUpperCase().trim(), // Agregué .trim() para limpiar espacios
+                        telefono: document.getElementById('telefono').value.trim(),
                         tipoTramite: tramite, 
                         entidad: ubicacion, 
                         numSolicitantes: solicitantes,
-                        numPropietarios: propietarios
+                        numPropietarios: propietarios,
+                        unidad: valorUnidad // Usamos la variable segura
                     })
                 });
 
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+
                 let json = await response.json();
 
+                // 5. Éxito
                 document.getElementById('form-nuevo').classList.add('hidden');
                 document.getElementById('resultado').classList.remove('hidden');
                 
@@ -256,15 +298,21 @@
                 
                 document.getElementById('liga-generada').value = cleanUrl;
                 document.getElementById('btn-ver-portal').href = cleanUrl;
-                const mensaje = `Hola *${document.getElementById('nombre').value}*, sube tus documentos aquí: ${cleanUrl}`;
-                document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${document.getElementById('telefono').value}&text=${encodeURIComponent(mensaje)}`;
+                
+                const nombreCliente = document.getElementById('nombre').value.toUpperCase().trim();
+                const telefonoCliente = document.getElementById('telefono').value.trim();
+                
+                const mensaje = `Hola *${nombreCliente}*, hemos generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
+                document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${telefonoCliente}&text=${encodeURIComponent(mensaje)}`;
 
             } catch (error) {
-                alert("Hubo un error de conexión.");
+                console.error("Error al crear expediente:", error);
+                alert("❌ Hubo un error al conectar con el servidor. Intenta de nuevo.");
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
             }
         }
+        
     </script>
 </body>
 </html>

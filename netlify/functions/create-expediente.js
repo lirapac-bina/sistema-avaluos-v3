@@ -1,14 +1,26 @@
 const admin = require('firebase-admin');
+const { google } = require('googleapis'); // <--- REQUISITO: npm install googleapis
 const fs = require('fs');
 const path = require('path');
 
-// --- 1. INICIALIZACIÓN ---
+// --- CONFIGURACIÓN DE CARPETAS MAESTRAS (DRIVE) ---
+// Aquí definimos "qué marca va en qué carpeta"
+const DRIVE_FOLDERS = {
+    'PNA': '1s_Q8ZOk2GtaAbKmT7bY23G-IYgb-fZU-', // ✅ ID CONFIRMADO (PNA)
+    'EME': 'PONER_AQUI_EL_ID_DE_EME',           // ⚠️ PENDIENTE: Cambia esto por el ID real
+    'AVE': 'PONER_AQUI_EL_ID_DE_AVE'            // ⚠️ PENDIENTE: Cambia esto por el ID real
+};
+
+// --- 1. INICIALIZACIÓN BLINDADA ---
+let serviceAccount = null; // Lo hacemos global para reusarlo en Drive
+
 if (admin.apps.length === 0) {
-    let serviceAccount;
+    // Intenta leer de variable de entorno (Nube)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
+    // Si no, intenta leer de archivo local (PC)
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -32,6 +44,54 @@ function obtenerListaSegura(obj, key) {
     return obj[key] || obj[key.toUpperCase()] || obj[key.charAt(0).toUpperCase() + key.slice(1)] || [];
 }
 
+// --- FUNCIÓN HELPER: CREAR CARPETA EN DRIVE ---
+async function crearCarpetaDrive(nombreCliente, unidad) {
+    if (!serviceAccount) {
+        console.error("❌ No hay credenciales para Drive.");
+        return null;
+    }
+
+    try {
+        // 1. Determinar la carpeta padre (PNA, EME o AVE)
+        // Si la unidad no tiene carpeta, usamos la de AVE (o la que definas como default)
+        const parentFolderId = DRIVE_FOLDERS[unidad] || DRIVE_FOLDERS['AVE'];
+        
+        if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) {
+            console.warn(`⚠️ No hay ID de carpeta configurado para: ${unidad}`);
+            return null;
+        }
+
+        // 2. Autenticación con Google Drive
+        const auth = new google.auth.JWT(
+            serviceAccount.client_email,
+            null,
+            serviceAccount.private_key,
+            ['https://www.googleapis.com/auth/drive']
+        );
+
+        const drive = google.drive({ version: 'v3', auth });
+
+        // 3. Crear la carpeta
+        const fileMetadata = {
+            'name': nombreCliente, // Nombre de la carpeta = Nombre del Cliente
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': [parentFolderId] // ¡Aquí está la magia! La metemos en su "casa" correcta
+        };
+
+        const file = await drive.files.create({
+            resource: fileMetadata,
+            fields: 'id'
+        });
+
+        console.log(`✅ Carpeta creada en Drive (${unidad}): ${file.data.id}`);
+        return file.data.id;
+
+    } catch (error) {
+        console.error("❌ Error creando carpeta en Drive:", error);
+        return null; // Si falla, no rompemos el proceso, solo no guardamos el ID
+    }
+}
+
 const PLANTILLA_RESPALDO = {
     solicitante: [{ nombre: 'Identificación Oficial', id: 'INE', obligatorio: true }],
     propietario: [{ nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true }],
@@ -39,11 +99,13 @@ const PLANTILLA_RESPALDO = {
 };
 
 exports.handler = async (event, context) => {
+    // Solo permitir POST
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
     try {
         const data = JSON.parse(event.body);
         
+        // Leemos y normalizamos la entidad y el trámite
         const entidad = normalizar(data.entidad || 'GLOBAL'); 
         const tramite = normalizar(data.tipoTramite || 'AVALUO');
         const numSol = parseInt(data.numSolicitantes) || 1;
@@ -51,7 +113,7 @@ exports.handler = async (event, context) => {
 
         console.log(`🔨 Creando Expediente: ${entidad} - ${tramite}`);
 
-        // --- 2. LEER DE FIREBASE ---
+        // --- 2. LEER CONFIGURACIÓN (PLANTILLA) ---
         let plantilla = null;
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
@@ -59,134 +121,95 @@ exports.handler = async (event, context) => {
             if (docSnap.exists) {
                 const todo = docSnap.data().requisitos || docSnap.data();
                 let plantillaEntidad = todo[entidad] || todo[Object.keys(todo).find(k => normalizar(k) === entidad)];
+                
                 if (!plantillaEntidad) {
-                    plantillaEntidad = todo['GLOBAL'] || todo[Object.keys(todo).find(k => normalizar(k) === 'GLOBAL')];
+                    console.warn(`⚠️ No se encontró config para ${entidad}, usando respaldo.`);
+                    plantillaEntidad = todo['GLOBAL'] || todo['VERACRUZ'] || PLANTILLA_RESPALDO;
                 }
-                if (plantillaEntidad) {
-                    plantilla = plantillaEntidad[tramite] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramite)];
-                }
+                
+                const servicios = plantillaEntidad.servicios || plantillaEntidad;
+                plantilla = servicios[tramite] || servicios[Object.keys(servicios).find(k => normalizar(k) === tramite)];
             }
-        } catch (e) { console.error("Error config:", e); }
-
-        if (!plantilla) plantilla = PLANTILLA_RESPALDO;
-
-        // --- 3. CONSTRUIR CHECKLIST ---
-        let checklistFinal = {};
-        
-        const procesarLista = (origen, cantidad, rol) => {
-            if (!origen) return;
-            let items = Array.isArray(origen) ? origen : Object.values(origen);
-            const loop = cantidad > 0 ? cantidad : 1;
-
-            for (let i = 1; i <= loop; i++) {
-                items.forEach(item => {
-                    if (!item.nombre) return;
-                    
-                    const suffixID = loop > 1 ? `_${i}` : '';
-                    let cleanID = item.id ? normalizar(item.id).replace(/\s+/g, '_') : `DOC_${Math.floor(Math.random()*99999)}`;
-                    const nNorm = normalizar(item.nombre);
-                    let esDeSistema = false; 
-                    
-                    // --- DETECCIÓN DE SISTEMA ---
-                    
-                    if (nNorm.includes('SOLICITUD') && nNorm.includes('AVAL')) {
-                        cleanID = 'SOLICITUD_AVALUO_SYS'; 
-                        esDeSistema = true;
-                    }
-                    else if (nNorm.includes('SOLICITUD') && nNorm.includes('INFONAVIT')) {
-                        cleanID = 'SOLICITUD_INFONAVIT_SYS';
-                        esDeSistema = true;
-                    }
-                    // CORRECCIÓN MAESTRA: SOLO SI ES SOLICITANTE ASIGNAMOS LA LLAVE MAESTRA
-                    else if (nNorm.includes('CORREO') && rol.toLowerCase() === 'solicitante') {
-                        cleanID = 'CORREO_ELECTRONICO_AUTO';
-                        esDeSistema = true;
-                    }
-
-                    // --- LLAVE EXACTA PARA SISTEMA, DINÁMICA PARA EL RESTO ---
-                    let finalKey = esDeSistema ? cleanID : `${cleanID}_${rol.toUpperCase()}${suffixID}`;
-
-                    // Caso borde: Múltiples solicitantes con correo
-                    if (esDeSistema && cleanID === 'CORREO_ELECTRONICO_AUTO' && i > 1) {
-                         finalKey = `${cleanID}_${i}`; 
-                    }
-
-                    checklistFinal[finalKey] = {
-                        id: cleanID,
-                        nombre: item.nombre + (loop > 1 && !esDeSistema ? ` (${rol} ${i})` : ''),
-                        categoria: rol.toLowerCase(), 
-                        obligatorio: item.obligatorio !== false, 
-                        estatus: 'PENDIENTE',
-                        tipo: nNorm.includes('CORREO') ? 'TXT' : 'documento',
-                        urlFormato: item.urlFormato || null, 
-                        fecha: new Date().toISOString()
-                    };
-                });
-            }
-        };
-
-        procesarLista(obtenerListaSegura(plantilla, 'solicitante'), numSol, 'Solicitante');
-        procesarLista(obtenerListaSegura(plantilla, 'propietario'), numProp, 'Propietario');
-        procesarLista(obtenerListaSegura(plantilla, 'inmueble'), 1, 'Inmueble');
-
-        // --- 4. INYECCIONES DE SISTEMA (Solo si faltan) ---
-
-        const existeKey = (key) => !!checklistFinal[key];
-
-        // A) Mapa
-        checklistFinal['UBICACION_MAPS'] = { 
-            nombre: 'Ubicación del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' 
-        };
-
-        // B) Correo (Si no venía en la BD del solicitante)
-        if (!existeKey('CORREO_ELECTRONICO_AUTO')) {
-            checklistFinal['CORREO_ELECTRONICO_AUTO'] = { 
-                nombre: 'Correo electrónico', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT', id: 'CORREO_ELECTRONICO_AUTO' 
-            };
+        } catch (e) {
+            console.error("Error leyendo plantilla:", e);
         }
 
-        // C) Fotos
-        checklistFinal['FOTO_FACHADA'] = { 
-            nombre: 'Foto de Fachada', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'imagen', seccion: 'FOTOS', id: 'FOTO_FACHADA' 
-        };
-        checklistFinal['FOTOS_INTERIORES_GENERAL'] = { 
-            nombre: 'Fotografías Interiores y Entorno', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: false, tipo: 'galeria', seccion: 'FOTOS', id: 'FOTOS_INTERIORES_GENERAL' 
+        if (!plantilla) {
+            console.warn("⚠️ Usando plantilla de respaldo hardcoded");
+            plantilla = PLANTILLA_RESPALDO;
+        }
+
+        // --- 3. GENERAR CHECKLIST ---
+        let checklistFinal = {};
+        const procesarItems = (items, categoria, cantidad = 1) => {
+            if (!items) return;
+            items.forEach(item => {
+                const esMulti = item.multi || item.porPersona || false;
+                const loop = esMulti ? cantidad : 1;
+                for (let i = 0; i < loop; i++) {
+                    let suffix = loop > 1 ? `_${i + 1}` : '';
+                    let key = `${normalizar(item.id || item.nombre)}${suffix}`;
+                    let nombre = `${item.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    checklistFinal[key] = {
+                        nombre: nombre,
+                        categoria: categoria,
+                        estatus: 'PENDIENTE',
+                        obligatorio: item.obligatorio !== false,
+                        tipo: item.tipo || 'archivo',
+                        originalId: item.id
+                    };
+                }
+            });
         };
 
-        // D) Solicitudes Faltantes (Si la BD no las tenía)
-        if (tramite.includes('INFONAVIT')) {
-            if (!existeKey('SOLICITUD_AVALUO_SYS')) {
-                checklistFinal['SOLICITUD_AVALUO_SYS'] = {
-                    id: 'SOLICITUD_AVALUO_SYS',
-                    nombre: 'Solicitud Avalúo', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
-                    urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf'
-                };
-            }
-            if (!existeKey('SOLICITUD_INFONAVIT_SYS')) {
-                checklistFinal['SOLICITUD_INFONAVIT_SYS'] = {
-                    id: 'SOLICITUD_INFONAVIT_SYS',
-                    nombre: 'Solicitud Infonavit', categoria: 'solicitante', estatus: 'PENDIENTE', obligatorio: true, tipo: 'documento',
-                    urlFormato: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf'
-                };
-            }
-            checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
-        } else if (tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
+        procesarItems(obtenerListaSegura(plantilla, 'solicitante'), 'solicitante', numSol);
+        procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
+        procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
+
+        checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' };
+        if (tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
              checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
         }
 
-        // --- 5. GUARDAR ---
-        const nombreClienteFinal = data.nombre || "Cliente Nuevo";
+        // --- 4. PREPARAR DATOS DEL EXPEDIENTE ---
+        const nombreClienteFinal = normalizar(data.nombre) || "CLIENTE NUEVO";
+        
+        // Detectamos la unidad para Drive y Logo
+        const unidadDestino = data.unidad || 'AVE'; 
+
+        // --- 4.5 CREAR CARPETA EN DRIVE (NUEVO) ---
+        // Intentamos crear la carpeta antes de guardar en Firebase
+        let driveFolderId = null;
+        if (serviceAccount) {
+            console.log(`📂 Intentando crear carpeta en Drive para: ${unidadDestino}`);
+            driveFolderId = await crearCarpetaDrive(nombreClienteFinal, unidadDestino);
+        }
+
+        // --- 5. ARMAR EL OBJETO FINAL ---
         const nuevoExpediente = {
-            ...data,
-            nombreCliente: nombreClienteFinal, 
+            tipoServicio: data.tipoServicio || 'avaluo',
             cliente: nombreClienteFinal,
+            nombreCliente: nombreClienteFinal,
+            telefono: data.telefono,
+            entidad: entidad,
+            tipoTramite: tramite,
+            tramite: tramite, 
+            numSolicitantes: numSol,
+            numPropietarios: numProp,
+            
+            // Unidad para el logo del portal
+            unidad: unidadDestino, 
+            
+            // ID de la carpeta en Drive (Si se creó con éxito)
+            driveFolderId: driveFolderId || null,
+
             checklist: checklistFinal,
             estatus: 'PENDIENTE',
-            entidad: entidad, 
             fechaCreacion: new Date().toISOString(),
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
 
+        // --- 6. GUARDAR EN FIREBASE ---
         const coleccionDestino = tramite.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
         const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
 
@@ -196,7 +219,8 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ 
                 id: ref.id, 
                 message: "Expediente Creado",
-                url: `/portal.html?id=${ref.id}`
+                url: `/portal.html?id=${ref.id}`,
+                driveFolderId: driveFolderId // Devolvemos el ID por si acaso
             }) 
         };
 

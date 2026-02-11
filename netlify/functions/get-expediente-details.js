@@ -99,7 +99,10 @@ exports.handler = async (event, context) => {
         fechaCreacion: data.fechaCreacion,
         checklist: data.checklist || {},
         telefono: data.telefono || "",
-        entidad: data.entidad || data.ubicacion || 'GLOBAL' 
+        entidad: data.entidad || data.ubicacion || 'GLOBAL',
+        
+        // 🔥 AGREGAMOS ESTA LÍNEA IMPORTANTE:
+        unidad: data.unidad || 'AVE' 
       })
     };
 
