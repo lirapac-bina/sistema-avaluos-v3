@@ -65,10 +65,10 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
         const auth = new google.auth.JWT(
             serviceAccount.client_email,
             null,
-            serviceAccount.private_key,
+            // 🔥 ESTA LÍNEA ES LA SOLUCIÓN: Reparamos los saltos de línea
+            (serviceAccount.private_key || '').replace(/\\n/g, '\n'),
             ['https://www.googleapis.com/auth/drive']
         );
-
         const drive = google.drive({ version: 'v3', auth });
 
         // 3. Crear la carpeta
