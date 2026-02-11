@@ -785,7 +785,7 @@
                 await cargarDetalles();
             } catch(e) { alert("Error al guardar correo"); }
         }
-        // --- FUNCIÓN ITEM (MEJORADA: RÁFAGA + DESCARGAS) ---
+        // --- FUNCIÓN ITEM (MEJORADA: RÁFAGA + DESCARGAS + MÚLTIPLES PDF) ---
         function generarTarjetaItem(key, item, nombre, estatus, categoria) {
             let color = 'gray'; let icon = 'radio_button_unchecked'; let texto = 'PENDIENTE';
             if(estatus === 'validado') { color = 'emerald'; icon = 'check_circle'; texto = 'VALIDADO'; }
@@ -796,9 +796,8 @@
             const borderClass = estatus === 'rechazado' ? 'border-orange-300 ring-2 ring-orange-100' : `border-${color}-200 dark:border-${color}-800`;
             const badgeOpcional = item.obligatorio === false ? `<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 border border-gray-200 font-bold">OPCIONAL</span>` : `<span class="text-red-500 ml-1 font-bold">*</span>`;
 
-            // Lógica URL Descarga
             let downloadLink = '';
-            let alertMsg = ''; // NUEVO: Mensaje Amarillo
+            let alertMsg = ''; 
             
             let urlFinal = item.urlFormato;
             if (!urlFinal) {
@@ -806,21 +805,16 @@
                 if (n.includes('SOLICITUD') && n.includes('AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
                 else if (n.includes('SOLICITUD') && n.includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
             }
-            
             if (urlFinal) {
                 downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Formato</a>`;
             }
-
-            // NUEVO: Si es Solicitud Pendiente -> Poner Aviso Amarillo Latente
             if (nombre.toUpperCase().includes('SOLICITUD') && estatus === 'pendiente') {
-                alertMsg = `
-                <div class="mt-3 w-full bg-amber-50 border border-amber-100 rounded-lg p-2 flex items-start gap-2 animate-pulse">
-                    <span class="material-symbols-rounded text-amber-500 text-sm mt-0.5">info</span>
-                    <p class="text-[10px] text-amber-700 font-bold leading-tight">IMPORTANTE: Descarga, imprime a color, firma con tinta azul y sube la solicitud.</p>
-                </div>`;
+                alertMsg = `<div class="mt-3 w-full bg-amber-50 border border-amber-100 rounded-lg p-2 flex items-start gap-2 animate-pulse"><span class="material-symbols-rounded text-amber-500 text-sm mt-0.5">info</span><p class="text-[10px] text-amber-700 font-bold leading-tight">IMPORTANTE: Descarga, imprime a color, firma con tinta azul y sube la solicitud.</p></div>`;
             }
 
             let controlHtml = '';
+            
+            // Si está pendiente o rechazado, mostramos los botones de carga
             if (estatus === 'pendiente' || estatus === 'rechazado') {
                 controlHtml = `
                 <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto mt-3 sm:mt-0 justify-end">
@@ -830,18 +824,19 @@
                             <span class="material-symbols-rounded text-lg">photo_camera</span> Escanear
                         </button>
                         <label class="px-4 py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 btn-upload transition-all active:scale-95">
-                            <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> PDF
-                            <input type="file" accept="image/*,application/pdf" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
+                            <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> Cargar Archivos
+                            <input type="file" multiple accept="image/*,application/pdf" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
                         </label>
                     </div>
                 </div>`;
             } else {
+                // Si está en revisión o validado, SOLO mostramos el estatus (sin botón de agregar más)
                 controlHtml = `<div class="mt-4 sm:mt-0 px-4 py-2 bg-${color}-100 text-${color}-700 border border-${color}-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1 w-full sm:w-auto shadow-sm"><span class="material-symbols-rounded text-lg">${icon}</span> ${texto}</div>`;
             }
 
             return `<div class="${bgClass} border ${borderClass} rounded-xl p-5 mb-3 transition-all shadow-sm hover:shadow-md relative overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div class="flex items-start gap-3 flex-1"><span class="material-symbols-rounded text-${color}-500 text-2xl mt-0.5">${icon}</span><div><div class="flex items-center flex-wrap gap-1"><p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>${badgeOpcional}</div></div></div><div class="shrink-0 w-full sm:w-auto flex justify-end">${controlHtml}</div></div>${alertMsg}</div>`;
         }
-
+        
         // --- FUNCIONES AUXILIARES ORIGINALES (MAPA, UBICACIÓN, ETC) ---
         function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
         window.initMap = function() { geocoder = new google.maps.Geocoder(); };
@@ -852,19 +847,65 @@
         async function confirmarUbicacion() { if(!selectedLocation) return alert("Mueve el mapa primero."); const btn = document.getElementById('btn-confirm-map'); btn.innerHTML = 'Guardando...'; btn.disabled = true; try { const res = await fetch('/.netlify/functions/save-coords', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ expedienteId: expedienteId, lat: selectedLocation.lat, lng: selectedLocation.lng, direccion: selectedLocation.address }) }); if(!res.ok) throw new Error("Error al guardar"); await cargarDetalles(); cerrarMapa(); } catch (error) { console.error(error); alert("Error de conexión."); } finally { btn.innerHTML = 'Guardar Ubicación'; btn.disabled = false; } }
         
         async function subirArchivo(itemKey, nombre, categoria, input) {
-            const archivo = input.files[0]; if(!archivo) return;
-            const label = input.closest('label'); const originalContent = label.innerHTML;
-            label.innerHTML = `<span class="material-symbols-rounded animate-spin text-indigo-500">sync</span>`;
+            const files = input.files;
+            if (!files || files.length === 0) return;
+
+            const label = input.closest('label');
+            const originalContent = label.innerHTML;
+            
+            // Indicador visual de carga masiva
+            label.innerHTML = `<span class="material-symbols-rounded animate-spin text-indigo-500">sync</span> Subiendo ${files.length}...`;
+            label.style.pointerEvents = 'none';
+
             try {
-                const base64 = await new Promise((r) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(archivo); });
-                const safeName = nombre.replace(/[^a-zA-Z0-9]/g, '_') + '.' + archivo.name.split('.').pop();
-                const res = await fetch('/.netlify/functions/subir-archivo', { 
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ expedienteId, itemKey: itemKey, categoriaItem: categoria, archivoBase64: base64.split(',')[1], nombreArchivo: safeName, mimeType: archivo.type }) 
-                });
-                if(!res.ok) throw new Error("Error en servidor");
+                // BUCLE PARA SUBIR CADA ARCHIVO
+                for (let i = 0; i < files.length; i++) {
+                    const archivo = files[i];
+                    console.log(`Subiendo archivo ${i + 1} de ${files.length}: ${archivo.name}`);
+
+                    const base64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                        reader.readAsDataURL(archivo);
+                    });
+
+                    // Si es el primer archivo, usa la Key original.
+                    // Si son el 2do, 3ro, etc., les pone _ANEXO_X para no sobrescribir el primero.
+                    let finalKey = itemKey;
+                    let finalNombre = nombre;
+                    
+                    if (i > 0) {
+                        finalKey = `${itemKey}_ANEXO_${i}`;
+                        finalNombre = `${nombre} (Anexo ${i})`;
+                    }
+
+                    const safeName = finalNombre.replace(/[^a-zA-Z0-9]/g, '_') + '.' + archivo.name.split('.').pop();
+                    
+                    const res = await fetch('/.netlify/functions/subir-archivo', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ 
+                            expedienteId, 
+                            itemKey: finalKey, 
+                            categoriaItem: categoria, 
+                            archivoBase64: base64.split(',')[1], 
+                            nombreArchivo: safeName, 
+                            mimeType: archivo.type 
+                        }) 
+                    });
+
+                    if (!res.ok) throw new Error(`Error subiendo ${archivo.name}`);
+                }
+
                 await cargarDetalles(); 
-            } catch (error) { console.error(error); alert('Error al subir.'); label.innerHTML = originalContent; }
+
+            } catch (error) { 
+                console.error(error); 
+                alert('Hubo un error al subir los archivos. Intenta de nuevo.'); 
+                label.innerHTML = originalContent; 
+                label.style.pointerEvents = 'auto';
+            }
         }
 
         function switchTab(categoria) { currentTab = categoria; document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden')); document.getElementById(`section-${categoria}`).classList.remove('hidden'); document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-transparent text-gray-500 hover:bg-gray-200 transition-all opacity-70 group'); const activeBtn = document.getElementById(`tab-btn-${categoria}`); let activeClass = 'bg-white shadow-sm font-bold opacity-100 ring-1 ring-black/5'; if(categoria === 'solicitante') activeClass += ' text-leezar-600'; if(categoria === 'propietario') activeClass += ' text-teal-600'; if(categoria === 'inmueble') activeClass += ' text-indigo-600'; activeBtn.className = `tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group ${activeClass}`; }
