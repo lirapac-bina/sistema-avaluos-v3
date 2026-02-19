@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portal Cliente</title>
+    <title>Portal Cliente - Leezar</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -12,8 +12,9 @@
     <script src="firebase-config.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
         tailwind.config = { 
             darkMode: 'class', 
@@ -32,12 +33,16 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <script>
+        window.leezarMapReady = false;
+        window.initMap = function() { 
+            window.leezarMapReady = true; 
+            if(typeof window.onGoogleMapsReady === 'function') window.onGoogleMapsReady();
+        };
+
         (function() {
             var script = document.createElement('script');
-            // Llave en Base64
             var key = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
             script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initMap`;
             script.async = true;
@@ -61,7 +66,14 @@
     </style>
 </head>
 
-<body class="pb-32 bg-gray-50 dark:bg-slate-900 transition-colors text-gray-800 dark:text-gray-200">
+<body class="pb-32 bg-gray-50 dark:bg-slate-900 transition-colors text-gray-800 dark:text-gray-200 relative">
+
+    <div id="global-loader" class="fixed inset-0 z-[99999] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center transition-opacity">
+        <div class="animate-spin rounded-full h-20 w-20 border-4 border-indigo-500 border-t-transparent mb-6 shadow-xl"></div>
+        <p id="global-loader-text" class="text-white font-extrabold text-2xl animate-pulse tracking-wide text-center px-4">Procesando...</p>
+        <p class="text-indigo-200 text-xs mt-4 font-bold bg-indigo-900/50 px-5 py-2 rounded-full border border-indigo-800/50">Por favor, no cierres esta ventana</p>
+    </div>
+    
     <div id="securityLock" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900 transition-opacity duration-500">
         <div class="bg-white dark:bg-slate-800 w-full max-w-sm p-8 rounded-3xl shadow-2xl text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-leezar-500 to-indigo-500"></div>
@@ -69,10 +81,10 @@
                 <span class="material-symbols-rounded text-3xl text-slate-600 dark:text-slate-300">lock</span>
             </div>
             <h2 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">Acceso Seguro</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Ingresa los últimos 4 dígitos del teléfono.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Ingresa los últimos 4 dígitos del teléfono registrado.</p>
             <div class="space-y-4">
-                <input type="password" id="security-input" maxlength="10" placeholder="****" class="w-full text-center text-2xl font-bold tracking-widest py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors">
-                <button onclick="validarIdentidad()" class="w-full bg-leezar-500 hover:bg-leezar-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200/50 transition-all active:scale-95 flex items-center justify-center gap-2">
+                <input type="password" id="security-input" maxlength="30" placeholder="****" class="w-full text-center text-2xl font-bold tracking-widest py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors">
+                <button id="btn-verificar" onclick="verificarIdentidad()" class="w-full bg-leezar-500 hover:bg-leezar-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200/50 transition-all active:scale-95 flex items-center justify-center gap-2">
                     <span class="material-symbols-rounded">key</span> Entrar
                 </button>
                 <p id="security-error" class="text-red-500 text-xs font-bold hidden animate-bounce">❌ Clave incorrecta.</p>
@@ -207,7 +219,7 @@
                 </div>
 
                 <button onclick="guardarDetalles()" id="btn-save-details" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl mt-4 transition-all active:scale-95 shadow-lg shadow-indigo-500/30 flex justify-center gap-2 items-center">
-                    <span class="material-symbols-rounded">save</span> Guardar Información
+                    <span class="material-symbols-rounded">save</span> Guardar y Validar
                 </button>
             </div>
         </div>
@@ -234,17 +246,6 @@
             <div id="gallery-limit-msg" class="hidden text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-xl">
                  <span class="material-symbols-rounded text-3xl text-red-500 mb-2">block</span>
                  <p class="text-sm font-bold text-red-600 dark:text-red-400">Límite de 20 fotos alcanzado.</p>
-                 <p class="text-xs text-slate-500">No puedes subir más archivos.</p>
-            </div>
-
-            <div id="gallery-progress" class="hidden mt-6">
-                <div class="flex justify-between text-xs text-slate-500 mb-1">
-                    <span id="gallery-status">Preparando...</span>
-                    <span id="gallery-pct">0%</span>
-                </div>
-                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                    <div id="gallery-bar" class="bg-teal-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                </div>
             </div>
         </div>
     </div>
@@ -267,20 +268,19 @@
         </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-4 pt-28 pb-12">
+    <div id="mainContent" class="max-w-3xl mx-auto px-4 pt-28 pb-12 hidden">
         <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 mb-8 relative overflow-hidden">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2" id="cliente-nombre">Cargando...</h1>
             <div id="header-info" class="flex flex-wrap gap-2 mt-2"></div>
             <div class="mt-4" id="estado-badge"></div>
         </div>
 
-        <div id="loading-card" class="text-center py-20">
+        <div id="loading-card" class="text-center py-20 hidden">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-leezar-500 border-t-transparent mx-auto mb-4"></div>
             <p class="text-gray-500 dark:text-gray-400 font-medium animate-pulse">Sincronizando expediente...</p>
-            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden bg-red-50 p-2 rounded inline-block border border-red-200">⚠️ Error de conexión. Intenta recargar.</p>
         </div>
 
-        <div id="main-container" class="hidden fade-in">
+        <div id="main-container" class="fade-in">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Avance (Obligatorios)</h3>
@@ -382,9 +382,8 @@
             <p class="text-[10px] text-gray-300 dark:text-gray-600">© 2026 Ingeniería Leezar • Sistema Seguro V2.6</p>
         </div>
     </div>
-
+    
     <script>
-        // --- CONFIGURACIÓN E INICIALIZACIÓN ---
         const db = firebase.firestore();
         const params = new URLSearchParams(window.location.search);
         const expedienteId = params.get('id');
@@ -393,436 +392,352 @@
         let currentTab = 'solicitante'; 
         let map, geocoder, autocomplete;
         let selectedLocation = null; 
-        let secretPhone = "";
-        let docData = null; // Variable para uso interno
 
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
 
         // ==========================================
-        // 1. SEGURIDAD (SHA-256 
+        // 🔒 FUNCIONES DE CARGA GLOBAL (BLOQUEADOR DE CLICS)
         // ==========================================
-        async function sha256(msg) {
+        function showLoader(texto) {
+            document.getElementById('global-loader-text').innerText = texto;
+            const loader = document.getElementById('global-loader');
+            loader.classList.remove('hidden');
+            loader.classList.add('flex');
+        }
+        
+        function hideLoader() {
+            const loader = document.getElementById('global-loader');
+            loader.classList.add('hidden');
+            loader.classList.remove('flex');
+        }
+
+        // ==========================================
+        // 1. SEGURIDAD (CERO TRUST + VAULT + SESIÓN)
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (expedienteId && sessionStorage.getItem('auth_' + expedienteId) === 'true') {
+                document.getElementById('securityLock').classList.add('hidden');
+                document.getElementById('loading-card').classList.remove('hidden');
+                cargarDatosEnSesion(); 
+            } else {
+                const secInput = document.getElementById('security-input');
+                if (secInput) {
+                    secInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') verificarIdentidad();
+                    });
+                    setTimeout(() => secInput.focus(), 500); 
+                }
+            }
+        });
+
+        async function cargarDatosEnSesion() {
             try {
-                const buf = new TextEncoder().encode(msg);
-                const hash = await crypto.subtle.digest('SHA-256', buf);
-                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+                const response = await fetch(`/.netlify/functions/get-expediente-details?id=${expedienteId}&t=${Date.now()}`);
+                if (!response.ok) throw new Error("Error de conexión");
+                const data = await response.json();
+                expedienteGlobal = data;
+                
+                document.getElementById('mainContent').classList.remove('hidden');
+                document.getElementById('loading-card').classList.add('hidden');
+                renderizarExpediente(data); 
+                verificarEstadoLegal();
             } catch (e) {
-                console.warn("Crypto no disponible."); return null; 
+                console.error(e);
+                sessionStorage.removeItem('auth_' + expedienteId);
+                location.reload();
             }
         }
 
-        async function validarIdentidad() {
-            const input = document.getElementById('security-input').value.trim();
+        async function verificarIdentidad() {
+            const input = document.getElementById('security-input');
+            const btn = document.getElementById('btn-verificar');
             const errorMsg = document.getElementById('security-error');
-            
-            // Hash "wana"
-            const masterHash = "4b34eb89578033d59664f3d242f205562760f385c2759905c86c8f938d227440"; 
-            
-            let isMaster = false;
-            try {
-                const inputHash = await sha256(input);
-                if (inputHash === masterHash || input.toLowerCase() === 'wana') isMaster = true;
-            } catch(e) { /* Fallback */ }
+            const code = input.value.trim();
 
-            if (!isMaster && input.length < 4) return;
-
-            // Modo Local (Sin ID)
-            if (!expedienteId) {
-                if(isMaster) { alert("⚠️ Modo Admin Local"); desbloquearUI(); } 
-                else { alert("❌ Faltan datos en la URL (?id=...)"); }
+            if (code.length < 4) {
+                errorMsg.innerText = "Ingresa los 4 dígitos o la llave maestra.";
+                errorMsg.classList.remove('hidden');
                 return;
             }
 
-// Modo Producción
-            try {
-                const docRef = db.collection('expedientes_avaluos').doc(expedienteId);
-                const docSnap = await docRef.get();
-                
-                if (!docSnap.exists) { alert('Expediente no encontrado.'); return; }
-                
-                const data = docSnap.data();
-                docData = data; 
-                
-                const telReal = (data.telefono || "XXXXXX").toString();
-
-                if (isMaster || input === telReal.slice(-4)) {
-                    console.log("Acceso Autorizado");
-                    desbloquearUI();
-                    verificarEstadoLegal(); // <--- ¡AGREGA ESTA LÍNEA AQUÍ!
-                    cargarDetalles(); 
-                } else {
-                    errorMsg.classList.remove('hidden');
-                    if(navigator.vibrate) navigator.vibrate(200);
-                }
-            } catch(e) { 
-                console.error(e); 
-                alert("Error de conexión con Firebase."); 
-            }
-        }
-
-        function desbloquearUI() {
-            document.getElementById('securityLock').classList.add('opacity-0', 'pointer-events-none');
-            const main = document.getElementById('main-container'); // No bloquear main
-        }
-        // ==========================================
-        // 2. LÓGICA DE EVIDENCIA (RÁFAGA + PDF)
-        // ==========================================
-        let evidenceImages = [];
-        let currentDoc = null; 
-
-        function iniciarCapturaEvidencia(id, label) {
-            currentDoc = { id, label };
-            evidenceImages = [];
-            const modal = document.getElementById('evidenceModal');
-            if(modal) {
-                modal.classList.remove('hidden');
-                document.getElementById('evidence-modal-title').innerText = label;
-                renderEvidenceGrid();
-            } else { alert("Error: Modal no encontrado."); }
-        }
-
-        function triggerEvidenceCamera() { document.getElementById('evidence-input').click(); }
-
-        function handleEvidenceFiles(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    evidenceImages.push(e.target.result);
-                    renderEvidenceGrid();
-                    input.value = '';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function renderEvidenceGrid() {
-            const grid = document.getElementById('evidence-grid');
-            if(!grid) return;
-            if(evidenceImages.length === 0) {
-                grid.innerHTML = '';
-                document.getElementById('evidence-empty').classList.remove('hidden');
-            } else {
-                document.getElementById('evidence-empty').classList.add('hidden');
-                grid.innerHTML = evidenceImages.map((img, i) => `
-                    <div class="relative aspect-square bg-black rounded-lg overflow-hidden border border-slate-700">
-                        <img src="${img}" class="w-full h-full object-cover">
-                        <button onclick="evidenceImages.splice(${i},1);renderEvidenceGrid()" class="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md">×</button>
-                    </div>
-                `).join('');
-            }
-            const btn = document.getElementById('btn-pdf-ev');
-            if(btn) btn.disabled = (evidenceImages.length === 0);
-        }
-
-        // --- FUNCIÓN MEJORADA: PDF SIN DISTORSIÓN ---
-        async function guardarEvidenciaFinal() {
-            if (evidenceImages.length === 0) return;
-            const btn = document.getElementById('btn-pdf-ev');
-            const txtOriginal = btn.innerText;
-            btn.innerText = "Comprimiendo y Generando..."; 
             btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin">🔄</span> Verificando...';
+            errorMsg.classList.add('hidden');
 
             try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF(); 
-                const pageWidth = 210;
-                const pageHeight = 297;
-                const margin = 15; // Margen un poco más amplio
-                const maxContentWidth = pageWidth - (margin * 2); 
-                const maxContentHeight = pageHeight - (margin * 2);
+                const response = await fetch('/.netlify/functions/get-expediente-details', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, accessCode: code })
+                });
 
-                doc.setFontSize(14); 
-                doc.text(`Expediente: ${currentDoc.label}`, margin, 15);
-                doc.setFontSize(10); 
-                doc.text(`Fecha: ${new Date().toLocaleString()}`, margin, 22);
+                if (response.status === 403) throw new Error("El código o la llave maestra no coinciden.");
+                if (!response.ok) throw new Error("Expediente no encontrado.");
 
-                let y = 30; // Posición vertical inicial
-
-                // Helper para comprimir
-                const comprimirImagen = (base64) => {
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.src = base64;
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            // Max 1200px es suficiente calidad
-                            const maxWidth = 1200; 
-                            // Calculamos escala manteniendo proporción
-                            let newWidth = img.width;
-                            let newHeight = img.height;
-                            
-                            if (img.width > maxWidth) {
-                                const scale = maxWidth / img.width;
-                                newWidth = maxWidth;
-                                newHeight = img.height * scale;
-                            }
-
-                            canvas.width = newWidth;
-                            canvas.height = newHeight;
-                            
-                            ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                            // Retornamos la imagen comprimida y sus dimensiones
-                            resolve({
-                                dataUrl: canvas.toDataURL('image/jpeg', 0.7),
-                                width: newWidth,
-                                height: newHeight
-                            });
-                        };
-                    });
-                };
-
-                for (let i = 0; i < evidenceImages.length; i++) {
-                    btn.innerText = `Procesando foto ${i+1} de ${evidenceImages.length}...`;
-                    
-                    // 1. Obtenemos imagen comprimida y sus medidas reales
-                    const imgObj = await comprimirImagen(evidenceImages[i]);
-                    
-                    // 2. Calcular dimensiones para el PDF
-                    // La imagen intentará ocupar todo el ancho disponible
-                    let finalPdfWidth = maxContentWidth;
-                    let finalPdfHeight = (imgObj.height * maxContentWidth) / imgObj.width;
-
-                    // Si la altura calculada es mayor que una página entera, la ajustamos
-                    if (finalPdfHeight > maxContentHeight) {
-                        const ratio = maxContentHeight / finalPdfHeight;
-                        finalPdfHeight = maxContentHeight;
-                        finalPdfWidth = finalPdfWidth * ratio;
-                    }
-
-                    // 3. Verificar si cabe en la página actual
-                    if (y + finalPdfHeight > pageHeight - margin) {
-                        doc.addPage();
-                        y = margin; // Empezamos arriba en la nueva página
-                    }
-
-                    // 4. Centrar si es más angosta que el ancho página (por ajuste de altura)
-                    const xPos = margin + ((maxContentWidth - finalPdfWidth) / 2);
-
-                    // 5. Agregar imagen
-                    doc.addImage(imgObj.dataUrl, 'JPEG', xPos, y, finalPdfWidth, finalPdfHeight);
-                    
-                    // 6. Mover cursor para la siguiente
-                    y += finalPdfHeight + 10; // 10mm de espacio entre fotos
-                }
-                
-                // --- SUBIDA ---
-                btn.innerText = "Subiendo PDF...";
-                const pdfBlob = doc.output('blob');
-                
-                const fileName = `${currentDoc.id}_evidencia_${Date.now()}.pdf`;
-                const reader = new FileReader();
-                reader.readAsDataURL(pdfBlob);
-                reader.onloadend = async () => {
-                    const base64data = reader.result.split(',')[1];
-                    await fetch('/.netlify/functions/subir-archivo', { 
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ expedienteId, itemKey: currentDoc.id, categoriaItem: 'solicitante', archivoBase64: base64data, nombreArchivo: fileName, mimeType: 'application/pdf' }) 
-                    });
-                    alert("¡Documento guardado y subido con éxito!");
-                    document.getElementById('evidenceModal').classList.add('hidden');
-                    cargarDetalles();
-                };
-
-            } catch(e) { 
-                console.error(e); 
-                alert("Error al generar PDF: " + e.message); 
-            } finally { 
-                btn.innerText = txtOriginal; 
-                btn.disabled = false; 
-            }
-        }
-
-        // ==========================================
-        // 3. LÓGICA ORIGINAL (VISUALIZACIÓN)
-        // ==========================================
-        async function cargarDetalles() {
-            try {
-                const url = `/.netlify/functions/get-expediente-details?id=${expedienteId}&t=${Date.now()}`;
-                const response = await fetch(url, { headers: { 'Cache-Control': 'no-cache' } });
-                if (!response.ok) throw new Error('Expediente no encontrado');
                 const data = await response.json();
-                if (!data.checklist) data.checklist = {}; 
-                expedienteGlobal = data; 
-                renderizarExpediente(data);
-                switchTab(currentTab);
-            } catch (error) { document.getElementById('loading-card').classList.add('hidden'); document.getElementById('error-msg').classList.remove('hidden'); }
+                expedienteGlobal = data;
+
+                sessionStorage.setItem('auth_' + expedienteId, 'true');
+
+                document.getElementById('securityLock').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                
+                renderizarExpediente(data); 
+                verificarEstadoLegal();
+                
+            } catch (error) {
+                console.error(error);
+                errorMsg.innerText = "⛔ " + error.message;
+                errorMsg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-rounded">key</span> Entrar';
+                input.value = ''; 
+                input.focus();
+            }
         }
 
-        function renderizarExpediente(data) {
-            document.getElementById('loading-card').classList.add('hidden');
-            document.getElementById('main-container').classList.remove('hidden');
+        // ==========================================
+        // 🌟 SÚPER PODER: ESCÁNER DE PÍXELES
+        // ==========================================
+        async function verificarSiEsColor(file) {
+            if (file.type === 'application/pdf') return true; 
 
-            // --- LÓGICA DE MARCA BLANCA (WHITE LABEL) ---
-            const unidad = data.unidad || 'AVE'; 
-            
-            const logoImg = document.getElementById('brand-logo');
-            const header = document.getElementById('main-header');
-            const subTitle = document.getElementById('brand-subtitle');
-
-           // Configuración de Marcas (Con URLs Blindadas)
-            const brands = {
-                'EME': { 
-                    logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', 
-                    color: 'bg-indigo-600', 
-                    name: 'Unidad EME' 
-                },
-                'PNA': { 
-                    logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', 
-                    color: 'bg-gray-600', 
-                    name: 'Asesoría Valuación y Estudios - Representante en Veracruz' 
-                },
-                'AVE': { 
-                    // ⚠️ AQUÍ DEBES PONER EL LINK DEL LOGO DE LEEZAR SI ES DIFERENTE
-                    logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', 
-                    color: 'bg-leezar-500', 
-                    name: 'Ingeniería Leezar' 
-                }
-            };
-
-            const brandConfig = brands[unidad] || brands['AVE'];
-
-            // 1. Cambiar Logo 
-            if (logoImg) {
-                // Asignamos la URL correcta
-                logoImg.src = brandConfig.logo;
-                
-                // Función para mostrarlo solo cuando haya cargado
-                const mostrarLogo = () => {
-                    logoImg.classList.remove('opacity-0');
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 200; canvas.height = 200;
+                    ctx.drawImage(img, 0, 0, 200, 200);
+                    
+                    const imgData = ctx.getImageData(0, 0, 200, 200).data;
+                    let pixelesColor = 0;
+                    
+                    for (let i = 0; i < imgData.length; i += 4) {
+                        const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+                        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                        if (max - min > 15) pixelesColor++;
+                    }
+                    resolve(pixelesColor > 400); 
                 };
-
-                // Si la imagen ya está en caché, mostrar de inmediato
-                if (logoImg.complete) {
-                    mostrarLogo();
-                } else {
-                    // Si no, esperar a que cargue para mostrar
-                    logoImg.onload = mostrarLogo;
-                }
-            }
-            
-            // 2. Cambiar Color del Header (Quitamos clases viejas y ponemos la nueva)
-            if (header) {
-                header.className = `fixed top-0 left-0 w-full text-white shadow-lg z-40 h-16 flex items-center transition-colors duration-500 ${brandConfig.color}`;
-            }
-            
-            // 3. Cambiar Subtítulo
-            if (subTitle) {
-                subTitle.textContent = brandConfig.name;
-            }
-
-            // --- FIN LÓGICA MARCA BLANCA ---
-
-            document.getElementById('cliente-nombre').textContent = data.nombreCliente || data.cliente || "Cliente Leezar";
-            const fecha = data.fechaCreacion ? new Date(data.fechaCreacion).toLocaleDateString('es-MX') : 'Hoy';
-            document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${ (data.tipoTramite || 'Trámite').replace(/_/g, ' ') }</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
-
-            const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
-            Object.values(containers).forEach(c => c.innerHTML = '');
-            const fotoContainer = document.getElementById('list-fotos'); if(fotoContainer) fotoContainer.innerHTML = ''; 
-
-            let itemsArray = Object.entries(data.checklist || {});
-            // Ordenar items
-            itemsArray.forEach(entry => { 
-                let score = 2;
-                if(entry[1].estatus === 'rechazado') score = 0;
-                else if(entry[1].estatus === 'pendiente') score = 1;
-                entry[1]._sortVal = score;
+                img.onerror = () => resolve(true); 
+                img.src = URL.createObjectURL(file);
             });
-            itemsArray.sort((a, b) => a[1]._sortVal - b[1]._sortVal);
+        }
 
-            totalRequisitos = 0; completados = 0; let revisionCount = 0; let rechazados = 0;
-            let hasExtraPhotos = false;
-            
-            itemsArray.forEach(([key, item]) => {
-                const nombreMostrar = item.nombre || key.replace(/_/g, ' '); 
-                const estatus = (item.estatus || 'pendiente').toLowerCase();
-                const categoria = item.categoria || 'solicitante';
-                const esOpcional = item.obligatorio === false; 
+        // ==========================================
+        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 4.0 (Con Bóveda Global)
+        // ==========================================
+        async function subirArchivo(itemKey, nombreItem, categoria, input) {
+            const files = Array.from(input.files);
+            if(files.length === 0) return;
 
-                if (key.toUpperCase().includes('COORDENADAS') && key !== 'UBICACION_MAPS') return;
+            const totalArchivos = files.length;
+            showLoader(`Iniciando subida...`);
 
-                // Lógica especial de Ubicación y Detalles
-                if (key === 'UBICACION_MAPS') {
-                    document.getElementById('card-ubicacion').classList.remove('hidden');
-                    const actionsDiv = document.getElementById('ubicacion-actions');
-                    const successDiv = document.getElementById('ubicacion-success');
-                    if(estatus === 'revision' || estatus === 'validado') { actionsDiv.classList.add('hidden'); successDiv.classList.remove('hidden'); document.getElementById('coordenadas-display').textContent = "Ubicación Registrada"; } 
-                    else { actionsDiv.classList.remove('hidden'); successDiv.classList.add('hidden'); }
-                    if(!esOpcional) { totalRequisitos++; if(estatus==='validado') completados++; if(estatus==='revision') revisionCount++; }
-                    return; 
+            try {
+                // 🌟 REGLA ESTRICTA: ESCÁNER DE COLOR 
+                const nameUpper = String(nombreItem).toUpperCase();
+                if (nameUpper.includes('INE') || nameUpper.includes('SOLICITUD')) {
+                    showLoader(`Analizando color original...`);
+                    for (let f of files) {
+                        const esColor = await verificarSiEsColor(f);
+                        if (!esColor) {
+                            throw new Error(`👋 Hola,\n\nHemos detectado que el archivo "${f.name}" parece estar en blanco y negro.\n\nPara que tu trámite fluya sin contratiempos, por favor asegúrate de subir este documento a COLOR. \n\n¡Muchas gracias!`);
+                        }
+                    }
                 }
-                if (key === 'DETALLES_INMUEBLE') {
-                    document.getElementById('card-detalles').classList.remove('hidden');
-                    if(!esOpcional) { totalRequisitos++; if(estatus==='validado') completados++; if(estatus==='revision') revisionCount++; }
-                    return;
-                }
-                if (key.includes('FOTO_EXTRA_')) { if (estatus === 'revision' || estatus === 'validado') hasExtraPhotos = true; return; }
-                if (key === 'FOTOS_INTERIORES_GENERAL') return; 
 
-                // Renderizado Normal
-                if (!esOpcional) { totalRequisitos++; if (estatus === 'validado') completados++; if (estatus === 'revision') revisionCount++; }
-                if (estatus === 'rechazado') rechazados++;
+                let fileToUpload;
+                let finalName = files[0].name;
+                let finalType = files[0].type;
+
+                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS
+                if (totalArchivos > 1) {
+                    const hasPDF = files.some(f => f.type === 'application/pdf');
+                    if (hasPDF) throw new Error("Por favor, sube los PDF de 1 en 1, o selecciona únicamente fotos para que el sistema las una por ti.");
+
+                    const validImages = files.every(f => f.type.startsWith('image/'));
+                    if (!validImages) throw new Error("Solo se pueden fusionar Fotos (JPG/PNG).");
+
+                    showLoader(`Uniendo ${totalArchivos} fotos en un solo PDF...`);
+                    
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const maxW = 190, maxH = 277;
+
+                    for (let i = 0; i < totalArchivos; i++) {
+                        showLoader(`Procesando foto ${i+1} de ${totalArchivos}...`);
+                        const imgData = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(files[i]);
+                        });
+
+                        const imgObj = await new Promise((resolve) => {
+                            const img = new Image();
+                            img.src = imgData;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                const scale = Math.min(800 / img.width, 1); 
+                                canvas.width = img.width * scale;
+                                canvas.height = img.height * scale;
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                resolve({ data: canvas.toDataURL('image/jpeg', 0.6), w: canvas.width, h: canvas.height });
+                            };
+                        });
+
+                        let imgH = (imgObj.h * maxW) / imgObj.w;
+                        if (imgH > maxH) imgH = maxH; 
+
+                        if (i > 0) doc.addPage();
+                        doc.addImage(imgObj.data, 'JPEG', 10, 10, maxW, imgH);
+                    }
+
+                    fileToUpload = doc.output('blob');
+                    finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
+                    finalType = 'application/pdf';
+
+                } else {
+                    // 🌟 LÓGICA DE 1 SOLO ARCHIVO
+                    const f = files[0];
+                    if (f.type !== 'application/pdf' && !f.type.startsWith('image/')) {
+                         throw new Error("Formato inválido. Solo se admiten PDFs o Fotos (JPG/PNG).");
+                    }
+                    fileToUpload = f;
+                }
+
+                showLoader(`Cargando archivo para revisión...`);
+
+                let uploadUrl, filePath;
+                try {
+                    const res = await fetch('/.netlify/functions/get-upload-url', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: finalType })
+                    });
+                    if (!res.ok) throw new Error("Servidor rechazó la conexión inicial.");
+                    const dataUrl = await res.json();
+                    uploadUrl = dataUrl.uploadUrl;
+                    filePath = dataUrl.filePath;
+                } catch (err) {
+                    throw new Error("Error de seguridad al pedir permiso: " + err.message);
+                }
 
                 try {
-                    let html = '';
-                    if (key.includes('CORREO')) {
-                        html = generarTarjetaCorreo(key, item, nombreMostrar, estatus, categoria);
-                    } else {
-                        html = generarTarjetaItem(key, item, nombreMostrar, estatus, categoria);
-                    }
+                    const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': finalType } });
+                    if (!uploadRes.ok) throw new Error("Google Cloud rechazó el archivo.");
+                } catch (err) {
+                    throw new Error("Fallo de red. Revisa tu conexión a internet.");
+                }
 
-                    if (key === 'FOTO_FACHADA') {
-                        document.getElementById('seccion-fotos').classList.remove('hidden');
-                        if(fotoContainer) fotoContainer.insertAdjacentHTML('beforeend', html);
-                    } else {
-                        if (containers[categoria]) containers[categoria].insertAdjacentHTML('beforeend', html);
-                        else if(containers['solicitante']) containers['solicitante'].insertAdjacentHTML('beforeend', html); 
-                    }
-                } catch(e) { console.error(e); }
-            });
-            updateProgressBars(completados, revisionCount, totalRequisitos);
-        }
-
-        // --- FUNCIÓN DE CORREO (RECUPERADA) ---
-        function generarTarjetaCorreo(key, item, nombre, estatus, categoria) {
-            const done = estatus === 'validado' || estatus === 'revision';
-            const actionHtml = done 
-                ? `<div class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded border border-emerald-100 flex items-center gap-1"><span class="material-symbols-rounded text-sm">check_circle</span> REGISTRADO</div>`
-                : `<div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0"><input type="email" id="input-${key}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ejemplo@correo.com"><button onclick="guardarCorreo('${key}', '${categoria}')" class="bg-leezar-500 text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-leezar-600 transition-colors shadow-md">Guardar</button></div>`;
-
-            const feedback = item.mensaje_rechazo ? `<div class="mt-2 bg-red-50 border border-red-100 text-red-600 text-[10px] p-2 rounded flex items-start gap-2"><span class="material-symbols-rounded text-sm mt-0.5">error</span><span>Rechazado: ${item.mensaje_rechazo}</span></div>` : '';
-
-            return `<div class="bg-white dark:bg-slate-800 border ${done ? 'border-emerald-200' : 'border-gray-200'} dark:border-slate-700 rounded-xl p-5 mb-3 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500"><span class="material-symbols-rounded">mail</span></div><div><p class="font-bold text-sm text-slate-800 dark:text-white">${nombre} <span class="text-red-500">*</span></p><p class="text-[10px] text-slate-500 mt-1">${done ? 'Correo guardado.' : 'Ingresa un correo válido.'}</p></div></div><div class="w-full sm:w-auto">${actionHtml}</div></div>${feedback}</div>`;
-        }
-
-        async function guardarCorreo(key, cat) {
-            const val = document.getElementById(`input-${key}`).value;
-            if(!val.includes('@') || !val.includes('.')) return alert("Correo inválido.");
-            try {
-                const res = await fetch('/.netlify/functions/save-details', { 
-                    method: 'POST', 
-                    body: JSON.stringify({ expedienteId, itemKey: key, textoDirecto: "CORREO: " + val }) 
+                showLoader('Guardando estatus...');
+                
+                const updateRes = await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
                 });
-                if(!res.ok) throw new Error("Error server");
-                await cargarDetalles();
-            } catch(e) { alert("Error al guardar correo"); }
-        }
-        // --- FUNCIÓN ITEM (MEJORADA: RÁFAGA + DESCARGAS + MÚLTIPLES PDF) ---
-        function generarTarjetaItem(key, item, nombre, estatus, categoria) {
-            let color = 'gray'; let icon = 'radio_button_unchecked'; let texto = 'PENDIENTE';
-            if(estatus === 'validado') { color = 'emerald'; icon = 'check_circle'; texto = 'VALIDADO'; }
-            else if(estatus === 'revision' || estatus === 'en_revision') { color = 'amber'; icon = 'hourglass_top'; texto = 'EN REVISIÓN'; }
-            else if(estatus === 'rechazado') { color = 'orange'; icon = 'error'; texto = 'RECHAZADO'; }
-            
-            const bgClass = estatus === 'pendiente' ? 'bg-white dark:bg-slate-800' : `bg-${color}-50 dark:bg-${color}-900/10`;
-            const borderClass = estatus === 'rechazado' ? 'border-orange-300 ring-2 ring-orange-100' : `border-${color}-200 dark:border-${color}-800`;
-            const badgeOpcional = item.obligatorio === false ? `<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 border border-gray-200 font-bold">OPCIONAL</span>` : `<span class="text-red-500 ml-1 font-bold">*</span>`;
 
-            let downloadLink = '';
-            let alertMsg = ''; 
+                if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
+
+                location.reload();
+
+            } catch (error) {
+                console.error("Error subida:", error);
+                alert("❌ " + error.message);
+            } finally {
+                input.value = ''; 
+                hideLoader();
+            }
+        }
+
+        // ==========================================
+        // 🌟 NUEVO: SUBIDA MÚLTIPLE DE GALERÍA DE FOTOS
+        // ==========================================
+        async function subirMultiplesFotos(input) {
+            const files = Array.from(input.files);
+            if(files.length === 0) return;
+            if(files.length > 20) {
+                document.getElementById('gallery-limit-msg').classList.remove('hidden');
+                return;
+            }
+
+            showLoader(`Preparando ${files.length} fotos...`);
+
+            try {
+                const validImages = files.every(f => f.type.startsWith('image/'));
+                if (!validImages) throw new Error("Solo se permiten imágenes (JPG/PNG) en la galería.");
+
+                for (let i = 0; i < files.length; i++) {
+                    showLoader(`Subiendo foto ${i+1} de ${files.length}...`);
+                    const f = files[i];
+                    
+                    // Creamos llaves fantasma para que no sobreescriban
+                    const fileKey = `FOTO_EXTRA_${Date.now()}_${i}`;
+                    const finalName = `Galeria_${i+1}_${Date.now()}.jpg`;
+
+                    const res = await fetch('/.netlify/functions/get-upload-url', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ expedienteId, itemKey: fileKey, fileName: finalName, mimeType: f.type })
+                    });
+                    
+                    if (!res.ok) throw new Error("Fallo al pedir pista en la nube.");
+                    const { uploadUrl, filePath } = await res.json();
+
+                    await fetch(uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } });
+
+                    await fetch('/.netlify/functions/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ expedienteId, itemKey: fileKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: 'inmueble' })
+                    });
+                }
+
+                showLoader(`Finalizando galería...`);
+                // Le avisamos a la Mesa de Control que la Galería está lista
+                await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, itemKey: 'FOTOS_INTERIORES_GENERAL', nuevoEstado: 'revision', categoriaItem: 'inmueble' })
+                });
+
+                location.reload();
+
+            } catch (error) {
+                console.error(error);
+                alert("❌ Error subiendo fotos: " + error.message);
+            } finally {
+                hideLoader();
+                input.value = '';
+                document.getElementById('galleryModal').classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // 3. GENERADOR DE TARJETAS (CORREGIDO COLOR DE RECHAZO)
+        // ==========================================
+        function generarTarjetaItem(key, item, nombre, estatus, categoria) {
             
+            // Diccionario de colores forzados para Tailwind
+            const ui = {
+                'validado':  { icon: 'check_circle', texto: 'VALIDADO', borderCard: 'border-emerald-200 dark:border-emerald-800', iconColor: 'text-emerald-500', badgeBg: 'bg-emerald-100 dark:bg-emerald-900/30', badgeText: 'text-emerald-700 dark:text-emerald-400', badgeBorder: 'border-emerald-200 dark:border-emerald-800' },
+                'revision':  { icon: 'hourglass_top', texto: 'EN REVISIÓN', borderCard: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-500', badgeBg: 'bg-amber-100 dark:bg-amber-900/30', badgeText: 'text-amber-700 dark:text-amber-400', badgeBorder: 'border-amber-200 dark:border-amber-800' },
+                'rechazado': { icon: 'cancel', texto: 'RECHAZADO', borderCard: 'border-red-400 dark:border-red-600 shadow-md shadow-red-100 dark:shadow-red-900/20', iconColor: 'text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-700 dark:text-red-400', badgeBorder: 'border-red-200 dark:border-red-800' },
+                'pendiente': { icon: 'radio_button_unchecked', texto: 'PENDIENTE', borderCard: 'border-gray-200 dark:border-slate-700', iconColor: 'text-gray-400', badgeBg: 'bg-gray-100 dark:bg-slate-800', badgeText: 'text-gray-600 dark:text-gray-300', badgeBorder: 'border-gray-200 dark:border-slate-600' }
+            };
+            
+            const c = ui[estatus] || ui['pendiente'];
+            const badge = item.obligatorio === false ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 font-bold">OPCIONAL</span>' : '<span class="text-red-500 ml-1">*</span>';
+            
+            let downloadLink = '';
+            let alertMsg = '';
             let urlFinal = item.urlFormato;
+            
             if (!urlFinal) {
                 const n = nombre.toUpperCase();
                 if (n.includes('SOLICITUD') && n.includes('AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
@@ -831,125 +746,512 @@
             if (urlFinal) {
                 downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Formato</a>`;
             }
+            
             if (nombre.toUpperCase().includes('SOLICITUD') && estatus === 'pendiente') {
                 alertMsg = `<div class="mt-3 w-full bg-amber-50 border border-amber-100 rounded-lg p-2 flex items-start gap-2 animate-pulse"><span class="material-symbols-rounded text-amber-500 text-sm mt-0.5">info</span><p class="text-[10px] text-amber-700 font-bold leading-tight">IMPORTANTE: Descarga, imprime a color, firma con tinta azul y sube la solicitud.</p></div>`;
             }
+            
+            // 🔥 LA ALERTA ROJA INYECTADA PARA RECHAZOS
+            if (estatus === 'rechazado') {
+                const motivo = item.retroalimentacion || "El documento no cumple con los requisitos. Por favor, súbelo nuevamente corregido.";
+                alertMsg = `
+                <div class="mt-3 text-xs text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-start gap-2 shadow-inner animate-[popIn_0.3s_ease-out]">
+                    <span class="material-symbols-rounded text-base mt-0.5 text-red-500">warning</span>
+                    <div>
+                        <p class="font-black uppercase mb-0.5 tracking-wide text-red-600 dark:text-red-400">Documento Rechazado</p>
+                        <p>${motivo}</p>
+                    </div>
+                </div>`;
+            }
 
             let controlHtml = '';
-            
-            // Si está pendiente o rechazado, mostramos los botones de carga
             if (estatus === 'pendiente' || estatus === 'rechazado') {
                 controlHtml = `
-                <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto mt-3 sm:mt-0 justify-end">
-                    ${downloadLink}
-                    <div class="flex gap-2">
-                        <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}')" class="px-4 py-2 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95">
-                            <span class="material-symbols-rounded text-lg">photo_camera</span> Escanear
-                        </button>
-                        <label class="px-4 py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 btn-upload transition-all active:scale-95">
-                            <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> Cargar Archivos
-                            <input type="file" multiple accept="image/*,application/pdf" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
-                        </label>
+                <div class="flex flex-col items-end w-full sm:w-auto mt-3 sm:mt-0 gap-2">
+                    ${estatus === 'rechazado' ? `<div class="px-3 py-1 ${c.badgeBg} ${c.badgeText} border ${c.badgeBorder} rounded-lg text-[10px] font-black uppercase flex items-center gap-1 shadow-sm mb-1 animate-pulse"><span class="material-symbols-rounded text-sm">${c.icon}</span> ${c.texto}</div>` : ''}
+                    
+                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full justify-end">
+                        ${downloadLink}
+                        <div class="flex gap-2">
+                            <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}')" class="px-4 py-2 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95">
+                                <span class="material-symbols-rounded text-lg">photo_camera</span> Escanear
+                            </button>
+                            <label class="px-4 py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 transition-all active:scale-95">
+                                <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> Cargar
+                                <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
+                            </label>
+                        </div>
                     </div>
                 </div>`;
             } else {
-                // Si está en revisión o validado, SOLO mostramos el estatus (sin botón de agregar más)
-                controlHtml = `<div class="mt-4 sm:mt-0 px-4 py-2 bg-${color}-100 text-${color}-700 border border-${color}-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1 w-full sm:w-auto shadow-sm"><span class="material-symbols-rounded text-lg">${icon}</span> ${texto}</div>`;
+                controlHtml = `<div class="mt-4 sm:mt-0 px-4 py-2 ${c.badgeBg} ${c.badgeText} border ${c.badgeBorder} rounded-lg text-xs font-bold uppercase flex items-center gap-1 w-full sm:w-auto shadow-sm"><span class="material-symbols-rounded text-lg">${c.icon}</span> ${c.texto}</div>`;
             }
 
-            return `<div class="${bgClass} border ${borderClass} rounded-xl p-5 mb-3 transition-all shadow-sm hover:shadow-md relative overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div class="flex items-start gap-3 flex-1"><span class="material-symbols-rounded text-${color}-500 text-2xl mt-0.5">${icon}</span><div><div class="flex items-center flex-wrap gap-1"><p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>${badgeOpcional}</div></div></div><div class="shrink-0 w-full sm:w-auto flex justify-end">${controlHtml}</div></div>${alertMsg}</div>`;
+            return `
+            <div class="bg-white dark:bg-slate-800 border-2 ${c.borderCard} rounded-xl p-5 mb-3 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div class="flex items-start gap-3 flex-1">
+                        <span class="material-symbols-rounded ${c.iconColor} text-2xl mt-0.5">${c.icon}</span>
+                        <div>
+                            <div class="flex items-center flex-wrap gap-1">
+                                <p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>
+                                ${badge}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="shrink-0 w-full sm:w-auto flex justify-end">
+                        ${controlHtml}
+                    </div>
+                </div>
+                ${alertMsg}
+            </div>`;
         }
-        
-        // --- FUNCIONES AUXILIARES ORIGINALES (MAPA, UBICACIÓN, ETC) ---
-        function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
-        window.initMap = function() { geocoder = new google.maps.Geocoder(); };
-        function abrirMapa() { document.getElementById('mapModal').classList.remove('hidden'); if(!map) { const defaultPos = { lat: 19.4326, lng: -99.1332 }; map = new google.maps.Map(document.getElementById("map"), { zoom: 17, center: defaultPos, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: true, gestureHandling: "greedy" }); map.addListener("center_changed", () => { const c = map.getCenter(); actualizarDatosPosicion(c.lat(), c.lng()); }); const input = document.getElementById("pac-input"); autocomplete = new google.maps.places.Autocomplete(input); autocomplete.bindTo("bounds", map); autocomplete.addListener("place_changed", () => { const place = autocomplete.getPlace(); if (!place.geometry || !place.geometry.location) return; map.setCenter(place.geometry.location); map.setZoom(18); }); usarMiUbicacion(true); } setTimeout(() => { if(map) google.maps.event.trigger(map, "resize"); }, 300); }
-        function usarMiUbicacion(silencioso = false) { const btn = document.getElementById('btn-my-location'); if(!silencioso) btn.innerHTML = 'Buscando GPS...'; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { const pos = new google.maps.LatLng(p.coords.latitude, p.coords.longitude); map.setCenter(pos); map.setZoom(18); if(!silencioso) btn.innerHTML = '<span class="material-symbols-rounded">my_location</span> Usar mi ubicación'; }, (e) => { console.error("Error GPS:", e); if(!silencioso) { alert("Activa tu GPS."); btn.innerHTML = 'Reintentar GPS'; } }, { enableHighAccuracy: true }); } }
-        function actualizarDatosPosicion(lat, lng) { const latDec = typeof lat === 'function' ? lat() : lat; const lngDec = typeof lng === 'function' ? lng() : lng; document.getElementById('coordenadas-texto').textContent = `${latDec.toFixed(6)}, ${lngDec.toFixed(6)}`; selectedLocation = { lat: latDec, lng: lngDec }; if(window.geoTimeout) clearTimeout(window.geoTimeout); window.geoTimeout = setTimeout(() => { geocoder.geocode({ location: { lat: latDec, lng: lngDec } }, (r, s) => { document.getElementById('direccion-texto').textContent = (s === "OK" && r[0]) ? r[0].formatted_address : "Ubicación marcada"; if(selectedLocation) selectedLocation.address = (s === "OK" && r[0]) ? r[0].formatted_address : "Sin dirección"; }); }, 800); }
-        function cerrarMapa() { document.getElementById('mapModal').classList.add('hidden'); }
-        async function confirmarUbicacion() { if(!selectedLocation) return alert("Mueve el mapa primero."); const btn = document.getElementById('btn-confirm-map'); btn.innerHTML = 'Guardando...'; btn.disabled = true; try { const res = await fetch('/.netlify/functions/save-coords', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ expedienteId: expedienteId, lat: selectedLocation.lat, lng: selectedLocation.lng, direccion: selectedLocation.address }) }); if(!res.ok) throw new Error("Error al guardar"); await cargarDetalles(); cerrarMapa(); } catch (error) { console.error(error); alert("Error de conexión."); } finally { btn.innerHTML = 'Guardar Ubicación'; btn.disabled = false; } }
-        
-        async function subirArchivo(itemKey, nombre, categoria, input) {
-            const files = input.files;
-            if (!files || files.length === 0) return;
 
-            const label = input.closest('label');
-            const originalContent = label.innerHTML;
+        function generarTarjetaCorreo(key, item, nombre, estatus, categoria) {
+            const done = estatus === 'validado' || estatus === 'revision';
+            const inputHtml = done 
+                ? `<span class="text-emerald-600 font-bold text-xs">Registrado</span>` 
+                : `<div class="flex gap-2 mt-2"><input type="email" id="input-${key}" class="border rounded px-2 py-1 text-sm w-full" placeholder="correo@ejemplo.com"><button onclick="guardarCorreo('${key}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Guardar</button></div>`;
+            return `<div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5 mb-3 shadow-sm"><div class="flex flex-col"><div class="flex items-center gap-3"><span class="material-symbols-rounded text-indigo-500">mail</span><p class="font-bold text-sm dark:text-white">${nombre}</p></div>${inputHtml}</div></div>`;
+        }
+
+        async function guardarCorreo(key) {
+            const val = document.getElementById(`input-${key}`).value;
+            if (!val.includes('@')) return alert("Correo inválido");
+            showLoader('Guardando correo...');
+            await fetch('/.netlify/functions/save-details', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: key, textoDirecto: "CORREO: " + val }) });
+            location.reload();
+        }
+
+        // ==========================================
+        // 3. LÓGICA DE VISUALIZACIÓN (CON DETALLES DE INMUEBLE DINÁMICOS)
+        // ==========================================
+        function renderizarExpediente(data) {
+            document.getElementById('loading-card').classList.add('hidden');
             
-            // Indicador visual de carga masiva
-            label.innerHTML = `<span class="material-symbols-rounded animate-spin text-indigo-500">sync</span> Subiendo ${files.length}...`;
-            label.style.pointerEvents = 'none';
+            const unidad = data.unidad || 'AVE';
+            const brands = {
+                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-indigo-600', name: 'Unidad EME' },
+                'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-gray-600', name: 'Asesoría Valuación y Estudios - Representante en Veracruz' },
+                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-leezar-500', name: 'Ingeniería Leezar' }
+            };
+            const config = brands[unidad] || brands['AVE'];
+            
+            const logoImg = document.getElementById('brand-logo');
+            logoImg.src = config.logo;
+            logoImg.onload = () => logoImg.classList.remove('opacity-0');
+            
+            document.getElementById('main-header').className = `fixed top-0 left-0 w-full text-white shadow-lg z-40 h-24 flex items-center transition-colors duration-500 ${config.color}`;
+            document.getElementById('brand-subtitle').textContent = config.name;
 
-            try {
-                // BUCLE PARA SUBIR CADA ARCHIVO
-                for (let i = 0; i < files.length; i++) {
-                    const archivo = files[i];
-                    console.log(`Subiendo archivo ${i + 1} de ${files.length}: ${archivo.name}`);
+            document.getElementById('cliente-nombre').textContent = data.nombreCliente || "Cliente";
+            const fecha = data.fechaCreacion ? new Date(data.fechaCreacion).toLocaleDateString('es-MX') : 'Hoy';
+            document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${ (data.tipoTramite || 'Trámite').replace(/_/g, ' ') }</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
 
-                    const base64 = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.onerror = error => reject(error);
-                        reader.readAsDataURL(archivo);
-                    });
+            const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
+            Object.values(containers).forEach(c => c.innerHTML = '');
+            document.getElementById('list-fotos').innerHTML = '';
 
-                    // Si es el primer archivo, usa la Key original.
-                    // Si son el 2do, 3ro, etc., les pone _ANEXO_X para no sobrescribir el primero.
-                    let finalKey = itemKey;
-                    let finalNombre = nombre;
-                    
-                    if (i > 0) {
-                        finalKey = `${itemKey}_ANEXO_${i}`;
-                        finalNombre = `${nombre} (Anexo ${i})`;
+            let itemsArray = Object.entries(data.checklist || {});
+            itemsArray.sort((a, b) => {
+                const score = (s) => s === 'rechazado' ? 0 : s === 'pendiente' ? 1 : 2;
+                return score(a[1].estatus) - score(b[1].estatus);
+            });
+
+            totalRequisitos = 0; completados = 0; let revisionCount = 0;
+            
+            itemsArray.forEach(([key, item]) => {
+                const estatus = (item.estatus || 'pendiente').toLowerCase().trim();
+                const categoria = item.categoria || 'solicitante';
+                const esOpcional = item.obligatorio === false;
+
+                if (key.includes('COORDENADAS') && key !== 'UBICACION_MAPS') return;
+                
+                // --- TARJETA DE UBICACIÓN ---
+                if (key === 'UBICACION_MAPS') {
+                    document.getElementById('card-ubicacion').classList.remove('hidden');
+                    if (estatus === 'validado' || estatus === 'revision') {
+                        document.getElementById('ubicacion-actions').classList.add('hidden');
+                        document.getElementById('ubicacion-success').classList.remove('hidden');
+                        document.getElementById('coordenadas-display').textContent = "Ubicación Registrada";
                     }
-
-                    const safeName = finalNombre.replace(/[^a-zA-Z0-9]/g, '_') + '.' + archivo.name.split('.').pop();
-                    
-                    const res = await fetch('/.netlify/functions/subir-archivo', { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ 
-                            expedienteId, 
-                            itemKey: finalKey, 
-                            categoriaItem: categoria, 
-                            archivoBase64: base64.split(',')[1], 
-                            nombreArchivo: safeName, 
-                            mimeType: archivo.type 
-                        }) 
-                    });
-
-                    if (!res.ok) throw new Error(`Error subiendo ${archivo.name}`);
+                    if (!esOpcional) { totalRequisitos++; if(estatus==='validado') completados++; else if(estatus==='revision') revisionCount++; }
+                    return;
                 }
 
-                await cargarDetalles(); 
+                // --- TARJETA DE DETALLES DEL INMUEBLE (¡AHORA DINÁMICA!) ---
+                if (key === 'DETALLES_INMUEBLE') {
+                    const cardDetails = document.getElementById('card-detalles');
+                    const statusContainer = document.getElementById('detalles-status');
+                    cardDetails.classList.remove('hidden');
+                    
+                    // Limpiamos alertas previas si existen
+                    const existingAlert = document.getElementById('alert-detalles-rechazo');
+                    if (existingAlert) existingAlert.remove();
 
-            } catch (error) { 
-                console.error(error); 
-                alert('Hubo un error al subir los archivos. Intenta de nuevo.'); 
-                label.innerHTML = originalContent; 
-                label.style.pointerEvents = 'auto';
+                    // Reseteamos clases base
+                    cardDetails.className = "bg-white border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-5 mb-4 shadow-sm relative overflow-hidden transition-all";
+
+                    if (estatus === 'revision') {
+                        // AMARILLO
+                        cardDetails.classList.replace('border-gray-200', 'border-amber-200');
+                        cardDetails.classList.replace('dark:border-slate-700', 'dark:border-amber-800');
+                        statusContainer.innerHTML = `<div class="px-4 py-2 bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1"><span class="material-symbols-rounded text-lg">hourglass_top</span> En Revisión</div>`;
+                    
+                    } else if (estatus === 'validado') {
+                        // VERDE
+                        cardDetails.classList.replace('border-gray-200', 'border-emerald-200');
+                        cardDetails.classList.replace('dark:border-slate-700', 'dark:border-emerald-800');
+                        statusContainer.innerHTML = `<div class="px-4 py-2 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1"><span class="material-symbols-rounded text-lg">check_circle</span> Validado</div>`;
+                    
+                    } else if (estatus === 'rechazado') {
+                        // ROJO + ALERTA
+                        cardDetails.classList.replace('border-gray-200', 'border-red-200');
+                        cardDetails.classList.replace('dark:border-slate-700', 'dark:border-red-800');
+                        
+                        statusContainer.innerHTML = `
+                            <div class="flex flex-col items-end gap-2">
+                                <div class="px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold uppercase flex items-center gap-1"><span class="material-symbols-rounded text-lg">cancel</span> Rechazado</div>
+                                <button onclick="abrirDetalles()" class="text-xs font-bold text-indigo-600 underline hover:text-indigo-800">Corregir Información</button>
+                            </div>`;
+                        
+                        const motivo = item.retroalimentacion || "Información incorrecta. Verifique.";
+                        const alertDiv = document.createElement('div');
+                        alertDiv.id = 'alert-detalles-rechazo';
+                        alertDiv.className = "mt-3 text-xs text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-start gap-2 shadow-inner animate-[popIn_0.3s_ease-out]";
+                        alertDiv.innerHTML = `<span class="material-symbols-rounded text-base mt-0.5 text-red-500">warning</span><div><p class="font-black uppercase mb-0.5 tracking-wide text-red-600 dark:text-red-400">Corrección Requerida</p><p>${motivo}</p></div>`;
+                        cardDetails.appendChild(alertDiv);
+
+                    } else {
+                        // PENDIENTE (Botón Original)
+                        statusContainer.innerHTML = `<button onclick="abrirDetalles()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Llenar</button>`;
+                    }
+
+                    if (!esOpcional) { totalRequisitos++; if(estatus==='validado') completados++; else if(estatus==='revision') revisionCount++; }
+                    return;
+                }
+
+                if (key.includes('FOTO_EXTRA_')) return; 
+
+                if (!esOpcional) { totalRequisitos++; if (estatus === 'validado') completados++; else if (estatus === 'revision') revisionCount++; }
+
+                const html = key.includes('CORREO') 
+                    ? generarTarjetaCorreo(key, item, item.nombre || key, estatus, categoria)
+                    : generarTarjetaItem(key, item, item.nombre || key, estatus, categoria);
+
+                if (key === 'FOTO_FACHADA') {
+                    document.getElementById('seccion-fotos').classList.remove('hidden');
+                    document.getElementById('list-fotos').insertAdjacentHTML('beforeend', html);
+                } else {
+                    if (containers[categoria]) containers[categoria].insertAdjacentHTML('beforeend', html);
+                    else containers['solicitante'].insertAdjacentHTML('beforeend', html);
+                }
+            });
+            
+            updateProgressBars(completados, revisionCount, totalRequisitos);
+            
+            // 🔥 MAGIA UX: Leer la memoria y abrir la pestaña en la que se quedó el cliente
+            const pestañaGuardada = sessionStorage.getItem('activeTab_' + expedienteId) || 'solicitante';
+            switchTab(pestañaGuardada);
+        }
+
+        // ==========================================
+        // 4. FUNCIONES UTILITARIAS Y MODALES
+        // ==========================================
+        function switchTab(cat) { 
+            currentTab = cat; 
+            if (expedienteId) sessionStorage.setItem('activeTab_' + expedienteId, cat);
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
+            document.getElementById(`section-${cat}`).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-leezar-600'));
+            document.getElementById(`tab-btn-${cat}`).classList.add('bg-white', 'shadow-sm', 'text-leezar-600');
+        }
+
+        function updateProgressBars(aprobados, revision, total) {
+            const base = total > 0 ? total : 1;
+            const pctA = Math.round((aprobados / base) * 100);
+            const pctR = Math.round((revision / base) * 100);
+            document.getElementById('counter-aprobados').innerText = `${aprobados}/${total}`;
+            document.getElementById('bar-aprobados').style.width = `${pctA}%`;
+            document.getElementById('bar-revision').style.width = `${pctR}%`;
+            document.getElementById('pct-txt').innerText = `${Math.min(100, pctA + pctR)}%`;
+            if (total > 0 && (aprobados + revision) >= total) {
+                document.getElementById('successModal').classList.remove('hidden');
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+        
+        function cerrarModalJack() { 
+            document.getElementById('successModal').classList.add('hidden'); 
+        }
+
+        function mostrarModalLegal(mostrar) { 
+            const modal = document.getElementById('dynamicPrivacyModal');
+            if (mostrar) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.getElementById('legal-dynamic-content').innerHTML = "Cargando aviso de privacidad...";
+                fetch('/.netlify/functions/get-legal')
+                    .then(r => r.json())
+                    .then(d => {
+                        document.getElementById('legal-dynamic-content').innerHTML = d.htmlContent || d.texto || "<p>Aviso de privacidad no disponible.</p>"; 
+                    })
+                    .catch(e => document.getElementById('legal-dynamic-content').innerHTML = "Error al cargar el aviso.");
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
         }
 
-        function switchTab(categoria) { currentTab = categoria; document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden')); document.getElementById(`section-${categoria}`).classList.remove('hidden'); document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-transparent text-gray-500 hover:bg-gray-200 transition-all opacity-70 group'); const activeBtn = document.getElementById(`tab-btn-${categoria}`); let activeClass = 'bg-white shadow-sm font-bold opacity-100 ring-1 ring-black/5'; if(categoria === 'solicitante') activeClass += ' text-leezar-600'; if(categoria === 'propietario') activeClass += ' text-teal-600'; if(categoria === 'inmueble') activeClass += ' text-indigo-600'; activeBtn.className = `tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group ${activeClass}`; }
-        function updateProgressBars(aprobados, revision, total) { const baseTotal = total > 0 ? total : 1; const pctAprobados = Math.round((aprobados / baseTotal) * 100); const pctRevision = Math.round((revision / baseTotal) * 100); document.getElementById('counter-aprobados').innerText = `${aprobados}/${total}`; document.getElementById('bar-aprobados').style.width = `${pctAprobados}%`; document.getElementById('bar-revision').style.width = `${pctRevision}%`; const totalPct = Math.min(100, Math.round(pctAprobados + pctRevision)); document.getElementById('pct-txt').innerText = `${totalPct}%`; if (total > 0 && (aprobados + revision) >= total) { document.getElementById('successModal').classList.remove('hidden'); if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } }
-        function cerrarModalJack() { document.getElementById('successModal').classList.add('hidden'); }
-        function mostrarModalLegal(bool) { document.getElementById('dynamicPrivacyModal').style.display = bool ? 'flex' : 'none'; if(bool) cargarLegal(); }
-        function cargarLegal() { fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ document.getElementById('legal-dynamic-content').innerHTML = d.texto || "Cargando..."; }); }
-        function verificarEstadoLegal() { if (!localStorage.getItem(`legal_accepted_${expedienteId}`)) { document.getElementById('dynamicPrivacyModal').style.display = 'flex'; cargarLegal(); const check = document.getElementById('acceptCheckDynamic'); const btn = document.getElementById('btnStartDynamic'); check.addEventListener('change', (e) => { btn.disabled = !e.target.checked; if(e.target.checked) { btn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.add('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); } else { btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed'); btn.classList.remove('bg-leezar-500', 'text-white', 'cursor-pointer', 'shadow-lg'); } }); btn.onclick = () => { localStorage.setItem(`legal_accepted_${expedienteId}`, 'true'); document.getElementById('dynamicPrivacyModal').style.display = 'none'; }; } }
-        function cerrarDetalles() { document.getElementById('detailsModal').classList.add('hidden'); }
-        function abrirDetalles() { document.getElementById('detailsModal').classList.remove('hidden'); }
-        function abrirGaleria() { const currentPhotos = Object.keys(expedienteGlobal.checklist).filter(k => k.includes('FOTO_EXTRA_')).length; if(currentPhotos >= 20) { document.getElementById('gallery-dropzone').classList.add('hidden'); document.getElementById('gallery-limit-msg').classList.remove('hidden'); } else { document.getElementById('gallery-dropzone').classList.remove('hidden'); document.getElementById('gallery-limit-msg').classList.add('hidden'); } document.getElementById('galleryModal').classList.remove('hidden'); }
-        async function guardarDetalles() { const data = { "TIPO": document.querySelector('input[name="tipo_vivienda"]:checked').value, "TERRENO": document.getElementById('det-terreno').value, "CONSTRUCCION": document.getElementById('det-const').value, "RECAMARAS": document.getElementById('det-recamaras').value, "BAÑOS": document.getElementById('det-banos').value, "MEDIOS_BANOS": document.getElementById('det-medios-banos').value, "NIVELES": document.getElementById('det-niveles').value, "ESTACIONAMIENTOS": document.getElementById('det-estacionamientos').value }; try { await fetch('/.netlify/functions/save-details', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: 'DETALLES_INMUEBLE', datos: data }) }); await cargarDetalles(); document.getElementById('detailsModal').classList.add('hidden'); } catch(e){ alert("Error"); } }
-        async function subirMultiplesFotos(input) { /* (Función original para galería, se mantiene) */ const files = Array.from(input.files); if(files.length === 0) return; const currentPhotos = Object.keys(expedienteGlobal.checklist).filter(k => k.includes('FOTO_EXTRA_')).length; if(currentPhotos + files.length > 20) { alert(`Límite de fotos excedido.`); input.value = ''; return; } const progressDiv = document.getElementById('gallery-progress'); const bar = document.getElementById('gallery-bar'); const pctTxt = document.getElementById('gallery-pct'); progressDiv.classList.remove('hidden'); for (let i = 0; i < files.length; i++) { try { const base64 = await new Promise((r) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(files[i]); }); const slotKey = `FOTO_EXTRA_${Date.now()}_${i}`; await fetch('/.netlify/functions/subir-archivo', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: slotKey, categoriaItem: 'inmueble', archivoBase64: base64.split(',')[1], nombreArchivo: `Interior ${i+1}`, mimeType: 'image/jpeg' }) }); const percentage = Math.round(((i + 1) / files.length) * 100); bar.style.width = `${percentage}%`; pctTxt.innerText = `${percentage}%`; } catch(e) { console.error(e); } } setTimeout(() => { progressDiv.classList.add('hidden'); document.getElementById('galleryModal').classList.add('hidden'); cargarDetalles(); }, 1000); }
+        function verificarEstadoLegal() { 
+            if (!localStorage.getItem(`legal_${expedienteId}`)) { 
+                mostrarModalLegal(true); 
+                
+                document.getElementById('btnStartDynamic').onclick = () => {
+                    localStorage.setItem(`legal_${expedienteId}`, 'true'); 
+                    mostrarModalLegal(false); 
+                }; 
+                
+                document.getElementById('acceptCheckDynamic').onchange = (e) => {
+                    document.getElementById('btnStartDynamic').disabled = !e.target.checked;
+                    if(e.target.checked) {
+                        document.getElementById('btnStartDynamic').classList.replace('bg-gray-200', 'bg-leezar-500');
+                        document.getElementById('btnStartDynamic').classList.replace('text-gray-400', 'text-white');
+                    } else {
+                        document.getElementById('btnStartDynamic').classList.replace('bg-leezar-500', 'bg-gray-200');
+                        document.getElementById('btnStartDynamic').classList.replace('text-white', 'text-gray-400');
+                    }
+                };
+            } 
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const inp = document.getElementById('security-input');
-            if(inp) {
-                inp.addEventListener('keypress', (e) => { if(e.key==='Enter') validarIdentidad(); });
-                inp.focus();
+        // --- MAPA ---
+        window.onGoogleMapsReady = function() { 
+            geocoder = new google.maps.Geocoder(); 
+        };
+        if (window.leezarMapReady) window.onGoogleMapsReady();
+                
+        function abrirMapa() { 
+            document.getElementById('mapModal').classList.remove('hidden'); 
+            if (!map) { 
+                map = new google.maps.Map(document.getElementById("map"), { 
+                    zoom: 17, center: {lat: 19.4326, lng: -99.1332}, disableDefaultUI: true 
+                }); 
+                const input = document.getElementById("pac-input"); 
+                autocomplete = new google.maps.places.Autocomplete(input); 
+                autocomplete.bindTo("bounds", map); 
+                autocomplete.addListener("place_changed", () => { 
+                    const p = autocomplete.getPlace(); 
+                    if (p.geometry) { 
+                        map.setCenter(p.geometry.location); 
+                        map.setZoom(18); 
+                    } 
+                }); 
+                usarMiUbicacion(); 
+            } 
+        }
+
+        function cerrarMapa() { document.getElementById('mapModal').classList.add('hidden'); }
+        
+        function usarMiUbicacion() { 
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(p => { 
+                    const pos = { lat: p.coords.latitude, lng: p.coords.longitude }; 
+                    map.setCenter(pos); 
+                    actualizaPos(pos.lat, pos.lng); 
+                }); 
             }
-        });
+        }
+        
+        function actualizaPos(lat, lng) { 
+            selectedLocation = { lat, lng }; 
+            document.getElementById('coordenadas-texto').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`; 
+            geocoder.geocode({ location: { lat, lng } }, (r, s) => { 
+                if (s === 'OK' && r[0]) {
+                    selectedLocation.address = r[0].formatted_address; 
+                }
+                document.getElementById('direccion-texto').innerText = selectedLocation.address || "Ubicación marcada"; 
+            }); 
+        }
+
+        async function confirmarUbicacion() { 
+            if (!selectedLocation) return; 
+            showLoader('Guardando ubicación...');
+            await fetch('/.netlify/functions/save-coords', {
+                method: 'POST', 
+                body: JSON.stringify({ expedienteId, ...selectedLocation })
+            }); 
+            location.reload(); 
+        }
+
+        // --- DETALLES INMUEBLE CORREGIDOS ---
+        function abrirDetalles() { document.getElementById('detailsModal').classList.remove('hidden'); }
+        function cerrarDetalles() { document.getElementById('detailsModal').classList.add('hidden'); }
+        
+        async function guardarDetalles() {
+            showLoader('Enviando detalles a revisión...');
+            try {
+                const data = { 
+                    "TIPO": document.querySelector('input[name="tipo_vivienda"]:checked').value, 
+                    "TERRENO": document.getElementById('det-terreno').value, 
+                    "CONSTRUCCION": document.getElementById('det-const').value, 
+                    "RECAMARAS": document.getElementById('det-recamaras').value, 
+                    "BAÑOS": document.getElementById('det-banos').value, 
+                    "MEDIOS_BANOS": document.getElementById('det-medios-banos').value, 
+                    "NIVELES": document.getElementById('det-niveles').value, 
+                    "ESTACIONAMIENTOS": document.getElementById('det-estacionamientos').value 
+                };
+                
+                await fetch('/.netlify/functions/save-details', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: 'DETALLES_INMUEBLE', datos: data }) });
+                
+                // 🔥 NUEVA LÍNEA: Cambia el estatus en la BD a "En Revisión" para que se ponga Amarillo.
+                await fetch('/.netlify/functions/update-status', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, itemKey: 'DETALLES_INMUEBLE', nuevoEstado: 'revision', categoriaItem: 'inmueble' }) 
+                });
+                
+                location.reload();
+            } catch(e) {
+                hideLoader();
+                alert("Error: " + e.message);
+            }
+        }
+        
+        function abrirGaleria() { document.getElementById('galleryModal').classList.remove('hidden'); }
+
+        let evidenceImages = []; 
+        let currentDoc = null;
+        
+        function iniciarCapturaEvidencia(id, label) { 
+            currentDoc = { id, label }; 
+            evidenceImages = []; 
+            document.getElementById('evidenceModal').classList.remove('hidden'); 
+            document.getElementById('evidence-modal-title').innerText = label; 
+            renderEvidenceGrid(); 
+        }
+        
+        function triggerEvidenceCamera() { document.getElementById('evidence-input').click(); }
+        
+        function handleEvidenceFiles(input) { 
+            if (input.files[0]) { 
+                const reader = new FileReader(); 
+                reader.onload = (e) => {
+                    evidenceImages.push(e.target.result); 
+                    renderEvidenceGrid(); 
+                    input.value = '';
+                }; 
+                reader.readAsDataURL(input.files[0]); 
+            } 
+        }
+        
+        function renderEvidenceGrid() { 
+            const g = document.getElementById('evidence-grid'); 
+            g.innerHTML = evidenceImages.map((img, i) => `
+                <div class="relative aspect-square bg-black rounded overflow-hidden">
+                    <img src="${img}" class="w-full h-full object-cover">
+                    <button onclick="evidenceImages.splice(${i}, 1); renderEvidenceGrid()" class="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full">×</button>
+                </div>
+            `).join(''); 
+            
+            document.getElementById('btn-pdf-ev').disabled = evidenceImages.length === 0; 
+            document.getElementById('evidence-empty').className = evidenceImages.length ? 'hidden' : 'flex flex-col items-center justify-center h-64 text-slate-500'; 
+        }
+        
+        // --- VERSIÓN PREMIUM: PDF COMPRIMIDO + SUBIDA DIRECTA ---
+        async function guardarEvidenciaFinal() {
+            if (evidenceImages.length === 0) return;
+            
+            showLoader('Generando y subiendo PDF de evidencia...');
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const pageWidth = 210;
+                const pageHeight = 297;
+                const margin = 10;
+                const maxW = pageWidth - (margin * 2);
+                const maxH = pageHeight - (margin * 2);
+
+                doc.setFontSize(12);
+                doc.text(`Expediente: ${currentDoc.label || 'Evidencia'}`, margin, 10);
+                doc.setFontSize(10);
+                doc.text(`Fecha: ${new Date().toLocaleString()}`, margin, 16);
+
+                let y = 25;
+
+                const comprimir = (src) => new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = src;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const scale = Math.min(1000 / img.width, 1); 
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve({
+                            data: canvas.toDataURL('image/jpeg', 0.6), 
+                            w: canvas.width,
+                            h: canvas.height
+                        });
+                    };
+                });
+
+                for (let i = 0; i < evidenceImages.length; i++) {
+                    const imgObj = await comprimir(evidenceImages[i]);
+                    let imgH = (imgObj.h * maxW) / imgObj.w;
+                    if (imgH > maxH) imgH = maxH; 
+
+                    if (y + imgH > pageHeight - margin) {
+                        doc.addPage();
+                        y = margin;
+                    }
+                    doc.addImage(imgObj.data, 'JPEG', margin, y, maxW, imgH);
+                    y += imgH + 10;
+                }
+
+                const pdfBlob = doc.output('blob');
+                const fileName = `${currentDoc.id}_evidencia_${Date.now()}.pdf`;
+
+                const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        expedienteId,
+                        itemKey: currentDoc.id,
+                        fileName: fileName,
+                        mimeType: 'application/pdf'
+                    })
+                });
+                
+                if (!resPermiso.ok) throw new Error("Error pidiendo permiso de subida");
+                const { uploadUrl, filePath } = await resPermiso.json();
+
+                await fetch(uploadUrl, {
+                    method: 'PUT',
+                    body: pdfBlob,
+                    headers: { 'Content-Type': 'application/pdf' }
+                });
+
+                await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        expedienteId,
+                        itemKey: currentDoc.id,
+                        nuevoEstado: 'revision',
+                        archivoPath: filePath,
+                        categoriaItem: 'solicitante'
+                    })
+                });
+
+                location.reload();
+
+            } catch (e) {
+                console.error(e);
+                alert("❌ Error: " + e.message);
+                hideLoader();
+            }
+        }
     </script>
 </body>
 </html>

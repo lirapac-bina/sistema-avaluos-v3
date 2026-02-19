@@ -10,37 +10,31 @@ const DRIVE_FOLDERS = {
     'AVE': 'PONER_AQUI_EL_ID_DE_AVE' 
 };
 
-// --- 1. INICIALIZACIÓN BLINDADA ---
+// --- 1. INICIALIZACIÓN BLINDADA (CORREGIDA PARA NETLIFY) ---
 let serviceAccount = null;
 
-if (admin.apps.length === 0) {
-    // 1. Intentar leer de variable de entorno (Nube)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { 
-            // Primera pasada de parseo
-            let parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-            
-            // PROTECCIÓN CONTRA DOBLE STRING: Si sigue siendo string, parseamos de nuevo
-            if (typeof parsed === 'string') {
-                console.log("⚠️ Detectado JSON con doble comilla, reparando...");
-                parsed = JSON.parse(parsed);
-            }
-            serviceAccount = parsed;
-        } 
-        catch (e) { console.error("❌ Error CRÍTICO leyendo ENV:", e); }
-    }
-    
-    // 2. Si falló, intentar archivo local (PC)
-    if (!serviceAccount) {
-        try {
-            const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
-            if (fs.existsSync(keyPath)) {
-                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-            }
-        } catch (e) { }
-    }
-    
-    if (serviceAccount) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+// A. SIEMPRE leemos la llave, no importa si Firebase ya está encendido
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try { 
+        let parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        serviceAccount = parsed;
+    } 
+    catch (e) { console.error("❌ Error leyendo ENV:", e); }
+}
+
+if (!serviceAccount) {
+    try {
+        const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
+        if (fs.existsSync(keyPath)) {
+            serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+        }
+    } catch (e) { console.error("❌ Error leyendo serviceaccountkey.json:", e); }
+}
+
+// B. Encendemos Firebase SOLO si estaba apagado
+if (admin.apps.length === 0 && serviceAccount) {
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 
@@ -54,36 +48,38 @@ function obtenerListaSegura(obj, key) {
     return obj[key] || obj[key.toUpperCase()] || obj[key.charAt(0).toUpperCase() + key.slice(1)] || [];
 }
 
-// --- FUNCIÓN HELPER: CREAR CARPETA EN DRIVE ---
+// --- FUNCIÓN HELPER: CREAR SUBCARPETA ---
+async function crearSubcarpeta(drive, nombre, parentId) {
+    const fileMetadata = {
+        'name': nombre,
+        'mimeType': 'application/vnd.google-apps.folder',
+        'parents': [parentId]
+    };
+    const file = await drive.files.create({
+        resource: fileMetadata,
+        fields: 'id'
+    });
+    return file.data.id;
+}
+
+// --- FUNCIÓN PRINCIPAL: CREAR CARPETA MAESTRA Y SUBCARPETAS ---
 async function crearCarpetaDrive(nombreCliente, unidad) {
-    console.log(`🔍 DIAGNÓSTICO DRIVE | Cliente: ${nombreCliente} | Unidad: ${unidad}`);
+    console.log(`🔍 DIAGNÓSTICO DRIVE | Intentando crear carpeta para: ${nombreCliente} | Unidad: ${unidad}`);
 
-    if (!serviceAccount) {
-        console.error("❌ ERROR: serviceAccount es NULL. Revisa la variable FIREBASE_SERVICE_ACCOUNT en Netlify.");
-        return null;
-    }
-
-    // --- REVISIÓN DE CREDENCIALES (Sin mostrar secretos) ---
-    const hasEmail = !!serviceAccount.client_email;
-    const keyLength = serviceAccount.private_key ? serviceAccount.private_key.length : 0;
-    console.log(`🔍 ESTADO DE LLAVE: Email=${hasEmail} | KeyLength=${keyLength}`);
-
-    if (!hasEmail || keyLength < 50) {
-        console.error("❌ ERROR: Las credenciales están incompletas o vacías.");
+    if (!serviceAccount || !serviceAccount.client_email) {
+        console.error("❌ ERROR DRIVE: No se encontró la llave de Firebase (serviceAccount) o le falta el correo.");
         return null;
     }
 
     try {
         const parentFolderId = DRIVE_FOLDERS[unidad] || DRIVE_FOLDERS['AVE'];
         if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) {
-            console.warn(`⚠️ No hay ID de carpeta configurado para: ${unidad}`);
+            console.warn(`⚠️ ERROR DRIVE: No hay ID de carpeta configurado para la unidad: ${unidad}. No se crearán carpetas.`);
             return null;
         }
 
-        // --- CORRECCIÓN DE LLAVE ---
         const cleanKey = (serviceAccount.private_key || '').replace(/\\n/g, '\n');
 
-        // USAMOS GoogleAuth (Más robusto que JWT)
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: serviceAccount.client_email,
@@ -94,27 +90,44 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
 
         const drive = google.drive({ version: 'v3', auth });
 
-        // Crear la carpeta
-        const fileMetadata = {
+        // 1. Crear la carpeta principal del cliente
+        const mainFolderMeta = {
             'name': nombreCliente,
             'mimeType': 'application/vnd.google-apps.folder',
             'parents': [parentFolderId]
         };
 
-        const file = await drive.files.create({
-            resource: fileMetadata,
+        const mainFolder = await drive.files.create({
+            resource: mainFolderMeta,
             fields: 'id'
         });
+        
+        const mainFolderId = mainFolder.data.id;
+        console.log(`✅ DRIVE: Carpeta principal creada con ID: ${mainFolderId}`);
 
-        console.log(`✅ ¡ÉXITO! Carpeta creada en Drive (${unidad}): ${file.data.id}`);
-        return file.data.id;
+        // 2. MAGIA: Crear las 3 subcarpetas en paralelo
+        const [idInmueble, idPropietario, idSolicitante] = await Promise.all([
+            crearSubcarpeta(drive, 'INMUEBLE', mainFolderId),
+            crearSubcarpeta(drive, 'PROPIETARIO', mainFolderId),
+            crearSubcarpeta(drive, 'SOLICITANTE', mainFolderId)
+        ]);
+
+        console.log(`✅ DRIVE: Las 3 subcarpetas (INMUEBLE, PROPIETARIO, SOLICITANTE) fueron creadas exitosamente.`);
+        
+        // Devolvemos todos los IDs
+        return {
+            main: mainFolderId,
+            subfolders: {
+                inmueble: idInmueble,
+                propietario: idPropietario,
+                solicitante: idSolicitante
+            }
+        };
 
     } catch (error) {
-        console.error("❌ ERROR FINAL DRIVE:", error.message);
-        // Si el error es de autenticación, mostramos detalles extra
-        if (error.code === 401 || error.code === 403) {
-            console.error("💡 PISTA: Verifica que el email del robot tenga permiso de EDITOR en la carpeta de Drive.");
-            console.error("💡 ROBOT EMAIL:", serviceAccount.client_email);
+        console.error("❌ ERROR FINAL DRIVE: La API de Google Drive rechazó la solicitud.", error.message);
+        if (error.message.includes('insufficientFilePermissions') || error.message.includes('not found')) {
+            console.error("👉 PISTA: Revisa que el correo del robot (" + serviceAccount.client_email + ") tenga permisos de 'Editor' en la carpeta de PNA.");
         }
         return null;
     }
@@ -131,12 +144,12 @@ exports.handler = async (event, context) => {
 
     try {
         const data = JSON.parse(event.body);
-        const entidad = normalizar(data.entidad || 'GLOBAL'); 
-        const tramite = normalizar(data.tipoTramite || 'AVALUO');
+        
+        // 🔍 NORMALIZAMOS SOLO PARA BUSCAR LA PLANTILLA (No alteramos el texto original)
+        const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
+        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || 'AVALUO');
         const numSol = parseInt(data.numSolicitantes) || 1;
         const numProp = parseInt(data.numPropietarios) || 1;
-
-        console.log(`🔨 Creando Expediente: ${entidad} - ${tramite}`);
 
         let plantilla = null;
         try {
@@ -144,10 +157,10 @@ exports.handler = async (event, context) => {
             const docSnap = await configRef.get();
             if (docSnap.exists) {
                 const todo = docSnap.data().requisitos || docSnap.data();
-                let plantillaEntidad = todo[entidad] || todo[Object.keys(todo).find(k => normalizar(k) === entidad)];
+                let plantillaEntidad = todo[entidadBusqueda] || todo[Object.keys(todo).find(k => normalizar(k) === entidadBusqueda)];
                 if (!plantillaEntidad) plantillaEntidad = todo['GLOBAL'] || todo['VERACRUZ'] || PLANTILLA_RESPALDO;
                 const servicios = plantillaEntidad.servicios || plantillaEntidad;
-                plantilla = servicios[tramite] || servicios[Object.keys(servicios).find(k => normalizar(k) === tramite)];
+                plantilla = servicios[tramiteBusqueda] || servicios[Object.keys(servicios).find(k => normalizar(k) === tramiteBusqueda)];
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
@@ -175,34 +188,49 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
 
         checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' };
-        if (tramite.includes('AVALUO') || tramite.includes('HIPOTECA')) {
+        if (tramiteBusqueda.includes('AVALUO') || tramiteBusqueda.includes('HIPOTECA')) {
              checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
         }
 
-        const nombreClienteFinal = normalizar(data.nombre) || "CLIENTE NUEVO";
+        const nombreClienteFinal = data.nombre || data.cliente || "CLIENTE NUEVO";
         const unidadDestino = data.unidad || 'AVE'; 
 
-        // --- INTENTO DE CREAR CARPETA ---
+        // --- MAGIA: CREACIÓN DE CARPETAS EN GOOGLE DRIVE ---
         let driveFolderId = null;
+        let driveSubfolders = {}; 
+
         if (serviceAccount) {
-            driveFolderId = await crearCarpetaDrive(nombreClienteFinal, unidadDestino);
+            const driveResult = await crearCarpetaDrive(nombreClienteFinal, unidadDestino);
+            if (driveResult) {
+                driveFolderId = driveResult.main;
+                driveSubfolders = driveResult.subfolders;
+            }
         } else {
-            console.warn("⚠️ Saltando creación en Drive porque no hay serviceAccount.");
+             console.warn("⚠️ No se intentó crear carpeta en Drive porque no se detectó la llave.");
         }
 
+        // 🔥 CORRECCIÓN: GUARDAMOS LOS DATOS ORIGINALES INTACTOS
         const nuevoExpediente = {
-            tipoServicio: data.tipoServicio || 'avaluo',
-            cliente: nombreClienteFinal, nombreCliente: nombreClienteFinal,
-            telefono: data.telefono, entidad: entidad, tipoTramite: tramite, tramite: tramite, 
-            numSolicitantes: numSol, numPropietarios: numProp,
+            tipoServicio: data.tipoServicio || data.servicio || 'Servicio General',
+            cliente: nombreClienteFinal, 
+            nombreCliente: nombreClienteFinal,
+            telefono: data.telefono || "", 
+            entidad: data.entidad || data.estado || 'GLOBAL', 
+            tipoTramite: data.tipoTramite || data.tramite || 'Trámite', 
+            tramite: data.tipoTramite || data.tramite || 'Trámite', 
+            numSolicitantes: numSol, 
+            numPropietarios: numProp,
+            tipoInmueble: data.tipoInmueble || 'CASA', // 🏠 Conectado al catálogo
             unidad: unidadDestino,
             driveFolderId: driveFolderId,
-            checklist: checklistFinal, estatus: 'PENDIENTE',
+            driveSubfolders: driveSubfolders, 
+            checklist: checklistFinal, 
+            estatus: 'PENDIENTE',
             fechaCreacion: new Date().toISOString(),
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        const coleccionDestino = tramite.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
+        const coleccionDestino = tramiteBusqueda.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
         const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
 
         return { 
