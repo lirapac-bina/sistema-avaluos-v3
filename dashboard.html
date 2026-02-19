@@ -69,7 +69,7 @@
                 <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-symbols-rounded text-6xl text-leezar-500">edit_document</span>
                 </div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">En Captura</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">En Proceso</p>
                 <h3 class="text-3xl font-extrabold text-leezar-600 dark:text-leezar-400" id="count-proceso">...</h3>
             </div>
 
@@ -82,9 +82,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 col-span-1 lg:col-span-2">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                     <span class="material-symbols-rounded text-leezar-500">timer</span>
                     Eficiencia de Tiempos
@@ -114,51 +114,74 @@
 
             <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-rounded text-orange-500">traffic</span>
-                    Flujo de Trabajo
+                    <span class="material-symbols-rounded text-orange-500">route</span>
+                    Flujo de Operación
                 </h3>
                 <div class="space-y-4">
                     <div>
                         <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">Visita Técnica</span>
-                            <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-val">0</span>
+                            <span class="text-slate-500 font-bold">1. Revisión Documental (Checklist)</span>
+                            <span class="text-slate-700 dark:text-white font-bold" id="bar-doc-val">0</span>
                         </div>
                         <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div id="bar-visita" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+                            <div id="bar-doc" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
                         </div>
                     </div>
                     <div>
                         <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">Mesa de Captura</span>
+                            <span class="text-slate-500 font-bold">2. Levantamiento y Dibujo</span>
+                            <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-dibujo-val">0</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div id="bar-visita-dibujo" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-500 font-bold">3. Mesa de Captura Final</span>
                             <span class="text-slate-700 dark:text-white font-bold" id="bar-captura-val">0</span>
                         </div>
                         <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div id="bar-captura" class="h-full bg-leezar-500 w-0 transition-all duration-1000"></div>
                         </div>
                     </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">Revisión Final</span>
-                            <span class="text-slate-700 dark:text-white font-bold" id="bar-revision-val">0</span>
-                        </div>
-                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div id="bar-revision" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 mt-6 mb-4 fade-in">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-indigo-500">groups</span>
+                Carga de Trabajo del Equipo (Activos)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-indigo-500">photo_camera</span> Visitadores</h4>
+                    <div id="list-visitadores" class="space-y-2">
+                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-orange-500">architecture</span> Dibujantes</h4>
+                    <div id="list-dibujantes" class="space-y-2">
+                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-teal-500">keyboard</span> Capturistas</h4>
+                    <div id="list-capturistas" class="space-y-2">
+                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
         <script src="firebase-config.js"></script>
 
         <script>
-        // --- MONITOREO VIVO + CÁLCULOS MATEMÁTICOS ---
+    // --- MOTOR INTELIGENTE DE DASHBOARD (CON CARGA DE EQUIPO) ---
         function iniciarMonitoreoDashboard() {
-            
-            // 1. CORRECCIÓN DE SEGURIDAD: Asegurar conexión a DB
-            // Si 'db' no existe localmente, la tomamos de la ventana global (config) o la pedimos directo a Firebase
             const db = window.db || firebase.firestore(); 
 
             if (!db) {
@@ -166,109 +189,147 @@
                 return;
             }
 
-            // Elementos DOM
+            // Elementos DOM (Tarjetas Superiores)
             const elTotal = document.getElementById('count-total');
             const elPendientes = document.getElementById('count-pendientes');
-            const elProceso = document.getElementById('count-proceso');
+            const elProceso = document.getElementById('count-proceso'); 
             const elTerminados = document.getElementById('count-terminados');
 
-            // Métricas de Tiempo
+            // Elementos de Tiempos
             const elTimeAvg = document.getElementById('time-avg');
             const elTimeMin = document.getElementById('time-min');
             const elTimeMax = document.getElementById('time-max');
 
-            // Barras
-            const barVisita = document.getElementById('bar-visita');
+            // Barras de Flujo
+            const barDoc = document.getElementById('bar-doc');
+            const barVisitaDibujo = document.getElementById('bar-visita-dibujo');
             const barCaptura = document.getElementById('bar-captura');
-            const barRevision = document.getElementById('bar-revision');
 
             // Iniciar Escucha en Tiempo Real
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
-                let total = 0, pendientes = 0, captura = 0, terminados = 0;
-                
-                // Contadores para barras
-                let cVisita = 0, cCaptura = 0, cRevision = 0;
-
-                // Arrays para tiempos (en días)
+                let total = 0, pendientes = 0, enProcesoTotal = 0, terminados = 0;
+                let cDoc = 0, cVisitaDibujo = 0, cCaptura = 0;
                 let tiemposRegistrados = [];
+                
+                // 🌟 NUEVO: DICCIONARIO PARA CONTAR ASIGNACIONES DE PERSONAL
+                let cargaPersonal = { visitadores: {}, dibujantes: {}, capturistas: {} };
 
                 snapshot.forEach((doc) => {
                     total++;
                     const data = doc.data();
-                    const status = (data.estatus || 'PENDIENTE').toUpperCase();
+                    const globalStatus = (data.estatus || 'PENDIENTE').toUpperCase();
 
-                    // 1. CLASIFICACIÓN GENERAL
-                    if (status.includes('PENDIENTE') || status === 'NUEVO') {
-                        pendientes++;
-                    } else if (status.includes('CONCLUIDO') || status.includes('ENTREGADO') || status.includes('TERMINADO')) {
+                    const checklist = data.checklist || {};
+                    const items = Object.values(checklist).filter(i => i.obligatorio !== false);
+                    const validados = items.filter(i => (i.estatus || '').toLowerCase() === 'validado').length;
+                    const checklistCompleto = (items.length > 0 && validados >= items.length);
+
+                    // 1. CONCLUIDOS
+                    if (globalStatus.includes('CONCLUIDO') || globalStatus.includes('ENTREGADO') || globalStatus === 'TERMINADO') {
                         terminados++;
-                        
-                        // CÁLCULO DE TIEMPOS (Solo para terminados)
-                        // Buscamos fecha de inicio y fin
-                        let inicio = data.fecha_creacion || data.fecha_solicitud;
-                        let fin = data.fecha_conclusion || data.fecha_termino;
-
+                        let inicio = data.fechaCreacion || data.fecha_creacion;
+                        let fin = data.fecha_conclusion || data.fechaActualizacion;
                         if (inicio && fin) {
-                            // Convertir a objetos Date (manejando Timestamps de Firebase)
-                            const dInicio = inicio.seconds ? new Date(inicio.seconds * 1000) : new Date(inicio);
-                            const dFin = fin.seconds ? new Date(fin.seconds * 1000) : new Date(fin);
-                            
-                            // Diferencia en días
-                            const diffTime = Math.abs(dFin - dInicio);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            const diffDays = Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)); 
                             tiemposRegistrados.push(diffDays);
                         }
+                    } 
+                    // 2. VIVOS (Pendientes o En Proceso)
+                    else {
+                        // A) Detectar si está "Por Asignar"
+                        let esPendiente = false;
+                        if (validados === 0 && globalStatus === 'PENDIENTE') {
+                            esPendiente = true; 
+                        } else if (checklistCompleto && !data.visitador_asignado && !data.dibujante_asignado && !data.capturista_asignado) {
+                            esPendiente = true; 
+                        }
 
-                    } else {
-                        // En Proceso (Captura)
-                        captura++;
+                        if (esPendiente) {
+                            pendientes++;
+                        } else {
+                            enProcesoTotal++;
+                            
+                            // 🌟 NUEVO: CONTABILIZAR PERSONAL SOLO DE EXPEDIENTES VIVOS
+                            const visitador = data.visitador_asignado || data.visitador;
+                            const dibujante = data.dibujante_asignado || data.dibujante;
+                            const capturista = data.capturista_asignado || data.capturista;
+
+                            if (visitador) cargaPersonal.visitadores[visitador] = (cargaPersonal.visitadores[visitador] || 0) + 1;
+                            if (dibujante) cargaPersonal.dibujantes[dibujante] = (cargaPersonal.dibujantes[dibujante] || 0) + 1;
+                            if (capturista) cargaPersonal.capturistas[capturista] = (cargaPersonal.capturistas[capturista] || 0) + 1;
+                        }
                         
-                        // SUB-CLASIFICACIÓN PARA BARRAS
-                        if(status.includes('VISITA')) cVisita++;
-                        else if(status.includes('REVISION')) cRevision++;
-                        else cCaptura++; // Captura general
+                        // B) Alimentar el Flujo de Operación
+                        if (data.capturista_asignado || data.capturista || globalStatus.includes('CAPTURA')) {
+                            cCaptura++;
+                        } else if (data.visitador_asignado || data.dibujante_asignado || data.visitador || data.dibujante) {
+                            cVisitaDibujo++;
+                        } else {
+                            cDoc++;
+                        }
                     }
                 });
 
-                // 2. ACTUALIZAR TARJETAS
+                // --- ACTUALIZAR PANTALLAS ---
                 elTotal.innerText = total;
                 elPendientes.innerText = pendientes;
-                elProceso.innerText = captura;
+                elProceso.innerText = enProcesoTotal; 
                 elTerminados.innerText = terminados;
 
-                // 3. ACTUALIZAR MÉTRICAS DE TIEMPO
                 if (tiemposRegistrados.length > 0) {
-                    const min = Math.min(...tiemposRegistrados);
-                    const max = Math.max(...tiemposRegistrados);
-                    const sum = tiemposRegistrados.reduce((a, b) => a + b, 0);
-                    const avg = (sum / tiemposRegistrados.length).toFixed(1);
-
-                    elTimeMin.innerText = min;
-                    elTimeMax.innerText = max;
-                    elTimeAvg.innerText = avg;
+                    elTimeMin.innerText = Math.min(...tiemposRegistrados);
+                    elTimeMax.innerText = Math.max(...tiemposRegistrados);
+                    elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
                 } else {
                     elTimeMin.innerText = "-";
                     elTimeMax.innerText = "-";
                     elTimeAvg.innerText = "-";
                 }
 
-                // 4. ACTUALIZAR BARRAS (Porcentajes relativos al total en proceso)
-                const totalActivos = cVisita + cCaptura + cRevision || 1; // Evitar div/0
-                
-                document.getElementById('bar-visita-val').innerText = cVisita;
+                const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
+                document.getElementById('bar-doc-val').innerText = cDoc;
+                document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo;
                 document.getElementById('bar-captura-val').innerText = cCaptura;
-                document.getElementById('bar-revision-val').innerText = cRevision;
 
-                barVisita.style.width = `${(cVisita / totalActivos) * 100}%`;
-                barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`;
-                barRevision.style.width = `${(cRevision / totalActivos) * 100}%`;
+                setTimeout(() => {
+                    barDoc.style.width = `${(cDoc / totalActivos) * 100}%`;
+                    barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`;
+                    barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`;
+                }, 100);
+
+                // 🌟 NUEVO: RENDERIZAR LISTAS DE PERSONAL
+                const renderLista = (obj, elementId, colorClass) => {
+                    const container = document.getElementById(elementId);
+                    // Ordenamos para que el que tiene más expedientes salga arriba
+                    const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
+                    
+                    if (keys.length === 0) {
+                        container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
+                        return;
+                    }
+
+                    container.innerHTML = keys.map(k => {
+                        // Limpiamos el nombre (por si guardaste el correo, quitamos el @gmail.com)
+                        const nombreLimpio = k.split('@')[0].toUpperCase();
+                        return `
+                        <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2" title="${k}">${nombreLimpio}</span>
+                            <span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700 shadow-inner">${obj[k]} Exp</span>
+                        </div>`;
+                    }).join('');
+                };
+
+                renderLista(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400');
+                renderLista(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400');
+                renderLista(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
 
             }, (error) => {
-                console.error("Error dashboard:", error);
+                console.error("Error en Dashboard:", error);
             });
         }
 
         document.addEventListener('DOMContentLoaded', iniciarMonitoreoDashboard);
+    
     </script>
 
 </body>
