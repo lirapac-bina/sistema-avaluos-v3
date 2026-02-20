@@ -6,8 +6,8 @@ const path = require('path');
 // --- CONFIGURACIÓN DE CARPETAS MAESTRAS (DRIVE) ---
 const DRIVE_FOLDERS = {
     'PNA': '1s_Q8ZOk2GtaAbKmT7bY23G-IYgb-fZU-', 
-    'EME': 'PONER_AQUI_EL_ID_DE_EME',
-    'AVE': 'PONER_AQUI_EL_ID_DE_AVE' 
+    'EME': '1DLn4ZzxuzPlxI3M8tirndubZvNQtJwV-',
+    'AVE': '1CKOOORFock0TsVbdgHmh4P9FSke2J75r'
 };
 
 // --- 1. INICIALIZACIÓN BLINDADA (CORREGIDA PARA NETLIFY) ---
