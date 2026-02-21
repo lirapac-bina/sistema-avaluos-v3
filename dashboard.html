@@ -7,10 +7,9 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
     <script src="firebase-config.js"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -24,10 +23,17 @@
             }
         }
     </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    
     <script src="js/layout.js"></script> 
+    
+    <style>
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .dark .thin-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 min-h-screen flex flex-col">
     
@@ -47,172 +53,214 @@
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
-                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <span class="material-symbols-rounded text-6xl text-blue-600">folder_special</span>
-                </div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Histórico</p>
-                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-total">...</h3>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
-                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <span class="material-symbols-rounded text-6xl text-orange-500">pending</span>
-                </div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Por Asignar</p>
-                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-pendientes">...</h3>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group ring-1 ring-leezar-500/20">
-                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <span class="material-symbols-rounded text-6xl text-leezar-500">edit_document</span>
-                </div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">En Proceso</p>
-                <h3 class="text-3xl font-extrabold text-leezar-600 dark:text-leezar-400" id="count-proceso">...</h3>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
-                <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <span class="material-symbols-rounded text-6xl text-green-500">verified</span>
-                </div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Concluidos</p>
-                <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-terminados">...</h3>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-rounded text-leezar-500">timer</span>
-                    Eficiencia de Tiempos
-                </h3>
-                
-                <div class="grid grid-cols-3 gap-4 text-center divide-x divide-slate-100 dark:divide-slate-700">
-                    <div class="p-2">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Promedio</p>
-                        <span class="text-4xl font-black text-slate-700 dark:text-white block" id="time-avg">--</span>
-                        <span class="text-xs text-slate-400">Días</span>
+        <div class="mb-6">
+            <button onclick="toggleSection('sec-kpis', 'icon-kpis')" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-blue-500">query_stats</span> Métricas Principales
+                </h2>
+                <span id="icon-kpis" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-blue-500">expand_more</span>
+            </button>
+            <div id="sec-kpis" class="mt-4 transition-all duration-500 origin-top">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-rounded text-6xl text-blue-600">folder_special</span></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Histórico</p>
+                        <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-total">...</h3>
                     </div>
-                    <div class="p-2">
-                        <p class="text-[10px] text-green-500 uppercase font-bold tracking-widest mb-1">Récord (Min)</p>
-                        <span class="text-4xl font-black text-green-600 block" id="time-min">--</span>
-                        <span class="text-xs text-slate-400">Días</span>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-rounded text-6xl text-orange-500">pending</span></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Por Asignar</p>
+                        <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-pendientes">...</h3>
                     </div>
-                    <div class="p-2">
-                        <p class="text-[10px] text-red-500 uppercase font-bold tracking-widest mb-1">Atención (Max)</p>
-                        <span class="text-4xl font-black text-red-500 block" id="time-max">--</span>
-                        <span class="text-xs text-slate-400">Días</span>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group ring-1 ring-leezar-500/20">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-rounded text-6xl text-leezar-500">edit_document</span></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">En Proceso</p>
+                        <h3 class="text-3xl font-extrabold text-leezar-600 dark:text-leezar-400" id="count-proceso">...</h3>
                     </div>
-                </div>
-                <p class="text-center text-[10px] text-slate-400 mt-4 bg-slate-50 dark:bg-slate-700/50 py-2 rounded-lg">
-                    Calculado en base a expedientes con fecha de término registrada.
-                </p>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-rounded text-orange-500">route</span>
-                    Flujo de Operación
-                </h3>
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">1. Revisión Documental (Checklist)</span>
-                            <span class="text-slate-700 dark:text-white font-bold" id="bar-doc-val">0</span>
-                        </div>
-                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div id="bar-doc" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">2. Levantamiento y Dibujo</span>
-                            <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-dibujo-val">0</span>
-                        </div>
-                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div id="bar-visita-dibujo" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-500 font-bold">3. Mesa de Captura Final</span>
-                            <span class="text-slate-700 dark:text-white font-bold" id="bar-captura-val">0</span>
-                        </div>
-                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div id="bar-captura" class="h-full bg-leezar-500 w-0 transition-all duration-1000"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 mt-6 mb-4 fade-in">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                <span class="material-symbols-rounded text-indigo-500">groups</span>
-                Carga de Trabajo del Equipo (Activos)
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-indigo-500">photo_camera</span> Visitadores</h4>
-                    <div id="list-visitadores" class="space-y-2">
-                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
-                    </div>
-                </div>
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-orange-500">architecture</span> Dibujantes</h4>
-                    <div id="list-dibujantes" class="space-y-2">
-                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
-                    </div>
-                </div>
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-teal-500">keyboard</span> Capturistas</h4>
-                    <div id="list-capturistas" class="space-y-2">
-                        <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-rounded text-6xl text-green-500">verified</span></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Concluidos</p>
+                        <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white" id="count-terminados">...</h3>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="mb-6">
+            <button onclick="toggleSection('sec-monitor', 'icon-monitor')" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-emerald-500">radar</span> Monitor de Expedientes en Vivo
+                </h2>
+                <span id="icon-monitor" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-emerald-500">expand_more</span>
+            </button>
+            <div id="sec-monitor" class="mt-4 transition-all duration-500 origin-top">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">upload_file</span> 1. En Llenado</h3>
+                            <span id="count-fase1" class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-fase1" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">rule</span> 2. En Revisión</h3>
+                            <span id="count-fase2" class="text-xs font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-fase2" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-emerald-500">engineering</span> 3. Operación</h3>
+                            <span id="count-fase3" class="text-xs font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-fase3" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <button onclick="toggleSection('sec-flujo', 'icon-flujo')" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-orange-500">timeline</span> Tiempos y Flujo de Operación
+                </h2>
+                <span id="icon-flujo" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-orange-500">expand_more</span>
+            </button>
+            <div id="sec-flujo" class="mt-4 transition-all duration-500 origin-top">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-leezar-500">timer</span> Eficiencia de Tiempos
+                        </h3>
+                        <div class="grid grid-cols-3 gap-4 text-center divide-x divide-slate-100 dark:divide-slate-700">
+                            <div class="p-2">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Promedio</p>
+                                <span class="text-4xl font-black text-slate-700 dark:text-white block" id="time-avg">--</span>
+                                <span class="text-xs text-slate-400">Días</span>
+                            </div>
+                            <div class="p-2">
+                                <p class="text-[10px] text-green-500 uppercase font-bold tracking-widest mb-1">Récord (Min)</p>
+                                <span class="text-4xl font-black text-green-600 block" id="time-min">--</span>
+                                <span class="text-xs text-slate-400">Días</span>
+                            </div>
+                            <div class="p-2">
+                                <p class="text-[10px] text-red-500 uppercase font-bold tracking-widest mb-1">Atención (Max)</p>
+                                <span class="text-4xl font-black text-red-500 block" id="time-max">--</span>
+                                <span class="text-xs text-slate-400">Días</span>
+                            </div>
+                        </div>
+                        <p class="text-center text-[10px] text-slate-400 mt-4 bg-slate-50 dark:bg-slate-700/50 py-2 rounded-lg">Calculado en base a expedientes con fecha de término registrada.</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-orange-500">route</span> Flujo de Operación
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-500 font-bold">1. Revisión Documental (Checklist)</span>
+                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-doc-val">0</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div id="bar-doc" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-500 font-bold">2. Levantamiento y Dibujo</span>
+                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-dibujo-val">0</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div id="bar-visita-dibujo" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-500 font-bold">3. Mesa de Captura Final</span>
+                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-captura-val">0</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div id="bar-captura" class="h-full bg-leezar-500 w-0 transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <button onclick="toggleSection('sec-equipo', 'icon-equipo')" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">groups</span> Carga de Trabajo del Equipo
+                </h2>
+                <span id="icon-equipo" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-indigo-500">expand_more</span>
+            </button>
+            <div id="sec-equipo" class="mt-4 transition-all duration-500 origin-top">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-indigo-500">photo_camera</span> Visitadores</h4>
+                            <div id="list-visitadores" class="space-y-2"><div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div></div>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-orange-500">architecture</span> Dibujantes</h4>
+                            <div id="list-dibujantes" class="space-y-2"><div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div></div>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm text-teal-500">keyboard</span> Capturistas</h4>
+                            <div id="list-capturistas" class="space-y-2"><div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-slate-300">sync</span></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-        <script src="firebase-config.js"></script>
+    <script>
+        // LÓGICA DE ACORDEONES CON MEMORIA
+        function toggleSection(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+            localStorage.setItem('dash_pref_' + contentId, content.classList.contains('hidden'));
+        }
 
-        <script>
-    // --- MOTOR INTELIGENTE DE DASHBOARD (CON CARGA DE EQUIPO) ---
+        function aplicarPreferenciasAcordeon() {
+            ['sec-kpis', 'sec-monitor', 'sec-flujo', 'sec-equipo'].forEach(id => {
+                if (localStorage.getItem('dash_pref_' + id) === 'true') {
+                    const elem = document.getElementById(id);
+                    const icon = document.getElementById('icon-' + id.split('-')[1]);
+                    if (elem && icon) {
+                        elem.classList.add('hidden');
+                        icon.classList.remove('rotate-180');
+                    }
+                }
+            });
+        }
+
+        // MOTOR INTELIGENTE DE DASHBOARD
         function iniciarMonitoreoDashboard() {
             const db = window.db || firebase.firestore(); 
+            if (!db) return;
 
-            if (!db) {
-                console.error("Error crítico: No hay conexión a base de datos.");
-                return;
-            }
+            aplicarPreferenciasAcordeon();
 
-            // Elementos DOM (Tarjetas Superiores)
-            const elTotal = document.getElementById('count-total');
-            const elPendientes = document.getElementById('count-pendientes');
-            const elProceso = document.getElementById('count-proceso'); 
-            const elTerminados = document.getElementById('count-terminados');
+            const elTotal = document.getElementById('count-total'), elPendientes = document.getElementById('count-pendientes');
+            const elProceso = document.getElementById('count-proceso'), elTerminados = document.getElementById('count-terminados');
+            const elTimeAvg = document.getElementById('time-avg'), elTimeMin = document.getElementById('time-min'), elTimeMax = document.getElementById('time-max');
+            const barDoc = document.getElementById('bar-doc'), barVisitaDibujo = document.getElementById('bar-visita-dibujo'), barCaptura = document.getElementById('bar-captura');
 
-            // Elementos de Tiempos
-            const elTimeAvg = document.getElementById('time-avg');
-            const elTimeMin = document.getElementById('time-min');
-            const elTimeMax = document.getElementById('time-max');
-
-            // Barras de Flujo
-            const barDoc = document.getElementById('bar-doc');
-            const barVisitaDibujo = document.getElementById('bar-visita-dibujo');
-            const barCaptura = document.getElementById('bar-captura');
-
-            // Iniciar Escucha en Tiempo Real
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 let total = 0, pendientes = 0, enProcesoTotal = 0, terminados = 0;
                 let cDoc = 0, cVisitaDibujo = 0, cCaptura = 0;
                 let tiemposRegistrados = [];
-                
-                // 🌟 NUEVO: DICCIONARIO PARA CONTAR ASIGNACIONES DE PERSONAL
                 let cargaPersonal = { visitadores: {}, dibujantes: {}, capturistas: {} };
+                let fase1 = [], fase2 = [], fase3 = []; 
 
                 snapshot.forEach((doc) => {
                     total++;
@@ -221,116 +269,121 @@
 
                     const checklist = data.checklist || {};
                     const items = Object.values(checklist).filter(i => i.obligatorio !== false);
+                    const tot = items.length || 1;
+                    
+                    const subidos = items.filter(i => ['revision', 'validado'].includes((i.estatus || '').toLowerCase())).length;
                     const validados = items.filter(i => (i.estatus || '').toLowerCase() === 'validado').length;
-                    const checklistCompleto = (items.length > 0 && validados >= items.length);
+                    
+                    const pctCliente = Math.round((subidos / tot) * 100);
+                    const pctValidado = Math.round((validados / tot) * 100);
 
-                    // 1. CONCLUIDOS
+                    // 🔥 LOS 4 CANDADOS ESTRICTOS 🔥
+                    const checkCompleto = (validados >= tot && tot > 0); // Tiene que estar 100% VALIDADO (no solo subido)
+                    const tieneVisitador = !!(data.visitador_asignado || data.visitador);
+                    const tieneDibujante = !!(data.dibujante_asignado || data.dibujante);
+                    const tieneCapturista = !!(data.capturista_asignado || data.capturista);
+                    const tieneCualquierAsignacion = tieneVisitador || tieneDibujante || tieneCapturista;
+
                     if (globalStatus.includes('CONCLUIDO') || globalStatus.includes('ENTREGADO') || globalStatus === 'TERMINADO') {
                         terminados++;
-                        let inicio = data.fechaCreacion || data.fecha_creacion;
-                        let fin = data.fecha_conclusion || data.fechaActualizacion;
-                        if (inicio && fin) {
-                            const diffDays = Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)); 
-                            tiemposRegistrados.push(diffDays);
-                        }
-                    } 
-                    // 2. VIVOS (Pendientes o En Proceso)
-                    else {
-                        // A) Detectar si está "Por Asignar"
-                        let esPendiente = false;
-                        if (validados === 0 && globalStatus === 'PENDIENTE') {
-                            esPendiente = true; 
-                        } else if (checklistCompleto && !data.visitador_asignado && !data.dibujante_asignado && !data.capturista_asignado) {
-                            esPendiente = true; 
-                        }
+                        let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
+                        if (inicio && fin) tiemposRegistrados.push(Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)));
+                    } else {
+                        // 1. Alimentar KPIs (Tarjetas superiores)
+                        if (subidos === 0 && globalStatus === 'PENDIENTE') pendientes++; 
+                        else if (checkCompleto && !tieneCualquierAsignacion) pendientes++; 
+                        else enProcesoTotal++;
 
-                        if (esPendiente) {
-                            pendientes++;
-                        } else {
-                            enProcesoTotal++;
-                            
-                            // 🌟 NUEVO: CONTABILIZAR PERSONAL SOLO DE EXPEDIENTES VIVOS
-                            const visitador = data.visitador_asignado || data.visitador;
-                            const dibujante = data.dibujante_asignado || data.dibujante;
-                            const capturista = data.capturista_asignado || data.capturista;
+                        // 2. Alimentar Carga de Personal
+                        if (tieneVisitador) cargaPersonal.visitadores[data.visitador_asignado || data.visitador] = (cargaPersonal.visitadores[data.visitador_asignado || data.visitador] || 0) + 1;
+                        if (tieneDibujante) cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] = (cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] || 0) + 1;
+                        if (tieneCapturista) cargaPersonal.capturistas[data.capturista_asignado || data.capturista] = (cargaPersonal.capturistas[data.capturista_asignado || data.capturista] || 0) + 1;
 
-                            if (visitador) cargaPersonal.visitadores[visitador] = (cargaPersonal.visitadores[visitador] || 0) + 1;
-                            if (dibujante) cargaPersonal.dibujantes[dibujante] = (cargaPersonal.dibujantes[dibujante] || 0) + 1;
-                            if (capturista) cargaPersonal.capturistas[capturista] = (cargaPersonal.capturistas[capturista] || 0) + 1;
-                        }
-                        
-                        // B) Alimentar el Flujo de Operación
-                        if (data.capturista_asignado || data.capturista || globalStatus.includes('CAPTURA')) {
-                            cCaptura++;
-                        } else if (data.visitador_asignado || data.dibujante_asignado || data.visitador || data.dibujante) {
-                            cVisitaDibujo++;
-                        } else {
-                            cDoc++;
+                        // 3. Alimentar Gráfica de Barras de Flujo
+                        if (checkCompleto && tieneCapturista) cCaptura++;
+                        else if (checkCompleto && (tieneVisitador || tieneDibujante)) cVisitaDibujo++;
+                        else cDoc++;
+
+                        // 4. 🔥 CLASIFICADOR DEL MONITOR EN VIVO (Ruteo Blindado) 🔥
+                        const expData = {
+                            nombre: data.cliente || data.nombreCliente || 'Cliente',
+                            tramite: (data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
+                            pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot
+                        };
+
+                        if (checkCompleto && tieneVisitador && tieneDibujante && tieneCapturista) {
+                            fase3.push(expData); // 🟢 OPERACIÓN: 100% Validado Y el equipo completo está asignado.
+                        } else if (checkCompleto) {
+                            fase2.push(expData); // 🟡 EN REVISIÓN / ASIGNACIÓN: 100% Validado, pero estás esperando asignar equipo.
+                        } else if (subidos > 0) {
+                            fase1.push(expData); // 🔵 EN LLENADO: El cliente ya empezó, pero no ha llegado al 100% validado.
                         }
                     }
                 });
 
-                // --- ACTUALIZAR PANTALLAS ---
-                elTotal.innerText = total;
-                elPendientes.innerText = pendientes;
-                elProceso.innerText = enProcesoTotal; 
-                elTerminados.innerText = terminados;
-
+                // ACTUALIZAR PANTALLAS
+                elTotal.innerText = total; elPendientes.innerText = pendientes; elProceso.innerText = enProcesoTotal; elTerminados.innerText = terminados;
+                
                 if (tiemposRegistrados.length > 0) {
-                    elTimeMin.innerText = Math.min(...tiemposRegistrados);
-                    elTimeMax.innerText = Math.max(...tiemposRegistrados);
+                    elTimeMin.innerText = Math.min(...tiemposRegistrados); elTimeMax.innerText = Math.max(...tiemposRegistrados);
                     elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
-                } else {
-                    elTimeMin.innerText = "-";
-                    elTimeMax.innerText = "-";
-                    elTimeAvg.innerText = "-";
-                }
+                } else { elTimeMin.innerText = "-"; elTimeMax.innerText = "-"; elTimeAvg.innerText = "-"; }
 
                 const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
-                document.getElementById('bar-doc-val').innerText = cDoc;
-                document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo;
-                document.getElementById('bar-captura-val').innerText = cCaptura;
+                document.getElementById('bar-doc-val').innerText = cDoc; document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo; document.getElementById('bar-captura-val').innerText = cCaptura;
+                setTimeout(() => { barDoc.style.width = `${(cDoc / totalActivos) * 100}%`; barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`; }, 100);
 
-                setTimeout(() => {
-                    barDoc.style.width = `${(cDoc / totalActivos) * 100}%`;
-                    barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`;
-                    barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`;
-                }, 100);
-
-                // 🌟 NUEVO: RENDERIZAR LISTAS DE PERSONAL
-                const renderLista = (obj, elementId, colorClass) => {
+                const renderListaP = (obj, elementId, colorClass) => {
                     const container = document.getElementById(elementId);
-                    // Ordenamos para que el que tiene más expedientes salga arriba
                     const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
-                    
-                    if (keys.length === 0) {
-                        container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
-                        return;
-                    }
+                    if (keys.length === 0) return container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
+                    container.innerHTML = keys.map(k => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${k.split('@')[0].toUpperCase()}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`).join('');
+                };
+                renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
 
-                    container.innerHTML = keys.map(k => {
-                        // Limpiamos el nombre (por si guardaste el correo, quitamos el @gmail.com)
-                        const nombreLimpio = k.split('@')[0].toUpperCase();
-                        return `
-                        <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
-                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2" title="${k}">${nombreLimpio}</span>
-                            <span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700 shadow-inner">${obj[k]} Exp</span>
-                        </div>`;
-                    }).join('');
+                // RENDERIZAR MONITOR EN VIVO
+                document.getElementById('count-fase1').innerText = fase1.length;
+                document.getElementById('count-fase2').innerText = fase2.length;
+                document.getElementById('count-fase3').innerText = fase3.length;
+
+                fase1.sort((a, b) => b.pctC - a.pctC); 
+                fase2.sort((a, b) => b.pctV - a.pctV); 
+                fase3.sort((a, b) => b.val - a.val);   
+
+                const renderFase = (arr, elId, colorTheme) => {
+                    const cont = document.getElementById(elId);
+                    if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10">Bandeja Vacía</div>`; return; }
+                    
+                    // CORRECCIÓN PARA EVITAR ERROR EN VS CODE (Separar las clases dinámicas de las etiquetas HTML)
+                    const colorClasesTexto = colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
+                    const colorClasesBarra = colorTheme === 'blue' ? 'bg-blue-500' : colorTheme === 'amber' ? 'bg-amber-500' : 'bg-emerald-500';
+
+                    cont.innerHTML = arr.map(exp => `
+                        <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="w-full pr-2">
+                                    <p class="text-xs font-black text-slate-800 dark:text-white truncate" title="${exp.nombre}">${exp.nombre}</p>
+                                    <p class="text-[9px] text-slate-500 uppercase mt-0.5">${exp.tramite}</p>
+                                </div>
+                                <span class="text-[10px] font-black ${colorClasesTexto} px-1.5 py-0.5 rounded shrink-0">${elId === 'list-fase1' ? exp.pctC : exp.pctV}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-1.5">
+                                <div class="${colorClasesBarra} h-1.5 rounded-full" style="width: ${elId === 'list-fase1' ? exp.pctC : exp.pctV}%"></div>
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-bold text-right">${elId === 'list-fase1' ? `${exp.sub} subidos` : `${exp.val} validados`} de ${exp.tot}</p>
+                        </div>
+                    `).join('');
                 };
 
-                renderLista(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400');
-                renderLista(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400');
-                renderLista(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
+                renderFase(fase1, 'list-fase1', 'blue');
+                renderFase(fase2, 'list-fase2', 'amber');
+                renderFase(fase3, 'list-fase3', 'emerald');
 
-            }, (error) => {
-                console.error("Error en Dashboard:", error);
-            });
+            }, (error) => { console.error("Error en Dashboard:", error); });
         }
 
+        // INICIAR AL CARGAR
         document.addEventListener('DOMContentLoaded', iniciarMonitoreoDashboard);
-    
     </script>
-
 </body>
 </html>
