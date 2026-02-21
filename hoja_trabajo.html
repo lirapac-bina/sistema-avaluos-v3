@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoja de Trabajo (Captura)</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { leezar: { 500: '#0d9488', 600: '#0f766e', 900: '#134e4a' } } 
+                } 
+            } 
+        }
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="js/layout.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        .dark body { background-color: #0f172a; color: #cbd5e1; }
+        
+        .leezar-input { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.35rem 0.5rem; font-size: 0.8rem; background-color: #fff; }
+        .dark .leezar-input { background-color: #1e293b; border-color: #334155; color: white; }
+        .leezar-label { display: block; font-size: 0.75rem; font-weight: 700; color: #4b5563; margin-bottom: 0.25rem; text-transform: uppercase; }
+        .dark .leezar-label { color: #94a3b8; }
+        
+        .tab-btn { padding-bottom: 0.75rem; font-size: 0.875rem; font-weight: 600; color: #6b7280; border-bottom: 4px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 800; }
+        .dark .tab-btn.active { color: #2dd4bf; border-bottom-color: #2dd4bf; }
+
+        th { font-size: 0.7rem; text-transform: uppercase; color: #4b5563; background-color: #f9fafb; padding: 0.5rem; font-weight: 800; border: 1px solid #e5e7eb; text-align: center; }
+        .dark th { background-color: #0f172a; color: #cbd5e1; border-color: #334155; }
+        td { padding: 0.25rem; border: 1px solid #e5e7eb; font-size: 0.8rem; }
+        .dark td { border-color: #334155; color: #94a3b8; }
+        .currency-wrap { position: relative; display: flex; align-items: center; }
+        .currency-symbol { position: absolute; left: 6px; font-size: 0.75rem; color: #9ca3af; }
+        .currency-input { padding-left: 1.2rem !important; text-align: right; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .thin-scroll::-webkit-scrollbar { width: 6px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 6px; }
+    </style>
+</head>
+<body class="transition-colors duration-300 min-h-screen">
+    
+    <main class="p-6 max-w-7xl mx-auto relative">
+        <header class="bg-white border-b border-gray-200 py-4 flex items-center justify-between px-8 shadow-sm rounded-t-xl mb-6 dark:bg-[#1e293b] dark:border-slate-700">
+            <div>
+                <h1 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-leezar-500">assignment</span> Hoja de Trabajo (Captura)
+                </h1>
+                <p id="active-expediente-label" class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">NINGÚN EXPEDIENTE SELECCIONADO</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="abrirModalExpedientes()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 text-xs px-4 py-2 rounded-md font-bold flex items-center gap-2 transition border border-slate-200 dark:border-slate-600">
+                    <span class="material-symbols-rounded text-sm">swap_horiz</span> Cambiar Expediente
+                </button>
+                <button onclick="guardarProgreso()" class="bg-leezar-600 hover:bg-leezar-500 text-white text-xs px-4 py-2 rounded-md font-bold flex items-center gap-2 shadow-md transition">
+                    <span class="material-symbols-rounded text-sm">save</span> Guardar Avance
+                </button>
+            </div>
+        </header>
+
+        <div id="workspace-container" class="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden opacity-50 pointer-events-none transition-opacity duration-300">
+            <div class="flex space-x-8 px-6 pt-4 border-b border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <button onclick="switchTab('datos')" id="btn-datos" class="tab-btn active"><span class="material-symbols-rounded text-sm align-middle mr-1">quick_reference_all</span> 1. Datos para Avalúo</button>
+                <button onclick="switchTab('notas')" id="btn-notas" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">edit_note</span> 2. Notas del Trámite</button>
+                <button onclick="switchTab('mercado')" id="btn-mercado" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">real_estate_agent</span> 3. Mercado</button>
+                <button onclick="switchTab('docjust')" id="btn-docjust" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">checklist</span> 4. Lista Doc Just</button>
+            </div>
+
+            <div class="p-6">
+                <div id="tab-datos" class="block fade-in">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 mb-6">
+                        <h3 class="text-xs font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-4">Información del Cliente e Inmueble</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div><label class="leezar-label">Nombre del Solicitante</label><input type="text" id="info-cliente" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
+                            <div><label class="leezar-label">Entidad Federativa</label><input type="text" id="info-entidad" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
+                            <div><label class="leezar-label">Tipo de Inmueble</label><input type="text" id="info-inmueble" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
+                        </div>
+                    </div>
+                    <div class="text-center py-10 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
+                        <span class="material-symbols-rounded text-4xl text-gray-400 mb-2">document_scanner</span>
+                        <p class="text-sm font-bold text-gray-500">Área de Extracción de Datos de Documentos.</p>
+                        <p class="text-xs text-gray-400">Aquí se conectará el resumen de lo que el cliente subió.</p>
+                    </div>
+                </div>
+
+                <div id="tab-notas" class="hidden fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Configuración de Notas</h3>
+                        <span id="badge-tramite" class="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full text-xs font-bold border border-purple-200 dark:border-purple-800">Trámite</span>
+                    </div>
+                    <textarea id="texto-notas-tramite" rows="15" class="w-full border border-gray-300 p-4 rounded-xl text-sm bg-white shadow-inner focus:ring-2 focus:ring-leezar-500 focus:outline-none dark:bg-[#0f172a] dark:text-white dark:border-slate-600" placeholder="Escribe aquí las observaciones del avalúo..."></textarea>
+                </div>
+
+                <div id="tab-mercado" class="hidden fade-in">
+                    <div class="mb-8 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                        <div class="bg-slate-50 dark:bg-slate-800 p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><span class="text-xl">⛰️</span> Homologación de Terreno</h3>
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase">Sup. Sujeto (m²)</label>
+                                <input type="text" id="terreno-sujeto-sup" class="w-24 leezar-input font-bold text-blue-700 dark:text-blue-400" placeholder="0.00" oninput="calcAll('terreno', 4)" onblur="formatInput(this)">
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-[#0f172a] overflow-x-auto">
+                            <table class="w-full mb-4 border-collapse"><thead><tr><th class="w-8">#</th><th class="w-32">Precio ($)</th><th class="w-20">Sup (m²)</th><th class="w-28">$/m² Original</th><th class="w-16">F. Neg</th><th class="w-16 text-purple-700">F. Sup</th><th class="w-16">F. Zona</th><th class="w-24 bg-blue-50 dark:bg-blue-900">Resultante</th></tr></thead><tbody id="terreno-rows"></tbody></table>
+                            <div class="flex justify-end gap-4 mt-2">
+                                <div class="text-right"><span class="block text-[10px] font-bold text-gray-500">PROMEDIO $/m²</span><span id="terreno-avg-homologado" class="text-lg font-black text-slate-800 dark:text-white">$0.00</span></div>
+                                <div class="text-right bg-leezar-50 dark:bg-leezar-900/30 px-4 py-1 rounded border border-leezar-200 dark:border-leezar-800"><span class="block text-[10px] font-bold text-leezar-600 dark:text-leezar-400">VALOR TOTAL TERRENO</span><span id="terreno-total-value" class="text-lg font-black text-leezar-700 dark:text-leezar-300">$0.00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-docjust" class="hidden fade-in">
+                    <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800 mb-6 flex items-start gap-3">
+                        <span class="material-symbols-rounded text-amber-500 text-2xl">warning</span>
+                        <div>
+                            <h3 class="text-sm font-black text-amber-800 dark:text-amber-400 uppercase tracking-widest">Lista de Documentos de Justificación</h3>
+                            <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">Marca las casillas conforme vayas integrando los documentos finales al expediente.</p>
+                        </div>
+                    </div>
+                    <div id="contenedor-excel-docs" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-expedientes" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 dark:text-white">Bandeja de Asignaciones</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona el expediente en el que vas a trabajar.</p>
+                    </div>
+                    <button id="btn-cerrar-modal" onclick="cerrarModalExpedientes()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white hidden">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+                <div class="p-6 max-h-[60vh] overflow-y-auto thin-scroll grid grid-cols-1 md:grid-cols-2 gap-4" id="lista-expedientes-modal">
+                    <div class="text-center py-10 col-span-full"><span class="material-symbols-rounded animate-spin text-slate-300 text-3xl">sync</span><p class="text-sm text-slate-400 mt-2">Buscando tus asignaciones...</p></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="toast" class="fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg shadow-xl hidden text-sm font-bold transition-opacity z-50 flex items-center gap-2"></div>
+    </main>
+
+    <script>
+        // VARIABLES GLOBALES
+        let currentFolioId = null;
+        let misExpedientes = {};
+
+        // LA LISTA EXACTA DEL EXCEL (En Altas y Bajas, sin el título)
+        const LISTA_DOC_JUST = [
+            "Alineamiento y Número Oficial", "Licencia de Construcción",
+            "Boleta Agua", "Recibo de Luz", "Boleta Predial", "Código Postal", "Cédula Catastral", 
+            "Costo Paramétrico", "Datos de Escritura", "Medidas y Colindancias", "Edad", 
+            "Constancia de No Adeudo CMAS", "Constancia de Datos Catastrales", 
+            "Proyecto Arquitectónico Planta Baja/Alta/Única", "Áreas Proy Arq Planta", 
+            "Med y Col Macrolote", "Ubicación Cisterna", "Ubicación Pozo", "Ubicación Biodigestor", 
+            "Indiviso", "Edad Efectiva", "Para Yucatán", "Info Catastral", "Plano Catastral", 
+            "Edad INSEJUPY", "Para Cofinavit / Infonavit", "Detalle de Registro Cédula MAI (Pag 1 de 2)",
+            "Solicitud Infonavit", "Solicitud AVE"
+        ];
+
+        // 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
+        document.addEventListener('DOMContentLoaded', () => {
+            renderListaExcel(); // Dibuja las 31 casillas en la pestaña 4
+
+            const userRole = localStorage.getItem('leezar_role') || 'capturista'; 
+            const userEmail = localStorage.getItem('leezar_user') || 'capturista@leezar.com';
+            
+            if (userRole !== 'capturista' && userRole !== 'admin' && userRole !== 'superadmin') {
+                alert("Acceso Denegado. Esta hoja de trabajo es exclusiva para la Mesa de Captura.");
+                window.location.href = "dashboard.html"; 
+                return;
+            }
+
+            iniciarHojaTrabajo(userEmail, userRole);
+        });
+
+        // 2. FUNCIÓN QUE DIBUJA LAS CASILLAS
+        function renderListaExcel() {
+            const container = document.getElementById('contenedor-excel-docs');
+            container.innerHTML = LISTA_DOC_JUST.map((item, index) => `
+                <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:border-leezar-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm bg-white dark:bg-[#1e293b]">
+                    <input type="checkbox" id="chk-docjust-${index}" class="w-5 h-5 text-leezar-600 bg-gray-100 border-gray-300 rounded focus:ring-leezar-500 shrink-0">
+                    <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-tight">${item}</span>
+                </label>
+            `).join('');
+        }
+
+        // 3. BUSCAR ASIGNACIONES (AHORA CON SEMÁFORO DE ESTADO)
+        function iniciarHojaTrabajo(currentUserEmail, userRole) {
+            const db = window.db || firebase.firestore();
+            if (!db) return showToast("Error conectando a BD", "error");
+
+            let query = db.collection('expedientes_avaluos');
+            if (userRole !== 'admin' && userRole !== 'superadmin') {
+                query = query.where('capturista_asignado', '==', currentUserEmail); 
+            }
+
+            query.onSnapshot((snapshot) => {
+                misExpedientes = {};
+                let htmlModal = '';
+
+                if (snapshot.empty) {
+                    htmlModal = `<div class="text-center py-10 text-slate-500 col-span-full"><span class="material-symbols-rounded text-5xl mb-3 opacity-20">inbox</span><p class="font-bold">Bandeja Vacía</p><p class="text-xs mt-1">No tienes expedientes asignados en este momento.</p></div>`;
+                } else {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        misExpedientes[id] = data; 
+                        
+                        const unidad = data.unidad || 'AVE';
+                        const numExp = data.folio_gestora || data.folio_numerico || id.substring(0,5).toUpperCase();
+                        const entidad = (data.entidad || data.estado || 'S/E').toUpperCase();
+                        const etiqueta = `GYS ${unidad} ${numExp} (${entidad})`;
+
+                        // 🔥 SEMÁFORO MÁGICO 🔥
+                        // Detectamos si el capturista ya guardó datos antes
+                        const tieneAvance = !!(data.fecha_actualizacion_captura || data.notas_captura);
+                        
+                        const badgeStatus = tieneAvance 
+                            ? `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200 ml-2 shrink-0"><span class="material-symbols-rounded text-[10px] align-middle mr-0.5">draw</span> EN PROGRESO</span>`
+                            : `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600 ml-2 shrink-0">SIN INICIAR</span>`;
+
+                        const borderClass = tieneAvance 
+                            ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-900/10" 
+                            : "border-slate-200 dark:border-slate-700";
+
+                        const iconColor = tieneAvance ? "text-emerald-500" : "text-slate-300";
+
+                        htmlModal += `
+                        <div onclick="seleccionarExpediente('${id}', '${etiqueta}')" class="p-4 ${borderClass} rounded-xl hover:border-leezar-500 hover:bg-leezar-50 dark:hover:bg-leezar-900/20 cursor-pointer transition group shadow-sm flex justify-between items-center">
+                            <div>
+                                <div class="flex items-center mb-1">
+                                    <h4 class="font-black text-slate-800 dark:text-white group-hover:text-leezar-600 dark:group-hover:text-leezar-400 text-sm truncate">${etiqueta}</h4>
+                                    ${badgeStatus}
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400"><span class="font-bold text-slate-700 dark:text-slate-300">${data.cliente || 'Sin Cliente'}</span> • ${data.tipoTramite || data.tramite || 'Trámite'}</p>
+                            </div>
+                            <span class="material-symbols-rounded ${iconColor} group-hover:text-leezar-500 transition-colors">chevron_right</span>
+                        </div>`;
+                    });
+                }
+                document.getElementById('lista-expedientes-modal').innerHTML = htmlModal;
+                if (!currentFolioId) abrirModalExpedientes(true);
+            });
+
+            initTable('terreno', 4);
+        }
+
+        // 4. ABRIR Y CERRAR MODAL
+        function abrirModalExpedientes(esObligatorio = false) {
+            const modal = document.getElementById('modal-expedientes');
+            const content = document.getElementById('modal-content');
+            const btnCerrar = document.getElementById('btn-cerrar-modal');
+            
+            if(esObligatorio) btnCerrar.classList.add('hidden');
+            else btnCerrar.classList.remove('hidden');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+
+        function cerrarModalExpedientes() {
+            const modal = document.getElementById('modal-expedientes');
+            const content = document.getElementById('modal-content');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // 5. CARGAR EXPEDIENTE E INYECTAR DATOS GUARDADOS
+        function seleccionarExpediente(id, etiqueta) {
+            currentFolioId = id;
+            const data = misExpedientes[id];
+            
+            document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('active-expediente-label').innerHTML = `<span class="text-leezar-600 dark:text-leezar-400">${etiqueta}</span> <span class="text-slate-300 mx-1">|</span> ${data.cliente || 'Sin Nombre'}`;
+            
+            document.getElementById('info-cliente').value = data.cliente || 'Sin Nombre';
+            document.getElementById('info-entidad').value = data.entidad || data.estado || 'S/E';
+            document.getElementById('info-inmueble').value = data.tipoInmueble || 'CASA';
+            
+            const tramite = (data.tipoTramite || data.tramite || 'TRÁMITE GENERAL').toUpperCase();
+            document.getElementById('badge-tramite').textContent = tramite;
+            
+            const areaNotas = document.getElementById('texto-notas-tramite');
+            if (data.notas_captura) {
+                areaNotas.value = data.notas_captura;
+            } else if(tramite.includes('INFONAVIT')) {
+                areaNotas.value = "NOTAS INFONAVIT:\n- Cumple con ecotecnologías requeridas.\n- Vida útil remanente aplicable según normatividad.\n- El inmueble no se encuentra en zona de riesgo.\n- ...";
+            } else {
+                areaNotas.value = "OBSERVACIONES GENERALES:\n- Se realizó la visita ocular sin contratiempos.\n- ...";
+            }
+
+            if (data.mercado_terreno) {
+                document.getElementById('terreno-sujeto-sup').value = data.mercado_terreno.sujeto_sup || '';
+                for(let i=1; i<=4; i++) {
+                    if(data.mercado_terreno.rows && data.mercado_terreno.rows[i-1]) {
+                        const r = data.mercado_terreno.rows[i-1];
+                        document.getElementById(`terreno-precio-${i}`).value = r.precio || '';
+                        document.getElementById(`terreno-sup-${i}`).value = r.sup || '';
+                        document.getElementById(`terreno-fneg-${i}`).value = r.fneg || '1.00';
+                        document.getElementById(`terreno-fzona-${i}`).value = r.fzona || '1.00';
+                    }
+                }
+            } else {
+                document.getElementById('terreno-sujeto-sup').value = '';
+                for(let i=1; i<=4; i++) {
+                    document.getElementById(`terreno-precio-${i}`).value = ''; document.getElementById(`terreno-sup-${i}`).value = '';
+                    document.getElementById(`terreno-fneg-${i}`).value = '1.00'; document.getElementById(`terreno-fzona-${i}`).value = '1.00';
+                }
+            }
+            calcAll('terreno', 4);
+
+            // Cargar Checklist de Excel guardado
+            LISTA_DOC_JUST.forEach((_, index) => {
+                const el = document.getElementById(`chk-docjust-${index}`);
+                if (el) {
+                    el.checked = data.docjust ? (data.docjust[`item_${index}`] || false) : false;
+                }
+            });
+            
+            cerrarModalExpedientes();
+            showToast("Expediente Cargado Correctamente", "success");
+        }
+
+        function switchTab(tabId) {
+            ['datos', 'notas', 'mercado', 'docjust'].forEach(id => {
+                document.getElementById('tab-' + id).classList.add('hidden');
+                document.getElementById('btn-' + id).classList.remove('active');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+        }
+
+        // FUNCIONES DE TABLA MERCADO
+        function initTable(type, count) { 
+            const tbody = document.getElementById(`${type}-rows`); 
+            if(!tbody) return; 
+            let html = ''; 
+            for(let i=1; i<=count; i++) { 
+                html += `<tr>
+                    <td class="text-center text-xs font-mono text-gray-400">${i}</td>
+                    <td class="p-0"><div class="currency-wrap"><span class="currency-symbol">$</span><input id="${type}-precio-${i}" class="leezar-input currency-input border-0" onblur="formatInput(this)" oninput="calcAll('${type}', ${count})"></div></td>
+                    <td class="p-0"><input id="${type}-sup-${i}" class="leezar-input text-right border-0" oninput="calcAll('${type}', ${count})"></td>
+                    <td class="text-right text-xs px-2 text-gray-500 bg-gray-50 dark:bg-slate-900 align-middle" id="${type}-orig-${i}">$0.00</td>
+                    <td class="p-0"><input id="${type}-fneg-${i}" class="leezar-input text-center bg-yellow-50 dark:bg-yellow-900/30 border-0" value="1.00" oninput="calcAll('${type}', ${count})"></td>
+                    <td class="text-center text-xs font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 align-middle" id="${type}-fsup-${i}">1.00</td>
+                    <td class="p-0"><input id="${type}-fzona-${i}" class="leezar-input text-center bg-yellow-50 dark:bg-yellow-900/30 border-0" value="1.00" oninput="calcAll('${type}', ${count})"></td>
+                    <td class="text-right font-bold text-xs px-2 bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300 align-middle" id="${type}-res-${i}">$0.00</td>
+                </tr>`; 
+            } 
+            tbody.innerHTML = html; 
+        }
+
+        window.calcAll = (type, count) => { 
+            const subjSup = getVal(`${type}-sujeto-sup`); 
+            let totalHomologado = 0, validCount = 0; 
+            for(let i=1; i<=count; i++) { 
+                const precio = getVal(`${type}-precio-${i}`), sup = getVal(`${type}-sup-${i}`); 
+                let unitario = (sup > 0) ? precio / sup : 0; 
+                document.getElementById(`${type}-orig-${i}`).textContent = formatMoney(unitario); 
+                
+                let fsup = 1.00; 
+                if(subjSup > 0 && sup > 0) fsup = Math.pow((sup / subjSup), 1/6); 
+                document.getElementById(`${type}-fsup-${i}`).textContent = fsup.toFixed(4); 
+                
+                const fneg = getVal(`${type}-fneg-${i}`) || 1; 
+                const fextra = getVal(`${type}-fzona-${i}`) || 1; 
+                const resultante = unitario * fneg * fsup * fextra; 
+                
+                document.getElementById(`${type}-res-${i}`).textContent = formatMoney(resultante); 
+                if(resultante > 0) { totalHomologado += resultante; validCount++; } 
+            } 
+            const avg = validCount > 0 ? totalHomologado / validCount : 0; 
+            document.getElementById(`${type}-avg-homologado`).textContent = formatMoney(avg); 
+            document.getElementById(`${type}-total-value`).textContent = formatMoney(avg * subjSup); 
+        };
+
+        function getVal(id) { return parseFloat(document.getElementById(id)?.value.replace(/[^0-9.-]+/g,'') || 0); }
+        function formatMoney(n) { return new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN'}).format(n); }
+        window.formatInput = (el) => { const v = parseFloat(el.value.replace(/[^0-9.-]+/g,'')); if(!isNaN(v)) el.value = new Intl.NumberFormat('en-US').format(v); };
+        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':(type==='success'?'bg-emerald-600':'bg-gray-800')}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
+
+        // 6. GUARDAR AVANCES
+        async function guardarProgreso() {
+            if(!currentFolioId) return showToast("Debes abrir un expediente primero.", "error");
+            
+            const db = window.db || firebase.firestore();
+            const btn = document.querySelector('button[onclick="guardarProgreso()"]');
+            btn.innerHTML = `<span class="material-symbols-rounded text-sm animate-spin">sync</span> Guardando...`;
+            btn.disabled = true;
+
+            const notasVal = document.getElementById('texto-notas-tramite').value;
+            
+            const mercado_terreno = {
+                sujeto_sup: document.getElementById('terreno-sujeto-sup').value, 
+                rows: []
+            };
+            for(let i=1; i<=4; i++) {
+                mercado_terreno.rows.push({
+                    precio: document.getElementById(`terreno-precio-${i}`).value,
+                    sup: document.getElementById(`terreno-sup-${i}`).value,
+                    fneg: document.getElementById(`terreno-fneg-${i}`).value,
+                    fzona: document.getElementById(`terreno-fzona-${i}`).value
+                });
+            }
+
+            // Recolectar las 31 casillas generadas del Excel
+            const docjustVal = {};
+            LISTA_DOC_JUST.forEach((_, index) => {
+                docjustVal[`item_${index}`] = document.getElementById(`chk-docjust-${index}`).checked;
+            });
+
+            try {
+                await db.collection('expedientes_avaluos').doc(currentFolioId).update({
+                    notas_captura: notasVal,
+                    mercado_terreno: mercado_terreno,
+                    docjust: docjustVal,
+                    fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast("Avance guardado en la nube ☁️", "success");
+            } catch (error) {
+                console.error("Error guardando:", error);
+                showToast("Error al conectar con la base de datos", "error");
+            } finally {
+                btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Avance`;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

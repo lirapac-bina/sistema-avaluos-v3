@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div>
                 <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p>
                 <ul class="space-y-1">
-                    <li><a href="operacion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>
+                    <li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>
                 </ul>
             </div>
             ${menuAdminHTML}
