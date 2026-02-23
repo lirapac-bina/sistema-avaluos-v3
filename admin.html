@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración - Ing. Leezar</title>
+    <title>Configuración</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -212,7 +212,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Correo Electrónico (ID)</label>
-                           <input type="email" id="user-email-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400" placeholder="ejemplo@ingleezar.com">
+                           <input type="email" id="user-email-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400" placeholder="ejemplo@dominio.com">
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -247,10 +247,11 @@
                         <div>
                             <label class="block text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">security</span> Nivel de Acceso</label>
                             <select id="user-rol-edit" onchange="togglePinField()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none">
-                            <option value="CAPTURISTA" class="text-slate-800 dark:text-white">CAPTURISTA (Básico)</option>
-                            <option value="TECNICO" class="text-slate-800 dark:text-white">TÉCNICO (Operativo)</option>
-                            <option value="GESTOR" class="text-slate-800 dark:text-white">GESTOR (Intermedio)</option>
+                            <option value="CAPTURISTA" class="text-slate-800 dark:text-white">CAPTURISTA</option>
+                            <option value="TECNICO" class="text-slate-800 dark:text-white">TÉCNICO</option>
+                            <option value="GESTOR" class="text-slate-800 dark:text-white">GESTOR </option>
                             <option value="ADMIN" class="text-slate-800 dark:text-white">ADMINISTRADOR</option>
+                            <option value="CONTROLADOR">CONTROLADOR</option> 
                             <option value="SUPER ADMIN" class="text-slate-800 dark:text-white">SUPER ADMIN</option>
                             </select>
                             
@@ -261,24 +262,41 @@
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-extrabold text-teal-500 dark:text-teal-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">work</span> Funciones Operativas</label>
-                            <div class="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="check-captura" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
-                                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition">Captura de Datos</span>
-                                </label>
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="check-visita" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
-                                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition">Visitas Técnicas</span>
-                                </label>
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="check-dibuja" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
-                                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition">Dibujo de Planos</span>
-                                </label>
-                            </div>
+                            <label class="block text-[10px] font-extrabold text-blue-500 dark:text-blue-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">menu</span> Permisos de Menú Lateral</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-6">
+
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" id="acc-gestion" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-500 transition uppercase">Expedientes</span>
+                            </label>
+
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="acc-revision" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-500 transition uppercase">Mesa de Control</span>
+                        </label>
+
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="acc-hoja" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-500 transition uppercase">Hoja de Trabajo</span>
+                        </label>
                         </div>
-                    </div>
-                </div>
+
+        <label id="titulo-funciones" class="block text-[10px] font-extrabold text-teal-500 dark:text-teal-400 mb-2 uppercase flex items-center gap-1"><span class="material-symbols-rounded text-sm">work</span> Funciones Operativas</label>
+        <div id="bloque-funciones-operativas" class="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+            <label id="wrap-captura" class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" id="check-captura" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition uppercase">Captura de Datos</span>
+            </label>
+            <label id="wrap-visita" class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" id="check-visita" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition uppercase">Visitas Técnicas</span>
+            </label>
+            <label id="wrap-dibuja" class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" id="check-dibuja" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-teal-500 transition uppercase">Dibujo de Planos</span>
+            </label>
+        </div>
+    </div>
 
                 <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
                     <button onclick="document.getElementById('modal-usuario').classList.add('hidden')" class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
@@ -545,182 +563,174 @@
         }
 
         function cargarUsuarioModal(encodedData) {
-            // 1. Reset visual
-            avatarBase64 = '';
-            document.getElementById('preview-avatar').classList.add('hidden');
-            document.getElementById('icon-avatar').classList.remove('hidden');
-            
-            // 2. Elementos
-            const elEmail = document.getElementById('user-email-edit');
-            const elRol = document.getElementById('user-rol-edit');
-            const elPin = document.getElementById('user-pin-edit');
+            document.getElementById('modal-usuario-title').innerText = encodedData ? 'Editar Usuario' : 'Nuevo Usuario';
+            document.getElementById('user-email-edit').disabled = !!encodedData;
+            document.getElementById('error-msg').classList.add('hidden');
 
-            // --- FUERZA BRUTA: DESBLOQUEO VISUAL ---
-            // Esto sobrescribe cualquier clase CSS que lo ponga gris
-            elEmail.style.backgroundColor = '#ffffff'; 
-            elEmail.style.opacity = '1';
-            elEmail.style.cursor = 'text';
-            elEmail.style.color = '#1e293b'; // Texto oscuro
-            elEmail.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
-
-            if(encodedData) {
-                // --- MODO EDICIÓN ---
+            if (encodedData) {
                 const u = JSON.parse(decodeURIComponent(encodedData));
-                
-                elEmail.value = u.email;
-                
-                // Aquí SÍ bloqueamos (porque no se puede cambiar el ID/Email de un usuario existente)
-                elEmail.disabled = true;
-                elEmail.style.backgroundColor = '#f1f5f9'; // Volvemos a ponerlo gris
-                elEmail.style.cursor = 'not-allowed';
-                
-                document.getElementById('user-name-edit').value = u.nombre || '';
-                document.getElementById('user-iniciales-edit').value = u.iniciales || '';
+                document.getElementById('user-email-edit').value = u.email || '';
+                document.getElementById('user-nombre-edit').value = u.nombre || '';
+                document.getElementById('user-rol-edit').value = u.rol || 'GESTOR';
                 document.getElementById('user-celular-edit').value = u.celular || '';
-                elRol.value = u.rol || 'CAPTURISTA';
-                elPin.value = u.pin || ''; 
-                
-                if (u.fechaNacimiento) document.getElementById('user-fecha-edit').value = u.fechaNacimiento;
-                if (u.photoUrl) {
-                    document.getElementById('preview-avatar').src = u.photoUrl;
-                    document.getElementById('preview-avatar').classList.remove('hidden');
-                    document.getElementById('icon-avatar').classList.add('hidden');
-                }
+                document.getElementById('user-iniciales-edit').value = u.iniciales || '';
+                document.getElementById('user-nacimiento-edit').value = u.nacimiento || '';
+                document.getElementById('user-pin-edit').value = u.pin || '';
 
-                // Checks
-                document.getElementById('check-captura').checked = (u.funciones || []).includes('captura');
-                document.getElementById('check-visita').checked = (u.funciones || []).includes('visita');
-                document.getElementById('check-dibuja').checked = (u.funciones || []).includes('dibuja');
+                document.getElementById('check-captura').checked = u.funciones ? u.funciones.includes('captura') : false;
+                document.getElementById('check-visita').checked = u.funciones ? u.funciones.includes('visita') : false;
+                document.getElementById('check-dibuja').checked = u.funciones ? u.funciones.includes('dibuja') : false;
+
+                // --- CARGAR ACCESOS DEL MENÚ ---
+                const accesos = u.accesos || ['dashboard', 'gestion', 'revision', 'hoja_trabajo']; // Todos encendidos por defecto
+                document.getElementById('acc-dashboard').checked = accesos.includes('dashboard');
+                document.getElementById('acc-gestion').checked = accesos.includes('gestion');
+                document.getElementById('acc-revision').checked = accesos.includes('revision');
+                document.getElementById('acc-hoja').checked = accesos.includes('hoja_trabajo');
 
             } else {
-                // --- MODO NUEVO USUARIO ---
-                console.log("Creando usuario: Desbloqueando campos...");
-                
-                elEmail.value = '';
-                elEmail.removeAttribute('disabled'); 
-                elEmail.disabled = false; // ¡IMPORTANTE!
-                
-                document.getElementById('user-name-edit').value = '';
-                document.getElementById('user-iniciales-edit').value = '';
+                document.getElementById('user-email-edit').value = '';
+                document.getElementById('user-nombre-edit').value = '';
+                document.getElementById('user-rol-edit').value = 'GESTOR';
                 document.getElementById('user-celular-edit').value = '';
-                elRol.value = 'CAPTURISTA'; // Por defecto
+                document.getElementById('user-iniciales-edit').value = '';
+                document.getElementById('user-nacimiento-edit').value = '';
+                document.getElementById('user-pin-edit').value = '';
                 
-                elPin.value = '';
-                document.getElementById('user-fecha-edit').value = '';
-                
-                document.getElementById('check-captura').checked = true;
+                document.getElementById('check-captura').checked = false;
                 document.getElementById('check-visita').checked = false;
                 document.getElementById('check-dibuja').checked = false;
+
+                // Resetear accesos para usuarios nuevos (Todos prendidos por defecto)
+                document.getElementById('acc-dashboard').checked = true;
+                document.getElementById('acc-gestion').checked = true;
+                document.getElementById('acc-revision').checked = true;
+                document.getElementById('acc-hoja').checked = true;
             }
 
-            // Ajustar si se ve el PIN o no según el rol seleccionado
+            // Ajustar si se ve el PIN y qué bloque de funciones se activa
             togglePinField();
 
             // Mostrar modal
             document.getElementById('modal-usuario').classList.remove('hidden');
             document.getElementById('modal-usuario').classList.add('flex');
         }
-
-        // PEGAR AQUÍ (Entre cargarUsuarioModal y guardarUsuario)
         
-        function togglePinField() {
+function togglePinField() {
             const rolSelect = document.getElementById('user-rol-edit');
             const pinInput = document.getElementById('user-pin-edit');
-            const pinLabel = document.getElementById('label-pin'); // ¡Ahora lo buscamos por ID directo!
-
+            const pinLabel = document.getElementById('label-pin');
             const rol = rolSelect.value;
 
-            // REGLA: El PIN solo existe para ADMINS
+            // 1. REGLA DEL PIN (Solo Admins)
             if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
                 pinInput.classList.remove('hidden');
                 if(pinLabel) pinLabel.classList.remove('hidden');
                 pinInput.disabled = false;
             } else {
                 pinInput.classList.add('hidden');
-                if(pinLabel) pinLabel.classList.add('hidden'); // Se oculta garantizado
+                if(pinLabel) pinLabel.classList.add('hidden'); 
                 pinInput.value = '';       
                 pinInput.disabled = true;  
+            }
+
+            // 2. REGLA DE FUNCIONES OPERATIVAS Y PERFIL TÉCNICO
+            const wrapCaptura = document.getElementById('wrap-captura');
+            const wrapVisita = document.getElementById('wrap-visita');
+            const wrapDibuja = document.getElementById('wrap-dibuja');
+            const bloqueFunciones = document.getElementById('bloque-funciones-operativas');
+            const tituloFunciones = document.getElementById('titulo-funciones');
+
+            // Reset: Mostrar bloque por defecto
+            if(bloqueFunciones) bloqueFunciones.classList.remove('hidden');
+            if(tituloFunciones) tituloFunciones.classList.remove('hidden');
+
+            if (rol === 'CAPTURISTA') {
+                if(wrapCaptura) wrapCaptura.classList.remove('hidden');
+                if(wrapVisita) wrapVisita.classList.remove('hidden');
+                if(wrapDibuja) wrapDibuja.classList.remove('hidden');
+            } else if (rol === 'TECNICO') {
+                // El técnico no captura, solo visita y dibuja
+                if(wrapCaptura) wrapCaptura.classList.add('hidden');
+                if(wrapVisita) wrapVisita.classList.remove('hidden');
+                if(wrapDibuja) wrapDibuja.classList.remove('hidden');
+                document.getElementById('check-captura').checked = false; 
+            } else {
+                // Gestores, Admins y Controladores: Ocultamos todo para no hacer ruido visual
+                if(bloqueFunciones) bloqueFunciones.classList.add('hidden');
+                if(tituloFunciones) tituloFunciones.classList.add('hidden');
+                document.getElementById('check-captura').checked = false;
+                document.getElementById('check-visita').checked = false;
+                document.getElementById('check-dibuja').checked = false;
             }
         }
 
         async function guardarUsuario() {
-            const btn = document.querySelector('button[onclick="guardarUsuario()"]');
+            const btn = document.getElementById('btn-save-user');
+            const originalText = btn.innerHTML;
             
-            // Obtener valores
             const email = document.getElementById('user-email-edit').value.trim().toLowerCase();
-            const nombre = document.getElementById('user-name-edit').value.trim();
+            const nombre = document.getElementById('user-nombre-edit').value.trim();
             const rol = document.getElementById('user-rol-edit').value;
-            let pin = document.getElementById('user-pin-edit').value.trim();
-            
-            // --- VALIDACIONES ---
-            if (!email || !nombre) return alert("Correo y Nombre son obligatorios.");
-
             const celular = document.getElementById('user-celular-edit').value.trim();
-            
-            // VALIDACIÓN DE CELULAR
-            if (celular && celular.length !== 10) {
-                return alert("El celular debe tener exactamente 10 dígitos.");
+            const iniciales = document.getElementById('user-iniciales-edit').value.trim().toUpperCase() || nombre.substring(0,2).toUpperCase();
+            const nacimiento = document.getElementById('user-nacimiento-edit').value;
+            const pin = document.getElementById('user-pin-edit').value.trim();
+
+            if (!email || !nombre) {
+                mostrarError("El correo y nombre son obligatorios.");
+                return;
             }
 
-            // REGLA: PIN OBLIGATORIO SOLO PARA ADMINS
-            if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
-                if (!pin || pin.length !== 4) {
-                    return alert("Los Administradores requieren un PIN de 4 dígitos.");
-                }
-                // NOTA: AQUÍ QUITAMOS LA VALIDACIÓN DE "PIN REPETIDO".
-                // Ahora dos admins pueden tener el '0000' sin problema.
-            } else {
-                // Si no es admin, limpiamos el PIN por seguridad (no lo necesitan)
-                pin = ""; 
-            }
-
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
             btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
 
             try {
-                // Preparar objeto
-                const userData = {
-                    email,
-                    nombre,
-                    iniciales: document.getElementById('user-iniciales-edit').value.trim().toUpperCase(),
-                    celular: document.getElementById('user-celular-edit').value,
-                    rol,
-                    pin, // Se guarda vacío si es capturista
-                    fechaNacimiento: document.getElementById('user-fecha-edit').value,
-                    funciones: [],
-                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                let userData = {
+                    nombre, rol, celular, iniciales, nacimiento,
+                    actualizado: firebase.firestore.FieldValue.serverTimestamp(),
+                    funciones: []
                 };
+
+                if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
+                    userData.pin = pin;
+                }
 
                 // Funciones checkbox
                 if(document.getElementById('check-captura').checked) userData.funciones.push('captura');
                 if(document.getElementById('check-visita').checked) userData.funciones.push('visita');
                 if(document.getElementById('check-dibuja').checked) userData.funciones.push('dibuja');
 
-                // Si hay foto nueva
-                const fileInput = document.getElementById('input-avatar');
-                if (fileInput.files.length > 0) {
-                    // Aquí iría tu lógica de subir foto a Storage (si la tienes implementada)
-                    // Por ahora asumimos que usas avatarBase64 o similar si lo tienes activo
-                    if(typeof avatarBase64 !== 'undefined' && avatarBase64) userData.photoUrl = avatarBase64;
+                // --- LEER ACCESOS DEL MENÚ ---
+                const accesosPermitidos = [];
+                if(document.getElementById('acc-dashboard').checked) accesosPermitidos.push('dashboard');
+                if(document.getElementById('acc-gestion').checked) accesosPermitidos.push('gestion');
+                if(document.getElementById('acc-revision').checked) accesosPermitidos.push('revision');
+                if(document.getElementById('acc-hoja').checked) accesosPermitidos.push('hoja_trabajo');
+                
+                userData.accesos = accesosPermitidos; // Guarda la lista exacta de lo que esté palomeado
+
+                // Si es nuevo (el input no está disabled), también guardamos el email base y la fecha de creación
+                if (!document.getElementById('user-email-edit').disabled) {
+                    userData.email = email;
+                    userData.creado = firebase.firestore.FieldValue.serverTimestamp();
                 }
 
-                // GUARDAR EN FIREBASE (Usamos el email como ID del documento para unicidad)
                 await db.collection('usuarios').doc(email).set(userData, { merge: true });
 
-                // --- AGREGAR ESTO AQUÍ ---
-                // Registramos qué pasó
-                const tipoAccion = document.getElementById('user-email-edit').disabled ? 'EDICIÓN USUARIO' : 'NUEVO USUARIO';
-                await registrarLog(tipoAccion, `Se guardó el usuario: ${email} (${rol})`);
-                // -------------------------
+                // Registrar en bitácora
+                await registrarLog('USUARIOS', `Se ${document.getElementById('user-email-edit').disabled ? 'actualizó' : 'creó'} el usuario: ${email}`);
 
-                alert("Usuario guardado correctamente.");
-                location.reload();
+                cerrarModalUsuario();
+                cargarUsuarios();
+                alert("✅ Usuario guardado correctamente.");
 
-            } catch (error) {
-                console.error(error);
-                alert("Error al guardar: " + error.message);
+            } catch (e) {
+                console.error(e);
+                mostrarError("Error al guardar en la base de datos.");
+            } finally {
+                btn.innerHTML = originalText;
                 btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-rounded">save</span> Guardar Perfil';
             }
         }
 
@@ -1327,7 +1337,6 @@ async function cargarListaUnidades() {
             } catch(e) { alert(e.message); }
         }
 
-        function cerrarSesion() { localStorage.removeItem('leezar_user_active'); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>

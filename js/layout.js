@@ -1,14 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
     // =================================================================
-    // 1. GESTIÓN DE SESIÓN UNIFICADA (100% LocalStorage)
+    // 1. GESTIÓN DE SESIÓN Y AUTO-SANIDAD
     // =================================================================
     const SESSION_KEY = 'leezar_user_active';
     
-    // A. CAPTURA DE SESIÓN DESDE URL (Cuando regresas de Google/Auth-finish)
+    // A. CAPTURA DE SESIÓN DESDE URL (Con auto-sanador de base de datos)
     const params = new URLSearchParams(window.location.search);
     if (params.has('email') && params.has('role')) {
+        const emailIngreso = params.get('email');
         const newUser = {
-            email: params.get('email'),
+            email: emailIngreso,
             nombre: params.get('name') || 'Usuario',
             rol: params.get('role').toUpperCase(),
             photo: params.get('photo') || '',
@@ -17,9 +18,22 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         
         localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
-        
-        // Limpiar URL para seguridad visual
         window.history.replaceState({}, document.title, window.location.pathname);
+
+        // 🔥 CURA DE AMNESIA: Descargar permisos reales de Firebase en 2do plano
+        fetch('/.netlify/functions/get-users')
+            .then(res => res.json())
+            .then(users => {
+                const dbUser = users.find(u => u.email === emailIngreso);
+                if (dbUser) {
+                    newUser.accesos = dbUser.accesos || []; 
+                    newUser.photo = dbUser.photoUrl || dbUser.fotoUrl || dbUser.photo || newUser.photo; 
+                    newUser.funciones = dbUser.funciones || [];
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
+                    window.location.reload(); // Recarga rápida para aplicar los permisos
+                }
+            })
+            .catch(err => console.error("Error sincronizando perfil:", err));
     }
 
     // B. LECTURA DE SESIÓN ACTUAL
@@ -28,36 +42,52 @@ document.addEventListener("DOMContentLoaded", () => {
         const stored = localStorage.getItem(SESSION_KEY);
         if (stored) activeUser = JSON.parse(stored);
     } catch (e) {
-        console.error("Error leyendo sesión:", e);
         localStorage.removeItem(SESSION_KEY);
     }
 
-    // C. SEGURIDAD DE RUTAS (ROUTER GUARD)
+    // C. SEGURIDAD DE RUTAS Y RUTEO DINÁMICO INTELIGENTE
     const path = window.location.pathname;
     const file = path.split('/').pop() || 'index.html';
-    
-    // Páginas que NO requieren login
     const publicPages = ['index.html', 'login.html', 'portal.html'];
     
-    // 1. SI NO HAY USUARIO y estás en página privada -> SACAR
+    // 1. Si no hay usuario en página privada -> SACAR
     if (!activeUser && !publicPages.includes(file)) {
-        console.warn("Acceso no autorizado. Redirigiendo a Login.");
         window.location.href = 'index.html?error=auth_required';
         return; 
     }
 
-    // 2. SI HAY USUARIO y estás en Login -> METER AL DASHBOARD
-    if (activeUser && (file === 'index.html' || file === 'login.html')) {
-        window.location.href = 'dashboard.html';
-        return; 
+    // 2. Ruteo Dinámico (Redirigir a la primera página que tenga permitida)
+    if (activeUser && activeUser.accesos && activeUser.accesos.length > 0) {
+        const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html' };
+        
+        // Si intenta entrar a una URL bloqueada
+        if ((file.includes('dashboard') && !activeUser.accesos.includes('dashboard')) ||
+            (file.includes('gestion') && !activeUser.accesos.includes('gestion')) ||
+            (file.includes('revision') && !activeUser.accesos.includes('revision')) ||
+            (file.includes('hoja_trabajo') && !activeUser.accesos.includes('hoja_trabajo') && !file.includes('operacion'))) {
+             alert("⛔ No tienes permisos para ver esta pantalla.");
+             window.location.href = routeMap[activeUser.accesos[0]];
+             return;
+        }
+        
+        // Si acaba de iniciar sesión, mandarlo a su pantalla de inicio
+        if (file === 'index.html' || file === 'login.html') {
+             window.location.href = routeMap[activeUser.accesos[0]];
+             return;
+        }
+    } else if (activeUser && (file === 'index.html' || file === 'login.html')) {
+        // Fallback por si acaso
+        window.location.href = 'dashboard.html'; 
+        return;
     }
 
-    // 3. PROTECCIÓN DE ADMIN (Solo roles altos)
+    // 3. PROTECCIÓN DE ADMIN ESTRICTA
     if (activeUser && (file.includes('admin') || file.includes('sembrar'))) {
         const rolesAdmin = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR', 'SUPER_ADMIN'];
         if (!rolesAdmin.includes(activeUser.rol)) {
             alert("⛔ ACCESO DENEGADO: Se requieren permisos de Administrador.");
-            window.location.href = 'dashboard.html';
+            const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html' };
+            window.location.href = activeUser.accesos ? routeMap[activeUser.accesos[0]] : 'dashboard.html';
             return;
         }
     }
@@ -68,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. RENDERIZADO DEL LAYOUT (UI)
     // =================================================================
     
-    // Inyectar recursos globales
     if (!document.getElementById('layout-resources')) {
         const head = document.head;
         const fontLink = document.createElement('link'); 
@@ -112,12 +141,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.documentElement.classList.add('dark');
     }
 
-    // === GENERADOR DE AVATAR UNIFICADO ===
-    const getAvatarHTML = (u) => u.photo 
-        ? `<img src="${u.photo}" class="w-9 h-9 rounded-full shadow-md object-cover border-2 border-slate-200 dark:border-slate-600">`
-        : `<div class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold shadow-md text-xs">${u.iniciales || 'U'}</div>`;
+    // Búsqueda inteligente de la foto en todas sus variables
+    const fotoSrc = activeUser.photoUrl || activeUser.fotoUrl || activeUser.photo || '';
+    
+    const avatarHTML = fotoSrc 
+        ? `<img src="${fotoSrc}" alt="Perfil" class="w-10 h-10 rounded-full object-cover border-2 border-leezar-500 shadow-sm">` 
+        : `<div class="w-10 h-10 rounded-full bg-leezar-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">${activeUser.iniciales || 'U'}</div>`;
 
-    // Menú Admin
     const esAdmin = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR'].includes(activeUser.rol);
     const menuAdminHTML = esAdmin ? `
         <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
@@ -128,6 +158,22 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
     ` : '';
 
+    // =================================================================
+    // 🔥 MOTOR DE MENÚ DINÁMICO (Vuelve a respetar el Dashboard)
+    // =================================================================
+    const accesos = activeUser.accesos || []; // Si no tiene, no ve nada hasta que sincronice
+
+    let menuOperacionesHTML = '';
+    if(accesos.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Dashboard</a></li>`;
+    if(accesos.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>`;
+    if(accesos.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('revision') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">fact_check</span>Mesa de Control</a></li>`;
+
+    let menuTecnicoHTML = '';
+    if(accesos.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>`;
+
+    const renderOperaciones = menuOperacionesHTML ? `<div><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Operaciones</p><ul class="space-y-1">${menuOperacionesHTML}</ul></div>` : '';
+    const renderTecnico = menuTecnicoHTML ? `<div class="mt-6"><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p><ul class="space-y-1">${menuTecnicoHTML}</ul></div>` : '';
+
     // HTML Sidebar
     const layoutHTML = `
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -137,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="material-symbols-rounded text-2xl text-slate-700 dark:text-white">menu</span></button>
             <span class="font-extrabold text-lg text-slate-800 dark:text-white tracking-tight">LEEZAR</span>
         </div>
-        <div onclick="abrirMiPerfil()" class="cursor-pointer">${getAvatarHTML(activeUser)}</div>
+        <div onclick="abrirMiPerfil()" class="cursor-pointer">${avatarHTML}</div>
     </div>
 
     <aside id="app-sidebar" class="bg-white border-r border-gray-200 dark:bg-[#0b1121] dark:border-slate-800 flex flex-col transition-colors duration-300">
@@ -150,22 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         <div class="h-16 md:hidden"></div>
 
-        <div class="flex-1 overflow-y-auto px-3 space-y-6 py-6 custom-scroll">
-            <div>
-                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Operaciones</p>
-                <ul class="space-y-1">
-                    <li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Dashboard</a></li>
-                    <li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>
-                    <li><a href="revision.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('revision') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">fact_check</span>Mesa de Control</a></li>
-                </ul>
-            </div>
-            
-            <div>
-                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p>
-                <ul class="space-y-1">
-                    <li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>
-                </ul>
-            </div>
+        <div class="flex-1 overflow-y-auto px-3 py-6 custom-scroll">
+            ${renderOperaciones}
+            ${renderTecnico}
             ${menuAdminHTML}
         </div>
         
@@ -176,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
             
             <div class="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group" onclick="abrirMiPerfil()">
-                ${getAvatarHTML(activeUser)}
+                ${avatarHTML}
                 <div class="flex-1 overflow-hidden">
                     <p class="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-teal-600 transition-colors">${activeUser.nombre}</p>
                     <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold truncate uppercase">${activeUser.rol}</p>
@@ -194,8 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
             
             <div class="text-center mb-6">
                 <div class="relative w-24 h-24 mx-auto mb-3 group cursor-pointer" onclick="document.getElementById('mi-avatar-input').click()">
-                    <img id="mi-avatar-preview" src="${activeUser.photo || ''}" class="w-full h-full rounded-full object-cover border-4 border-slate-100 dark:border-slate-700 shadow-lg ${!activeUser.photo ? 'hidden' : ''}">
-                    <div id="mi-avatar-fallback" class="w-full h-full rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg ${activeUser.photo ? 'hidden' : ''}">${activeUser.iniciales || 'U'}</div>
+                    <img id="mi-avatar-preview" src="${fotoSrc}" class="w-full h-full rounded-full object-cover border-4 border-slate-100 dark:border-slate-700 shadow-lg ${!fotoSrc ? 'hidden' : ''}">
+                    <div id="mi-avatar-fallback" class="w-full h-full rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg ${fotoSrc ? 'hidden' : ''}">${activeUser.iniciales || 'U'}</div>
                     
                     <div class="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
                         <span class="material-symbols-rounded text-white mb-1">photo_camera</span>
@@ -246,7 +279,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } 
     };
 
-    // --- MI PERFIL ---
     let nuevaFotoBase64 = null;
     window.abrirMiPerfil = () => document.getElementById('modal-mi-perfil').classList.remove('hidden');
     window.cerrarMiPerfil = () => { document.getElementById('modal-mi-perfil').classList.add('hidden'); nuevaFotoBase64 = null; };
@@ -292,8 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if(res.ok) {
-                // Guardar foto nueva en LocalStorage
-                activeUser.photo = nuevaFotoBase64;
+                activeUser.photoUrl = nuevaFotoBase64; // Uniformizamos variable
                 localStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
                 
                 alert("Perfil actualizado correctamente.");
@@ -310,7 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Inyección de contenedor principal
     const main = document.querySelector('main');
     if (main) {
         const originalContent = main.innerHTML;
