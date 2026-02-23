@@ -1,9 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     // =================================================================
-    // 1. GESTIÓN DE SESIÓN UNIFICADA
+    // 1. GESTIÓN DE SESIÓN UNIFICADA (100% LocalStorage)
     // =================================================================
-    // Usamos sessionStorage para que la sesión muera al cerrar la pestaña (Más seguro)
-    const SESSION_KEY = 'leezar_session_active'; 
+    const SESSION_KEY = 'leezar_user_active';
     
     // A. CAPTURA DE SESIÓN DESDE URL (Cuando regresas de Google/Auth-finish)
     const params = new URLSearchParams(window.location.search);
@@ -14,11 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
             rol: params.get('role').toUpperCase(),
             photo: params.get('photo') || '',
             iniciales: (params.get('name') || 'U').substring(0, 2).toUpperCase(),
-            // Guardamos el timestamp para forzar re-login si pasa mucho tiempo (opcional)
             loginTime: Date.now()
         };
         
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
+        localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
         
         // Limpiar URL para seguridad visual
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -27,11 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // B. LECTURA DE SESIÓN ACTUAL
     let activeUser = null;
     try {
-        const stored = sessionStorage.getItem(SESSION_KEY);
+        const stored = localStorage.getItem(SESSION_KEY);
         if (stored) activeUser = JSON.parse(stored);
     } catch (e) {
         console.error("Error leyendo sesión:", e);
-        sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_KEY);
     }
 
     // C. SEGURIDAD DE RUTAS (ROUTER GUARD)
@@ -45,13 +43,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!activeUser && !publicPages.includes(file)) {
         console.warn("Acceso no autorizado. Redirigiendo a Login.");
         window.location.href = 'index.html?error=auth_required';
-        return; // Detener ejecución
+        return; 
     }
 
     // 2. SI HAY USUARIO y estás en Login -> METER AL DASHBOARD
     if (activeUser && (file === 'index.html' || file === 'login.html')) {
         window.location.href = 'dashboard.html';
-        return; // Detener ejecución
+        return; 
     }
 
     // 3. PROTECCIÓN DE ADMIN (Solo roles altos)
@@ -64,14 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Si no hay usuario (y es página pública), no pintamos sidebar ni nada.
     if (!activeUser) return;
 
     // =================================================================
     // 2. RENDERIZADO DEL LAYOUT (UI)
     // =================================================================
     
-    // Inyectar recursos globales (Fuentes e Iconos)
+    // Inyectar recursos globales
     if (!document.getElementById('layout-resources')) {
         const head = document.head;
         const fontLink = document.createElement('link'); 
@@ -111,15 +108,14 @@ document.addEventListener("DOMContentLoaded", () => {
         head.appendChild(style);
     }
 
-    // Modo Oscuro (Persistimos tema en localStorage porque es preferencia de UI, no dato sensible)
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
     }
 
-    // Helper Avatar
+    // === GENERADOR DE AVATAR UNIFICADO ===
     const getAvatarHTML = (u) => u.photo 
-        ? `<img src="${u.photo}" id="sidebar-user-img" class="w-9 h-9 rounded-full shadow-md object-cover border border-slate-200 dark:border-slate-600">`
-        : `<div id="sidebar-user-initials" class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold shadow-md text-xs">${u.iniciales}</div>`;
+        ? `<img src="${u.photo}" class="w-9 h-9 rounded-full shadow-md object-cover border-2 border-slate-200 dark:border-slate-600">`
+        : `<div class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold shadow-md text-xs">${u.iniciales || 'U'}</div>`;
 
     // Menú Admin
     const esAdmin = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR'].includes(activeUser.rol);
@@ -141,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="material-symbols-rounded text-2xl text-slate-700 dark:text-white">menu</span></button>
             <span class="font-extrabold text-lg text-slate-800 dark:text-white tracking-tight">LEEZAR</span>
         </div>
-        <div onclick="abrirMiPerfil()">${getAvatarHTML(activeUser)}</div>
+        <div onclick="abrirMiPerfil()" class="cursor-pointer">${getAvatarHTML(activeUser)}</div>
     </div>
 
     <aside id="app-sidebar" class="bg-white border-r border-gray-200 dark:bg-[#0b1121] dark:border-slate-800 flex flex-col transition-colors duration-300">
@@ -167,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div>
                 <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p>
                 <ul class="space-y-1">
-                    <li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>
+                    <li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>
                 </ul>
             </div>
             ${menuAdminHTML}
@@ -199,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="text-center mb-6">
                 <div class="relative w-24 h-24 mx-auto mb-3 group cursor-pointer" onclick="document.getElementById('mi-avatar-input').click()">
                     <img id="mi-avatar-preview" src="${activeUser.photo || ''}" class="w-full h-full rounded-full object-cover border-4 border-slate-100 dark:border-slate-700 shadow-lg ${!activeUser.photo ? 'hidden' : ''}">
-                    <div id="mi-avatar-fallback" class="w-full h-full rounded-full bg-teal-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg ${activeUser.photo ? 'hidden' : ''}">${activeUser.iniciales}</div>
+                    <div id="mi-avatar-fallback" class="w-full h-full rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg ${activeUser.photo ? 'hidden' : ''}">${activeUser.iniciales || 'U'}</div>
                     
                     <div class="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
                         <span class="material-symbols-rounded text-white mb-1">photo_camera</span>
@@ -244,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.cerrarSesion = () => { 
         if(confirm("¿Estás seguro que deseas salir?")) { 
-            sessionStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_KEY);
             document.cookie = "leezar_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = 'index.html'; 
         } 
@@ -296,9 +292,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if(res.ok) {
-                // Actualizar Session Storage
+                // Guardar foto nueva en LocalStorage
                 activeUser.photo = nuevaFotoBase64;
-                sessionStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
+                localStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
+                
                 alert("Perfil actualizado correctamente.");
                 window.location.reload(); 
             } else {

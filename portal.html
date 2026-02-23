@@ -417,7 +417,7 @@
         // 1. SEGURIDAD (CERO TRUST + VAULT + SESIÓN)
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
-            if (expedienteId && sessionStorage.getItem('auth_' + expedienteId) === 'true') {
+            if (expedienteId && localStorage.getItem('auth_' + expedienteId) === 'true') {
                 document.getElementById('securityLock').classList.add('hidden');
                 document.getElementById('loading-card').classList.remove('hidden');
                 cargarDatosEnSesion(); 
@@ -445,7 +445,7 @@
                 verificarEstadoLegal();
             } catch (e) {
                 console.error(e);
-                sessionStorage.removeItem('auth_' + expedienteId);
+                localStorage.removeItem('auth_' + expedienteId);
                 location.reload();
             }
         }
@@ -479,7 +479,7 @@
                 const data = await response.json();
                 expedienteGlobal = data;
 
-                sessionStorage.setItem('auth_' + expedienteId, 'true');
+                localStorage.setItem('auth_' + expedienteId, 'true');
 
                 document.getElementById('securityLock').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -951,7 +951,7 @@
             updateProgressBars(completados, revisionCount, totalRequisitos);
             
             // 🔥 MAGIA UX: Leer la memoria y abrir la pestaña en la que se quedó el cliente
-            const pestañaGuardada = sessionStorage.getItem('activeTab_' + expedienteId) || 'solicitante';
+            const pestañaGuardada = localStorage.getItem('activeTab_' + expedienteId) || 'solicitante';
             switchTab(pestañaGuardada);
         }
 
@@ -960,7 +960,7 @@
         // ==========================================
         function switchTab(cat) { 
             currentTab = cat; 
-            if (expedienteId) sessionStorage.setItem('activeTab_' + expedienteId, cat);
+            if (expedienteId) localStorage.setItem('activeTab_' + expedienteId, cat);
             
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
             document.getElementById(`section-${cat}`).classList.remove('hidden');
