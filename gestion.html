@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión - Ing. Leezar</title>
+    <title>Gestión de Expedientes</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -64,10 +64,10 @@
             box-shadow: var(--shadow-float);
             padding: 10px 40px;
             display: flex; align-items: center; justify-content: space-between;
-            transform: translateY(-150%); /* Oculto por defecto */
+            transform: translateY(-150%);
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .fishing-bar.active { transform: translateY(0); } /* Visible */
+        .fishing-bar.active { transform: translateY(0); } 
 
         .fishing-info { display: flex; align-items: center; gap: 25px; }
         .jack-container { position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
@@ -189,7 +189,7 @@
                         <option value="COMPLETADO">Completados</option>
                     </select>
 
-                    <button onclick="cargarExpedientes(false)" class="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200 font-bold text-sm flex items-center gap-1 transition-colors px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/30" title="Forzar sincronización">
+                    <button onclick="iniciarEscuchaRealtime()" class="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200 font-bold text-sm flex items-center gap-1 transition-colors px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/30" title="Forzar sincronización">
                         <span class="material-symbols-rounded">sync</span>
                     </button>
                 </div>
@@ -277,32 +277,55 @@
         let currentPage = 1;
         let rowsPerPage = 25;
         let sortDirection = -1;
-        let refreshInterval;
+        
+        // Aquí guardaremos los usuarios reales que vienen de Firebase
+        let equipoDinamico = {
+            capturista: [],
+            visitador: [],
+            dibujante: []
+        };
 
-        const equipo = ['Sin Asignar', 'Ana', 'Luis', 'Carlos', 'Sofía', 'Pamela', 'Ing. Leezar', 'Dan Gil'];
+        // FUNCIÓN QUE TRAE EL EQUIPO REAL DE LA BASE DE DATOS
+        async function cargarEquipoDinamico() {
+            const db = window.db || firebase.firestore();
+            try {
+                const snapshot = await db.collection('usuarios').get();
+                snapshot.forEach(doc => {
+                    const usuario = doc.data();
+                    const rol = (usuario.rol || '').toLowerCase();
+                    const email = usuario.email || doc.id;
+                    const nombre = usuario.nombre || email.split('@')[0];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarExpedientes(false); 
-            iniciarModoEnVivo(); 
+                    if (rol.includes('capturista')) equipoDinamico.capturista.push({email, nombre});
+                    if (rol.includes('visitador')) equipoDinamico.visitador.push({email, nombre});
+                    if (rol.includes('dibujante')) equipoDinamico.dibujante.push({email, nombre});
+                });
+                console.log("✅ Equipo cargado desde Firebase:", equipoDinamico);
+            } catch (error) {
+                console.error("❌ Error cargando equipo de Firebase:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await cargarEquipoDinamico(); 
+            iniciarEscuchaRealtime();
         });
 
-// ==========================================
+        // ==========================================
         // CÓDIGO CORREGIDO Y DEFINITIVO
         // ==========================================
         
-        let unsubscribe; // Variable de control
+        let unsubscribe; 
 
         function iniciarEscuchaRealtime() {
             const tbody = document.getElementById('table-body');
             
-            // Si ya hay una escucha activa, la detenemos
             if (unsubscribe && typeof unsubscribe === 'function') {
                 unsubscribe();
             }
 
             console.log("🚀 Iniciando conexión Realtime (Versión Final)...");
 
-            // Escucha SIN filtros para traer TODO (más seguro)
             unsubscribe = db.collection('expedientes_avaluos')
                 .onSnapshot((snapshot) => {
                     
@@ -311,22 +334,20 @@
                         return;
                     }
 
-                    // Limpiamos tabla si tiene mensaje de carga
                     if (!tbody.innerHTML.includes('<tr class="hover')) tbody.innerHTML = ''; 
 
-                    dbExpedientes = []; // Reiniciamos la lista
+                    dbExpedientes = []; 
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         
-                        // 1. Lógica de Fecha (Detecta cualquier formato)
                         let fechaObj = null;
                         let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
 
                         if (rawDate) {
-                            if (rawDate.toDate) { fechaObj = rawDate.toDate(); } // Timestamp Firebase
+                            if (rawDate.toDate) { fechaObj = rawDate.toDate(); } 
                             else if (rawDate._seconds) { fechaObj = new Date(rawDate._seconds * 1000); }
-                            else { fechaObj = new Date(rawDate); } // Texto/Num
+                            else { fechaObj = new Date(rawDate); } 
                         }
 
                         const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
@@ -334,7 +355,6 @@
                             ? fechaObj.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
                             : '<span class="text-slate-300 italic">--/--</span>';
 
-                        // 2. Agregamos al arreglo (Mapeo seguro)
                         dbExpedientes.push({
                             id: doc.id,
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
@@ -346,24 +366,18 @@
                             capturista: data.capturista || null,
                             visitador: data.visitador || null,
                             dibujante: data.dibujante || null,
-                            municipio: data.municipio || '', // Evita errores si faltan
+                            municipio: data.municipio || '', 
                             colonia: data.colonia || ''
                         });
                     });
 
-                    // 3. Ordenamos (Nuevo -> Viejo)
                     dbExpedientes.sort((a, b) => b.timestamp - a.timestamp);
-
                     console.log(`✅ Cargados ${dbExpedientes.length} expedientes.`);
 
-                    // 4. PINTAMOS LA TABLA (Usando tu función original)
                     if (typeof filtrarTabla === 'function') {
                         filtrarTabla(true); 
-                    } else {
-                        console.error("❌ ERROR: No encuentro la función 'filtrarTabla'.");
                     }
                     
-                    // 5. Actualizamos reloj
                     const now = new Date();
                     const label = document.getElementById('last-update');
                     if(label) label.textContent = `En vivo: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
@@ -373,23 +387,15 @@
                     tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${error.message}</td></tr>`;
                 });
         }
-
-        // Arrancamos al cargar
-        document.addEventListener('DOMContentLoaded', () => {
-            iniciarEscuchaRealtime();
-        });
-        
         
         async function asignar(id, rol, selectElement) {
             const colaborador = selectElement.value;
             const original = selectElement.getAttribute('data-original');
 
             if(!colaborador || colaborador === 'Sin Asignar') return;
-            if (refreshInterval) clearInterval(refreshInterval);
 
             if(!confirm(`¿Confirmar asignación de ${colaborador} como ${rol}?`)) {
                 selectElement.value = original || "";
-                iniciarModoEnVivo(); 
                 return;
             }
 
@@ -402,31 +408,38 @@
                     body: JSON.stringify({ expedienteId: id, colaborador: colaborador, rol: rol })
                 });
 
-                if (!res.ok) throw new Error('Error en servidor');
-                
-                const exp = dbExpedientes.find(e => e.id === id);
-                if(exp) exp[rol] = colaborador;
-                
-                actualizarTabla(); 
+                if (!res.ok) {
+                    // Plan B: Guardar directo en Firebase si falla Netlify
+                    const db = window.db || firebase.firestore();
+                    await db.collection('expedientes_avaluos').doc(id).update({ [rol]: colaborador });
+                }
+
+                // La tabla se refresca sola por el onSnapshot
 
             } catch (error) {
                 alert("Error: " + error.message);
                 selectElement.disabled = false;
                 selectElement.value = original || "";
-            } finally {
-                iniciarModoEnVivo(); 
-            }
+            } 
         }
 
         function generarSelector(id, rol, valorActual) {
             if (valorActual && valorActual !== 'Sin Asignar') {
+                let nombreAmostrar = valorActual;
+                if(valorActual.includes('@')) nombreAmostrar = valorActual.split('@')[0];
+
                 return `<div class="font-bold text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 w-28 mx-auto truncate text-center cursor-not-allowed uppercase" title="${valorActual}">
-                    ${valorActual}
+                    ${nombreAmostrar}
                 </div>`;
             }
 
             let opts = `<option value="">Asignar...</option>`;
-            equipo.forEach(p => opts += `<option value="${p}">${p}</option>`);
+            
+            const listaRol = equipoDinamico[rol] || [];
+            
+            listaRol.forEach(persona => {
+                opts += `<option value="${persona.email}">${persona.nombre.toUpperCase()}</option>`;
+            });
             
             return `<select onchange="asignar('${id}', '${rol}', this)" data-original="" 
                 class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-[10px] rounded py-1 px-1 w-28 mx-auto focus:ring-2 focus:ring-teal-500 outline-none font-bold text-slate-500 cursor-pointer hover:border-teal-400 transition-colors uppercase">
@@ -479,18 +492,15 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
 
-            // Paginación
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             const paginaDatos = datosFiltrados.slice(start, end);
             
-            // Contadores
             const totalDocs = datosFiltrados.length;
             const totalPages = Math.ceil(totalDocs / rowsPerPage) || 1;
             document.getElementById('total-records').innerHTML = `<strong>${totalDocs}</strong> registros &bull; ${start + 1}-${Math.min(end, totalDocs)}`;
             document.getElementById('page-indicator').textContent = `${currentPage} / ${totalPages}`;
             
-            // Botones paginación
             document.getElementById('btn-prev').disabled = currentPage === 1;
             document.getElementById('btn-next').disabled = currentPage === totalPages;
             document.getElementById('btn-prev').classList.toggle('opacity-50', currentPage === 1);
@@ -502,7 +512,6 @@
             }
 
             paginaDatos.forEach(exp => {
-                // 1. ESTATUS (Badge)
                 let badgeClass = '';
                 const st = (exp.status || '').toUpperCase();
                 if(st === 'ACTIVO' || st === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
@@ -510,18 +519,7 @@
                 else if(st.includes('COMPLETADO') || st.includes('VALIDA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
 
-                // 2. PROGRESO (Cálculo que faltaba)
-                const checklist = exp.checklist || {};
-                const totalReq = Object.keys(checklist).length || 1;
-                const completados = Object.values(checklist).filter(i => i.estatus === 'validado').length;
-                const pct = Math.round((completados / totalReq) * 100) || 0;
-                
-                let colorBar = 'bg-slate-200';
-                if(pct > 0) colorBar = 'bg-blue-500';
-                if(pct === 100) colorBar = 'bg-emerald-500';
-
-                // 3. FILA HTML (Diseño Original Compacto + Botón Capturar)
-const row = `
+                const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
                             ${exp.cliente}
@@ -575,14 +573,11 @@ const row = `
             });
         }
 
-        // --- FUNCIONES DE EDICIÓN Y SEGURIDAD (NUEVAS) ---
         function abrirModalEditar(id, nombre, telefono) {
-            // Validar Permisos
             const userStr = localStorage.getItem('leezar_user_active');
             const user = userStr ? JSON.parse(userStr) : {};
             const rol = (user.rol || '').toUpperCase();
             
-            // Lista blanca de roles permitidos
             if (!['ADMIN', 'SUPER ADMIN', 'SUPER_ADMIN', 'GESTOR'].includes(rol)) {
                 alert("⛔ Acceso denegado. Se requieren permisos de Gestor o Administrador.");
                 return;
@@ -590,8 +585,6 @@ const row = `
 
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-nombre').value = nombre;
-            
-            // ASIGNAR EL VALOR REAL (si existe), si no, dejar vacío
             document.getElementById('edit-telefono').value = (telefono && telefono !== 'undefined' && telefono !== 'null') ? telefono : '';
 
             document.getElementById('modal-editar-cliente').classList.remove('hidden');
@@ -611,7 +604,6 @@ const row = `
             btn.disabled = true; btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
 
             try {
-                // Llamada a Netlify Function
                 const res = await fetch('/.netlify/functions/update-client-data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -620,11 +612,9 @@ const row = `
 
                 if (!res.ok) throw new Error("Error al guardar");
 
-                // Actualizar localmente
                 const exp = dbExpedientes.find(e => e.id === id);
                 if (exp) { exp.cliente = nombre; exp.telefono = telefono; }
                 
-                // Log en Bitácora Compartida
                 registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} (ID: ${id})`);
 
                 alert("✅ Datos actualizados correctamente");
@@ -646,7 +636,6 @@ const row = `
             localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
         }
 
-        // --- FUNCIONES EXISTENTES DE JACK Y ASIGNACIÓN ---
         function mostrarJack(cantidad) {
             const barra = document.getElementById('jack-notification');
             const contador = document.getElementById('fish-count-number');
@@ -665,7 +654,7 @@ const row = `
                 document.getElementById('jack-notification').classList.remove('active');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                cargarExpedientes(false); 
+                iniciarEscuchaRealtime(); 
             }, 2000);
         }
 
