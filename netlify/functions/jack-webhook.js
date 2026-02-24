@@ -1,13 +1,10 @@
 const admin = require('firebase-admin');
 
-// 1. CONEXIÓN A FIREBASE
+// 1. CONEXIÓN A FIREBASE (Versión Dieta AWS)
 if (!admin.apps.length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-        })
+        credential: admin.credential.cert(serviceAccount)
     });
 }
 
@@ -74,4 +71,3 @@ exports.handler = async (event, context) => {
         return { statusCode: 500, headers, body: JSON.stringify({ error: "Error interno del servidor." }) };
     }
 };
-// Empujoncito para que Netlify despierte
