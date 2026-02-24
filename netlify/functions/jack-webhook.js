@@ -58,6 +58,7 @@ exports.handler = async (event, context) => {
             tipoTramite: data.servicio || 'No especificado',
             tipoInmueble: data.tipoInmueble || 'No especificado',
             estatus: 'PENDIENTE',
+            unidad: 'POR ASIGNAR', 
             fecha_creacion: admin.firestore.FieldValue.serverTimestamp(),
             origen: 'JACK_FORMULARIO', 
             checklist: {}, 
