@@ -74,3 +74,4 @@ exports.handler = async (event, context) => {
         return { statusCode: 500, headers, body: JSON.stringify({ error: "Error interno del servidor." }) };
     }
 };
+// Empujoncito para que Netlify despierte
