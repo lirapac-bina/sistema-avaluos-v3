@@ -41,7 +41,7 @@
         
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Dashboard Ejecutivo</h1>
+                <h1 id="dash-title" class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Dashboard Ejecutivo</h1>
                 <p class="text-slate-400 dark:text-slate-500 font-medium">Métricas de rendimiento operativo</p>
             </div>
             <div class="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
@@ -248,6 +248,25 @@
             const db = window.db || firebase.firestore(); 
             if (!db) return;
 
+            // 1. LEER SESIÓN Y PERMISOS DE VISIBILIDAD
+            const stored = localStorage.getItem('leezar_user_active');
+            const activeUser = stored ? JSON.parse(stored) : { rol: 'GESTOR', email: '' };
+            const esOperativo = ['CAPTURISTA', 'TECNICO', 'VISITADOR', 'DIBUJANTE'].includes(activeUser.rol);
+
+            // 2. OCULTAR MÓDULOS DE JEFATURA SI ES OPERATIVO
+            if (esOperativo) {
+                document.getElementById('icon-kpis').closest('.mb-6').style.display = 'none';
+                document.getElementById('icon-flujo').closest('.mb-6').style.display = 'none';
+                document.getElementById('icon-equipo').closest('.mb-6').style.display = 'none';
+                
+               // Corregido: Seleccionamos por ID para no sobreescribir el logo del menú
+            const dashTitle = document.getElementById('dash-title');
+            if(dashTitle) dashTitle.innerText = "Mi Tablero de Trabajo";
+            
+            const dashDesc = document.querySelector('header p');
+            if(dashDesc) dashDesc.innerText = "Monitorea tus expedientes asignados.";
+            }
+
             aplicarPreferenciasAcordeon();
 
             const elTotal = document.getElementById('count-total'), elPendientes = document.getElementById('count-pendientes');
@@ -263,8 +282,20 @@
                 let fase1 = [], fase2 = [], fase3 = []; 
 
                 snapshot.forEach((doc) => {
-                    total++;
                     const data = doc.data();
+                    
+                    // 🔥 FILTRO ESTRICTO PARA OPERATIVOS: Si no es su expediente, ni siquiera lo lee 🔥
+                    if (esOperativo) {
+                        const emailUsr = activeUser.email.toLowerCase();
+                        const esMio = (
+                            (data.capturista_asignado || '').toLowerCase() === emailUsr || 
+                            (data.visitador_asignado || '').toLowerCase() === emailUsr || 
+                            (data.dibujante_asignado || '').toLowerCase() === emailUsr
+                        );
+                        if (!esMio) return; // Se salta este expediente por completo
+                    }
+
+                    total++;
                     const globalStatus = (data.estatus || 'PENDIENTE').toUpperCase();
 
                     const checklist = data.checklist || {};
@@ -277,8 +308,7 @@
                     const pctCliente = Math.round((subidos / tot) * 100);
                     const pctValidado = Math.round((validados / tot) * 100);
 
-                    // 🔥 LOS 4 CANDADOS ESTRICTOS 🔥
-                    const checkCompleto = (validados >= tot && tot > 0); // Tiene que estar 100% VALIDADO (no solo subido)
+                    const checkCompleto = (validados >= tot && tot > 0); 
                     const tieneVisitador = !!(data.visitador_asignado || data.visitador);
                     const tieneDibujante = !!(data.dibujante_asignado || data.dibujante);
                     const tieneCapturista = !!(data.capturista_asignado || data.capturista);
@@ -289,22 +319,19 @@
                         let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
                         if (inicio && fin) tiemposRegistrados.push(Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)));
                     } else {
-                        // 1. Alimentar KPIs (Tarjetas superiores)
                         if (subidos === 0 && globalStatus === 'PENDIENTE') pendientes++; 
                         else if (checkCompleto && !tieneCualquierAsignacion) pendientes++; 
                         else enProcesoTotal++;
 
-                        // 2. Alimentar Carga de Personal
                         if (tieneVisitador) cargaPersonal.visitadores[data.visitador_asignado || data.visitador] = (cargaPersonal.visitadores[data.visitador_asignado || data.visitador] || 0) + 1;
                         if (tieneDibujante) cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] = (cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] || 0) + 1;
                         if (tieneCapturista) cargaPersonal.capturistas[data.capturista_asignado || data.capturista] = (cargaPersonal.capturistas[data.capturista_asignado || data.capturista] || 0) + 1;
 
-                        // 3. Alimentar Gráfica de Barras de Flujo
                         if (checkCompleto && tieneCapturista) cCaptura++;
                         else if (checkCompleto && (tieneVisitador || tieneDibujante)) cVisitaDibujo++;
                         else cDoc++;
 
-                        // 4. 🔥 CLASIFICADOR DEL MONITOR EN VIVO (Ruteo Blindado) 🔥
+                        // CLASIFICADOR DEL MONITOR EN VIVO
                         const expData = {
                             nombre: data.cliente || data.nombreCliente || 'Cliente',
                             tramite: (data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
@@ -312,36 +339,38 @@
                         };
 
                         if (checkCompleto && tieneVisitador && tieneDibujante && tieneCapturista) {
-                            fase3.push(expData); // 🟢 OPERACIÓN: 100% Validado Y el equipo completo está asignado.
+                            fase3.push(expData); 
                         } else if (checkCompleto) {
-                            fase2.push(expData); // 🟡 EN REVISIÓN / ASIGNACIÓN: 100% Validado, pero estás esperando asignar equipo.
+                            fase2.push(expData); 
                         } else if (subidos > 0) {
-                            fase1.push(expData); // 🔵 EN LLENADO: El cliente ya empezó, pero no ha llegado al 100% validado.
+                            fase1.push(expData); 
                         }
                     }
                 });
 
-                // ACTUALIZAR PANTALLAS
-                elTotal.innerText = total; elPendientes.innerText = pendientes; elProceso.innerText = enProcesoTotal; elTerminados.innerText = terminados;
-                
-                if (tiemposRegistrados.length > 0) {
-                    elTimeMin.innerText = Math.min(...tiemposRegistrados); elTimeMax.innerText = Math.max(...tiemposRegistrados);
-                    elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
-                } else { elTimeMin.innerText = "-"; elTimeMax.innerText = "-"; elTimeAvg.innerText = "-"; }
+                // ACTUALIZAR PANTALLAS (Solo aplica si no es operativo)
+                if(!esOperativo) {
+                    elTotal.innerText = total; elPendientes.innerText = pendientes; elProceso.innerText = enProcesoTotal; elTerminados.innerText = terminados;
+                    
+                    if (tiemposRegistrados.length > 0) {
+                        elTimeMin.innerText = Math.min(...tiemposRegistrados); elTimeMax.innerText = Math.max(...tiemposRegistrados);
+                        elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
+                    } else { elTimeMin.innerText = "-"; elTimeMax.innerText = "-"; elTimeAvg.innerText = "-"; }
 
-                const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
-                document.getElementById('bar-doc-val').innerText = cDoc; document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo; document.getElementById('bar-captura-val').innerText = cCaptura;
-                setTimeout(() => { barDoc.style.width = `${(cDoc / totalActivos) * 100}%`; barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`; }, 100);
+                    const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
+                    document.getElementById('bar-doc-val').innerText = cDoc; document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo; document.getElementById('bar-captura-val').innerText = cCaptura;
+                    setTimeout(() => { barDoc.style.width = `${(cDoc / totalActivos) * 100}%`; barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`; }, 100);
 
-                const renderListaP = (obj, elementId, colorClass) => {
-                    const container = document.getElementById(elementId);
-                    const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
-                    if (keys.length === 0) return container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
-                    container.innerHTML = keys.map(k => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${k.split('@')[0].toUpperCase()}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`).join('');
-                };
-                renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
+                    const renderListaP = (obj, elementId, colorClass) => {
+                        const container = document.getElementById(elementId);
+                        const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
+                        if (keys.length === 0) return container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
+                        container.innerHTML = keys.map(k => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${k.split('@')[0].toUpperCase()}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`).join('');
+                    };
+                    renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
+                }
 
-                // RENDERIZAR MONITOR EN VIVO
+                // RENDERIZAR MONITOR EN VIVO (Para Todos)
                 document.getElementById('count-fase1').innerText = fase1.length;
                 document.getElementById('count-fase2').innerText = fase2.length;
                 document.getElementById('count-fase3').innerText = fase3.length;
@@ -354,7 +383,6 @@
                     const cont = document.getElementById(elId);
                     if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10">Bandeja Vacía</div>`; return; }
                     
-                    // CORRECCIÓN PARA EVITAR ERROR EN VS CODE (Separar las clases dinámicas de las etiquetas HTML)
                     const colorClasesTexto = colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
                     const colorClasesBarra = colorTheme === 'blue' ? 'bg-blue-500' : colorTheme === 'amber' ? 'bg-amber-500' : 'bg-emerald-500';
 

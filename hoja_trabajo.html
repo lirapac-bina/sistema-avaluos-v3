@@ -178,14 +178,21 @@
             "Solicitud Infonavit", "Solicitud AVE"
         ];
 
-        // 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
+// 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
         document.addEventListener('DOMContentLoaded', () => {
             renderListaExcel(); // Dibuja las 31 casillas en la pestaña 4
 
-            const userRole = localStorage.getItem('leezar_role') || 'capturista'; 
-            const userEmail = localStorage.getItem('leezar_user') || 'capturista@leezar.com';
+            // LEER LA SESIÓN ESTANDARIZADA
+            const storedUser = localStorage.getItem('leezar_user_active');
+            if (!storedUser) return window.location.href = "index.html";
+
+            const activeUser = JSON.parse(storedUser);
+            const userRole = activeUser.rol.toLowerCase(); 
+            const userEmail = activeUser.email.toLowerCase();
             
-            if (userRole !== 'capturista' && userRole !== 'admin' && userRole !== 'superadmin') {
+            const rolesPermitidos = ['capturista', 'admin', 'super admin', 'super_admin'];
+            
+            if (!rolesPermitidos.includes(userRole)) {
                 alert("Acceso Denegado. Esta hoja de trabajo es exclusiva para la Mesa de Captura.");
                 window.location.href = "dashboard.html"; 
                 return;

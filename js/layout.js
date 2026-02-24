@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // =================================================================
     const SESSION_KEY = 'leezar_user_active';
     
-    // A. CAPTURA DE SESIÓN DESDE URL (Con auto-sanador de base de datos)
+    // A. CAPTURA DE SESIÓN DESDE URL
     const params = new URLSearchParams(window.location.search);
     if (params.has('email') && params.has('role')) {
         const emailIngreso = params.get('email');
@@ -19,21 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
         window.history.replaceState({}, document.title, window.location.pathname);
-
-        // 🔥 CURA DE AMNESIA: Descargar permisos reales de Firebase en 2do plano
-        fetch('/.netlify/functions/get-users')
-            .then(res => res.json())
-            .then(users => {
-                const dbUser = users.find(u => u.email === emailIngreso);
-                if (dbUser) {
-                    newUser.accesos = dbUser.accesos || []; 
-                    newUser.photo = dbUser.photoUrl || dbUser.fotoUrl || dbUser.photo || newUser.photo; 
-                    newUser.funciones = dbUser.funciones || [];
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
-                    window.location.reload(); // Recarga rápida para aplicar los permisos
-                }
-            })
-            .catch(err => console.error("Error sincronizando perfil:", err));
     }
 
     // B. LECTURA DE SESIÓN ACTUAL
@@ -45,49 +30,86 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem(SESSION_KEY);
     }
 
-    // C. SEGURIDAD DE RUTAS Y RUTEO DINÁMICO INTELIGENTE
+    // 🔥 C. AUTO-SANADOR SILENCIOSO (Corregido el bug de la foto)
+    if (activeUser) {
+        fetch('/.netlify/functions/get-users')
+            .then(res => res.json())
+            .then(users => {
+                const dbUser = users.find(u => u.email === activeUser.email);
+                if (dbUser) {
+                    const currentAcc = JSON.stringify(activeUser.accesos || "null");
+                    const dbAcc = JSON.stringify(dbUser.accesos || "null");
+                    
+                    // Solo actualizamos si hay cambios en permisos, rol, o si en la BD hay una foto nueva
+                    const dbPhoto = dbUser.fotoUrl || dbUser.photoUrl;
+                    const currPhoto = activeUser.photoUrl || activeUser.fotoUrl || activeUser.photo;
+                    
+                    if (currentAcc !== dbAcc || activeUser.rol !== dbUser.rol || (dbPhoto && dbPhoto !== currPhoto)) {
+                        activeUser.accesos = dbUser.accesos; 
+                        activeUser.rol = dbUser.rol;
+                        activeUser.funciones = dbUser.funciones || [];
+                        
+                        // Si hay foto en BD, la impone. Si no, respeta tu foto de Google.
+                        if (dbPhoto) activeUser.photo = dbPhoto; 
+                        
+                        localStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
+                        window.location.reload(); 
+                    }
+                }
+            })
+            .catch(err => console.error("Error validando sesión:", err));
+    }
+
+    // 🔥 D. SEGURIDAD DE RUTAS SILENCIOSA Y MODO DIOS
     const path = window.location.pathname;
     const file = path.split('/').pop() || 'index.html';
     const publicPages = ['index.html', 'login.html', 'portal.html'];
     
-    // 1. Si no hay usuario en página privada -> SACAR
     if (!activeUser && !publicPages.includes(file)) {
-        window.location.href = 'index.html?error=auth_required';
+        window.location.replace('index.html?error=auth_required');
         return; 
     }
 
-    // 2. Ruteo Dinámico (Redirigir a la primera página que tenga permitida)
-    if (activeUser && activeUser.accesos && activeUser.accesos.length > 0) {
+    const esAltoMando = activeUser && ['ADMIN', 'SUPER ADMIN', 'DIRECTOR', 'SUPER_ADMIN'].includes(activeUser.rol);
+    let accesosRuta = activeUser && activeUser.accesos ? activeUser.accesos : null;
+    
+    if (!accesosRuta || esAltoMando) accesosRuta = ['dashboard', 'gestion', 'revision', 'hoja_trabajo'];
+
+    const esOperativo = activeUser && ['CAPTURISTA', 'TECNICO', 'VISITADOR', 'DIBUJANTE'].includes(activeUser.rol);
+    if (esOperativo) {
+        accesosRuta = accesosRuta.filter(item => item !== 'dashboard');
+    }
+
+    if (activeUser && accesosRuta.length > 0) {
         const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html' };
         
-        // Si intenta entrar a una URL bloqueada
-        if ((file.includes('dashboard') && !activeUser.accesos.includes('dashboard')) ||
-            (file.includes('gestion') && !activeUser.accesos.includes('gestion')) ||
-            (file.includes('revision') && !activeUser.accesos.includes('revision')) ||
-            (file.includes('hoja_trabajo') && !activeUser.accesos.includes('hoja_trabajo') && !file.includes('operacion'))) {
-             alert("⛔ No tienes permisos para ver esta pantalla.");
-             window.location.href = routeMap[activeUser.accesos[0]];
+        const isBlocked = !esAltoMando && (
+            (file.includes('dashboard') && !accesosRuta.includes('dashboard')) ||
+            (file.includes('gestion') && !accesosRuta.includes('gestion')) ||
+            (file.includes('revision') && !accesosRuta.includes('revision')) ||
+            (file.includes('hoja_trabajo') && !accesosRuta.includes('hoja_trabajo') && !file.includes('operacion'))
+        );
+
+        // Sin alertas. Redirección fantasma a la primera página que sí tiene permitida.
+        if (isBlocked || file === 'index.html' || file === 'login.html' || file === '') {
+             window.location.replace(routeMap[accesosRuta[0]]);
              return;
         }
-        
-        // Si acaba de iniciar sesión, mandarlo a su pantalla de inicio
-        if (file === 'index.html' || file === 'login.html') {
-             window.location.href = routeMap[activeUser.accesos[0]];
-             return;
-        }
-    } else if (activeUser && (file === 'index.html' || file === 'login.html')) {
-        // Fallback por si acaso
-        window.location.href = 'dashboard.html'; 
+    } else if (activeUser && accesosRuta.length === 0 && !publicPages.includes(file)) {
+        document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0f172a; color:white; font-family:sans-serif;">
+                <span style="font-size:4rem; margin-bottom:1rem;">⛔</span>
+                <h2>Acceso Restringido</h2>
+                <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:2rem;">Tu cuenta no tiene permisos asignados.</p>
+                <button onclick="localStorage.removeItem('${SESSION_KEY}'); window.location.href='index.html'" style="padding:10px 20px; background:#ef4444; color:white; border:none; border-radius:8px; cursor:pointer;">Cerrar Sesión</button>
+            </div>`;
         return;
     }
 
-    // 3. PROTECCIÓN DE ADMIN ESTRICTA
     if (activeUser && (file.includes('admin') || file.includes('sembrar'))) {
-        const rolesAdmin = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR', 'SUPER_ADMIN'];
-        if (!rolesAdmin.includes(activeUser.rol)) {
+        if (!esAltoMando) {
             alert("⛔ ACCESO DENEGADO: Se requieren permisos de Administrador.");
-            const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html' };
-            window.location.href = activeUser.accesos ? routeMap[activeUser.accesos[0]] : 'dashboard.html';
+            window.location.replace('dashboard.html');
             return;
         }
     }
@@ -141,15 +163,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.documentElement.classList.add('dark');
     }
 
-    // Búsqueda inteligente de la foto en todas sus variables
-    const fotoSrc = activeUser.photoUrl || activeUser.fotoUrl || activeUser.photo || '';
+    const fotoSrc = activeUser.photo || activeUser.photoUrl || activeUser.fotoUrl || '';
     
     const avatarHTML = fotoSrc 
         ? `<img src="${fotoSrc}" alt="Perfil" class="w-10 h-10 rounded-full object-cover border-2 border-leezar-500 shadow-sm">` 
         : `<div class="w-10 h-10 rounded-full bg-leezar-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">${activeUser.iniciales || 'U'}</div>`;
 
-    const esAdmin = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR'].includes(activeUser.rol);
-    const menuAdminHTML = esAdmin ? `
+    const menuAdminHTML = esAltoMando ? `
         <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
             <p class="px-4 text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1">Admin <span class="material-symbols-rounded text-[12px]">lock</span></p>
             <a href="admin.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg group hover:text-indigo-600 dark:hover:text-white transition-all ${file.includes('admin') ? 'active' : ''}">
@@ -159,29 +179,26 @@ document.addEventListener("DOMContentLoaded", () => {
     ` : '';
 
     // =================================================================
-    // 🔥 MOTOR DE MENÚ DINÁMICO (Vuelve a respetar el Dashboard)
+    // 🔥 DIBUJO DE MENÚ DINÁMICO
     // =================================================================
-    const accesos = activeUser.accesos || []; // Si no tiene, no ve nada hasta que sincronice
-
     let menuOperacionesHTML = '';
-    if(accesos.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Dashboard</a></li>`;
-    if(accesos.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>`;
-    if(accesos.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('revision') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">fact_check</span>Mesa de Control</a></li>`;
+    if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Tablero de Trabajo</a></li>`;
+    if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>`;
+    if(accesosRuta.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('revision') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">fact_check</span>Mesa de Control</a></li>`;
 
     let menuTecnicoHTML = '';
-    if(accesos.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>`;
+    if(accesosRuta.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>`;
 
     const renderOperaciones = menuOperacionesHTML ? `<div><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Operaciones</p><ul class="space-y-1">${menuOperacionesHTML}</ul></div>` : '';
     const renderTecnico = menuTecnicoHTML ? `<div class="mt-6"><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p><ul class="space-y-1">${menuTecnicoHTML}</ul></div>` : '';
 
-    // HTML Sidebar
     const layoutHTML = `
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
     
     <div id="mobile-header" class="bg-white/90 border-b border-slate-200 dark:bg-[#0b1121]/90 dark:border-slate-800 transition-colors">
         <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="material-symbols-rounded text-2xl text-slate-700 dark:text-white">menu</span></button>
-            <span class="font-extrabold text-lg text-slate-800 dark:text-white tracking-tight">LEEZAR</span>
+            <span class="font-extrabold text-lg text-slate-800 dark:text-white tracking-tight">SISTEMA AVALÚOS</span>
         </div>
         <div onclick="abrirMiPerfil()" class="cursor-pointer">${avatarHTML}</div>
     </div>
@@ -191,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-teal-500/30">
                 <span class="material-symbols-rounded text-white text-xl">apartment</span>
             </div>
-            <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white">LEEZAR <span class="text-teal-500">.</span></h1>
+            <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white">SISTEMA <span class="text-teal-500">AVALÚOS</span></h1>
         </div>
         
         <div class="h-16 md:hidden"></div>
@@ -324,9 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if(res.ok) {
-                activeUser.photoUrl = nuevaFotoBase64; // Uniformizamos variable
+                activeUser.photoUrl = nuevaFotoBase64; 
                 localStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
-                
                 alert("Perfil actualizado correctamente.");
                 window.location.reload(); 
             } else {
