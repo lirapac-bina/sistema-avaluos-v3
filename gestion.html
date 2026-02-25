@@ -643,7 +643,8 @@
                     btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Creando Carpeta Drive...`;
                     
                     try {
-                        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyC0JVj3VEx4xANgVUC4onKL1IrwFmLfy17yuCtrH3SkWBj99xyuKdp50jo7JOhZye1/exec'; 
+                        // 🔴 PEGA TU NUEVA LIGA DE GOOGLE AQUÍ:
+                        const scriptUrl = 'https://script.google.com/macros/s/AKfycby6BDx7PwdNv9wIHcdz_YZny-iS6lTulBptum32c0cLdzP0-5HZ7IIWInRMPyXKtntq/exec'; 
                         
                         const urlConDatos = `${scriptUrl}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
                         
@@ -652,6 +653,11 @@
                         
                         if (respuestaAlbanil.exito) {
                             updateData.carpeta_drive = respuestaAlbanil.url; 
+                            
+                            // 🔥 AQUÍ ATRAPAMOS EL MAPA DEL TESORO (LOS IDs)
+                            if (respuestaAlbanil.main) updateData.driveFolderId = respuestaAlbanil.main;
+                            if (respuestaAlbanil.subfolders) updateData.driveSubfolders = respuestaAlbanil.subfolders;
+                            
                             console.log("✅ Carpeta creada en Drive:", respuestaAlbanil.url);
                         } else {
                             console.error("❌ Error del Albañil:", respuestaAlbanil.error);
