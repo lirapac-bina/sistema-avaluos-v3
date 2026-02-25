@@ -263,9 +263,9 @@
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
                     <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
                         <option value="POR ASIGNAR">POR ASIGNAR</option>
-                        <option value="EME">EME (GLOBAL)</option>
-                        <option value="AVE">AVE (LEEZAR)</option>
-                        <option value="PNA">PNA (GLOBAL)</option>
+                        <option value="EME">EME (LEEZAR)</option>
+                        <option value="AVE">GYS EME (AVE)</option>
+                        <option value="PNA">PNA (AVE)</option>
                     </select>
                 </div>
             </div>
@@ -624,34 +624,71 @@
             if (!nombre) { alert("El nombre es obligatorio"); return; }
             if (telefono.length > 0 && telefono.length !== 10) { alert("El teléfono debe tener 10 dígitos exactos."); return; }
 
-            btn.disabled = true; btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
+            btn.disabled = true; 
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
 
             try {
-                // Guardar directo en Firebase
                 const db = window.db || firebase.firestore();
-                await db.collection('expedientes_avaluos').doc(id).update({
+                const exp = dbExpedientes.find(e => e.id === id);
+                
+                // Preparamos lo que vamos a guardar en Firebase
+                let updateData = {
                     cliente: nombre,
                     telefono: telefono,
                     unidad: unidad
-                });
+                };
 
-                const exp = dbExpedientes.find(e => e.id === id);
+                // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE
+                // Solo creamos la carpeta si el expediente era "POR ASIGNAR" y ahora elegiste una unidad
+                if (unidad !== 'POR ASIGNAR' && exp && exp.unidad === 'POR ASIGNAR') {
+                    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Creando Carpeta Drive...`;
+                    
+                    try {
+                        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyyh_OujAncrzAiDrkD_QYW2xqlWUyTXZkCA1QVI4mfb8y5LMykafO25NlN82RT8ivj/exec';
+                        const peticionAlbanil = await fetch(scriptUrl, {
+                            method: 'POST',
+                            body: JSON.stringify({ cliente: nombre, unidad: unidad }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" } // Truco antibloqueo de Google
+                        });
+                        
+                        const respuestaAlbanil = await peticionAlbanil.json();
+                        
+                        if (respuestaAlbanil.exito) {
+                            updateData.carpeta_drive = respuestaAlbanil.url; // Sumamos la liga a lo que guardaremos
+                            console.log("✅ Carpeta creada en Drive:", respuestaAlbanil.url);
+                        } else {
+                            console.error("❌ Error del Albañil:", respuestaAlbanil.error);
+                            alert("Se guardaron los datos, pero hubo un error al crear la carpeta en Drive: " + respuestaAlbanil.error);
+                        }
+                    } catch (errDrive) {
+                        console.error("❌ Falló la conexión con Drive:", errDrive);
+                        alert("Se guardaron los datos, pero no se pudo conectar con Google Drive.");
+                    }
+                }
+
+                // Guardamos todo de un golpe en Firebase
+                btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Actualizando base...`;
+                await db.collection('expedientes_avaluos').doc(id).update(updateData);
+
+                // Actualizamos la tabla localmente
                 if (exp) { 
                     exp.cliente = nombre; 
                     exp.telefono = telefono; 
                     exp.unidad = unidad;
+                    if (updateData.carpeta_drive) exp.carpeta_drive = updateData.carpeta_drive;
                 }
                 
                 registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Unidad: ${unidad} (ID: ${id})`);
 
-                alert("✅ Datos actualizados correctamente");
+                alert("✅ Datos y carpeta actualizados correctamente");
                 cerrarModalEditar();
                 filtrarTabla(true);
 
             } catch (error) {
                 alert("Error al actualizar: " + error.message);
             } finally {
-                btn.disabled = false; btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Cambios`;
+                btn.disabled = false; 
+                btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Cambios`;
             }
         }
 
