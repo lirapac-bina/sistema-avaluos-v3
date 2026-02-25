@@ -90,7 +90,7 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
 
         const drive = google.drive({ version: 'v3', auth });
 
-        // 1. Crear la carpeta principal del cliente
+        // 1. Crear la carpeta principal del cliente (La propiedad)
         const mainFolderMeta = {
             'name': nombreCliente,
             'mimeType': 'application/vnd.google-apps.folder',
@@ -105,19 +105,33 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
         const mainFolderId = mainFolder.data.id;
         console.log(`✅ DRIVE: Carpeta principal creada con ID: ${mainFolderId}`);
 
-        // 2. MAGIA: Crear las 3 subcarpetas en paralelo
-        const [idInmueble, idPropietario, idSolicitante] = await Promise.all([
-            crearSubcarpeta(drive, 'INMUEBLE', mainFolderId),
-            crearSubcarpeta(drive, 'PROPIETARIO', mainFolderId),
-            crearSubcarpeta(drive, 'SOLICITANTE', mainFolderId)
+        // 2. MAGIA: Construir las 5 carpetas base (Mansion) en paralelo
+        const [idExpediente, idDocJust, idFotos, idProyArq, idComparables] = await Promise.all([
+            crearSubcarpeta(drive, 'EXPEDIENTE', mainFolderId),
+            crearSubcarpeta(drive, 'DOC JUST', mainFolderId),
+            crearSubcarpeta(drive, 'FOTOS', mainFolderId),
+            crearSubcarpeta(drive, 'PROY ARQ', mainFolderId),
+            crearSubcarpeta(drive, 'COMPARABLES', mainFolderId)
         ]);
+        console.log(`✅ DRIVE: Las 5 carpetas base fueron creadas.`);
 
-        console.log(`✅ DRIVE: Las 3 subcarpetas (INMUEBLE, PROPIETARIO, SOLICITANTE) fueron creadas exitosamente.`);
+        // 3. Crear las 3 subcarpetas DENTRO de "EXPEDIENTE"
+        const [idInmueble, idPropietario, idSolicitante] = await Promise.all([
+            crearSubcarpeta(drive, 'INMUEBLE', idExpediente),
+            crearSubcarpeta(drive, 'PROPIETARIO', idExpediente),
+            crearSubcarpeta(drive, 'SOLICITANTE', idExpediente)
+        ]);
+        console.log(`✅ DRIVE: Subcarpetas de EXPEDIENTE construidas exitosamente.`);
         
-        // Devolvemos todos los IDs
+        // Devolvemos todos los IDs para que la base de datos sepa dónde están
         return {
             main: mainFolderId,
             subfolders: {
+                expediente: idExpediente,
+                docJust: idDocJust,
+                fotos: idFotos,
+                proyArq: idProyArq,
+                comparables: idComparables,
                 inmueble: idInmueble,
                 propietario: idPropietario,
                 solicitante: idSolicitante
@@ -126,9 +140,6 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
 
     } catch (error) {
         console.error("❌ ERROR FINAL DRIVE: La API de Google Drive rechazó la solicitud.", error.message);
-        if (error.message.includes('insufficientFilePermissions') || error.message.includes('not found')) {
-            console.error("👉 PISTA: Revisa que el correo del robot (" + serviceAccount.client_email + ") tenga permisos de 'Editor' en la carpeta de PNA.");
-        }
         return null;
     }
 }
