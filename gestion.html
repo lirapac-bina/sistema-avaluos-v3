@@ -638,32 +638,22 @@
                     unidad: unidad
                 };
 
-                // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE
-                // Solo creamos la carpeta si el expediente era "POR ASIGNAR" y ahora elegiste una unidad
+                // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE (Versión Antibloqueo GET)
                 if (unidad !== 'POR ASIGNAR' && exp && exp.unidad === 'POR ASIGNAR') {
-                    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Creando Carpeta Drive...`;
-                    
-                    try {
-                        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyo6_6D9G4bAfc6or_i4Qp2ioGy_nQLhwcedk_pKVl0ZbTVwDYUxsI7GEkg0btTMg-p/exec';
-                        const peticionAlbanil = await fetch(scriptUrl, {
-                            method: 'POST',
-                            body: JSON.stringify({ cliente: nombre, unidad: unidad }),
-                            headers: { "Content-Type": "text/plain;charset=utf-8" } // Truco antibloqueo de Google
-                        });
-                        
-                        const respuestaAlbanil = await peticionAlbanil.json();
-                        
-                        if (respuestaAlbanil.exito) {
-                            updateData.carpeta_drive = respuestaAlbanil.url; // Sumamos la liga a lo que guardaremos
-                            console.log("✅ Carpeta creada en Drive:", respuestaAlbanil.url);
-                        } else {
-                            console.error("❌ Error del Albañil:", respuestaAlbanil.error);
-                            alert("Se guardaron los datos, pero hubo un error al crear la carpeta en Drive: " + respuestaAlbanil.error);
-                        }
-                    } catch (errDrive) {
-                        console.error("❌ Falló la conexión con Drive:", errDrive);
-                        alert("Se guardaron los datos, pero no se pudo conectar con Google Drive.");
-                    }
+                btn.innerHTML = <span class="material-symbols-rounded animate-spin">sync</span> Creando Carpeta Drive...;
+                try {
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbxV5gkgwFQ7rBLrytQKd0f61JZG_6TLWGO_WPEbazD4zOTUgOfk38yHtswQpPDNdxbi/exec';
+                const urlConDatos = scriptUrl + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad);
+                const peticionAlbanil = await fetch(urlConDatos);
+                const respuestaAlbanil = await peticionAlbanil.json();
+                if (respuestaAlbanil.exito) {
+                updateData.carpeta_drive = respuestaAlbanil.url;
+                console.log("✅ Carpeta creada en Drive:", respuestaAlbanil.url);
+                }
+                } catch (errDrive) {
+                console.error("❌ Falló la conexión con Drive:", errDrive);
+                alert("Hubo un error de conexión con Drive al crear la carpeta.");
+                }
                 }
 
                 // Guardamos todo de un golpe en Firebase
