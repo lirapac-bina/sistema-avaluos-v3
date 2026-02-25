@@ -259,6 +259,15 @@
                         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                     <p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><span class="material-symbols-rounded text-xs">lock</span> Solo números, exacto 10 dígitos.</p>
                 </div>
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
+                    <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                        <option value="POR ASIGNAR">POR ASIGNAR</option>
+                        <option value="EME">EME (GLOBAL)</option>
+                        <option value="AVE">AVE (LEEZAR)</option>
+                        <option value="PNA">PNA (GLOBAL)</option>
+                    </select>
+                </div>
             </div>
 
             <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -358,7 +367,7 @@
                         dbExpedientes.push({
                             id: doc.id,
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
-                            telefono: data.telefono || '', 
+                            telefono: data.telefono || data.celular || '', // <-- CABLE CONECTADO A JACK
                             tramite: (data.tramite || data.tipoTramite || 'General').toUpperCase(),
                             status: (data.status || data.estatus || data.estado || 'PENDIENTE').toUpperCase(),
                             fechaDisplay: fechaDisplay,
@@ -367,7 +376,9 @@
                             visitador: data.visitador || null,
                             dibujante: data.dibujante || null,
                             municipio: data.municipio || '', 
-                            colonia: data.colonia || ''
+                            colonia: data.colonia || '',
+                            origen: data.origen || '', // <-- CABLE DEL PERRITO CONECTADO
+                            unidad: data.unidad || 'POR ASIGNAR' // <-- CABLE DE LA UNIDAD CONECTADO
                         });
                     });
 
@@ -519,10 +530,20 @@
                 else if(st.includes('COMPLETADO') || st.includes('VALIDA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
 
+                // --- LA ALERTA DE JACK 🐶 ---
+                let alertaJack = '';
+                if (exp.origen === 'JACK_FORMULARIO' && exp.unidad === 'POR ASIGNAR') {
+                    alertaJack = `
+                    <div class="mt-1.5 inline-flex items-center gap-1.5 bg-amber-400 text-amber-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-[0_0_15px_rgba(251,191,36,0.9)] border-2 border-amber-200 animate-pulse">
+                        <span class="text-sm">🐶</span> ¡ASIGNAR UNIDAD!
+                    </div>`;
+                }
+
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
-                            ${exp.cliente}
+                            <div class="truncate">${exp.cliente}</div>
+                            ${alertaJack}
                         </td>
                         
                         <td class="px-4 py-3 text-center">
@@ -547,7 +568,7 @@
                         
                         <td class="px-4 py-3 text-right">
                             <div class="flex justify-end gap-1 items-center">
-                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}')" 
+                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}')" 
                                     class="text-amber-500 hover:text-amber-600 p-1.5 rounded transition-all hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                                     title="Editar">
                                     <span class="material-symbols-rounded text-lg">edit</span>
@@ -573,7 +594,7 @@
             });
         }
 
-        function abrirModalEditar(id, nombre, telefono) {
+            function abrirModalEditar(id, nombre, telefono, unidad) {
             const userStr = localStorage.getItem('leezar_user_active');
             const user = userStr ? JSON.parse(userStr) : {};
             const rol = (user.rol || '').toUpperCase();
@@ -586,9 +607,10 @@
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-nombre').value = nombre;
             document.getElementById('edit-telefono').value = (telefono && telefono !== 'undefined' && telefono !== 'null') ? telefono : '';
+            document.getElementById('edit-unidad').value = unidad || 'POR ASIGNAR';
 
             document.getElementById('modal-editar-cliente').classList.remove('hidden');
-        }
+            }
 
         function cerrarModalEditar() { document.getElementById('modal-editar-cliente').classList.add('hidden'); }
 
@@ -596,6 +618,7 @@
             const id = document.getElementById('edit-id').value;
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
+            const unidad = document.getElementById('edit-unidad').value;
             const btn = document.getElementById('btn-save-edit');
 
             if (!nombre) { alert("El nombre es obligatorio"); return; }
@@ -604,18 +627,22 @@
             btn.disabled = true; btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
 
             try {
-                const res = await fetch('/.netlify/functions/update-client-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, nombre, telefono })
+                // Guardar directo en Firebase
+                const db = window.db || firebase.firestore();
+                await db.collection('expedientes_avaluos').doc(id).update({
+                    cliente: nombre,
+                    telefono: telefono,
+                    unidad: unidad
                 });
 
-                if (!res.ok) throw new Error("Error al guardar");
-
                 const exp = dbExpedientes.find(e => e.id === id);
-                if (exp) { exp.cliente = nombre; exp.telefono = telefono; }
+                if (exp) { 
+                    exp.cliente = nombre; 
+                    exp.telefono = telefono; 
+                    exp.unidad = unidad;
+                }
                 
-                registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} (ID: ${id})`);
+                registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Unidad: ${unidad} (ID: ${id})`);
 
                 alert("✅ Datos actualizados correctamente");
                 cerrarModalEditar();
