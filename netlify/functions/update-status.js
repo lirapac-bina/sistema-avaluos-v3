@@ -72,7 +72,7 @@ exports.handler = async (event) => {
             updateData[`checklist.${itemKey}.retroalimentacion`] = motivo;
         }
 
-        // 🔥 RECUPERAMOS EL MOTOR GENERADOR DE TOKENS QUE SE HABÍA BORRADO 🔥
+        // 🔥 RECUPERAMOS EL MOTOR GENERADOR DE TOKENS 🔥
         let firebaseUrl = itemAnterior.url; 
         const pathEnNube = archivoPath || itemAnterior.archivoPath;
 
@@ -90,47 +90,88 @@ exports.handler = async (event) => {
         }
 
         // ========================================================
-        // 🌟 MAGIA: TRANSFERENCIA A DRIVE VÍA PUENTE MÁGICO 🌟
+        // 🌟 MAGIA MASIVA: TRANSFERENCIA A DRIVE VÍA PUENTE MÁGICO 🌟
         // ========================================================
-        if (nuevoEstado === 'validado' || nuevoEstado === 'VALIDADO') {
-            console.log(`🚀 [DRIVE] Estatus 'Validado'. Iniciando teletransportación...`);
-            
-            let categoria = (categoriaItem || itemAnterior.categoria || 'solicitante').toLowerCase();
-            const driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[categoria] : null;
-
-            if (firebaseUrl && driveFolderId && APPS_SCRIPT_WEBHOOK.startsWith("https://script.google.com")) {
-                
-                const nombreBase = itemAnterior.nombre || itemKey;
-                const extension = pathEnNube && pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
-                const mimeType = extension === '.pdf' ? 'application/pdf' : 'image/jpeg';
-                const fileNameDrive = `${nombreBase}_${docData.cliente}${extension}`;
-
-                console.log(`📤 [DRIVE] Solicitando al Puente Mágico que guarde: ${fileNameDrive}`);
-
-                const scriptResponse = await fetch(APPS_SCRIPT_WEBHOOK, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        secretToken: "LeezarMagia2026",
-                        fileUrl: firebaseUrl, 
-                        fileName: fileNameDrive,
-                        mimeType: mimeType,
-                        folderId: driveFolderId
-                    })
-                });
-
-                const scriptData = await scriptResponse.json();
-                
-                if (scriptData.success) {
-                    console.log(`✅ [DRIVE] ¡Magia completada! El archivo está en Drive. ID: ${scriptData.fileId}`);
-                    updateData[`checklist.${itemKey}.driveUrl`] = scriptData.url;
-                } else {
-                    console.error("❌ [DRIVE] Error del Puente Mágico:", scriptData.error);
+        let archivosAPasar = [];
+        
+        // Si detecta la galería de fotos, recolecta todas las hijas (FOTO_EXTRA_)
+        if (itemKey === 'FOTOS_INTERIORES_GENERAL') {
+            Object.keys(docData.checklist).forEach(k => {
+                if (k.includes('FOTO_EXTRA_')) {
+                    const fotoItem = docData.checklist[k];
+                    const urlReal = fotoItem.url || fotoItem.archivoUrl;
+                    if (urlReal) {
+                        archivosAPasar.push({
+                            key: k,
+                            url: urlReal,
+                            nombreBase: fotoItem.nombre || k,
+                            categoria: fotoItem.categoria || 'inmueble',
+                            pathEnNube: fotoItem.archivoPath
+                        });
+                        // También validamos las hijas para que la BD esté limpia
+                        updateData[`checklist.${k}.estatus`] = nuevoEstado; 
+                    }
                 }
-
-            } else {
-                console.warn(`⚠️ [DRIVE] Falta la URL del Apps Script o el ID de la subcarpeta.`);
+            });
+        } else {
+            // Archivo normal individual
+            if (firebaseUrl) {
+                archivosAPasar.push({
+                    key: itemKey,
+                    url: firebaseUrl,
+                    nombreBase: itemAnterior.nombre || itemKey,
+                    categoria: categoriaItem || itemAnterior.categoria || 'solicitante',
+                    pathEnNube: pathEnNube
+                });
             }
+        }
+
+        if ((nuevoEstado === 'validado' || nuevoEstado === 'VALIDADO') && archivosAPasar.length > 0) {
+            console.log(`🚀 [DRIVE] Estatus 'Validado'. Procesando ${archivosAPasar.length} archivo(s) en paralelo...`);
+            
+            // Enviamos todo a Drive en PARALELO para no superar el límite de tiempo de Netlify
+            const promesasDrive = archivosAPasar.map(async (archivo) => {
+                let catDrive = (archivo.categoria || 'solicitante').toLowerCase();
+                const driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[catDrive] : null;
+
+                if (archivo.url && driveFolderId && APPS_SCRIPT_WEBHOOK.startsWith("https://script.google.com")) {
+                    const extension = archivo.pathEnNube && archivo.pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
+                    const mimeType = extension === '.pdf' ? 'application/pdf' : 'image/jpeg';
+                    
+                    // Limitamos el nombre si es muy largo y agregamos un identificador único para no sobrescribir
+                    const nomCorto = archivo.nombreBase.substring(0, 30).trim();
+                    const hashCorto = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    const fileNameDrive = `${nomCorto}_${hashCorto}_${docData.cliente}${extension}`;
+
+                    try {
+                        const scriptResponse = await fetch(APPS_SCRIPT_WEBHOOK, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                secretToken: "LeezarMagia2026",
+                                fileUrl: archivo.url, 
+                                fileName: fileNameDrive,
+                                mimeType: mimeType,
+                                folderId: driveFolderId
+                            })
+                        });
+
+                        const scriptData = await scriptResponse.json();
+                        
+                        if (scriptData.success) {
+                            console.log(`✅ [DRIVE] Subido: ${fileNameDrive}`);
+                            updateData[`checklist.${archivo.key}.driveUrl`] = scriptData.url;
+                        } else {
+                            console.error(`❌ [DRIVE] Error con ${fileNameDrive}:`, scriptData.error);
+                        }
+                    } catch (err) {
+                        console.error(`❌ [DRIVE] Falla de conexión con ${fileNameDrive}:`, err.message);
+                    }
+                }
+            });
+
+            // Esperamos a que TODAS las subidas de Drive terminen
+            await Promise.all(promesasDrive);
         }
         // ========================================================
 
