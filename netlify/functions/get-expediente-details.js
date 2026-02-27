@@ -81,7 +81,9 @@ exports.handler = async (event) => {
             estatusGeneral: data.estatus || 'ACTIVO',
             direccion: data.direccion || '',
             coordenadas: data.coordenadas || null,
-            unidad: data.unidad || 'AVE' // <-- ESTO REPARA LOS LOGOS PNA / EME
+            unidad: data.unidad || 'AVE', // <-- ESTO REPARA LOS LOGOS PNA / EME
+            visitador: data.visitador || null,
+            dibujante: data.dibujante || null
         };
 
         return { statusCode: 200, headers, body: JSON.stringify(responseData) };

@@ -233,10 +233,10 @@
                             <div class="w-8 h-8 rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">photo_camera</span></div>
                             <div>
                                 <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Visita de Campo</p>
-                                <p class="text-[9px] text-slate-400">Luis (Visitador)</p>
+                                <p class="text-[9px] text-slate-400 uppercase font-bold" id="staff-visitador-name">Cargando...</p>
                             </div>
                         </div>
-                        <span class="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900">15 Fotos</span>
+                        <span id="staff-visitador-status" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">...</span>
                     </div>
 
                     <div class="flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50">
@@ -244,12 +244,10 @@
                             <div class="w-8 h-8 rounded bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">architecture</span></div>
                             <div>
                                 <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Gabinete</p>
-                                <p class="text-[9px] text-slate-400">Sofía (Arq)</p>
+                                <p class="text-[9px] text-slate-400 uppercase font-bold" id="staff-dibujante-name">Cargando...</p>
                             </div>
                         </div>
-                        <span class="text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900">
-                            <span class="material-symbols-rounded text-[10px] animate-spin">sync</span> DWG Pendiente
-                        </span>
+                        <span id="staff-dibujante-status" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">...</span>
                     </div>
                 </div>
             </div>
@@ -351,9 +349,39 @@
                 const data = await res.json();
                 transformarDatos(id, data);
                 renderCurrentGroup();
+                // 🔥 LLAMAMOS A LA NUEVA FUNCIÓN
+                renderStaffPanel(data);
             } catch (e) {
                 console.error("Error cargando detalles:", e);
                 alert("No se pudieron cargar los requisitos.");
+            }
+        }
+
+        function renderStaffPanel(data) {
+            const visName = data.visitador ? data.visitador.split('@')[0] : 'SIN ASIGNAR';
+            const dibName = data.dibujante ? data.dibujante.split('@')[0] : 'SIN ASIGNAR';
+            
+            document.getElementById('staff-visitador-name').innerText = visName;
+            document.getElementById('staff-dibujante-name').innerText = dibName;
+
+            const visStatus = document.getElementById('staff-visitador-status');
+            const dibStatus = document.getElementById('staff-dibujante-status');
+
+            // Lógica inteligente visual (Preparando el terreno para el futuro)
+            if (!data.visitador) {
+                visStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
+                visStatus.innerHTML = 'Falta Asignar';
+            } else {
+                visStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900 flex items-center gap-1';
+                visStatus.innerHTML = '<span class="material-symbols-rounded text-[10px] animate-spin">sync</span> Esperando App';
+            }
+
+            if (!data.dibujante) {
+                dibStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
+                dibStatus.innerHTML = 'Falta Asignar';
+            } else {
+                dibStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900';
+                dibStatus.innerHTML = '<span class="material-symbols-rounded text-[10px] animate-spin">sync</span> DWG Pendiente';
             }
         }
 
@@ -580,10 +608,12 @@
                 document.getElementById('preview-placeholder').classList.remove('hidden');
             }
             
+            // 🔥 CANDADO DE SEGURIDAD: La barra solo sube si está "En Revisión" o "Rechazado"
             const bar = document.getElementById('decision-bar');
-            if (['review', 'rejected', 'valid'].includes(req.status)) {
+            if (['review', 'rejected'].includes(req.status)) {
                 bar.classList.remove('translate-y-full');
             } else {
+                // Si el estatus es 'valid' (o 'pending'), la barra se esconde y bloquea la decisión
                 bar.classList.add('translate-y-full');
             }
         }
