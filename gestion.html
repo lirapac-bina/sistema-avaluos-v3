@@ -294,22 +294,24 @@
             dibujante: []
         };
 
-        // FUNCIÓN QUE TRAE EL EQUIPO REAL DE LA BASE DE DATOS
+        // FUNCIÓN QUE TRAE EL EQUIPO REAL DE LA BASE DE DATOS (SOPORTA MULTI-ROL)
         async function cargarEquipoDinamico() {
             const db = window.db || firebase.firestore();
             try {
                 const snapshot = await db.collection('usuarios').get();
                 snapshot.forEach(doc => {
                     const usuario = doc.data();
-                    const rol = (usuario.rol || '').toLowerCase();
                     const email = usuario.email || doc.id;
                     const nombre = usuario.nombre || email.split('@')[0];
+                    
+                    // 🔥 LA MAGIA: Leemos sus funciones específicas, no su rol general
+                    const funciones = usuario.funciones || [];
 
-                    if (rol.includes('capturista')) equipoDinamico.capturista.push({email, nombre});
-                    if (rol.includes('visitador')) equipoDinamico.visitador.push({email, nombre});
-                    if (rol.includes('dibujante')) equipoDinamico.dibujante.push({email, nombre});
+                    if (funciones.includes('captura')) equipoDinamico.capturista.push({email, nombre});
+                    if (funciones.includes('visita')) equipoDinamico.visitador.push({email, nombre});
+                    if (funciones.includes('dibuja')) equipoDinamico.dibujante.push({email, nombre});
                 });
-                console.log("✅ Equipo cargado desde Firebase:", equipoDinamico);
+                console.log("✅ Equipo Multi-Rol cargado desde Firebase:", equipoDinamico);
             } catch (error) {
                 console.error("❌ Error cargando equipo de Firebase:", error);
             }

@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración</title>
+    <title>Configuración de Sistema</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <script src="firebase-config.js"></script>
 
@@ -82,7 +83,7 @@
                 <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Configuración del Sistema</h1>
                 <p class="text-slate-400 text-sm mt-1">Control maestro de catálogos y usuarios.</p>
             </div>
-<div class="flex items-center gap-3">
+            <div class="flex items-center gap-3">
                 <div class="flex flex-col items-end mr-2">
                     <div class="flex items-center gap-1.5">
                         <span class="relative flex h-2.5 w-2.5">
@@ -163,29 +164,50 @@
 
         <div id="dynamic-view" class="hidden flex-1 flex flex-col min-h-0 mt-6"></div>
 
-        <div id="modal-editor" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+        <div id="modal-editor" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
             <div class="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative overflow-hidden fade-in">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6" id="modal-title">Nuevo Requisito</h3>
-                <div class="space-y-5">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6" id="modal-title">Documento del Diccionario</h3>
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Nombre Visual (Portal)</label>
-                        <input type="text" id="input-nombre" oninput="normalizarInput(this); generarIDAuto()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 uppercase-input" placeholder="EJ. RECIBO DE LUZ">
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Nombre Visual (Portal)</label>
+                        <input type="text" id="input-nombre" oninput="normalizarInput(this); generarIDAuto()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 uppercase-input" placeholder="EJ. RECIBO DE LUZ">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">ID Base Datos (Automático)</label>
-                        <input type="text" id="input-id" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono text-slate-500 dark:text-slate-400 outline-none uppercase-input" readonly>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">ID Base Datos (Único)</label>
+                        <input type="text" id="input-id" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono text-slate-500 outline-none uppercase-input" readonly>
                     </div>
-                    <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <input type="checkbox" id="input-obligatorio" class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <p class="text-sm font-bold text-slate-700 dark:text-white">Marcar como Obligatorio</p>
-                            <p class="text-xs text-slate-400">Si se desmarca, el usuario puede omitirlo.</p>
+                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Categoría</label>
+                            <select id="input-categoria" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer">
+                                <option value="solicitante">Solicitante</option>
+                                <option value="propietario">Propietario</option>
+                                <option value="inmueble">Inmueble</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Enlace de Descarga (Plantilla PDF - Opcional)</label>
+                        <input type="url" id="input-plantilla" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-slate-300" placeholder="https://ejemplo.com/formato.pdf">
+                        <p class="text-[9px] text-amber-500 font-bold mt-1">Si pones un enlace, el cliente verá un aviso amarillo para descargar y firmar.</p>
+                    </div>
+
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Tipo de Archivo</label>
+                                <select id="input-tipo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer">
+                                <option value="MIXTO">Archivo (PDF o Foto)</option>
+                                <option value="IMG">Solo Imagen / Foto</option>
+                                <option value="PDF">Solo Documento PDF</option>
+                                <option value="TXT">Texto / Formulario</option>
+                                <option value="GALERIA">Galería Múltiple</option>
+                                <option value="MAPA">Coordenadas GPS</option>
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-8">
                     <button onclick="cerrarModalEditor()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
-                    <button onclick="confirmarGuardado()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg">Guardar</button>
+                    <button onclick="confirmarGuardadoDiccionario()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg">Guardar al Diccionario</button>
                 </div>
             </div>
         </div>
@@ -310,38 +332,13 @@
     </main>
 
     <script>
-        // --- PLANTILLA MAESTRA ---
-        const PLANTILLA_MAESTRA = {
-            "solicitante": [
-                { "id": "INE_SOLICITANTE", "nombre": "INE / IDENTIFICACION OFICIAL", "obligatorio": true },
-                { "id": "CURP_SOLICITANTE", "nombre": "CURP", "obligatorio": true },
-                { "id": "CONSTANCIA_SITUACION_FISCAL", "nombre": "CONSTANCIA SITUACION FISCAL (RFC)", "obligatorio": true },
-                { "id": "NUMERO_SEGURO_SOCIAL", "nombre": "NUMERO DE SEGURIDAD SOCIAL (NSS)", "obligatorio": true },
-                { "id": "CORREO_ELECTRONICO", "nombre": "CORREO ELECTRONICO", "obligatorio": true, "textoPreview": "CORREO: " },
-                { "id": "SOLICITUD_AVALUO", "nombre": "SOLICITUD AVALUO (FIRMADA)", "obligatorio": true }
-            ],
-            "propietario": [
-                { "id": "INE_PROPIETARIO", "nombre": "INE PROPIETARIO", "obligatorio": false },
-                { "id": "CURP_PROPIETARIO", "nombre": "CURP PROPIETARIO", "obligatorio": false }
-            ],
-            "inmueble": [
-                { "id": "ESCRITURAS", "nombre": "ESCRITURA PUBLICA COMPLETA", "obligatorio": true },
-                { "id": "PREDIAL", "nombre": "BOLETA PREDIAL (RECIENTE)", "obligatorio": true },
-                { "id": "AGUA", "nombre": "RECIBO(S) AGUA", "obligatorio": true },
-                { "id": "LUZ", "nombre": "RECIBO(S) DE LUZ (CFE)", "obligatorio": true },
-                { "id": "ALINEAMIENTO_NUMERO_OFICIAL", "nombre": "ALINEAMIENTO Y NUMERO OFICIAL", "obligatorio": true },
-                { "id": "UBICACION_MAPS", "nombre": "UBICACION INMUEBLE", "obligatorio": true },
-                { "id": "DETALLES_INMUEBLE", "nombre": "DETALLES DEL INMUEBLE", "obligatorio": true },
-                { "id": "FOTO_FACHADA", "nombre": "FOTO DE FACHADA", "obligatorio": true },
-                { "id": "FOTOS_INTERIORES_GENERAL", "nombre": "FOTOGRAFIAS INTERIORES Y ENTORNO", "obligatorio": false }
-            ]
-        };
 
+        // --- MOTOR RELACIONAL ---
         let catalogoData = null;
         let currentEntidad = null, currentServicio = null;
-        let editMode = false, activeCategory = '', activeIndex = -1;
+        let editMode = false, activeTabConfig = 'matriz';
         let activeUser = null;
-        let avatarBase64 = ''; 
+        let avatarBase64 = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             const userData = localStorage.getItem('leezar_user_active');
@@ -351,26 +348,17 @@
                     document.getElementById('lock-status').innerText = `Hola, ${activeUser.nombre || 'Usuario'}. Confirma tu PIN.`;
                     document.getElementById('user-display').innerText = activeUser.email;
                     
-                    // --- CUMPLEAÑOS CORREGIDO (HORA LOCAL) ---
                     if (activeUser.fechaNacimiento) {
                         const hoy = new Date();
-                        // Ajustamos a 2 dígitos (01, 02... 10, 11)
                         const mes = String(hoy.getMonth() + 1).padStart(2, '0');
                         const dia = String(hoy.getDate()).padStart(2, '0');
-                        const fechaHoy = `${mes}-${dia}`; // Ejemplo: "01-10" para 10 de Enero
-
-                        // La fecha en BD viene como YYYY-MM-DD, tomamos los últimos 5 chars (MM-DD)
+                        const fechaHoy = `${mes}-${dia}`;
                         const cumpleUsuario = activeUser.fechaNacimiento.slice(5, 10);
 
-                        console.log("Revisando cumple:", fechaHoy, "vs", cumpleUsuario);
-
                         if (cumpleUsuario === fechaHoy) {
-                            // ¡Es hoy!
                             confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-                            
                             const saludo = document.getElementById('user-display');
                             if(saludo) {
-                                // Mensaje especial
                                 saludo.innerHTML = `
                                     <div class="flex flex-col items-center animate-bounce">
                                         <span class="text-4xl">🎂</span>
@@ -384,7 +372,6 @@
                 } catch(e) { }
             }
 
-            // Ocultar opción SUPER ADMIN si el usuario actual no lo es
             if (activeUser && activeUser.rol !== 'SUPER ADMIN' && activeUser.rol !== 'SUPER_ADMIN') {
                 const optSuper = document.getElementById('opt-superadmin');
                 if (optSuper) optSuper.remove();
@@ -393,7 +380,6 @@
             document.getElementById('login-pin').focus();
         });
 
-        // --- SEGURIDAD INTELIGENTE (SIN BACKDOOR) ---
         async function validarAdmin() {
             const pinInput = document.getElementById('login-pin').value;
             const btn = document.getElementById('btn-login');
@@ -423,7 +409,6 @@
                     localStorage.setItem('leezar_user_active', JSON.stringify(foundUser)); 
                     document.getElementById('user-display').innerText = foundUser.email;
                     desbloquearPantalla();
-                    // ya no es necesario: registrarLog('LOGIN_ADMIN', `Acceso a configuración: ${foundUser.email}`);
                 } else {
                     throw new Error("PIN Incorrecto");
                 }
@@ -442,13 +427,19 @@
             setTimeout(() => { document.getElementById('admin-lock').remove(); }, 500);
         }
 
+        function cerrarSesion() {
+            if(confirm("¿Seguro que deseas salir del panel de administración?")) {
+                localStorage.removeItem('leezar_user_active');
+                location.reload();
+            }
+        }
+
         function normalizarInput(input) {
             let val = input.value;
             val = val.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             input.value = val;
         }
 
-        // --- GESTIÓN DE USUARIOS VISUAL (Estilo Cards) ---
         async function renderUsuarios(container) {
             container.innerHTML = '<div class="flex h-full items-center justify-center"><span class="material-symbols-rounded animate-spin text-4xl text-rose-500">sync</span></div>';
             
@@ -457,10 +448,8 @@
                 const users = await res.json();
                 window.listaUsuariosGlobal = users; 
 
-                // FILTRADO INTELIGENTE (Case Insensitive)
                 const admins = users.filter(u => (u.rol || '').toUpperCase() === 'ADMIN');
                 const gestores = users.filter(u => (u.rol || '').toUpperCase() === 'GESTOR');
-                // Operativos son CAPTURISTA, TECNICO o los que no tengan rol definido
                 const operativos = users.filter(u => {
                     const r = (u.rol || 'CAPTURISTA').toUpperCase();
                     return r === 'CAPTURISTA' || r === 'TECNICO';
@@ -477,11 +466,9 @@
                     </div>
 
                     <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-8">
-                        
                         ${renderUserSection('Administradores', admins, 'indigo')}
                         ${renderUserSection('Gestión', gestores, 'teal')}
                         ${renderUserSection('Operativos', operativos, 'slate')}
-
                     </div>
                 </div>`;
                 container.innerHTML = html;
@@ -496,30 +483,25 @@
             if(lista.length === 0) return '';
             
             let cards = '';
-            const today = new Date().toISOString().slice(5,10); // MM-DD
+            const today = new Date().toISOString().slice(5,10);
 
             lista.forEach(u => {
-                // 1. AQUI ESTA EL CAMBIO: Solo usamos el correo
                 const userEmail = u.email; 
                 const iniciales = u.iniciales || (u.nombre ? u.nombre.substring(0,2) : 'XX');
                 
-                // INSIGNIAS
                 let badges = '';
                 let isMulti = false;
                 const f = u.funciones || [];
                 if(f.includes('visita')) { badges += '<span title="Visita" class="text-xs cursor-help">🚗</span>'; isMulti = true; }
                 if(f.includes('dibuja')) { badges += '<span title="Dibuja" class="text-xs cursor-help">📐</span>'; isMulti = true; }
                 
-                // Si es capturista y hace algo más, lleva estrella
                 const star = isMulti ? '<span class="text-amber-400 drop-shadow-sm text-sm" title="Multifuncional">⭐</span>' : '';
                 
-                // CUMPLEAÑOS
                 let birthdayIcon = '';
                 if(u.fechaNacimiento && u.fechaNacimiento.slice(5,10) === today) {
                     birthdayIcon = '<div class="absolute -top-3 -right-3 text-2xl birthday-bounce drop-shadow-md">🎂</div>';
                 }
 
-                // AVATAR
                 let avatarHtml = `<div class="w-12 h-12 rounded-full bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 flex items-center justify-center font-bold text-lg border-2 border-white dark:border-slate-700 shadow-sm relative shrink-0">
                     ${iniciales}
                     ${birthdayIcon}
@@ -557,7 +539,6 @@
             `;
         }
 
-        // --- MANEJO DE AVATAR ---
         function cargarAvatar(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -566,19 +547,17 @@
                 document.getElementById('preview-avatar').src = e.target.result;
                 document.getElementById('preview-avatar').classList.remove('hidden');
                 document.getElementById('icon-avatar').classList.add('hidden');
-                avatarBase64 = e.target.result; // Guardar base64 para envío
+                avatarBase64 = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        // --- FUNCIONES RECUPERADAS ---
         function togglePinField() {
             const rolSelect = document.getElementById('user-rol-edit');
             const pinInput = document.getElementById('user-pin-edit');
             const pinLabel = document.getElementById('label-pin');
             const rol = rolSelect ? rolSelect.value : '';
 
-            // 1. REGLA DEL PIN
             if (pinInput) {
                 if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
                     pinInput.classList.remove('hidden');
@@ -592,7 +571,6 @@
                 }
             }
 
-            // 2. REGLA DE FUNCIONES OPERATIVAS
             const wrapCaptura = document.getElementById('wrap-captura');
             const wrapVisita = document.getElementById('wrap-visita');
             const wrapDibuja = document.getElementById('wrap-dibuja');
@@ -636,80 +614,7 @@
             renderLogsTable();
         }
 
-
-        async function guardarUsuario() {
-            const btn = document.getElementById('btn-save-user');
-            const originalText = btn ? btn.innerHTML : 'Guardar';
-            
-            // IDs Corregidos
-            const email = document.getElementById('user-email-edit').value.trim().toLowerCase();
-            const nombre = document.getElementById('user-name-edit').value.trim();
-            const rol = document.getElementById('user-rol-edit').value;
-            const celular = document.getElementById('user-celular-edit').value.trim();
-            const iniciales = document.getElementById('user-iniciales-edit').value.trim().toUpperCase() || nombre.substring(0,2).toUpperCase();
-            const nacimiento = document.getElementById('user-fecha-edit').value;
-            
-            const pinEl = document.getElementById('user-pin-edit');
-            const pin = pinEl ? pinEl.value.trim() : '';
-
-            if (!email || !nombre) {
-                alert("El correo y nombre son obligatorios.");
-                return;
-            }
-
-            if(btn) {
-                btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
-                btn.disabled = true;
-            }
-
-            try {
-                let userData = {
-                    nombre, rol, celular, iniciales, nacimiento,
-                    actualizado: firebase.firestore.FieldValue.serverTimestamp(),
-                    funciones: []
-                };
-
-                if (rol === 'ADMIN' || rol === 'SUPER ADMIN') {
-                    userData.pin = pin;
-                }
-
-                const cCap = document.getElementById('check-captura'); if(cCap && cCap.checked) userData.funciones.push('captura');
-                const cVis = document.getElementById('check-visita'); if(cVis && cVis.checked) userData.funciones.push('visita');
-                const cDib = document.getElementById('check-dibuja'); if(cDib && cDib.checked) userData.funciones.push('dibuja');
-
-                const accesosPermitidos = [];
-                const aDash = document.getElementById('acc-dashboard'); if(aDash && aDash.checked) accesosPermitidos.push('dashboard');
-                const aGes = document.getElementById('acc-gestion'); if(aGes && aGes.checked) accesosPermitidos.push('gestion');
-                const aRev = document.getElementById('acc-revision'); if(aRev && aRev.checked) accesosPermitidos.push('revision');
-                const aHoj = document.getElementById('acc-hoja'); if(aHoj && aHoj.checked) accesosPermitidos.push('hoja_trabajo');
-                
-                userData.accesos = accesosPermitidos; 
-
-                if (!document.getElementById('user-email-edit').disabled) {
-                    userData.email = email;
-                    userData.creado = firebase.firestore.FieldValue.serverTimestamp();
-                }
-
-                await db.collection('usuarios').doc(email).set(userData, { merge: true });
-                await registrarLog('USUARIOS', `Se ${document.getElementById('user-email-edit').disabled ? 'actualizó' : 'creó'} el usuario: ${email}`);
-
-                document.getElementById('modal-usuario').classList.add('hidden');
-                abrirVista('usuarios'); // Refresca visualmente las tarjetas
-                alert("✅ Usuario guardado correctamente.");
-
-            } catch (e) {
-                console.error(e);
-                alert("Error al guardar en la base de datos.");
-            } finally {
-                if(btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            }
-        }
-
         function cargarUsuarioModal(emailToEdit) {
-            // 1. Escudo para Título
             const titleEl = document.getElementById('modal-usuario-title');
             if (titleEl) titleEl.innerText = emailToEdit ? 'Editar Usuario' : 'Nuevo Usuario';
             
@@ -719,7 +624,6 @@
                 const u = window.listaUsuariosGlobal.find(user => user.email === emailToEdit);
                 if(!u) return alert("Error al cargar la información del usuario.");
 
-                // 2. IDs Corregidos (name y fecha)
                 document.getElementById('user-email-edit').value = u.email || '';
                 document.getElementById('user-name-edit').value = u.nombre || ''; 
                 document.getElementById('user-rol-edit').value = u.rol || 'GESTOR';
@@ -730,7 +634,6 @@
                 const pin = document.getElementById('user-pin-edit');
                 if(pin) pin.value = u.pin || '';
 
-                // 3. Escudos Anti-Crash para Checkboxes
                 const cCap = document.getElementById('check-captura'); if(cCap) cCap.checked = u.funciones ? u.funciones.includes('captura') : false;
                 const cVis = document.getElementById('check-visita'); if(cVis) cVis.checked = u.funciones ? u.funciones.includes('visita') : false;
                 const cDib = document.getElementById('check-dibuja'); if(cDib) cDib.checked = u.funciones ? u.funciones.includes('dibuja') : false;
@@ -770,7 +673,6 @@
             const btn = document.getElementById('btn-save-user');
             const originalText = btn ? btn.innerHTML : 'Guardar';
             
-            // IDs Corregidos
             const email = document.getElementById('user-email-edit').value.trim().toLowerCase();
             const nombre = document.getElementById('user-name-edit').value.trim();
             const rol = document.getElementById('user-rol-edit').value;
@@ -823,7 +725,7 @@
                 await registrarLog('USUARIOS', `Se ${document.getElementById('user-email-edit').disabled ? 'actualizó' : 'creó'} el usuario: ${email}`);
 
                 document.getElementById('modal-usuario').classList.add('hidden');
-                abrirVista('usuarios'); // Refresca visualmente las tarjetas
+                abrirVista('usuarios');
                 alert("✅ Usuario guardado correctamente.");
 
             } catch (e) {
@@ -837,39 +739,46 @@
             }
         }
 
-        // --- DEMÁS FUNCIONES DEL SISTEMA ---
+        // ==========================================
+        // 🧩 CATÁLOGO MAESTRO (CON DRAG & DROP Y 2 PASOS)
+        // ==========================================
         async function fetchCatalogo() {
             try {
-                const res = await fetch('/.netlify/functions/admin-catalog');
-                if (!res.ok) throw new Error("Error fetching catalog");
-                const data = await res.json();
-                catalogoData = (data && Object.keys(data).length > 0) ? data : {};
-            } catch (e) { console.error(e); alert("Error cargando configuración."); }
+                const docSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
+                if (docSnap.exists) {
+                    catalogoData = docSnap.data();
+                    if (!catalogoData.diccionario) catalogoData.diccionario = {};
+                    if (!catalogoData.matriz) catalogoData.matriz = {};
+                } else {
+                    catalogoData = { diccionario: {}, matriz: {} };
+                }
+            } catch (e) { 
+                console.error(e); 
+                alert("Error cargando la matriz desde Firebase."); 
+            }
         }
 
         async function saveCatalogo() {
             try {
-                const res = await fetch('/.netlify/functions/admin-catalog', { method: 'POST', body: JSON.stringify({ requisitos: catalogoData }) });
-                if (!res.ok) throw new Error("Error saving");
-                registrarLog('CATALOGO', `Actualización estructura: ${currentEntidad}/${currentServicio}`);
+                await db.collection('configuracion').doc('plantilla_maestra').set(catalogoData);
+                await registrarLog('CATÁLOGO', `Actualización de Matriz/Diccionario`);
                 return true;
-            } catch (e) { alert("Error al guardar cambios."); return false; }
+            } catch (e) { 
+                console.error(e);
+                alert("Error al guardar cambios permanentemente."); 
+                return false; 
+            }
         }
 
-        // --- FUNCIÓN DE REGISTRO (LOGS) MEJORADA ---
         async function registrarLog(accion, detalle) {
             try {
-                // Si no hay usuario activo, usamos "Sistema" o "Desconocido"
-                const usuario = (typeof activeUser !== 'undefined' && activeUser.email) ? activeUser.email : 'Sistema';
-                
+                const usuario = (typeof activeUser !== 'undefined' && activeUser && activeUser.email) ? activeUser.email : 'Sistema';
                 await db.collection('logs').add({
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     usuario: usuario,
                     accion: accion,
                     detalle: detalle
                 });
-                
-                console.log("Log registrado:", accion);
             } catch (e) {
                 console.error("Error al registrar log:", e);
             }
@@ -883,7 +792,7 @@
             container.innerHTML = '<div class="flex h-full items-center justify-center"><span class="material-symbols-rounded animate-spin text-4xl text-indigo-500">progress_activity</span></div>';
             
             if (vista === 'catalogo') {
-                if (!catalogoData) await fetchCatalogo();
+                await fetchCatalogo(); 
                 renderCatalogo(container);
             } else if (vista === 'legal') {
                 renderLegal(container);
@@ -892,7 +801,8 @@
             } else if (vista === 'bitacora') {
                 renderBitacora(container);
             } else if (vista === 'unidades') {
-                renderUnidades(container);}
+                renderUnidades(container);
+            }
         }
 
         function cerrarVista() {
@@ -902,243 +812,434 @@
         }
 
         function renderCatalogo(container) {
-             const entidadesReales = Object.keys(catalogoData).sort();
-             if (!catalogoData[currentEntidad] && entidadesReales.length > 0) currentEntidad = entidadesReales[0];
-             
-             let optEntidades = ``;
-             // CORRECCIÓN 1: Quitamos guiones bajos visualmente en la lista de Entidades
-             entidadesReales.forEach(ent => optEntidades += `<option value="${ent}" class="dark:bg-slate-800" ${ent === currentEntidad ? 'selected' : ''}>${ent.replace(/_/g, ' ')}</option>`);
-
-             let serviciosReales = [];
-             if(currentEntidad && catalogoData[currentEntidad]) {
-                 serviciosReales = Object.keys(catalogoData[currentEntidad] || {});
-                 if (!catalogoData[currentEntidad][currentServicio] && serviciosReales.length > 0) currentServicio = serviciosReales[0];
-             }
-             
-             let optServicios = ``;
-             // CORRECCIÓN 2: Quitamos guiones bajos visualmente en la lista de Trámites
-             serviciosReales.forEach(ser => optServicios += `<option value="${ser}" class="dark:bg-slate-800" ${ser === currentServicio ? 'selected' : ''}>${ser.replace(/_/g, ' ')}</option>`);
-             
-             container.innerHTML = `
-             <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
-                <div class="flex flex-col xl:flex-row gap-4 mb-6 justify-between bg-white dark:bg-leezar-card p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            container.classList.add('flex', 'flex-col', 'h-[calc(100vh-140px)]'); 
+            container.innerHTML = `
+             <div class="flex flex-col flex-1 min-h-0 w-full animate-[fadeIn_0.3s]">
+                <div class="flex flex-col lg:flex-row gap-4 mb-4 justify-between bg-white dark:bg-leezar-card p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
                     <div class="flex items-center gap-4">
-                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
-                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Catálogo Maestro</h2><p class="text-xs text-slate-400">Estructura de expedientes</p></div>
+                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
+                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Catálogo Maestro</h2><p class="text-xs text-slate-400">Estructura Relacional</p></div>
                     </div>
-                    <div class="flex flex-wrap gap-4 items-center">
-                        <div class="flex flex-col gap-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Entidad Federativa</span>
-                            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                                <select onchange="cambiarContexto('entidad', this.value)" class="bg-transparent text-slate-700 dark:text-white text-sm font-bold outline-none px-2 py-1 min-w-[120px]">${optEntidades || '<option>Sin Entidades</option>'}</select>
-                                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                                <button onclick="nuevaEntidad()" class="p-1 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded" title="Nueva Entidad"><span class="material-symbols-rounded text-lg">add</span></button>
-                                <button onclick="eliminarEntidad()" class="p-1 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" title="Eliminar Entidad"><span class="material-symbols-rounded text-lg">delete</span></button>
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trámite / Servicio</span>
-                            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                                <select onchange="cambiarContexto('servicio', this.value)" class="bg-transparent text-slate-700 dark:text-white text-sm font-bold outline-none px-2 py-1 min-w-[120px]">${optServicios || '<option>Sin Trámites</option>'}</select>
-                                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                                <button onclick="nuevoServicio()" class="p-1 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded" title="Nuevo Trámite"><span class="material-symbols-rounded text-lg">add</span></button>
-                                <button onclick="eliminarServicio()" class="p-1 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" title="Eliminar Trámite"><span class="material-symbols-rounded text-lg">delete</span></button>
-                            </div>
-                        </div>
+                    <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <button onclick="switchTabConfig('matriz')" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTabConfig === 'matriz' ? 'bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}">🧩 Armado de Trámites</button>
+                        <button onclick="switchTabConfig('diccionario')" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTabConfig === 'diccionario' ? 'bg-white dark:bg-slate-700 shadow text-teal-600 dark:text-teal-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}">📚 Diccionario Global</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
-                    ${renderColumna('solicitante', 'Solicitante', 'bg-teal-50 text-teal-700', 'person')}
-                    ${renderColumna('propietario', 'Propietario', 'bg-blue-50 text-blue-700', 'group')}
-                    ${renderColumna('inmueble', 'Inmueble', 'bg-indigo-50 text-indigo-700', 'home')}
-                </div>
+                <div id="config-content-area" class="flex-1 overflow-hidden flex flex-col min-h-0"></div>
             </div>`; 
-            cargarRequisitosUI();
-        }
-
-        async function nuevaEntidad() {
-            const nombre = prompt("Nombre de la nueva Entidad Federativa:");
-            if(!nombre) return;
-            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
-            if(catalogoData[key]) return alert("Esa entidad ya existe.");
             
-            catalogoData[key] = {};
-            currentEntidad = key;
-            currentServicio = null;
-            await saveCatalogo();
+            if (activeTabConfig === 'diccionario') renderDiccionario();
+            else renderMatriz();
+        }
+
+        function switchTabConfig(tab) {
+            activeTabConfig = tab;
             renderCatalogo(document.getElementById('dynamic-view'));
         }
 
-        async function eliminarEntidad() {
-            if(!currentEntidad) return;
-            if(!confirm(`¿ELIMINAR ENTIDAD ${currentEntidad}?\nSe borrarán todos sus trámites.`)) return;
-            delete catalogoData[currentEntidad];
-            const keys = Object.keys(catalogoData);
-            currentEntidad = keys.length > 0 ? keys[0] : null;
-            await saveCatalogo();
-            renderCatalogo(document.getElementById('dynamic-view'));
-        }
-
-        async function nuevoServicio() {
-            if(!currentEntidad) return alert("Selecciona una Entidad primero.");
-            const nombre = prompt(`Nuevo trámite para ${currentEntidad} (Nombre del trámite/servicio:)`);
-            if(!nombre) return;
-            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
-            if(catalogoData[currentEntidad][key]) return alert("Este trámite ya existe.");
-
-            // --- HERENCIA DE PLANTILLA MAESTRA ---
-            catalogoData[currentEntidad][key] = JSON.parse(JSON.stringify(PLANTILLA_MAESTRA));
+        // --- 📚 DICCIONARIO ---
+        function renderDiccionario() {
+            const area = document.getElementById('config-content-area');
+            const items = Object.entries(catalogoData.diccionario || {});
             
-            currentServicio = key;
-            await saveCatalogo();
-            renderCatalogo(document.getElementById('dynamic-view'));
+            const docsCat = { solicitante: [], propietario: [], inmueble: [] };
+            items.forEach(([id, doc]) => {
+                if(docsCat[doc.categoria]) docsCat[doc.categoria].push({id, ...doc});
+                else docsCat['solicitante'].push({id, ...doc});
+            });
+
+            const columnas = [
+                { id: 'solicitante', titulo: 'Del Solicitante', color: 'teal', icon: 'person' },
+                { id: 'propietario', titulo: 'Del Propietario', color: 'amber', icon: 'group' },
+                { id: 'inmueble', titulo: 'Del Inmueble', color: 'indigo', icon: 'home' }
+            ];
+
+            let html = `
+            <div class="flex flex-col flex-1 min-h-0 overflow-hidden animate-[fadeIn_0.3s]">
+                <div class="mb-4 flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+                    <div>
+                        <h3 class="font-bold text-slate-700 dark:text-white text-sm uppercase tracking-wide flex items-center gap-2">
+                            <span class="material-symbols-rounded text-teal-500">library_books</span> Diccionario Global
+                        </h3>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Tip: Arrastra los archivos para ordenarlos.</p>
+                    </div>
+                    <button onclick="abrirModalDiccionario(null)" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1 shadow-md transition-colors">
+                        <span class="material-symbols-rounded text-sm">add</span> Nuevo Archivo
+                    </button>
+                </div>
+                
+                <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">`;
+
+            columnas.forEach(col => {
+                html += `
+                <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col min-h-0 overflow-hidden shadow-sm">
+                    <div class="p-3 bg-${col.color}-50 dark:bg-${col.color}-900/20 border-b border-${col.color}-100 dark:border-${col.color}-900/50 flex items-center gap-2 shrink-0">
+                        <span class="material-symbols-rounded text-${col.color}-600 dark:text-${col.color}-400 text-lg">${col.icon}</span>
+                        <h3 class="font-extrabold text-${col.color}-700 dark:text-${col.color}-400 text-xs uppercase tracking-wide">${col.titulo}</h3>
+                    </div>
+                    <div id="list-${col.id}" class="flex-1 p-3 space-y-3 custom-scroll overflow-y-auto min-h-0 pb-10">`;
+
+                docsCat[col.id].forEach(doc => {
+                    html += `
+                    <div data-id="${doc.id}" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col gap-2 relative group hover:border-${col.color}-400 transition-colors shadow-sm cursor-grab active:cursor-grabbing">
+                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="abrirModalDiccionario('${doc.id}')" class="p-1.5 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-indigo-500 shadow-sm"><span class="material-symbols-rounded text-[14px]">edit</span></button>
+                            <button onclick="eliminarDelDiccionario('${doc.id}')" class="p-1.5 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-red-500 shadow-sm"><span class="material-symbols-rounded text-[14px]">delete</span></button>
+                        </div>
+                        <div class="pr-12 pointer-events-none">
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${doc.nombre}</p>
+                            <p class="text-[9px] font-mono text-slate-400 mt-1">${doc.id}</p>
+                            <p class="text-[9px] font-bold text-${col.color}-600 dark:text-${col.color}-400 mt-1.5 bg-${col.color}-50 dark:bg-${col.color}-900/20 inline-block px-1.5 py-0.5 rounded">Tipo: ${doc.tipo}</p>
+                        </div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+
+            area.innerHTML = html + `</div></div>`;
+
+            columnas.forEach(col => {
+                const el = document.getElementById(`list-${col.id}`);
+                if(el) new Sortable(el, { animation: 150, ghostClass: 'opacity-20' });
+            });
         }
 
-        async function eliminarServicio() {
-            if(!currentServicio || !currentEntidad) return;
-            if(!confirm(`¿Eliminar trámite ${currentServicio}?`)) return;
-            delete catalogoData[currentEntidad][currentServicio];
-            const skeys = Object.keys(catalogoData[currentEntidad]);
-            currentServicio = skeys.length > 0 ? skeys[0] : null;
-            await saveCatalogo();
-            renderCatalogo(document.getElementById('dynamic-view'));
+        function abrirModalDiccionario(idToEdit) {
+            document.getElementById('modal-editor').classList.remove('hidden');
+            const iNom = document.getElementById('input-nombre');
+            const iId = document.getElementById('input-id');
+            const iCat = document.getElementById('input-categoria');
+            const iTip = document.getElementById('input-tipo');
+            const iPlan = document.getElementById('input-plantilla');
+
+            if (idToEdit) {
+                editMode = true;
+                const doc = catalogoData.diccionario[idToEdit];
+                iNom.value = doc.nombre; iId.value = idToEdit; iId.disabled = true;
+                iCat.value = doc.categoria || 'solicitante'; iTip.value = doc.tipo || 'IMG';
+                iPlan.value = doc.plantilla || ''; 
+            } else {
+                editMode = false;
+                iNom.value = ''; iId.value = ''; iId.disabled = false;
+                iCat.value = 'solicitante'; iTip.value = 'IMG';
+                iPlan.value = ''; 
+            }
+            iNom.focus();
         }
 
-        function renderColumna(id, titulo, color, icon) { 
-            return `<div class="bg-white dark:bg-leezar-card border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50"><div class="flex gap-2 items-center"><div class="p-1.5 rounded-lg ${color} shadow-sm"><span class="material-symbols-rounded text-lg">${icon}</span></div><h3 class="font-bold text-slate-700 dark:text-white text-sm uppercase tracking-wide">${titulo}</h3></div><button onclick="abrirModalEditor('${id}', -1)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 hover:bg-indigo-100 rounded-lg transition font-bold flex items-center gap-1 text-[10px] border border-indigo-100 dark:border-indigo-800"><span class="material-symbols-rounded text-sm">add</span></button></div><div id="list-${id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll"></div></div>`; 
+        function generarIDAuto() {
+            if (editMode) return;
+            const nombre = document.getElementById('input-nombre').value;
+            const idLimpio = nombre ? nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/[^A-Z0-9]/g, '_') : "";
+            document.getElementById('input-id').value = idLimpio;
+        }
+
+        function cerrarModalEditor() { document.getElementById('modal-editor').classList.add('hidden'); }
+
+        async function confirmarGuardadoDiccionario() {
+            const nombre = document.getElementById('input-nombre').value.trim();
+            const id = document.getElementById('input-id').value.trim();
+            const cat = document.getElementById('input-categoria').value;
+            const tipo = document.getElementById('input-tipo').value;
+            const plantilla = document.getElementById('input-plantilla').value.trim();
+
+            if (!nombre || !id) return alert("Nombre e ID son obligatorios.");
+            if (!catalogoData.diccionario) catalogoData.diccionario = {};
+            
+            catalogoData.diccionario[id] = { nombre: nombre, categoria: cat, tipo: tipo };
+            if (plantilla) catalogoData.diccionario[id].plantilla = plantilla; 
+
+            await saveCatalogo();
+            cerrarModalEditor();
+            renderDiccionario();
+        }
+        
+        async function eliminarDelDiccionario(id) {
+            if(!confirm(`¿Borrar [${id}] del diccionario global?\nSe eliminará también de todas las recetas.`)) return;
+            
+            delete catalogoData.diccionario[id];
+            
+            for (const ent in catalogoData.matriz) {
+                for (const tr in catalogoData.matriz[ent]) {
+                    ['solicitante', 'propietario', 'inmueble'].forEach(cat => {
+                        if (catalogoData.matriz[ent][tr][cat]) {
+                            catalogoData.matriz[ent][tr][cat] = catalogoData.matriz[ent][tr][cat].filter(i => i.id !== id);
+                        }
+                    });
+                }
+            }
+            await saveCatalogo();
+            renderDiccionario();
+        }
+
+        // --- 🧩 MATRIZ (2 PASOS Y DRAG&DROP) ---
+        function renderMatriz() {
+            const area = document.getElementById('config-content-area');
+            const matriz = catalogoData.matriz || {};
+            
+            const entidades = Object.keys(matriz).sort();
+            if (!currentEntidad && entidades.length > 0) currentEntidad = entidades[0];
+            
+            const servicios = currentEntidad && matriz[currentEntidad] ? Object.keys(matriz[currentEntidad]).sort() : [];
+            if (!currentServicio && servicios.length > 0) currentServicio = servicios[0];
+
+            let html = `
+            <div class="flex flex-col flex-1 min-h-0 overflow-hidden animate-[fadeIn_0.3s]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4 shrink-0 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-indigo-500 mb-2 uppercase tracking-widest">PASO 1: ENTIDAD FEDERATIVA</label>
+                        <div class="flex gap-2">
+                            <select onchange="cambiarContexto('entidad', this.value)" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 uppercase text-slate-800 dark:text-white cursor-pointer">
+                                ${entidades.length === 0 ? '<option value="">(Vacío)</option>' : ''}
+                                ${entidades.map(e => `<option value="${e}" ${e === currentEntidad ? 'selected' : ''}>${e.replace(/_/g, ' ')}</option>`).join('')}
+                            </select>
+                            <button onclick="nuevaEntidadMatriz()" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">add</span></button>
+                            <button onclick="eliminarEntidadMatriz()" class="bg-red-50 hover:bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">delete</span></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-teal-500 mb-2 uppercase tracking-widest">PASO 2: TRÁMITE / SERVICIO</label>
+                        <div class="flex gap-2">
+                            <select onchange="cambiarContexto('servicio', this.value)" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500 uppercase text-slate-800 dark:text-white cursor-pointer">
+                                ${servicios.length === 0 ? '<option value="">(Vacío)</option>' : ''}
+                                ${servicios.map(s => `<option value="${s}" ${s === currentServicio ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
+                            </select>
+                            <button onclick="nuevoServicioMatriz()" class="bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">add</span></button>
+                            <button onclick="eliminarServicioMatriz()" class="bg-red-50 hover:bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">delete</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-h-0 overflow-hidden">
+                    <div id="matriz-columnas" class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full pb-2"></div>
+                </div>
+            </div>`;
+
+            area.innerHTML = html;
+            renderColumnasMatriz();
         }
 
         function cambiarContexto(tipo, valor) { 
-            if(tipo === 'entidad') { currentEntidad = valor; const s = Object.keys(catalogoData[currentEntidad] || {}); currentServicio = s.length > 0 ? s[0] : null; }
+            if(tipo === 'entidad') { currentEntidad = valor; const s = Object.keys(catalogoData.matriz[currentEntidad] || {}); currentServicio = s.length > 0 ? s[0] : null; }
             if(tipo === 'servicio') currentServicio = valor; 
-            renderCatalogo(document.getElementById('dynamic-view')); 
+            renderMatriz(); 
         }
 
-        function cargarRequisitosUI() { 
-            if (!currentEntidad || !currentServicio || !catalogoData[currentEntidad] || !catalogoData[currentEntidad][currentServicio]) {
-                ['solicitante', 'propietario', 'inmueble'].forEach(cat => document.getElementById(`list-${cat}`).innerHTML = `<div class="text-center py-10 opacity-30 select-none"><p class="text-xs font-medium">Selecciona Entidad/Trámite</p></div>`); return;
+        function renderColumnasMatriz() {
+            const colContainer = document.getElementById('matriz-columnas');
+            if (!currentEntidad || !currentServicio || !catalogoData.matriz[currentEntidad] || !catalogoData.matriz[currentEntidad][currentServicio]) {
+                colContainer.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400"><span class="material-symbols-rounded text-5xl mb-3 opacity-50 block">extension_off</span>Crea un Trámite en el Paso 2 para empezar a armar la receta.</div>`;
+                return;
             }
-            const datos = catalogoData[currentEntidad][currentServicio]; 
-            ['solicitante', 'propietario', 'inmueble'].forEach(cat => { 
-                const list = document.getElementById(`list-${cat}`); list.innerHTML = ''; 
-                if(!datos[cat] || datos[cat].length === 0) { list.innerHTML = `<div class="text-center py-10 opacity-30 select-none"><span class="material-symbols-rounded text-4xl block mb-2">folder_off</span><p class="text-xs font-medium">Vacío</p></div>`; return; } 
-                datos[cat].forEach((req, idx) => { 
-                    list.insertAdjacentHTML('beforeend', `<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex justify-between items-start hover:border-indigo-400 transition-all cursor-pointer shadow-sm"><div onclick="abrirModalEditor('${cat}', ${idx})" class="flex-1"><p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${req.nombre} ${req.obligatorio?'<span class="text-red-500">*</span>':''}</p><p class="text-[9px] text-slate-400 font-mono mt-1">${req.id}</p></div><div class="flex gap-1"><button onclick="abrirModalEditor('${cat}', ${idx})" class="p-1 text-slate-400 hover:text-indigo-500"><span class="material-symbols-rounded text-sm">edit</span></button><button onclick="borrarRequisito('${cat}', ${idx})" class="p-1 text-slate-400 hover:text-red-500"><span class="material-symbols-rounded text-sm">delete</span></button></div></div>`); 
-                }); 
-            }); 
+
+            const matrizActual = catalogoData.matriz[currentEntidad][currentServicio];
+            const dicc = catalogoData.diccionario || {};
+
+            const columnas = [
+                { id: 'solicitante', titulo: 'Del Solicitante', color: 'teal', icon: 'person' },
+                { id: 'propietario', titulo: 'Del Propietario', color: 'amber', icon: 'group' },
+                { id: 'inmueble', titulo: 'Del Inmueble', color: 'indigo', icon: 'home' }
+            ];
+
+            let html = '';
+            columnas.forEach(col => {
+                const docsCat = Object.entries(dicc).filter(([k, v]) => v.categoria === col.id);
+                const arrActual = matrizActual[col.id] || [];
+                
+                const incluidos = arrActual.map(item => ({ id: item.id, obligatorio: item.obligatorio, meta: dicc[item.id] })).filter(i => i.meta);
+                const excluidos = docsCat.filter(([docId]) => !arrActual.find(i => i.id === docId)).map(([docId, meta]) => ({ id: docId, obligatorio: false, meta: meta }));
+                
+                const docsList = [...incluidos, ...excluidos];
+
+                let listHtml = '';
+                
+                docsList.forEach((doc) => {
+                    const docId = doc.id;
+                    const docMeta = doc.meta;
+                    const isIncluded = arrActual.some(i => i.id === docId);
+                    const isMandatory = doc.obligatorio;
+
+                    listHtml += `
+                    <div data-id="${docId}" class="bg-white dark:bg-slate-800 border ${isIncluded ? `border-${col.color}-400 shadow-sm cursor-grab active:cursor-grabbing` : 'border-slate-200 dark:border-slate-700 opacity-60'} rounded-xl p-3 flex flex-col gap-2 transition-all group">
+                        <div class="flex gap-3 items-start relative">
+                            ${isIncluded ? `<span class="material-symbols-rounded text-slate-300 absolute -left-2 top-1 opacity-0 group-hover:opacity-100 transition-opacity text-sm pointer-events-none">drag_indicator</span>` : ''}
+                            <input type="checkbox" onchange="toggleMatrizItem('${col.id}', '${docId}', this.checked)" ${isIncluded ? 'checked' : ''} class="mt-0.5 w-4 h-4 text-${col.color}-600 rounded cursor-pointer relative z-10 ml-2">
+                            <div class="flex-1 min-w-0 pointer-events-none">
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-tight" title="${docMeta.nombre}">${docMeta.nombre}</p>
+                                <p class="text-[9px] font-mono text-slate-400 mt-0.5">${docId}</p>
+                            </div>
+                        </div>
+                        ${isIncluded ? `
+                        <div class="pl-9 flex items-center gap-2 animate-[fadeIn_0.2s]">
+                            <div class="w-px h-3 bg-slate-200 dark:bg-slate-700"></div>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold ${isMandatory ? 'text-rose-500' : 'text-slate-400'} relative z-10">
+                                <input type="checkbox" onchange="toggleMatrizObligatorio('${col.id}', '${docId}', this.checked)" ${isMandatory ? 'checked' : ''} class="w-3 h-3 rounded text-rose-500 focus:ring-rose-500">
+                                Requisito Obligatorio (*)
+                            </label>
+                        </div>` : ''}
+                    </div>`;
+                });
+
+                if (docsList.length === 0) listHtml = `<p class="text-center text-xs text-slate-400 mt-10">No hay documentos para esta categoría.</p>`;
+
+                html += `
+                <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full overflow-hidden shadow-sm">
+                    <div class="p-3 bg-${col.color}-50 dark:bg-${col.color}-900/20 border-b border-${col.color}-100 dark:border-${col.color}-900/50 flex items-center gap-2 shrink-0">
+                        <span class="material-symbols-rounded text-${col.color}-600 dark:text-${col.color}-400 text-lg">${col.icon}</span>
+                        <h3 class="font-extrabold text-${col.color}-700 dark:text-${col.color}-400 text-xs uppercase tracking-wide">${col.titulo}</h3>
+                    </div>
+                    <div id="sort-matriz-${col.id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll min-h-0 pb-10">
+                        ${listHtml}
+                    </div>
+                </div>`;
+            });
+
+            colContainer.innerHTML = html;
+
+            // Activar Drag & Drop evitando los checkboxes
+            columnas.forEach(col => {
+                const el = document.getElementById(`sort-matriz-${col.id}`);
+                if (el) {
+                    new Sortable(el, {
+                        animation: 150,
+                        ghostClass: 'opacity-20',
+                        filter: 'input', 
+                        preventOnFilter: false,
+                        onEnd: function() { guardarOrdenMatrizColumna(col.id, el); }
+                    });
+                }
+            });
         }
 
-        function abrirModalEditor(categoria, indice) { 
-            activeCategory = categoria; activeIndex = indice; 
-            document.getElementById('modal-editor').classList.remove('hidden'); 
-            const inputNom = document.getElementById('input-nombre'); 
-            const inputID = document.getElementById('input-id'); 
-            const inputOblig = document.getElementById('input-obligatorio');
+        async function guardarOrdenMatrizColumna(categoria, contenedor) {
+            if(!currentEntidad || !currentServicio) return;
+            const todosLosIds = Array.from(contenedor.querySelectorAll('[data-id]')).map(el => el.dataset.id);
+            const arrActual = catalogoData.matriz[currentEntidad][currentServicio][categoria] || [];
+            const nuevosIncluidos = [];
             
-            if (indice === -1) { 
-                editMode = false; inputNom.value = ''; inputID.value = ''; inputID.disabled = false; inputOblig.checked = true; inputNom.focus(); 
+            todosLosIds.forEach(id => {
+                const itemOriginal = arrActual.find(i => i.id === id);
+                if(itemOriginal) nuevosIncluidos.push(itemOriginal);
+            });
+
+            catalogoData.matriz[currentEntidad][currentServicio][categoria] = nuevosIncluidos;
+            await saveCatalogo();
+            renderColumnasMatriz(); 
+        }
+
+        async function toggleMatrizItem(categoria, docId, isChecked) {
+            if(!catalogoData.matriz[currentEntidad][currentServicio][categoria]) catalogoData.matriz[currentEntidad][currentServicio][categoria] = [];
+            const arr = catalogoData.matriz[currentEntidad][currentServicio][categoria];
+            if (isChecked) { 
+                arr.push({ id: docId, obligatorio: true }); 
             } else { 
-                editMode = true; const item = catalogoData[currentEntidad][currentServicio][categoria][indice]; 
-                inputNom.value = item.nombre; inputID.value = item.id; inputID.disabled = true; inputOblig.checked = item.obligatorio !== false; inputNom.focus(); 
-            } 
+                const idx = arr.findIndex(i => i.id === docId); 
+                if(idx > -1) arr.splice(idx, 1); 
+            }
+            await saveCatalogo();
+            renderColumnasMatriz(); 
         }
-        function cerrarModalEditor() { document.getElementById('modal-editor').classList.add('hidden'); }
-        function generarIDAuto() { if (editMode) return; const nombre = document.getElementById('input-nombre').value; const idLimpio = nombre ? nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, '_') : ""; document.getElementById('input-id').value = idLimpio; }
 
-        async function confirmarGuardado() { 
-            const nombre = document.getElementById('input-nombre').value.trim(); const id = document.getElementById('input-id').value.trim(); const esObligatorio = document.getElementById('input-obligatorio').checked; if (!nombre || !id) return; 
-            const listaActual = catalogoData[currentEntidad][currentServicio][activeCategory]; 
-            if (editMode) { listaActual[activeIndex].nombre = nombre; listaActual[activeIndex].obligatorio = esObligatorio; } 
-            else { listaActual.push({ id: id, nombre: nombre, obligatorio: esObligatorio }); } 
-            await saveCatalogo(); cargarRequisitosUI(); cerrarModalEditor(); 
+        async function toggleMatrizObligatorio(categoria, docId, isMandatory) {
+            const arr = catalogoData.matriz[currentEntidad][currentServicio][categoria];
+            const item = arr.find(i => i.id === docId);
+            if(item) { item.obligatorio = isMandatory; await saveCatalogo(); renderColumnasMatriz(); }
         }
-        async function borrarRequisito(cat, idx) { if(confirm("¿Borrar requisito?")) { catalogoData[currentEntidad][currentServicio][cat].splice(idx, 1); await saveCatalogo(); cargarRequisitosUI(); } }
 
+        async function nuevaEntidadMatriz() {
+            const nombre = prompt("Nombre de la nueva Entidad Federativa (Ej: VERACRUZ):");
+            if(!nombre) return;
+            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            if(!catalogoData.matriz) catalogoData.matriz = {};
+            if(catalogoData.matriz[key]) return alert("Esa entidad ya existe.");
+            catalogoData.matriz[key] = {};
+            currentEntidad = key; currentServicio = null;
+            await saveCatalogo(); renderMatriz();
+        }
+
+        async function eliminarEntidadMatriz() {
+            if(!currentEntidad) return;
+            if(!confirm(`¿ELIMINAR ENTIDAD ${currentEntidad}?\nSe borrarán todas sus recetas y trámites.`)) return;
+            delete catalogoData.matriz[currentEntidad];
+            const keys = Object.keys(catalogoData.matriz);
+            currentEntidad = keys.length > 0 ? keys[0] : null;
+            currentServicio = null;
+            await saveCatalogo(); renderMatriz();
+        }
+
+        async function nuevoServicioMatriz() {
+            if(!currentEntidad) return alert("Selecciona una Entidad en el Paso 1 primero.");
+            const nombre = prompt(`Nuevo trámite para ${currentEntidad} (Ej: INFONAVIT):`);
+            if(!nombre) return;
+            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            if(!catalogoData.matriz[currentEntidad]) catalogoData.matriz[currentEntidad] = {};
+            if(catalogoData.matriz[currentEntidad][key]) return alert("Este trámite ya existe.");
+            catalogoData.matriz[currentEntidad][key] = { solicitante: [], propietario: [], inmueble: [] };
+            currentServicio = key;
+            await saveCatalogo(); renderMatriz();
+        }
+
+        async function eliminarServicioMatriz() {
+            if(!currentServicio || !currentEntidad) return;
+            if(!confirm(`¿Eliminar trámite ${currentServicio} de ${currentEntidad}?`)) return;
+            delete catalogoData.matriz[currentEntidad][currentServicio];
+            const skeys = Object.keys(catalogoData.matriz[currentEntidad]);
+            currentServicio = skeys.length > 0 ? skeys[0] : null;
+            await saveCatalogo(); renderMatriz();
+        }
+
+        // ==========================================
+        // 🧩 LEGAL, BITACORA Y UNIDADES
+        // ==========================================
         function renderLegal(container) {
             container.innerHTML = `
                 <div class="h-[calc(100vh-140px)] flex flex-col animate-[fadeIn_0.3s]">
-                    
                     <div class="flex-none flex justify-between mb-4 items-center">
                         <div class="flex items-center gap-4">
-                            <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors">
-                                <span class="material-symbols-rounded">arrow_back</span>
-                            </button>
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Aviso de Privacidad</h2>
-                                <p class="text-xs text-slate-400">Edición de términos legales</p>
-                            </div>
+                            <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-rounded">arrow_back</span></button>
+                            <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Aviso de Privacidad</h2><p class="text-xs text-slate-400">Edición de términos legales</p></div>
                         </div>
-                        <button id="btn-save-legal" onclick="guardarLegal()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg shadow-teal-500/20 flex items-center gap-2">
-                            <span class="material-symbols-rounded">save</span> Guardar Cambios
-                        </button>
+                        <button id="btn-save-legal" onclick="guardarLegal()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg flex items-center gap-2"><span class="material-symbols-rounded">save</span> Guardar Cambios</button>
                     </div>
-
-                    <div class="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden relative group">
-                        
+                    <div class="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
                         <div class="flex-none bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 px-4 py-2 flex items-center gap-1 text-slate-500">
-                            
-                            <button onclick="insertarFormato('b')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Negrita">
-                                <span class="material-symbols-rounded text-sm">format_bold</span>
-                            </button>
-                            <button onclick="insertarFormato('i')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Cursiva">
-                                <span class="material-symbols-rounded text-sm">format_italic</span>
-                            </button>
-                            <button onclick="insertarFormato('u')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Subrayado">
-                                <span class="material-symbols-rounded text-sm">format_underlined</span>
-                            </button>
-                            <button onclick="insertarFormato('br')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-600 dark:text-slate-400" title="Salto de Línea">
-                                <span class="material-symbols-rounded text-sm">keyboard_return</span>
-                            </button>
-
+                            <button onclick="insertarFormato('b')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"><span class="material-symbols-rounded text-sm">format_bold</span></button>
+                            <button onclick="insertarFormato('i')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"><span class="material-symbols-rounded text-sm">format_italic</span></button>
+                            <button onclick="insertarFormato('u')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"><span class="material-symbols-rounded text-sm">format_underlined</span></button>
+                            <button onclick="insertarFormato('br')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"><span class="material-symbols-rounded text-sm">keyboard_return</span></button>
                             <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-2"></div>
                             <span class="text-[10px] font-mono opacity-50">EDITOR HTML</span>
                         </div>
-
-                        <textarea id="legal-editor" class="flex-1 w-full p-6 bg-transparent text-slate-700 dark:text-slate-300 outline-none resize-none font-mono text-sm leading-relaxed custom-scroll" placeholder="Escribe aquí el aviso de privacidad..."></textarea>
+                        <textarea id="legal-editor" class="flex-1 w-full p-6 bg-transparent text-slate-700 dark:text-slate-300 outline-none resize-none font-mono text-sm leading-relaxed custom-scroll" placeholder="Escribe aquí el aviso..."></textarea>
                     </div>
-                    
-                    <p class="flex-none text-right text-[10px] text-slate-400 mt-2">Selecciona texto y usa los botones para dar formato.</p>
                 </div>
             `;
             
-            // Cargar contenido existente
             fetch('/.netlify/functions/get-legal').then(r=>r.json()).then(d=>{ 
                 if(d.htmlContent) document.getElementById('legal-editor').value = d.htmlContent; 
-            }).catch(err => console.error("Error cargando legal:", err));
+            }).catch(err => console.error(err));
         }
 
         function insertarFormato(tag) {
             const textarea = document.getElementById('legal-editor');
             if (!textarea) return;
-
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const text = textarea.value;
             const selectedText = text.substring(start, end);
-
             let newText = '';
 
-            // Lógica para insertar etiquetas HTML
             if (tag === 'br') {
-                // Salto de línea
                 newText = text.substring(0, start) + '<br>\n' + text.substring(end);
                 textarea.value = newText;
                 textarea.selectionStart = textarea.selectionEnd = start + 5; 
             } else {
-                // Etiquetas dobles (b, i, u)
-                const openTag = `<${tag}>`;
-                const closeTag = `</${tag}>`;
+                const openTag = `<${tag}>`; const closeTag = `</${tag}>`;
                 newText = text.substring(0, start) + openTag + selectedText + closeTag + text.substring(end);
-                
                 textarea.value = newText;
-                
-                // Recolocar cursor
-                if (start !== end) {
-                    textarea.selectionStart = start;
-                    textarea.selectionEnd = end + openTag.length + closeTag.length;
-                } else {
-                    textarea.selectionStart = textarea.selectionEnd = start + openTag.length;
-                }
+                if (start !== end) { textarea.selectionStart = start; textarea.selectionEnd = end + openTag.length + closeTag.length; } 
+                else { textarea.selectionStart = textarea.selectionEnd = start + openTag.length; }
             }
-            
             textarea.focus();
         }
 
@@ -1149,7 +1250,6 @@
             alert("Términos actualizados."); btn.disabled = false; btn.innerHTML = '<span class="material-symbols-rounded">save</span> Guardar Cambios';
         }
 
-// VARIABLES PARA PAGINACIÓN (Pegar esto justo antes de renderBitacora)
         let logsCache = [];
         let logsPerPage = 25;
         let currentPage = 1;
@@ -1157,55 +1257,34 @@
         function renderBitacora(container) {
             container.innerHTML = `
                 <div class="flex flex-col animate-[fadeIn_0.3s] h-[calc(100vh-140px)]">
-                    
                     <div class="flex-none mb-4">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center gap-4">
-                                <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors">
-                                    <span class="material-symbols-rounded">arrow_back</span>
-                                </button>
-                                <div>
-                                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Bitácora Global</h2>
-                                    <p class="text-xs text-slate-400">Historial de movimientos</p>
-                                </div>
+                                <button onclick="cerrarVista()" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-rounded">arrow_back</span></button>
+                                <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Bitácora Global</h2><p class="text-xs text-slate-400">Historial de movimientos</p></div>
                             </div>
-                            <button onclick="cargarLogs()" class="text-indigo-500 hover:text-indigo-400 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition">
-                                <span class="material-symbols-rounded">refresh</span>
-                            </button>
+                            <button onclick="cargarLogs()" class="text-indigo-500 hover:text-indigo-400 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition"><span class="material-symbols-rounded">refresh</span></button>
                         </div>
-
                         <div class="flex justify-between items-center mt-4 px-1">
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-slate-500 font-medium">Mostrar:</span>
-                                <select onchange="cambiarLogsPorPagina(this.value)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs p-1.5 outline-none text-slate-700 dark:text-slate-300 shadow-sm cursor-pointer hover:border-indigo-400 transition-colors">
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="9999">Todos</option>
+                                <select onchange="cambiarLogsPorPagina(this.value)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs p-1.5 outline-none cursor-pointer">
+                                    <option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">Todos</option>
                                 </select>
                             </div>
-                            
                             <div class="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
-                                <button onclick="cambiarPagina(-1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-30 transition" id="btn-prev">
-                                    <span class="material-symbols-rounded text-lg">chevron_left</span>
-                                </button>
-                                <span id="page-info" class="text-xs text-slate-600 dark:text-slate-400 font-mono font-bold px-3 border-x border-slate-100 dark:border-slate-700 min-w-[80px] text-center">Pág 1</span>
-                                <button onclick="cambiarPagina(1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-30 transition" id="btn-next">
-                                    <span class="material-symbols-rounded text-lg">chevron_right</span>
-                                </button>
+                                <button onclick="cambiarPagina(-1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30" id="btn-prev"><span class="material-symbols-rounded text-lg">chevron_left</span></button>
+                                <span id="page-info" class="text-xs font-mono font-bold px-3 border-x border-slate-100 min-w-[80px] text-center">Pág 1</span>
+                                <button onclick="cambiarPagina(1)" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30" id="btn-next"><span class="material-symbols-rounded text-lg">chevron_right</span></button>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex-1 overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-0">
+                    <div class="flex-1 overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col min-h-0">
                         <div class="overflow-y-auto custom-scroll flex-1 relative">
                             <table class="w-full text-left border-collapse">
                                 <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 shadow-sm">
                                     <tr class="text-[10px] uppercase text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700">
-                                        <th class="p-3 w-[15%] bg-slate-50 dark:bg-slate-900">Fecha</th>
-                                        <th class="p-3 w-[20%] bg-slate-50 dark:bg-slate-900">Usuario</th>
-                                        <th class="p-3 w-[15%] bg-slate-50 dark:bg-slate-900">Acción</th>
-                                        <th class="p-3 w-[50%] bg-slate-50 dark:bg-slate-900">Detalle</th>
+                                        <th class="p-3 w-[15%]">Fecha</th><th class="p-3 w-[20%]">Usuario</th><th class="p-3 w-[15%]">Acción</th><th class="p-3 w-[50%]">Detalle</th>
                                     </tr>
                                 </thead>
                                 <tbody id="logs-body" class="text-xs text-slate-600 dark:text-slate-300 font-mono divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -1213,8 +1292,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
-                        <div class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-2 px-4 flex justify-between items-center flex-none">
+                        <div class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-2 px-4 flex justify-between items-center">
                             <span class="text-[9px] text-slate-400">Sistema Leezar V3</span>
                             <span id="total-logs" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">0 Registros</span>
                         </div>
@@ -1223,147 +1301,77 @@
             cargarLogs();
         }
 
-        // --- FUNCIONES DE PAGINACIÓN (NUEVAS) ---
-        
         async function cargarLogs() {
             const tbody = document.getElementById('logs-body');
-            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400"><span class="material-symbols-rounded animate-spin text-2xl mb-2 block">sync</span>Sincronizando bitácora completa...</td></tr>';
-            
+            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sincronizando...</td></tr>';
             try {
-                // --- CAMBIO CLAVE: Leer directo de Firebase ---
-                // Traemos los últimos 500 registros (para no saturar si crece mucho)
-                // ordenados por fecha descendente (lo más nuevo arriba)
-                const snapshot = await db.collection('logs')
-                                       .orderBy('fecha', 'desc')
-                                       .limit(500) 
-                                       .get();
-                
+                const snapshot = await db.collection('logs').orderBy('fecha', 'desc').limit(500).get();
                 const logsData = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Convertir Timestamp de Firebase a fecha legible o Date objeto
-                    // para que el renderizado funcione bien
                     let fechaProcesada = data.fecha;
-                    
-                    // Si es timestamp de Firebase
-                    if (data.fecha && data.fecha.seconds) {
-                        fechaProcesada = new Date(data.fecha.seconds * 1000); 
-                    } 
-                    // Si es string o fecha JS normal
-                    else if (data.fecha) {
-                        fechaProcesada = new Date(data.fecha);
-                    }
-
-                    logsData.push({
-                        ...data,
-                        fecha: fechaProcesada
-                    });
+                    if (data.fecha && data.fecha.seconds) fechaProcesada = new Date(data.fecha.seconds * 1000); 
+                    else if (data.fecha) fechaProcesada = new Date(data.fecha);
+                    logsData.push({ ...data, fecha: fechaProcesada });
                 });
-                
-                // Guardamos en memoria
-                logsCache = logsData;
-
-                currentPage = 1; 
-                renderLogsTable(); 
-
+                logsCache = logsData; currentPage = 1; renderLogsTable(); 
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400 font-bold">Error al cargar logs.<br><span class="text-[10px] font-normal opacity-70">${e.message}</span></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400">Error al cargar logs.</td></tr>`;
             }
         }
-// --- FUNCIÓN RECUPERADA: DIBUJAR TABLA ---
+
         function renderLogsTable() {
             const tbody = document.getElementById('logs-body');
             const totalSpan = document.getElementById('total-logs');
-            // Elementos de paginación (si existen en tu HTML)
             const pageInfo = document.getElementById('page-info'); 
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
-
             if (!tbody) return;
 
-            // Lógica de Paginación
             const start = (currentPage - 1) * logsPerPage;
             const end = start + parseInt(logsPerPage);
             const paginatedItems = logsCache.slice(start, end);
             const totalPages = Math.ceil(logsCache.length / logsPerPage);
 
             tbody.innerHTML = '';
-            
-            // Caso: Sin registros
             if (logsCache.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros disponibles.</td></tr>';
-                if(totalSpan) totalSpan.innerText = "0 REGISTROS";
-                return;
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin registros.</td></tr>';
+                if(totalSpan) totalSpan.innerText = "0 REGISTROS"; return;
             }
 
-            // Dibujar cada fila
             paginatedItems.forEach(log => {
-                // Formato de fecha amigable
                 let fechaStr = "Sin fecha";
-                if (log.fecha instanceof Date) {
-                    fechaStr = log.fecha.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
-                }
-
-                // Colores según la acción
-                let bg = 'bg-slate-100 dark:bg-slate-700';
-                let color = 'text-slate-600 dark:text-slate-300';
-                
+                if (log.fecha instanceof Date) fechaStr = log.fecha.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+                let bg = 'bg-slate-100 dark:bg-slate-700'; let color = 'text-slate-600 dark:text-slate-300';
                 if(log.accion) {
                     const acc = log.accion.toUpperCase();
                     if(acc.includes('NUEVO')) { bg = 'bg-emerald-100 dark:bg-emerald-900/30'; color = 'text-emerald-600 dark:text-emerald-400'; }
                     if(acc.includes('EDICIÓN') || acc.includes('EDIT')) { bg = 'bg-amber-100 dark:bg-amber-900/30'; color = 'text-amber-600 dark:text-amber-400'; }
                     if(acc.includes('ELIMINAR')) { bg = 'bg-red-100 dark:bg-red-900/30'; color = 'text-red-600 dark:text-red-400'; }
                 }
-
                 tbody.innerHTML += `
-                    <tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="p-3 w-[15%] text-[10px] text-slate-400 font-mono whitespace-nowrap">${fechaStr}</td>
-                        
+                    <tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td class="p-3 w-[15%] text-[10px] text-slate-400 font-mono">${fechaStr}</td>
                         <td class="p-3 w-[20%] font-bold text-slate-700 dark:text-slate-200 text-xs">${log.usuario || 'Sistema'}</td>
-                        
-                        <td class="p-3 w-[15%]">
-                            <span class="${color} ${bg} px-2 py-0.5 rounded text-[10px] uppercase tracking-wide border border-transparent whitespace-nowrap">${log.accion || 'Acción'}</span>
-                        </td>
-                        
-                        <td class="p-3 w-[50%] text-slate-500 dark:text-slate-400 text-[11px] relative">
-                            <div class="truncate w-full max-w-md" title="${log.detalle || ''}">
-                                ${log.detalle || ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                        <td class="p-3 w-[15%]"><span class="${color} ${bg} px-2 py-0.5 rounded text-[10px] uppercase">${log.accion || 'Acción'}</span></td>
+                        <td class="p-3 w-[50%] text-slate-500 dark:text-slate-400 text-[11px]"><div class="truncate w-full max-w-md">${log.detalle || ''}</div></td>
+                    </tr>`;
             });
 
-            // Actualizar contadores
             if(totalSpan) totalSpan.innerText = `${logsCache.length} REGISTROS`;
             if(pageInfo) pageInfo.innerText = `${currentPage} / ${totalPages || 1}`;
-            
-            // Habilitar/Deshabilitar botones
-            if(btnPrev) {
-                btnPrev.disabled = currentPage === 1;
-                btnPrev.classList.toggle('opacity-30', currentPage === 1);
-            }
-            if(btnNext) {
-                btnNext.disabled = currentPage >= totalPages;
-                btnNext.classList.toggle('opacity-30', currentPage >= totalPages);
-            }
+            if(btnPrev) { btnPrev.disabled = currentPage === 1; btnPrev.classList.toggle('opacity-30', currentPage === 1); }
+            if(btnNext) { btnNext.disabled = currentPage >= totalPages; btnNext.classList.toggle('opacity-30', currentPage >= totalPages); }
         }
 
-// ==========================================
-        //      GESTIÓN DE UNIDADES DE VALUACIÓN
-        // ==========================================
         async function renderUnidades(container) {
             container.innerHTML = `
                 <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
                     <div class="flex items-center gap-4 mb-6">
                         <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Unidades de Valuación</h2>
-                            <p class="text-xs text-slate-400">Catálogo maestro de empresas.</p>
-                        </div>
+                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Unidades de Valuación</h2><p class="text-xs text-slate-400">Catálogo maestro de empresas.</p></div>
                     </div>
-
                     <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-2xl mx-auto w-full">
                         <div class="flex gap-2 mb-6">
                             <input type="text" id="nueva-unidad" placeholder="Agrega solo siglas" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 uppercase">
@@ -1371,73 +1379,39 @@
                                 <span class="material-symbols-rounded">add</span> Agregar
                             </button>
                         </div>
-
-                        <div id="lista-unidades" class="space-y-2">
-                            <div class="text-center py-8"><span class="material-symbols-rounded animate-spin text-emerald-500">sync</span></div>
-                        </div>
+                        <div id="lista-unidades" class="space-y-2"><div class="text-center py-8"><span class="material-symbols-rounded animate-spin text-emerald-500">sync</span></div></div>
                     </div>
                 </div>
             `;
-
             cargarListaUnidades();
         }
 
-async function cargarListaUnidades() {
+        async function cargarListaUnidades() {
             const lista = document.getElementById('lista-unidades');
             try {
                 const snapshot = await db.collection('unidades_valuacion').orderBy('nombre').get();
-                
-                if (snapshot.empty) {
-                    lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">No hay unidades. Agrega la primera.</p>';
-                    return;
-                }
-
+                if (snapshot.empty) { lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">No hay unidades.</p>'; return; }
                 lista.innerHTML = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // VERSIÓN SEGURA: Solo visualización, sin botón de eliminar
                     lista.innerHTML += `
                         <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs mr-3">
-                                ${data.nombre.substring(0,2)}
-                            </div>
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs mr-3">${data.nombre.substring(0,2)}</div>
                             <span class="font-bold text-slate-700 dark:text-slate-200">${data.nombre}</span>
-                        </div>
-                    `;
+                        </div>`;
                 });
-            } catch (e) {
-                console.error(e);
-                lista.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar.</p>';
-            }
+            } catch (e) { lista.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar.</p>'; }
         }
 
         async function agregarUnidad() {
             const input = document.getElementById('nueva-unidad');
             const nombre = input.value.trim().toUpperCase();
             if (!nombre) return alert("Escribe un nombre.");
-
             try {
-                // Usamos el nombre como ID para evitar duplicados exactos
-                await db.collection('unidades_valuacion').doc(nombre).set({ 
-                    nombre: nombre,
-                    creado: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
+                await db.collection('unidades_valuacion').doc(nombre).set({ nombre: nombre, creado: firebase.firestore.FieldValue.serverTimestamp() });
                 await registrarLog('CATÁLOGO', `Se agregó la unidad: ${nombre}`);
-                input.value = '';
-                cargarListaUnidades();
-            } catch (e) {
-                alert("Error al guardar: " + e.message);
-            }
-        }
-
-        async function eliminarUnidad(id, nombre) {
-            if(!confirm(`¿Eliminar la unidad ${nombre}?`)) return;
-            try {
-                await db.collection('unidades_valuacion').doc(id).delete();
-                await registrarLog('CATÁLOGO', `Se eliminó la unidad: ${nombre}`);
-                cargarListaUnidades();
-            } catch(e) { alert(e.message); }
+                input.value = ''; cargarListaUnidades();
+            } catch (e) { alert("Error al guardar."); }
         }
 
     </script>

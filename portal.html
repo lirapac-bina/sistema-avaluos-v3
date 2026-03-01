@@ -301,16 +301,16 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 mb-8 bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-xl">
-                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group">
+            <div class="grid grid-cols-3 gap-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-xl">
+                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-teal-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">person</span> 
                     <span class="text-xs font-bold">Solicitante</span>
                 </button>
-                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group">
+                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-amber-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">group</span> 
                     <span class="text-xs font-bold">Propietario</span>
                 </button>
-                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group">
+                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-indigo-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">home</span> 
                     <span class="text-xs font-bold">Inmueble</span>
                 </button>
@@ -734,21 +734,31 @@
             const c = ui[estatus] || ui['pendiente'];
             const badge = item.obligatorio === false ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 font-bold">OPCIONAL</span>' : '<span class="text-red-500 ml-1">*</span>';
             
-            let downloadLink = '';
+let downloadLink = '';
             let alertMsg = '';
-            let urlFinal = item.urlFormato;
             
-            if (!urlFinal) {
-                const n = nombre.toUpperCase();
-                if (n.includes('SOLICITUD') && n.includes('AVAL')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
-                else if (n.includes('SOLICITUD') && n.includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
+            // 🔥 LEEMOS LA PLANTILLA DEL DICCIONARIO
+            let urlFinal = item.plantilla || item.urlFormato;
+            
+            // Fallback histórico para no romper expedientes viejos
+            if (!urlFinal && nombre.toUpperCase().includes('SOLICITUD')) {
+                if (nombre.toUpperCase().includes('AVE')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
+                else if (nombre.toUpperCase().includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
             }
+
             if (urlFinal) {
-                downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Formato</a>`;
+                downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Descargar Plantilla</a>`;
             }
             
-            if (nombre.toUpperCase().includes('SOLICITUD') && estatus === 'pendiente') {
-                alertMsg = `<div class="mt-3 w-full bg-amber-50 border border-amber-100 rounded-lg p-2 flex items-start gap-2 animate-pulse"><span class="material-symbols-rounded text-amber-500 text-sm mt-0.5">info</span><p class="text-[10px] text-amber-700 font-bold leading-tight">IMPORTANTE: Descarga, imprime a color, firma con tinta azul y sube la solicitud.</p></div>`;
+            // 🔥 MAGIA AMARILLA ANIMADA: Si el documento tiene plantilla y está pendiente
+            if (urlFinal && estatus === 'pendiente') {
+                alertMsg = `<div class="mt-3 w-full bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 shadow-sm animate-[popIn_0.3s_ease-out]">
+                    <span class="material-symbols-rounded text-amber-500 text-xl mt-0.5 animate-bounce">notification_important</span>
+                    <div>
+                        <p class="text-xs text-amber-800 font-extrabold uppercase tracking-wide mb-0.5">Atención Requerida</p>
+                        <p class="text-[11px] text-amber-700 leading-tight">Descarga la plantilla, imprímela a color, fírmala con tinta azul y sube el documento escaneado aquí mismo.</p>
+                    </div>
+                </div>`;
             }
             
             // 🔥 LA ALERTA ROJA INYECTADA PARA RECHAZOS
@@ -772,12 +782,15 @@
                     
                     <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full justify-end">
                         ${downloadLink}
-                        <div class="flex gap-2">
-                            <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}')" class="px-4 py-2 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95">
-                                <span class="material-symbols-rounded text-lg">photo_camera</span> Escanear
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                            <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}')" class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95 group">
+                                <span class="material-symbols-rounded text-lg group-hover:scale-110 transition-transform">photo_camera</span> 
+                                <span>Escanear<span class="block text-[9px] font-normal opacity-80 mt-[-2px]">Usar Cámara</span></span>
                             </button>
-                            <label class="px-4 py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-gray-50 transition-all active:scale-95">
-                                <span class="material-symbols-rounded text-lg text-gray-400">upload_file</span> Cargar
+                            
+                            <label class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-all active:scale-95 group">
+                                <span class="material-symbols-rounded text-lg text-indigo-500 group-hover:-translate-y-1 transition-transform">upload_file</span> 
+                                <span class="text-left leading-tight">Cargar PDF / Fotos<span class="block text-[9px] font-normal text-slate-400 mt-[-1px]">Soporta selección múltiple</span></span>
                                 <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
                             </label>
                         </div>
@@ -849,7 +862,22 @@
             document.getElementById('header-info').innerHTML = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${ (data.tipoTramite || 'Trámite').replace(/_/g, ' ') }</span> <span class="text-xs text-gray-500 ml-2">Creado: ${fecha}</span>`;
 
             const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
-            Object.values(containers).forEach(c => c.innerHTML = '');
+            
+            // Inyectamos el Hint Educativo al inicio de cada contenedor
+            const hintEducativo = `
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 mb-4 rounded-xl flex items-start gap-3 shadow-sm">
+                    <span class="material-symbols-rounded text-indigo-500 mt-0.5">lightbulb</span>
+                    <div class="text-xs text-indigo-800 dark:text-indigo-300">
+                        <p class="font-bold mb-1 uppercase tracking-wide">¿Cómo subir tus documentos?</p>
+                        <ul class="list-disc pl-4 space-y-0.5 opacity-90">
+                            <li>Usa <b>Escanear</b> para tomar fotos directas con la cámara de tu celular (se unirán en un PDF automático).</li>
+                            <li>Usa <b>Cargar PDF / Fotos</b> para subir un archivo existente. <br><span class="font-bold">💡 Tip:</span> Puedes seleccionar <i>varias fotos a la vez</i> (ej. INE frente y reverso) y el sistema las unirá por ti.</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            Object.values(containers).forEach(c => c.innerHTML = hintEducativo);
             document.getElementById('list-fotos').innerHTML = '';
 
             let itemsArray = Object.entries(data.checklist || {});
@@ -964,8 +992,21 @@
             
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
             document.getElementById(`section-${cat}`).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-leezar-600'));
-            document.getElementById(`tab-btn-${cat}`).classList.add('bg-white', 'shadow-sm', 'text-leezar-600');
+            
+            // 1. Apagamos todos los botones
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-white', 'shadow-sm', 'text-teal-600', 'text-amber-500', 'text-indigo-600');
+                b.classList.add('text-slate-400');
+            });
+            
+            // 2. Encendemos el botón activo con su color de identidad
+            const activeBtn = document.getElementById(`tab-btn-${cat}`);
+            activeBtn.classList.remove('text-slate-400');
+            activeBtn.classList.add('bg-white', 'shadow-sm');
+            
+            if(cat === 'solicitante') activeBtn.classList.add('text-teal-600');
+            if(cat === 'propietario') activeBtn.classList.add('text-amber-500');
+            if(cat === 'inmueble') activeBtn.classList.add('text-indigo-600');
         }
 
         function updateProgressBars(aprobados, revision, total) {

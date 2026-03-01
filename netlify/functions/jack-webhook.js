@@ -13,7 +13,7 @@ const db = admin.firestore();
 // 🔐 LEEMOS EL TOKEN DIRECTAMENTE DE LA BÓVEDA DE NETLIFY
 const TOKEN_SECRETO = process.env.JACK_SECRET_TOKEN;
 
-// --- FUNCIONES HELPER (El cerebro clonado del Chef) ---
+// --- FUNCIONES HELPER ---
 function normalizar(texto) {
     if (!texto) return "";
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
@@ -25,9 +25,9 @@ function obtenerListaSegura(obj, key) {
 }
 
 const PLANTILLA_RESPALDO = {
-    solicitante: [{ nombre: 'Identificación Oficial', id: 'INE', obligatorio: true }],
-    propietario: [{ nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true }],
-    inmueble: [{ nombre: 'Boleta Predial', id: 'PREDIAL', obligatorio: true }]
+    solicitante: [{ id: 'INE', nombre: 'Identificación Oficial', obligatorio: true }],
+    propietario: [{ id: 'ESCRITURA', nombre: 'Escritura Pública', obligatorio: true }],
+    inmueble: [{ id: 'PREDIAL', nombre: 'Boleta Predial', obligatorio: true }]
 };
 
 exports.handler = async (event, context) => {
@@ -51,40 +51,62 @@ exports.handler = async (event, context) => {
 
         if (!data.nombreCompleto) return { statusCode: 400, headers, body: JSON.stringify({ error: "Falta el nombre del cliente" }) };
 
-        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO ---
-        const entidadBusqueda = normalizar(data.entidad || 'GLOBAL'); 
-        const tramiteBusqueda = normalizar(data.servicio || 'AVALUO');
-        const numSol = 1;
-        const numProp = 1;
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (CEREBRO RELACIONAL) ---
+        const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
+        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
+        const numSol = parseInt(data.numSolicitantes) || 1;
+        const numProp = parseInt(data.numPropietarios) || 1;
 
         let plantilla = null;
+        let diccionarioGlobal = {};
+        
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
             const docSnap = await configRef.get();
             if (docSnap.exists) {
-                const todo = docSnap.data().requisitos || docSnap.data();
-                let plantillaEntidad = todo[entidadBusqueda] || todo[Object.keys(todo).find(k => normalizar(k) === entidadBusqueda)];
-                if (!plantillaEntidad) plantillaEntidad = todo['GLOBAL'] || todo['VERACRUZ'] || PLANTILLA_RESPALDO;
-                const servicios = plantillaEntidad.servicios || plantillaEntidad;
-                plantilla = servicios[tramiteBusqueda] || servicios[Object.keys(servicios).find(k => normalizar(k) === tramiteBusqueda)];
+                const dbData = docSnap.data();
+                diccionarioGlobal = dbData.diccionario || {};
+                const matriz = dbData.matriz || {};
+                
+                // 1. Buscar la entidad DENTRO de la Matriz
+                let plantillaEntidad = matriz[entidadBusqueda] || matriz[Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda)];
+                
+                // 2. Buscar el trámite
+                if (plantillaEntidad) {
+                    plantilla = plantillaEntidad[tramiteBusqueda] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramiteBusqueda)];
+                }
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
+        // Si la base de datos falla, usamos el respaldo de emergencia
         if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
         let checklistFinal = {};
+        
         const procesarItems = (items, categoria, cantidad = 1) => {
             if (!items) return;
             items.forEach(item => {
-                const loop = (item.multi || item.porPersona) ? cantidad : 1;
+                // 3. CRUZAR CON EL DICCIONARIO para obtener nombre real, tipo y plantilla
+                const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
+                
+                const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
+                
                 for (let i = 0; i < loop; i++) {
                     let suffix = loop > 1 ? `_${i + 1}` : '';
-                    let key = `${normalizar(item.id || item.nombre)}${suffix}`;
-                    let nombre = `${item.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    let key = `${normalizar(item.id)}${suffix}`;
+                    let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    
                     checklistFinal[key] = {
-                        nombre: nombre, categoria: categoria, estatus: 'PENDIENTE',
-                        obligatorio: item.obligatorio !== false, tipo: item.tipo || 'archivo', originalId: item.id
+                        nombre: nombre, 
+                        categoria: infoDic.categoria || categoria, 
+                        estatus: 'PENDIENTE',
+                        obligatorio: item.obligatorio !== false, 
+                        tipo: infoDic.tipo || 'MIXTO', 
+                        originalId: item.id
                     };
+                    
+                    // Si el diccionario tiene una plantilla PDF, se la pasamos al cliente
+                    if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
                 }
             });
         };
@@ -93,30 +115,29 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
 
-        checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' };
-        if (tramiteBusqueda.includes('AVALUO') || tramiteBusqueda.includes('HIPOTECA')) {
-             checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
-        }
+// Fijos inquebrantables (AHORA SÍ PARA SIEMPRE)
+        checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
+        checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT', id: 'DETALLES_INMUEBLE' };
         // 🧠 --- FIN LÓGICA DE CHECKLIST ---
 
-        // 🔥 CORRECCIÓN: NOMBRES DE VARIABLES Y FORMATO DE FECHA
+        // 🔥 CREACIÓN DEL EXPEDIENTE
         const nuevoExpediente = {
             cliente: data.nombreCompleto.toUpperCase(),
-            nombreCliente: data.nombreCompleto.toUpperCase(), // Alias para el portal
+            nombreCliente: data.nombreCompleto.toUpperCase(), 
             telefono: data.celular || 'Sin teléfono',
             celular: data.celular || 'Sin teléfono',
             entidad: data.entidad || 'GLOBAL',
             tramite: data.servicio || 'No especificado',
-            tipoTramite: data.servicio || 'No especificado', // Alias para el portal
+            tipoTramite: data.servicio || 'No especificado', 
             tipoInmueble: data.tipoInmueble || 'CASA',
             numSolicitantes: numSol,
             numPropietarios: numProp,
             estatus: 'PENDIENTE',
             unidad: 'POR ASIGNAR', 
             origen: 'JACK_FORMULARIO', 
-            checklist: checklistFinal, // <-- AQUÍ SE INYECTA LA LISTA ARMADA
-            fechaCreacion: new Date().toISOString(), // <-- FECHA ATÓMICA CORREGIDA
-            timestamp: admin.firestore.FieldValue.serverTimestamp() // Para ordenar la tabla
+            checklist: checklistFinal,
+            fechaCreacion: new Date().toISOString(),
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
 
         const docRef = await db.collection('expedientes_avaluos').add(nuevoExpediente);

@@ -121,9 +121,16 @@
                     </div>
 
                     <div class="flex-1 overflow-y-auto thin-scroll p-0 relative" id="checklist-container">
-                        <div class="text-center py-10"><span class="material-symbols-rounded animate-spin text-slate-400">sync</span></div>
+                    <div class="text-center py-10"><span class="material-symbols-rounded animate-spin text-slate-400">sync</span></div>
                     </div>
-                </div>
+
+                        <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                        <button onclick="solicitarDocumentoExtra()" class="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <span class="material-symbols-rounded text-base">add_circle</span> Solicitar Documento Extra
+                        </button>
+                    </div>
+
+                </div> 
 
                 <div class="flex-1 bg-slate-100 dark:bg-[#0b1121] flex flex-col relative workspace-pattern">
                     <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
@@ -454,7 +461,7 @@
             });
         }
 
-        function renderCurrentGroup() {
+function renderCurrentGroup() {
             const container = document.getElementById('checklist-container');
             container.innerHTML = '';
             
@@ -464,8 +471,6 @@
             const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
             document.getElementById('carousel-title').innerText = titles[currentKey];
 
-// --- BLOQUE CORREGIDO DE PROGRESO ---
-            
             // 1. Contar documentos válidos (Acepta 'valid' Y 'validado')
             let valid = items.filter(i => i.status === 'valid' || i.estatus === 'validado').length;
             let total = items.length;
@@ -523,7 +528,7 @@
                 itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
                 itemDiv.style.animationDelay = `${index * 0.05}s`;
                 
-                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT') { // CORRECCIÓN: TXT siempre clickeable
+                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT') { 
                     itemDiv.onclick = () => seleccionarRequisito(req);
                 } else {
                     itemDiv.classList.add('cursor-not-allowed'); itemDiv.title = "Aún no suben este archivo";
@@ -532,6 +537,38 @@
                 itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px]">${req.nombre}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
                 container.appendChild(itemDiv);
             });
+        }
+
+        // --- MOTOR DE BOMBERAZOS (DOCUMENTOS EXTRA) ---
+        async function solicitarDocumentoExtra() {
+            const nombreDoc = prompt("¿Qué documento adicional necesitas pedirle al cliente? (Ej. Constancia Ejidal)");
+            if (!nombreDoc) return;
+
+            // Detecta en qué pestaña estás parado (Solicitante, Propietario o Inmueble) para meterlo ahí
+            const currentKey = groupKeys[activeGroupIndex]; 
+            const idDoc = 'EXTRA_' + Date.now();
+
+            try {
+                // Inyectamos el requisito directamente a la base de datos de este expediente
+                await db.collection('expedientes_avaluos').doc(expediente.id).set({
+                    checklist: {
+                        [idDoc]: {
+                            nombre: nombreDoc.toUpperCase(),
+                            estatus: 'pendiente',
+                            categoria: currentKey, 
+                            obligatorio: true,
+                            tipo: 'MIXTO', // Permite PDF o Foto
+                            fechaAgregado: new Date().toISOString()
+                        }
+                    }
+                }, { merge: true });
+                
+                alert("¡Documento inyectado con éxito! Si el cliente actualiza su portal, ya le aparecerá.");
+                location.reload(); // Recargamos para verlo nosotros también
+            } catch (e) {
+                console.error(e);
+                alert("Error al solicitar documento: " + e.message);
+            }
         }
 
         function nextGroup() { activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0; renderCurrentGroup(); }

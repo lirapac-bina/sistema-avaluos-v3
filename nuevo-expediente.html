@@ -13,7 +13,14 @@
     
     <script src="js/layout.js"></script>
     
-    <style> body { font-family: 'Inter', sans-serif; } .counter-btn:active { transform: scale(0.95); } </style>
+    <style> 
+        body { font-family: 'Inter', sans-serif; } 
+        .fade-in-up { animation: fadeInUp 0.4s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex items-center justify-center p-4">
 
@@ -26,7 +33,7 @@
                 </h1>
                 <p class="text-gray-400 dark:text-slate-400 text-sm mt-1 font-medium">Sistema de Gestión de Avalúos</p>
             </div>
-            <a href="gestion.html" class="text-gray-400 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 text-sm font-bold bg-gray-50 dark:bg-slate-700 px-4 py-2 rounded-full hover:bg-teal-50 dark:hover:bg-teal-900/30">
+            <a href="gestion.html" class="text-gray-400 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition flex items-center gap-1 text-sm font-bold bg-gray-50 dark:bg-slate-700 px-4 py-2 rounded-full">
                 <span class="material-symbols-rounded text-lg">arrow_back</span> Cancelar
             </a>
         </div>
@@ -39,21 +46,21 @@
                     <div class="grid grid-cols-3 gap-4">
                         <label class="cursor-pointer group">
                             <input type="radio" name="unidad" value="AVE" checked class="peer hidden">
-                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-teal-500 peer-checked:text-teal-600 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-teal-300">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-teal-500 peer-checked:text-teal-600 peer-checked:bg-teal-50 dark:peer-checked:bg-teal-900/20 transition-all flex flex-col items-center gap-2 group-hover:border-teal-300">
                                 <span class="material-symbols-rounded text-3xl">apartment</span>
                                 <span class="text-[10px] md:text-xs uppercase">Leezar (AVE)</span>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
                             <input type="radio" name="unidad" value="EME" class="peer hidden">
-                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-indigo-500 peer-checked:text-indigo-600 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-indigo-300">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-indigo-500 peer-checked:text-indigo-600 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 transition-all flex flex-col items-center gap-2 group-hover:border-indigo-300">
                                 <span class="material-symbols-rounded text-3xl">domain</span>
                                 <span class="text-[10px] md:text-xs uppercase">Unidad EME</span>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
                             <input type="radio" name="unidad" value="PNA" class="peer hidden">
-                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-blue-500 peer-checked:text-blue-600 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 peer-checked:shadow-md transition-all flex flex-col items-center gap-2 group-hover:border-blue-300">
+                            <div class="py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center peer-checked:border-blue-500 peer-checked:text-blue-600 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all flex flex-col items-center gap-2 group-hover:border-blue-300">
                                 <span class="material-symbols-rounded text-3xl">corporate_fare</span>
                                 <span class="text-[10px] md:text-xs uppercase">Unidad PNA</span>
                             </div>
@@ -63,42 +70,19 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">CLIENTE / SOLICITANTE</label>
-                        <input type="text" id="nombre" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-semibold text-gray-700 dark:text-gray-200 uppercase placeholder-gray-300" placeholder="NOMBRE COMPLETO">
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1 uppercase">Cliente / Solicitante</label>
+                        <input type="text" id="nombre" required class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-semibold text-gray-700 dark:text-gray-200 uppercase" placeholder="NOMBRE COMPLETO">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">WHATSAPP</label>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1 uppercase">WhatsApp</label>
                         <input type="tel" id="telefono" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full pl-4 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-semibold text-gray-700 dark:text-gray-200" placeholder="10 DÍGITOS">
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 mb-6 shadow-sm">
-                    <h3 class="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-100 dark:border-slate-700 pb-2">Configuración del Expediente</h3>
-                    <div class="grid grid-cols-2 gap-8">
-                        <div class="flex flex-col items-center">
-                            <span class="text-xs font-bold text-slate-400 mb-2">SOLICITANTES</span>
-                            <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-600">
-                                <button type="button" onclick="cambiarCantidad('solicitantes', -1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-teal-600 font-bold text-lg disabled:opacity-50 transition-all">-</button>
-                                <span id="num-solicitantes" class="text-lg font-extrabold text-slate-700 dark:text-white w-4 text-center">1</span>
-                                <button type="button" onclick="cambiarCantidad('solicitantes', 1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-teal-600 font-bold text-lg transition-all">+</button>
-                            </div>
-                            <p class="text-[9px] text-slate-400 mt-1.5 text-center leading-tight">Se pedirán documentos por c/u</p>
-                        </div>
-                        <div class="flex flex-col items-center border-l border-slate-100 dark:border-slate-700 pl-4">
-                            <span class="text-xs font-bold text-slate-400 mb-2">PROPIETARIOS</span>
-                            <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-600">
-                                <button type="button" onclick="cambiarCantidad('propietarios', -1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-indigo-600 font-bold text-lg disabled:opacity-50 transition-all">-</button>
-                                <span id="num-propietarios" class="text-lg font-extrabold text-slate-700 dark:text-white w-4 text-center">1</span>
-                                <button type="button" onclick="cambiarCantidad('propietarios', 1)" class="counter-btn w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-lg text-slate-500 hover:text-indigo-600 font-bold text-lg transition-all">+</button>
-                            </div>
-                            <p class="text-[9px] text-slate-400 mt-1.5 text-center leading-tight">Se pedirán documentos por c/u</p>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">UBICACIÓN DEL INMUEBLE</label>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1 uppercase">Ubicación del Inmueble</label>
                         <div class="relative">
                             <select id="estado" class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200">
                                 <option value="">Cargando catálogo...</option>
@@ -106,11 +90,10 @@
                             <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
                         </div>
                     </div>
-                    
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1">TIPO DE AVALÚO</label>
+                        <label class="block text-xs font-bold text-gray-400 dark:text-slate-500 mb-2 ml-1 uppercase">Tipo de Avalúo</label>
                         <div class="relative">
-                            <select id="tipoTramite" disabled class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <select id="tipoTramite" disabled class="w-full pl-4 pr-10 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50">
                                 <option value="">Esperando ubicación...</option>
                             </select>
                             <span class="material-symbols-rounded absolute right-3 top-3 text-gray-400 pointer-events-none">expand_more</span>
@@ -118,7 +101,7 @@
                     </div>
                 </div>
 
-                <button type="submit" id="btn-crear" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 text-lg shadow-lg shadow-teal-200/50 transition-all transform hover:-translate-y-0.5">
+                <button type="submit" id="btn-crear" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 text-lg shadow-lg transition-all transform hover:-translate-y-0.5">
                     <span class="material-symbols-rounded">rocket_launch</span> Generar Expediente
                 </button>
             </form>
@@ -130,39 +113,32 @@
                         <span class="material-symbols-rounded text-3xl text-teal-600 dark:text-teal-400">check</span>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">¡Listo!</h3>
-                    <p class="text-gray-400 dark:text-slate-400 text-sm mb-6">Expediente creado y sincronizado.</p>
+                    <p class="text-gray-400 dark:text-slate-400 text-sm mb-6">Expediente creado con éxito.</p>
                     
                     <div class="text-left bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <label class="text-xs font-bold text-slate-400 ml-1 mb-2 block uppercase">Liga Segura (Solo ID):</label>
+                        <label class="text-xs font-bold text-slate-400 ml-1 mb-2 block uppercase">Enlace del Portal:</label>
                         <div class="flex gap-2">
-                            <input type="text" id="liga-generada" readonly class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 select-all font-mono shadow-sm">
-                            <button onclick="copiarLiga()" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-teal-500 hover:text-teal-600 px-4 rounded-lg font-bold text-slate-500 dark:text-slate-300 text-sm transition-all" id="btn-copy">Copiar</button>
+                            <input type="text" id="liga-generada" readonly class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-mono">
+                            <button onclick="copiarLiga()" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:text-teal-600 px-4 rounded-lg font-bold text-sm" id="btn-copy">Copiar</button>
                         </div>
                     </div>
                 </div>
                 
                 <div class="flex flex-col gap-3">
-                    <a id="btn-whatsapp" href="#" target="_blank" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2 text-lg transform hover:-translate-y-0.5">
+                    <a id="btn-whatsapp" href="#" target="_blank" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-lg">
                         <span class="material-symbols-rounded text-2xl">chat</span> Enviar por WhatsApp
                     </a>
-
-                    <a id="btn-ver-portal" href="#" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 text-lg">
+                    <a id="btn-ver-portal" href="#" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-lg">
                         <span class="material-symbols-rounded">visibility</span> Ver Portal del Cliente
                     </a>
-                    
-                    <button onclick="window.location.href='gestion.html'" class="w-full bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-teal-500 hover:text-teal-600 font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 mt-2">
-                        Regresar a Gestión
-                    </button>
+                    <button onclick="location.reload()" class="mt-4 text-sm text-gray-400 hover:text-teal-600 underline">Crear otro expediente</button>
                 </div>
-                
-                <button onclick="location.reload()" class="mt-8 text-sm text-gray-400 hover:text-teal-600 underline">Crear otro expediente</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- LÓGICA DE NEGOCIO (IGUAL, PERO LIMPIA) ---
-        let catalogoGlobal = {}; 
+<script>
+let catalogoGlobal = {}; 
 
         document.addEventListener('DOMContentLoaded', cargarCatalogo);
 
@@ -171,148 +147,123 @@
             try {
                 const res = await fetch('/.netlify/functions/admin-catalog');
                 if(!res.ok) throw new Error("Error en la red");
-                catalogoGlobal = await res.json();
+                const data = await res.json();
+                
+                // 🔥 ESTA ES LA LÍNEA CRÍTICA QUE ARREGLA LOS MENÚS
+                catalogoGlobal = data.matriz || data; 
                 
                 selectEstado.innerHTML = '<option value="">Selecciona Ubicación</option>';
                 const ubicaciones = Object.keys(catalogoGlobal).sort();
 
-                if (ubicaciones.length === 0) {
-                    selectEstado.innerHTML = '<option value="">Sin datos configurados</option>';
+                if (ubicaciones.length === 0 || (ubicaciones.length === 2 && ubicaciones.includes('diccionario'))) {
+                    selectEstado.innerHTML = '<option value="">Sin ubicaciones configuradas</option>';
                     return;
                 }
 
                 ubicaciones.forEach(ub => {
                     const option = document.createElement('option');
-                    option.value = ub; option.textContent = ub; 
+                    option.value = ub; 
+                    option.textContent = ub.replace(/_/g, ' '); 
                     selectEstado.appendChild(option);
                 });
-
-                if (ubicaciones.length === 1) {
-                    selectEstado.value = ubicaciones[0];
-                    actualizarTramites(ubicaciones[0]); 
-                }
             } catch (e) {
-                console.error("Error:", e);
-                selectEstado.innerHTML = '<option value="">Error de conexión</option>';
+                console.error("Error catálogo:", e);
+                selectEstado.innerHTML = '<option value="">Error al cargar catálogo</option>';
             }
         }
 
-        document.getElementById('estado').addEventListener('change', (e) => actualizarTramites(e.target.value));
-
-        function actualizarTramites(ubicacion) {
+        document.getElementById('estado').addEventListener('change', (e) => {
             const selectTramite = document.getElementById('tipoTramite');
+            const ubicacion = e.target.value;
             selectTramite.innerHTML = '<option value="">Selecciona trámite</option>';
-            selectTramite.disabled = true;
+            
+            if (ubicacion && catalogoGlobal[ubicacion]) {
+                const servicios = Object.keys(catalogoGlobal[ubicacion]).sort();
+                servicios.forEach(serv => {
+                    const option = document.createElement('option');
+                    option.value = serv;
+                    option.textContent = serv.replace(/_/g, ' ');
+                    selectTramite.appendChild(option);
+                });
+                selectTramite.disabled = false;
+            } else {
+                selectTramite.disabled = true;
+            }
+        });
 
-            if (!ubicacion || !catalogoGlobal[ubicacion]) return;
+        async function crearExpediente(e) {
+            if (e) e.preventDefault();
+            const btn = document.getElementById('btn-crear');
+            const originalContent = btn.innerHTML;
+            
+            const nombreInput = document.getElementById('nombre').value.toUpperCase().trim();
+            const telefonoInput = document.getElementById('telefono').value.trim();
+            const tramite = document.getElementById('tipoTramite').value;
+            const ubicacion = document.getElementById('estado').value;
+            const unidadEl = document.querySelector('input[name="unidad"]:checked');
+            const valorUnidad = unidadEl ? unidadEl.value : 'AVE';
 
-            const servicios = Object.keys(catalogoGlobal[ubicacion]);
-            if (servicios.length === 0) {
-                selectTramite.innerHTML = '<option>Sin servicios configurados</option>';
+            if (!nombreInput || !telefonoInput || !tramite || !ubicacion) {
+                alert("⚠️ Por favor, completa todos los campos.");
                 return;
             }
 
-            servicios.forEach(serv => {
-                const option = document.createElement('option');
-                option.value = serv;
-                option.textContent = serv.charAt(0).toUpperCase() + serv.slice(1).toLowerCase();
-                selectTramite.appendChild(option);
-            });
-            selectTramite.disabled = false;
-        }
+            try {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin material-symbols-rounded">sync</span> Generando...`;
 
-        let solicitantes = 1; let propietarios = 1;
+                const response = await fetch('/.netlify/functions/create-expediente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: nombreInput,
+                        telefono: telefonoInput,
+                        tipoTramite: tramite, 
+                        entidad: ubicacion, 
+                        numSolicitantes: 1, 
+                        numPropietarios: 1, 
+                        unidad: valorUnidad
+                    })
+                });
 
-        function cambiarCantidad(tipo, delta) {
-            const el = document.getElementById(tipo === 'solicitantes' ? 'num-solicitantes' : 'num-propietarios');
-            let val = parseInt(el.textContent);
-            const nuevoVal = val + delta;
-            if (nuevoVal >= 1 && nuevoVal <= 5) {
-                if(tipo === 'solicitantes') solicitantes = nuevoVal;
-                else propietarios = nuevoVal;
-                el.textContent = nuevoVal;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Error en el servidor");
+                }
+
+                const json = await response.json();
+
+                document.getElementById('form-nuevo').classList.add('hidden');
+                document.getElementById('resultado').classList.remove('hidden');
+                
+                const finalId = json.id;
+                const cleanUrl = `${window.location.origin}/portal.html?id=${finalId}`;
+                
+                document.getElementById('liga-generada').value = cleanUrl;
+                document.getElementById('btn-ver-portal').href = cleanUrl;
+                
+                const mensaje = `Hola *${nombreInput}*, hemos generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
+                document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${telefonoInput}&text=${encodeURIComponent(mensaje)}`;
+
+            } catch (error) {
+                console.error("Error crítico:", error);
+                alert("❌ Error: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
             }
         }
 
         function copiarLiga() {
             const copyText = document.getElementById("liga-generada");
             copyText.select();
+            copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            const btn = document.getElementById('btn-copy');
-            btn.innerText = "¡Copiado!";
-            setTimeout(() => { btn.innerText = "Copiar"; }, 2000);
-        }
-
-        async function crearExpediente(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-crear');
-            const tramite = document.getElementById('tipoTramite').value;
-            const ubicacion = document.getElementById('estado').value;
-
-            // 1. Validación de campos básicos
-            if (!tramite || !ubicacion) {
-                alert("⚠️ Error: Debes seleccionar una Ubicación y un Trámite válidos.");
-                return;
-            }
-
-            // 2. Validación de Unidad (Blindaje)
-            const unidadSeleccionada = document.querySelector('input[name="unidad"]:checked');
-            if (!unidadSeleccionada) {
-                alert("⚠️ Error: Por favor selecciona una Unidad de Valuación (Leezar, EME o PNA).");
-                return;
-            }
-            const valorUnidad = unidadSeleccionada.value;
-
-            // 3. Preparación UI
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span class="material-symbols-rounded animate-spin mr-2">sync</span> Generando ID...`;
             
-            try {
-                // 4. Envío de datos
-                let response = await fetch('/.netlify/functions/create-expediente', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        tipoServicio: 'avaluo', 
-                        nombre: document.getElementById('nombre').value.toUpperCase().trim(), // Agregué .trim() para limpiar espacios
-                        telefono: document.getElementById('telefono').value.trim(),
-                        tipoTramite: tramite, 
-                        entidad: ubicacion, 
-                        numSolicitantes: solicitantes,
-                        numPropietarios: propietarios,
-                        unidad: valorUnidad // Usamos la variable segura
-                    })
-                });
-
-                if (!response.ok) throw new Error("Error en la respuesta del servidor");
-
-                let json = await response.json();
-
-                // 5. Éxito
-                document.getElementById('form-nuevo').classList.add('hidden');
-                document.getElementById('resultado').classList.remove('hidden');
-                
-                const finalId = json.id || ('EXP-' + Date.now()); 
-                const cleanUrl = `${window.location.origin}/portal.html?id=${finalId}`;
-                
-                document.getElementById('liga-generada').value = cleanUrl;
-                document.getElementById('btn-ver-portal').href = cleanUrl;
-                
-                const nombreCliente = document.getElementById('nombre').value.toUpperCase().trim();
-                const telefonoCliente = document.getElementById('telefono').value.trim();
-                
-                const mensaje = `Hola *${nombreCliente}*, hemos generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
-                document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${telefonoCliente}&text=${encodeURIComponent(mensaje)}`;
-
-            } catch (error) {
-                console.error("Error al crear expediente:", error);
-                alert("❌ Hubo un error al conectar con el servidor. Intenta de nuevo.");
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            }
+            const btn = document.getElementById('btn-copy');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '¡Copiado!';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
         }
-        
     </script>
 </body>
 </html>

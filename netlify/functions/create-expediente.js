@@ -13,7 +13,6 @@ const DRIVE_FOLDERS = {
 // --- 1. INICIALIZACIÓN BLINDADA (CORREGIDA PARA NETLIFY) ---
 let serviceAccount = null;
 
-// A. SIEMPRE leemos la llave, no importa si Firebase ya está encendido
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try { 
         let parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -32,7 +31,6 @@ if (!serviceAccount) {
     } catch (e) { console.error("❌ Error leyendo serviceaccountkey.json:", e); }
 }
 
-// B. Encendemos Firebase SOLO si estaba apagado
 if (admin.apps.length === 0 && serviceAccount) {
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
@@ -48,64 +46,35 @@ function obtenerListaSegura(obj, key) {
     return obj[key] || obj[key.toUpperCase()] || obj[key.charAt(0).toUpperCase() + key.slice(1)] || [];
 }
 
-// --- FUNCIÓN HELPER: CREAR SUBCARPETA ---
 async function crearSubcarpeta(drive, nombre, parentId) {
-    const fileMetadata = {
-        'name': nombre,
-        'mimeType': 'application/vnd.google-apps.folder',
-        'parents': [parentId]
-    };
-    const file = await drive.files.create({
-        resource: fileMetadata,
-        fields: 'id'
-    });
+    const fileMetadata = { 'name': nombre, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parentId] };
+    const file = await drive.files.create({ resource: fileMetadata, fields: 'id' });
     return file.data.id;
 }
 
-// --- FUNCIÓN PRINCIPAL: CREAR CARPETA MAESTRA Y SUBCARPETAS ---
 async function crearCarpetaDrive(nombreCliente, unidad) {
-    console.log(`🔍 DIAGNÓSTICO DRIVE | Intentando crear carpeta para: ${nombreCliente} | Unidad: ${unidad}`);
-
-    if (!serviceAccount || !serviceAccount.client_email) {
-        console.error("❌ ERROR DRIVE: No se encontró la llave de Firebase (serviceAccount) o le falta el correo.");
-        return null;
-    }
+    if (!serviceAccount || !serviceAccount.client_email) return null;
 
     try {
         const parentFolderId = DRIVE_FOLDERS[unidad] || DRIVE_FOLDERS['AVE'];
-        if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) {
-            console.warn(`⚠️ ERROR DRIVE: No hay ID de carpeta configurado para la unidad: ${unidad}. No se crearán carpetas.`);
-            return null;
-        }
+        if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) return null;
 
         const cleanKey = (serviceAccount.private_key || '').replace(/\\n/g, '\n');
 
         const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: serviceAccount.client_email,
-                private_key: cleanKey,
-            },
+            credentials: { client_email: serviceAccount.client_email, private_key: cleanKey },
             scopes: ['https://www.googleapis.com/auth/drive'],
         });
 
         const drive = google.drive({ version: 'v3', auth });
 
-        // 1. Crear la carpeta principal del cliente (La propiedad)
-        const mainFolderMeta = {
-            'name': nombreCliente,
-            'mimeType': 'application/vnd.google-apps.folder',
-            'parents': [parentFolderId]
-        };
-
         const mainFolder = await drive.files.create({
-            resource: mainFolderMeta,
+            resource: { 'name': nombreCliente, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parentFolderId] },
             fields: 'id'
         });
         
         const mainFolderId = mainFolder.data.id;
-        console.log(`✅ DRIVE: Carpeta principal creada con ID: ${mainFolderId}`);
 
-        // 2. MAGIA: Construir las 5 carpetas base (Mansion) en paralelo
         const [idExpediente, idDocJust, idFotos, idProyArq, idComparables] = await Promise.all([
             crearSubcarpeta(drive, 'EXPEDIENTE', mainFolderId),
             crearSubcarpeta(drive, 'DOC JUST', mainFolderId),
@@ -113,41 +82,25 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
             crearSubcarpeta(drive, 'PROY ARQ', mainFolderId),
             crearSubcarpeta(drive, 'COMPARABLES', mainFolderId)
         ]);
-        console.log(`✅ DRIVE: Las 5 carpetas base fueron creadas.`);
 
-        // 3. Crear las 3 subcarpetas DENTRO de "EXPEDIENTE"
         const [idInmueble, idPropietario, idSolicitante] = await Promise.all([
             crearSubcarpeta(drive, 'INMUEBLE', idExpediente),
             crearSubcarpeta(drive, 'PROPIETARIO', idExpediente),
             crearSubcarpeta(drive, 'SOLICITANTE', idExpediente)
         ]);
-        console.log(`✅ DRIVE: Subcarpetas de EXPEDIENTE construidas exitosamente.`);
         
-        // Devolvemos todos los IDs para que la base de datos sepa dónde están
         return {
             main: mainFolderId,
-            subfolders: {
-                expediente: idExpediente,
-                docJust: idDocJust,
-                fotos: idFotos,
-                proyArq: idProyArq,
-                comparables: idComparables,
-                inmueble: idInmueble,
-                propietario: idPropietario,
-                solicitante: idSolicitante
-            }
+            subfolders: { expediente: idExpediente, docJust: idDocJust, fotos: idFotos, proyArq: idProyArq, comparables: idComparables, inmueble: idInmueble, propietario: idPropietario, solicitante: idSolicitante }
         };
 
-    } catch (error) {
-        console.error("❌ ERROR FINAL DRIVE: La API de Google Drive rechazó la solicitud.", error.message);
-        return null;
-    }
+    } catch (error) { return null; }
 }
 
 const PLANTILLA_RESPALDO = {
-    solicitante: [{ nombre: 'Identificación Oficial', id: 'INE', obligatorio: true }],
-    propietario: [{ nombre: 'Escritura Pública', id: 'ESCRITURA', obligatorio: true }],
-    inmueble: [{ nombre: 'Boleta Predial', id: 'PREDIAL', obligatorio: true }]
+    solicitante: [{ id: 'INE', nombre: 'Identificación Oficial', obligatorio: true }],
+    propietario: [{ id: 'ESCRITURA', nombre: 'Escritura Pública', obligatorio: true }],
+    inmueble: [{ id: 'PREDIAL', nombre: 'Boleta Predial', obligatorio: true }]
 };
 
 exports.handler = async (event, context) => {
@@ -156,40 +109,62 @@ exports.handler = async (event, context) => {
     try {
         const data = JSON.parse(event.body);
         
-        // 🔍 NORMALIZAMOS SOLO PARA BUSCAR LA PLANTILLA (No alteramos el texto original)
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (CEREBRO RELACIONAL) ---
         const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
-        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || 'AVALUO');
+        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
         const numSol = parseInt(data.numSolicitantes) || 1;
         const numProp = parseInt(data.numPropietarios) || 1;
 
         let plantilla = null;
+        let diccionarioGlobal = {};
+        
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
             const docSnap = await configRef.get();
             if (docSnap.exists) {
-                const todo = docSnap.data().requisitos || docSnap.data();
-                let plantillaEntidad = todo[entidadBusqueda] || todo[Object.keys(todo).find(k => normalizar(k) === entidadBusqueda)];
-                if (!plantillaEntidad) plantillaEntidad = todo['GLOBAL'] || todo['VERACRUZ'] || PLANTILLA_RESPALDO;
-                const servicios = plantillaEntidad.servicios || plantillaEntidad;
-                plantilla = servicios[tramiteBusqueda] || servicios[Object.keys(servicios).find(k => normalizar(k) === tramiteBusqueda)];
+                const dbData = docSnap.data();
+                diccionarioGlobal = dbData.diccionario || {};
+                const matriz = dbData.matriz || {};
+                
+                // 1. Buscar la entidad DENTRO de la Matriz
+                let plantillaEntidad = matriz[entidadBusqueda] || matriz[Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda)];
+                
+                // 2. Buscar el trámite
+                if (plantillaEntidad) {
+                    plantilla = plantillaEntidad[tramiteBusqueda] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramiteBusqueda)];
+                }
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
+        // Si la base de datos falla, usamos el respaldo de emergencia
         if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
         let checklistFinal = {};
+        
         const procesarItems = (items, categoria, cantidad = 1) => {
             if (!items) return;
             items.forEach(item => {
-                const loop = (item.multi || item.porPersona) ? cantidad : 1;
+                // 3. CRUZAR CON EL DICCIONARIO para obtener nombre real, tipo y plantilla
+                const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
+                
+                const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
+                
                 for (let i = 0; i < loop; i++) {
                     let suffix = loop > 1 ? `_${i + 1}` : '';
-                    let key = `${normalizar(item.id || item.nombre)}${suffix}`;
-                    let nombre = `${item.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    let key = `${normalizar(item.id)}${suffix}`;
+                    let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    
                     checklistFinal[key] = {
-                        nombre: nombre, categoria: categoria, estatus: 'PENDIENTE',
-                        obligatorio: item.obligatorio !== false, tipo: item.tipo || 'archivo', originalId: item.id
+                        nombre: nombre, 
+                        categoria: infoDic.categoria || categoria, 
+                        estatus: 'PENDIENTE',
+                        obligatorio: item.obligatorio !== false, 
+                        tipo: infoDic.tipo || 'MIXTO', 
+                        originalId: item.id
                     };
+                    
+                    // Si el diccionario tiene una plantilla PDF, se la pasamos al cliente
+                    if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
                 }
             });
         };
@@ -198,15 +173,15 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
 
-        checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'mapa', id: 'UBICACION_MAPS' };
-        if (tramiteBusqueda.includes('AVALUO') || tramiteBusqueda.includes('HIPOTECA')) {
-             checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'form', id: 'DETALLES_INMUEBLE' };
-        }
-
+       // Fijos inquebrantables
+        checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
+        
+        // 🧠 --- FIN LÓGICA DE CHECKLIST ---
+        
         const nombreClienteFinal = data.nombre || data.cliente || "CLIENTE NUEVO";
         const unidadDestino = data.unidad || 'AVE'; 
 
-        // --- MAGIA: CREACIÓN DE CARPETAS EN GOOGLE DRIVE ---
+        // --- CREACIÓN DE CARPETAS EN GOOGLE DRIVE ---
         let driveFolderId = null;
         let driveSubfolders = {}; 
 
@@ -216,11 +191,8 @@ exports.handler = async (event, context) => {
                 driveFolderId = driveResult.main;
                 driveSubfolders = driveResult.subfolders;
             }
-        } else {
-             console.warn("⚠️ No se intentó crear carpeta en Drive porque no se detectó la llave.");
         }
 
-        // 🔥 CORRECCIÓN: GUARDAMOS LOS DATOS ORIGINALES INTACTOS
         const nuevoExpediente = {
             tipoServicio: data.tipoServicio || data.servicio || 'Servicio General',
             cliente: nombreClienteFinal, 
@@ -231,7 +203,7 @@ exports.handler = async (event, context) => {
             tramite: data.tipoTramite || data.tramite || 'Trámite', 
             numSolicitantes: numSol, 
             numPropietarios: numProp,
-            tipoInmueble: data.tipoInmueble || 'CASA', // 🏠 Conectado al catálogo
+            tipoInmueble: data.tipoInmueble || 'CASA', 
             unidad: unidadDestino,
             driveFolderId: driveFolderId,
             driveSubfolders: driveSubfolders, 

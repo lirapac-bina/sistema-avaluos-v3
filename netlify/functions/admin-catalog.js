@@ -1,6 +1,5 @@
 const admin = require('firebase-admin');
 
-// Inicializar Firebase si no existe
 if (!admin.apps.length) {
     try {
         admin.initializeApp({
@@ -13,16 +12,12 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// PLANTILLA POR DEFECTO (Respaldo)
-const PLANTILLA_DEFAULT = {
-    'INE_SOLICITANTE': { nombre: 'INE Solicitante', texto: 'Frente y Vuelta', categoria: 'solicitante', activo: true },
-    'CURP_SOLICITANTE': { nombre: 'CURP', texto: 'Descarga reciente', categoria: 'solicitante', activo: true },
-    'ESCRITURA': { nombre: 'Escritura Pública', texto: 'Completa con sello RPP', categoria: 'inmueble', activo: true, permitirExtras: true },
-    'PREDIAL': { nombre: 'Boleta Predial', texto: 'Año en curso', categoria: 'inmueble', activo: true }
+const ESTRUCTURA_DEFAULT = {
+    diccionario: {},
+    matriz: {}
 };
 
 exports.handler = async (event, context) => {
-    // Referencia: configuracion -> plantilla_maestra
     const docRef = db.collection('configuracion').doc('plantilla_maestra');
 
     const headers = {
@@ -31,43 +26,35 @@ exports.handler = async (event, context) => {
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
     };
 
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
-    }
+    if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
     try {
         // --- MODO LECTURA (GET) ---
         if (event.httpMethod === 'GET') {
             const doc = await docRef.get();
             
-            if (!doc.exists) {
-                await docRef.set({ requisitos: PLANTILLA_DEFAULT });
-                return { statusCode: 200, headers, body: JSON.stringify(PLANTILLA_DEFAULT) };
+            // Si no existe o tiene la estructura vieja del dinosaurio, inyectamos el nuevo modelo matriz
+            if (!doc.exists || !doc.data().diccionario) {
+                await docRef.set(ESTRUCTURA_DEFAULT);
+                return { statusCode: 200, headers, body: JSON.stringify(ESTRUCTURA_DEFAULT) };
             }
 
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify(doc.data().requisitos)
-            };
+            return { statusCode: 200, headers, body: JSON.stringify(doc.data()) };
         }
 
         // --- MODO GUARDADO (POST) ---
         if (event.httpMethod === 'POST') {
             const data = JSON.parse(event.body);
             
-            if (!data.requisitos) throw new Error("Faltan datos de requisitos");
+            if (!data.diccionario || !data.matriz) throw new Error("Falta estructura Diccionario/Matriz");
 
-            // CORRECCIÓN CRÍTICA: Quitamos { merge: true }
-            // Ahora, lo que envíe el sistema REEMPLAZA totalmente lo que había.
-            // Si borraste 'TJ' en el front, desaparecerá de la DB.
-            await docRef.set({ requisitos: data.requisitos });
+            // Guardamos la nueva estructura relacional
+            await docRef.set({ 
+                diccionario: data.diccionario, 
+                matriz: data.matriz 
+            });
 
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ message: "Catálogo actualizado y limpiado correctamente" })
-            };
+            return { statusCode: 200, headers, body: JSON.stringify({ message: "Catálogo Matriz actualizado" }) };
         }
 
         return { statusCode: 405, headers, body: "Method Not Allowed" };
