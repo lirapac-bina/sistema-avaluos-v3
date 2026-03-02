@@ -487,6 +487,7 @@
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (key === 'FOTOS_INTERIORES_GENERAL') {
                     tipoArchivo = 'GALERIA';
+                    item.nombre = item.nombre || 'Reporte Fotográfico'; // 🔥 Repara el "Sin nombre"
                     fotosGaleria = fotosExtras; 
                     if(fotosExtras.length > 0) {
                         if(uiStatus === 'pending') uiStatus = 'review'; 
@@ -644,7 +645,7 @@
                 if (req.coordenadas) {
                     document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
                     document.getElementById('map-coords-text').innerText = req.coordenadas;
-                    const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
+                    const embedUrl = `https://www.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
                     document.getElementById('google-map-embed').src = embedUrl;
                     document.getElementById('map-container').classList.remove('hidden');
                 } else {

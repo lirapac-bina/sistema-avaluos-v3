@@ -63,7 +63,12 @@
         .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .fade-in { animation: popIn 0.3s ease-out forwards; }
+
+            #map { height: 300px; width: 100%; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
+            .dark #map { border-color: #1e293b; }
     </style>
+
+
 </head>
 
 <body class="pb-32 bg-gray-50 dark:bg-slate-900 transition-colors text-gray-800 dark:text-gray-200 relative">
@@ -1094,14 +1099,24 @@ let downloadLink = '';
                 map = new google.maps.Map(document.getElementById("map"), { 
                     zoom: 17, center: {lat: 19.4326, lng: -99.1332}, disableDefaultUI: true 
                 }); 
+                
+                // 🔥 NUEVO: Detectar cuando el usuario arrastra el mapa y actualizar el texto
+                map.addListener('dragend', () => {
+                    const center = map.getCenter();
+                    actualizaPos(center.lat(), center.lng());
+                });
+
                 const input = document.getElementById("pac-input"); 
                 autocomplete = new google.maps.places.Autocomplete(input); 
                 autocomplete.bindTo("bounds", map); 
+                
+                // 🔥 NUEVO: Actualizar el texto cuando selecciona una calle del buscador
                 autocomplete.addListener("place_changed", () => { 
                     const p = autocomplete.getPlace(); 
                     if (p.geometry) { 
                         map.setCenter(p.geometry.location); 
                         map.setZoom(18); 
+                        actualizaPos(p.geometry.location.lat(), p.geometry.location.lng());
                     } 
                 }); 
                 usarMiUbicacion(); 
