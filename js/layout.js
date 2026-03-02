@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem(SESSION_KEY);
     }
 
-    // 🔥 C. AUTO-SANADOR SILENCIOSO (Corregido el bug de la foto)
+    // 🔥 C. AUTO-SANADOR SILENCIOSO
     if (activeUser) {
         fetch('/.netlify/functions/get-users')
             .then(res => res.json())
@@ -40,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const currentAcc = JSON.stringify(activeUser.accesos || "null");
                     const dbAcc = JSON.stringify(dbUser.accesos || "null");
                     
-                    // Solo actualizamos si hay cambios en permisos, rol, o si en la BD hay una foto nueva
                     const dbPhoto = dbUser.fotoUrl || dbUser.photoUrl;
                     const currPhoto = activeUser.photoUrl || activeUser.fotoUrl || activeUser.photo;
                     
@@ -49,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         activeUser.rol = dbUser.rol;
                         activeUser.funciones = dbUser.funciones || [];
                         
-                        // Si hay foto en BD, la impone. Si no, respeta tu foto de Google.
                         if (dbPhoto) activeUser.photo = dbPhoto; 
                         
                         localStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
@@ -60,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(err => console.error("Error validando sesión:", err));
     }
 
-    // 🔥 D. SEGURIDAD DE RUTAS SILENCIOSA Y MODO DIOS
+    // 🔥 D. SEGURIDAD DE RUTAS SILENCIOSA
     const path = window.location.pathname;
     const file = path.split('/').pop() || 'index.html';
     const publicPages = ['index.html', 'login.html', 'portal.html'];
@@ -73,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const esAltoMando = activeUser && ['ADMIN', 'SUPER ADMIN', 'DIRECTOR', 'SUPER_ADMIN'].includes(activeUser.rol);
     let accesosRuta = activeUser && activeUser.accesos ? activeUser.accesos : null;
     
-    if (!accesosRuta || esAltoMando) accesosRuta = ['dashboard', 'gestion', 'revision', 'hoja_trabajo'];
+    if (!accesosRuta || esAltoMando) accesosRuta = ['dashboard', 'gestion', 'revision', 'hoja_trabajo', 'visitas_dibujo'];
 
     const esOperativo = activeUser && ['CAPTURISTA', 'TECNICO', 'VISITADOR', 'DIBUJANTE'].includes(activeUser.rol);
     if (esOperativo) {
@@ -81,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (activeUser && accesosRuta.length > 0) {
-        const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html' };
+        const routeMap = { 'dashboard': 'dashboard.html', 'gestion': 'gestion.html', 'revision': 'revision.html', 'hoja_trabajo': 'hoja_trabajo.html', 'visitas_dibujo': 'visitas_dibujo.html' };
         
         const isBlocked = !esAltoMando && (
             (file.includes('dashboard') && !accesosRuta.includes('dashboard')) ||
@@ -90,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
             (file.includes('hoja_trabajo') && !accesosRuta.includes('hoja_trabajo') && !file.includes('operacion'))
         );
 
-        // Sin alertas. Redirección fantasma a la primera página que sí tiene permitida.
         if (isBlocked || file === 'index.html' || file === 'login.html' || file === '') {
              window.location.replace(routeMap[accesosRuta[0]]);
              return;
@@ -178,9 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
     ` : '';
 
-    // =================================================================
-    // 🔥 DIBUJO DE MENÚ DINÁMICO
-    // =================================================================
     let menuOperacionesHTML = '';
     if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Tablero de Trabajo</a></li>`;
     if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>`;
@@ -188,6 +182,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let menuTecnicoHTML = '';
     if(accesosRuta.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>`;
+    
+    // 🔥 NUEVO BOTÓN: visitas y Dibujo
+    if (['VISITADOR', 'DIBUJANTE', 'CAPTURISTA', 'TECNICO', 'ADMIN', 'SUPER ADMIN', 'GESTOR'].includes(activeUser.rol)) {
+        menuTecnicoHTML += `<li><a href="visitas_dibujo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('visitas_dibujo') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">explore</span>Visitas y Dibujo</a></li>`;
+    }
 
     const renderOperaciones = menuOperacionesHTML ? `<div><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Operaciones</p><ul class="space-y-1">${menuOperacionesHTML}</ul></div>` : '';
     const renderTecnico = menuTecnicoHTML ? `<div class="mt-6"><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p><ul class="space-y-1">${menuTecnicoHTML}</ul></div>` : '';

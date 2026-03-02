@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visitas y Dibujo | Leezar</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="js/layout.js"></script> 
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .dark body { background-color: #0f172a; }
+        .mobile-card { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="transition-colors duration-300 pb-24 text-slate-800 dark:text-slate-200">
+
+    <main class="w-full max-w-lg mx-auto">
+        
+        <div class="flex gap-4 mb-6 hidden border-b border-slate-200 dark:border-slate-700" id="tabs-container">
+            <button onclick="switchTab('visitas')" id="tab-visitas" class="flex-1 pb-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">Mis Visitas</button>
+            <button onclick="switchTab('dibujos')" id="tab-dibujos" class="flex-1 pb-3 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-colors">Mis Dibujos</button>
+        </div>
+
+        <div class="flex justify-between items-end mb-4">
+            <h2 class="text-xl font-extrabold" id="section-title">Tareas Pendientes</h2>
+            <span class="text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded-lg" id="task-counter">0</span>
+        </div>
+
+        <div id="tasks-container" class="space-y-4">
+            <div class="text-center py-20 text-slate-400">
+                <span class="material-symbols-rounded animate-spin text-4xl mb-2">sync</span>
+                <p class="text-sm font-bold">Buscando asignaciones...</p>
+            </div>
+        </div>
+    </main>
+
+    <input type="file" id="input-visita" accept="image/*" multiple class="hidden" onchange="procesarArchivos(event, 'VISITA')">
+    <input type="file" id="input-dibujo" accept=".pdf,.dwg,.dxf" multiple class="hidden" onchange="procesarArchivos(event, 'DIBUJO')">
+
+    <div id="modal-upload" class="fixed inset-0 z-[100] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl border border-slate-200 dark:border-slate-700">
+            <span class="material-symbols-rounded animate-spin text-6xl text-indigo-500 mb-4 block">cloud_sync</span>
+            <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2" id="upload-title">Subiendo Archivos...</h3>
+            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6" id="upload-status">Preparando archivos...</p>
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden shadow-inner">
+                <div id="upload-progress" class="bg-indigo-500 h-full transition-all duration-300 relative" style="width: 0%">
+                    <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-4 font-medium">Por favor, no cierres esta pantalla.</p>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore();
+        let userActive = null;
+        let misExpedientes = [];
+        let vistaActual = 'visitas'; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userStr = localStorage.getItem('leezar_user_active');
+            if (!userStr) {
+                window.location.href = 'index.html'; 
+                return;
+            }
+            
+            userActive = JSON.parse(userStr);
+
+            if (userActive.funciones && userActive.funciones.includes('dibuja') && !userActive.funciones.includes('visita')) {
+                vistaActual = 'dibujos';
+            }
+
+            if (userActive.funciones && userActive.funciones.includes('visita') && userActive.funciones.includes('dibuja')) {
+                document.getElementById('tabs-container').classList.remove('hidden');
+                switchTab(vistaActual);
+            }
+
+            iniciarMotorBusqueda();
+        });
+
+        function iniciarMotorBusqueda() {
+            const emailOperador = userActive.email.toLowerCase();
+
+            db.collection('expedientes_avaluos')
+              .where('estatus', 'not-in', ['FINALIZADO', 'CANCELADO'])
+              .onSnapshot((snapshot) => {
+                  misExpedientes = [];
+
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      
+                      const esVisitador = (data.visitador_asignado || '').toLowerCase() === emailOperador || (data.visitador || '').toLowerCase() === emailOperador;
+                      const esDibujante = (data.dibujante_asignado || '').toLowerCase() === emailOperador || (data.dibujante || '').toLowerCase() === emailOperador;
+
+                      if (esVisitador || esDibujante) {
+                          misExpedientes.push({
+                              id: doc.id,
+                              cliente: data.cliente || data.nombreCliente || 'Sin Nombre',
+                              tramite: (data.tipoTramite || data.tramite || 'TRÁMITE').replace(/_/g, ' '),
+                              direccion: data.direccion || data.municipio || 'Dirección no registrada',
+                              coordenadas: getCoordenadas(data.checklist),
+                              esMiVisita: esVisitador,
+                              esMiDibujo: esDibujante
+                          });
+                      }
+                  });
+
+                  renderizarTareas();
+
+              }, error => console.error("Error al buscar asignaciones:", error));
+        }
+
+        function getCoordenadas(checklist) {
+            if(!checklist) return null;
+            if(checklist.UBICACION_MAPS && checklist.UBICACION_MAPS.coordenadas) return checklist.UBICACION_MAPS.coordenadas;
+            return null;
+        }
+
+        function renderizarTareas() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            const tareasMostrar = misExpedientes.filter(exp => vistaActual === 'visitas' ? exp.esMiVisita : exp.esMiDibujo);
+            
+            document.getElementById('task-counter').innerText = tareasMostrar.length;
+            document.getElementById('section-title').innerText = vistaActual === 'visitas' ? '📍 Visitas Pendientes' : '📐 Dibujos Pendientes';
+
+            if (tareasMostrar.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 text-slate-400 bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                        <span class="material-symbols-rounded text-5xl mb-3 text-slate-300">celebration</span>
+                        <p class="text-sm font-bold text-slate-500">¡Al día!</p>
+                        <p class="text-xs">No tienes ${vistaActual} pendientes.</p>
+                    </div>`;
+                return;
+            }
+
+            tareasMostrar.forEach((exp, index) => {
+                
+                let btnMapa = '';
+                if (exp.coordenadas) {
+                    const linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${exp.coordenadas}`;
+                    btnMapa = `
+                        <a href="${linkGoogleMaps}" target="_blank" class="w-full mt-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors border border-slate-200 dark:border-slate-600">
+                            <span class="material-symbols-rounded text-base text-red-500">pin_drop</span> Abrir Navegador GPS
+                        </a>
+                    `;
+                }
+
+                const btnAccion = vistaActual === 'visitas' 
+                    ? `<button onclick="abrirSubida('${exp.id}', 'VISITA')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform"><span class="material-symbols-rounded">add_a_photo</span> Subir Reporte Fotográfico</button>`
+                    : `<button onclick="abrirSubida('${exp.id}', 'DIBUJO')" class="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform"><span class="material-symbols-rounded">architecture</span> Subir Archivo CAD / Plano</button>`;
+
+                const card = `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 mobile-card" style="animation-delay: ${index * 0.05}s">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="pr-3 w-full">
+                                <span class="text-[9px] font-black tracking-widest text-slate-400 uppercase">${exp.tramite}</span>
+                                <h3 class="text-base font-black text-slate-800 dark:text-white leading-tight mt-0.5 truncate" title="${exp.cliente}">${exp.cliente}</h3>
+                            </div>
+                            <span class="text-xs font-mono font-bold bg-slate-50 dark:bg-slate-900 text-slate-400 px-2 py-1 rounded border border-slate-100 dark:border-slate-700 shrink-0">
+                                #${exp.id.substring(0,4)}
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-start gap-2 mb-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span class="material-symbols-rounded text-sm shrink-0 mt-0.5">location_on</span>
+                            <p class="line-clamp-2">${exp.direccion}</p>
+                        </div>
+
+                        ${btnMapa}
+                        
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                            ${btnAccion}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function switchTab(tab) {
+            vistaActual = tab;
+            document.getElementById('tab-visitas').className = tab === 'visitas' ? 'flex-1 pb-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors' : 'flex-1 pb-3 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-colors';
+            document.getElementById('tab-dibujos').className = tab === 'dibujos' ? 'flex-1 pb-3 text-sm font-bold text-orange-600 border-b-2 border-orange-600 transition-colors' : 'flex-1 pb-3 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-colors';
+            renderizarTareas();
+        }
+
+        const SCRIPT_SUBIDA_URL = 'https://script.google.com/macros/s/AKfycbwaPtdWt6rf9-GgQxcMzMlSdBzHIDVRpNy1Zt3L__joYf5IHkkKSGcyyQy0SCw42Vr_rQ/exec';
+
+        let expActivoParaSubida = null;
+
+        function abrirSubida(idExpediente, tipo) {
+            expActivoParaSubida = misExpedientes.find(e => e.id === idExpediente);
+            // Abre la cámara/galería o el selector de archivos
+            if(tipo === 'VISITA') document.getElementById('input-visita').click();
+            else document.getElementById('input-dibujo').click();
+        }
+
+        async function procesarArchivos(event, tipo) {
+            const files = event.target.files;
+            if(!files || files.length === 0) return;
+
+            const modal = document.getElementById('upload-modal') || document.getElementById('modal-upload');
+            const status = document.getElementById('upload-status');
+            const bar = document.getElementById('upload-progress');
+            document.getElementById('upload-title').innerText = tipo === 'VISITA' ? '📸 Subiendo Fotos...' : '📐 Subiendo Planos...';
+            
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+
+            try {
+                // 1. Conseguir el ID de la carpeta destino
+                const docRef = await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).get();
+                const dataDb = docRef.data();
+                
+                let folderIdDestino = null;
+                if (dataDb.driveSubfolders) {
+                    folderIdDestino = tipo === 'VISITA' ? dataDb.driveSubfolders['Fotografías'] : dataDb.driveSubfolders['Proy Arq'];
+                }
+
+                if (!folderIdDestino) {
+                    console.warn("⚠️ No se encontró carpeta destino. Se guardará en la raíz de Drive.");
+                }
+
+                let archivosSubidos = [];
+
+                // 2. Procesar y subir archivo por archivo
+                for(let i=0; i<files.length; i++) {
+                    const file = files[i];
+                    status.innerText = `Subiendo archivo ${i+1} de ${files.length}...\n${file.name}`;
+                    
+                    const base64Data = await fileToBase64(file);
+                    const cleanBase64 = base64Data.split(',')[1];
+
+                    // 🛡️ PASE VIP PARA GOOGLE SCRIPT (Evita el bloqueo CORS)
+                    const response = await fetch(SCRIPT_SUBIDA_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            filename: file.name,
+                            mimeType: file.type,
+                            base64: cleanBase64,
+                            folderId: folderIdDestino
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if(result.exito) {
+                        archivosSubidos.push({ nombre: file.name, url: result.url });
+                    } else {
+                        console.error("Error de Drive:", result.error);
+                    }
+                    bar.style.width = `${((i+1)/files.length)*100}%`;
+                }
+
+                if(archivosSubidos.length === 0) throw new Error("Ningún archivo logró subirse.");
+
+                status.innerText = 'Notificando a Mesa de Control...';
+
+                // 3. Escribir en Firebase (Creando el nido si no existía)
+                let actualizaciones = { estatus: 'EN REVISIÓN' };
+                
+                if (tipo === 'VISITA') {
+                    // Obligamos a Firebase a crear el bloque de fotos si no existía
+                    actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.nombre'] = 'Reporte Fotográfico';
+                    actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.categoria'] = 'inmueble';
+                    actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.estatus'] = 'revision';
+                    actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.obligatorio'] = true;
+                    
+                    archivosSubidos.forEach((arch, idx) => {
+                        actualizaciones[`checklist.FOTO_EXTRA_${Date.now()}_${idx}`] = {
+                            nombre: arch.nombre, url: arch.url, estatus: 'revision', categoria: 'inmueble', tipo: 'IMG'
+                        };
+                    });
+                } else {
+                    archivosSubidos.forEach((arch, idx) => {
+                        const esPDF = arch.nombre.toLowerCase().includes('.pdf');
+                        actualizaciones[`checklist.PLANO_${esPDF ? 'PDF' : 'CAD'}_${Date.now()}_${idx}`] = {
+                            nombre: arch.nombre, url: arch.url, estatus: 'revision', categoria: 'inmueble', tipo: esPDF ? 'PDF' : 'TXT'
+                        };
+                    });
+                }
+
+                await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).update(actualizaciones);
+
+                // Éxito final
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+                event.target.value = ''; 
+                alert("✅ ¡Éxito! Archivos enviados a Mesa de Control.");
+
+                // Forzamos recarga visual
+                iniciarMotorBusqueda();
+
+            } catch (error) {
+                console.error(error);
+                alert("❌ Hubo un error de conexión con Drive o Firebase. Revisa tu consola (F12).");
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+            }
+        }
+
+        // Utilidad para convertir el archivo
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+</html>
