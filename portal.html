@@ -643,6 +643,9 @@
                 });
 
                 if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
+            
+                // 🔥 REGISTRO DE AUDITORÍA
+                await registrarLog('NUEVO DOCUMENTO', `El cliente subió un archivo desde su dispositivo.`, itemKey);
 
                 location.reload();
 
@@ -705,6 +708,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expedienteId, itemKey: 'FOTOS_INTERIORES_GENERAL', nuevoEstado: 'revision', categoriaItem: 'inmueble' })
                 });
+
+                // 🔥 NUEVO: REGISTRO DE AUDITORÍA PARA GALERÍA
+                await registrarLog('NUEVA GALERÍA', `El cliente subió ${files.length} fotos de interiores y entorno.`, 'FOTOS_INTERIORES_GENERAL');
 
                 location.reload();
 
@@ -831,8 +837,17 @@ let downloadLink = '';
         async function guardarCorreo(key) {
             const val = document.getElementById(`input-${key}`).value;
             if (!val.includes('@')) return alert("Correo inválido");
+            
             showLoader('Guardando correo...');
-            await fetch('/.netlify/functions/save-details', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: key, textoDirecto: "CORREO: " + val }) });
+            
+            await fetch('/.netlify/functions/save-details', { 
+                method: 'POST', 
+                body: JSON.stringify({ expedienteId, itemKey: key, textoDirecto: "CORREO: " + val }) 
+            });
+            
+            // 🔥 NUEVO: REGISTRO DE AUDITORÍA
+            await registrarLog('DATO ACTUALIZADO', `El cliente registró su correo electrónico.`, key);
+            
             location.reload();
         }
 
@@ -1146,12 +1161,14 @@ let downloadLink = '';
                 
                 await fetch('/.netlify/functions/save-details', { method: 'POST', body: JSON.stringify({ expedienteId, itemKey: 'DETALLES_INMUEBLE', datos: data }) });
                 
-                // 🔥 NUEVA LÍNEA: Cambia el estatus en la BD a "En Revisión" para que se ponga Amarillo.
                 await fetch('/.netlify/functions/update-status', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expedienteId, itemKey: 'DETALLES_INMUEBLE', nuevoEstado: 'revision', categoriaItem: 'inmueble' }) 
                 });
+                
+                // 🔥 REGISTRO DE AUDITORÍA
+                await registrarLog('DATOS ACTUALIZADOS', `El cliente llenó el formulario de Detalles Técnicos.`, 'DETALLES_INMUEBLE');
                 
                 location.reload();
             } catch(e) {
@@ -1285,6 +1302,9 @@ let downloadLink = '';
                     })
                 });
 
+                // 🔥 REGISTRO DE AUDITORÍA
+                await registrarLog('DOCUMENTO ESCANEADO', `El cliente digitalizó el documento usando la cámara del portal.`, currentDoc.id);
+
                 location.reload();
 
             } catch (e) {
@@ -1293,6 +1313,34 @@ let downloadLink = '';
                 hideLoader();
             }
         }
+
+        // ==========================================
+        // 🔒 SISTEMA DE AUDITORÍA (LOGS DEL CLIENTE)
+        // ==========================================
+        async function registrarLog(accion, detalle, itemKey) {
+            try {
+                showLoader('Registrando en auditoría...');
+                
+                // 🔥 EL FIX: Usamos expedienteGlobal (es la variable que tienes definida arriba)
+                const nombreCliente = (typeof expedienteGlobal !== 'undefined' && expedienteGlobal && expedienteGlobal.cliente) ? expedienteGlobal.cliente : 'Cliente (Portal)';
+                
+                await db.collection('logs').add({
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    usuario: nombreCliente,
+                    accion: accion,
+                    detalle: detalle,
+                    expedienteId: expedienteId, 
+                    itemKey: itemKey      
+                });
+
+                // Pausa de seguridad para garantizar que viaje a la nube
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+            } catch (e) { 
+                console.error("Error al registrar log:", e); 
+            }
+        }
+
     </script>
 </body>
 </html>

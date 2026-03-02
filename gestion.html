@@ -369,7 +369,7 @@
                         dbExpedientes.push({
                             id: doc.id,
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
-                            telefono: data.telefono || data.celular || '', // <-- CABLE CONECTADO A JACK
+                            telefono: data.telefono || data.celular || '', 
                             tramite: (data.tramite || data.tipoTramite || 'General').toUpperCase(),
                             status: (data.status || data.estatus || data.estado || 'PENDIENTE').toUpperCase(),
                             fechaDisplay: fechaDisplay,
@@ -379,8 +379,9 @@
                             dibujante: data.dibujante || null,
                             municipio: data.municipio || '', 
                             colonia: data.colonia || '',
-                            origen: data.origen || '', // <-- CABLE DEL PERRITO CONECTADO
-                            unidad: data.unidad || 'POR ASIGNAR' // <-- CABLE DE LA UNIDAD CONECTADO
+                            origen: data.origen || '', 
+                            unidad: data.unidad || 'POR ASIGNAR',
+                            checklist: data.checklist || {} // 🔥 EL FIX: Traemos la checklist para calcular %
                         });
                     });
 
@@ -501,6 +502,24 @@
             }
         }
 
+        // 📅 CALCULADORA DE DÍAS HÁBILES (LUNES A VIERNES)
+        function calcularDiasHabiles(timestamp) {
+            if(!timestamp) return 0;
+            let inicio = new Date(timestamp);
+            let fin = new Date();
+            let dias = 0;
+            inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+            
+            if (inicio >= fin) return 0; // Creado hoy
+            
+            while (inicio < fin) {
+                inicio.setDate(inicio.getDate() + 1);
+                // getDay(): 0 es Domingo, 6 es Sábado
+                if (inicio.getDay() !== 0 && inicio.getDay() !== 6) dias++;
+            }
+            return dias;
+        }
+
         function actualizarTabla() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
@@ -529,8 +548,35 @@
                 const st = (exp.status || '').toUpperCase();
                 if(st === 'ACTIVO' || st === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
                 else if(st.includes('REVISI')) badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
-                else if(st.includes('COMPLETADO') || st.includes('VALIDA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
+                else if(st.includes('COMPLETADO') || st.includes('VALIDA') || st.includes('FINALIZADO') || st.includes('CAPTURA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
+
+                // 🔥 CÁLCULO DE AVANCE PARA EVITAR PÁNICO INNECESARIO
+                const items = Object.values(exp.checklist || {});
+                const totReq = items.length || 1;
+                const subidos = items.filter(d => ['revision', 'validado'].includes((d.estatus || '').toLowerCase())).length;
+                const validados = items.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
+                
+                const pctSubidos = Math.round((subidos / totReq) * 100);
+                const pctValidados = Math.round((validados / totReq) * 100);
+                
+                const yaTerminado = (pctValidados === 100 && items.length > 0) || st.includes('COMPLETADO') || st.includes('FINALIZADO') || st.includes('CAPTURA');
+
+                // --- LÓGICA DE DÍAS HÁBILES Y CUELLO DE BOTELLA ---
+                const diasAbierto = exp.timestamp ? calcularDiasHabiles(exp.timestamp) : 0;
+                let badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="Días hábiles activo">⏳ ${diasAbierto}d</span>`;
+                
+                if (yaTerminado) {
+                    // Si ya está completado, apagar el fuego (Color Neutro/Gris)
+                    badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${diasAbierto}d</span>`;
+                } else {
+                    if (diasAbierto >= 3 && diasAbierto <= 5) {
+                        badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Atención requerida">⏳ ${diasAbierto}d</span>`;
+                    } else if (diasAbierto > 5) {
+                        // Solo arde si tiene > 5 días Y NO HA TERMINADO
+                        badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]" title="¡CUELLO DE BOTELLA!">🔥 ${diasAbierto}d</span>`;
+                    }
+                }
 
                 // --- LA ALERTA DE JACK 🐶 ---
                 let alertaJack = '';
@@ -555,17 +601,27 @@
                         </td>
                         
                         <td class="px-4 py-3 text-center text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
-                            ${exp.fechaDisplay}
+                            <div class="flex flex-col items-center gap-1">
+                                <span>${exp.fechaDisplay}</span>
+                                ${badgeDias}
+                            </div>
                         </td>
                         
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'capturista', exp.capturista)}</td>
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'visitador', exp.visitador)}</td>
                         <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'dibujante', exp.dibujante)}</td>
                         
-                        <td class="px-4 py-3 text-center">
-                            <span class="${badgeClass} border text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
-                                ${exp.status}
-                            </span>
+                        <td class="px-4 py-3 text-center min-w-[120px]">
+                            <div class="flex flex-col items-center justify-center gap-1.5">
+                                <span class="${badgeClass} border text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+                                    ${exp.status}
+                                </span>
+                                <div class="w-full max-w-[80px] bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden flex" title="${pctValidados}% Validado | ${pctSubidos}% Subido">
+                                    <div class="bg-emerald-500 h-full" style="width: ${pctValidados}%"></div>
+                                    <div class="bg-amber-400 h-full opacity-60" style="width: ${pctSubidos - pctValidados}%"></div>
+                                </div>
+                                <span class="text-[8px] font-bold text-slate-500 dark:text-slate-400">${pctValidados}% Avance</span>
+                            </div>
                         </td>
                         
                         <td class="px-4 py-3 text-right">

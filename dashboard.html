@@ -93,25 +93,38 @@
                 </h2>
                 <span id="icon-monitor" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-emerald-500">expand_more</span>
             </button>
+            
             <div id="sec-monitor" class="mt-4 transition-all duration-500 origin-top">
+                <div class="flex justify-end mb-4 px-2">
+                    <div class="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                        <span class="material-symbols-rounded text-slate-400 text-sm">sort</span>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Ordenar por:</span>
+                        <select id="sort-monitor" onchange="aplicarFiltroOrden()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 p-1.5 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                            <option value="avance">📊 Mayor % Avance</option>
+                            <option value="urgencia">🔥 Urgencia (Más días)</option>
+                            <option value="recientes">✨ Recientes (Menos días)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">upload_file</span> 1. En Llenado</h3>
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">upload_file</span> 1. En Llenado de Requisitos</h3>
                             <span id="count-fase1" class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase1" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
                     </div>
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">rule</span> 2. En Revisión</h3>
                             <span id="count-fase2" class="text-xs font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase2" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
                     </div>
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-96">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-emerald-500">engineering</span> 3. Llenado de Avalúo</h3>
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-emerald-500">engineering</span> 3. En Captura</h3>
                             <span id="count-fase3" class="text-xs font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase3" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
@@ -243,28 +256,118 @@
             });
         }
 
+        // 📅 CALCULADORA DE DÍAS HÁBILES (LUNES A VIERNES)
+        function calcularDiasHabiles(timestamp) {
+            if(!timestamp) return 0;
+            let inicio = new Date(timestamp);
+            let fin = new Date();
+            let dias = 0;
+            inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+            
+            if (inicio >= fin) return 0; 
+            
+            while (inicio < fin) {
+                inicio.setDate(inicio.getDate() + 1);
+                if (inicio.getDay() !== 0 && inicio.getDay() !== 6) dias++;
+            }
+            return dias;
+        }
+
+        // 🔥 VARIABLES GLOBALES PARA ORDENAMIENTO EN VIVO 🔥
+        let cacheFase1 = [], cacheFase2 = [], cacheFase3 = [];
+
+        const renderFase = (arr, elId, colorTheme) => {
+            const cont = document.getElementById(elId);
+            if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl mx-2">Bandeja Vacía</div>`; return; }
+            
+            const colorClasesTexto = colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
+
+            cont.innerHTML = arr.map(exp => {
+                const yaTerminado = (exp.pctV === 100 && exp.tot > 0) || elId === 'list-fase3';
+                let badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="${exp.dias} días hábiles activo">⏳ ${exp.dias}d</span>`;
+                
+                if (yaTerminado) {
+                    badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${exp.dias}d</span>`;
+                } else {
+                    if (exp.dias >= 3 && exp.dias <= 5) badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Requiere atención">⏳ ${exp.dias}d</span>`;
+                    else if (exp.dias > 5) badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" title="¡CUELLO DE BOTELLA!">🔥 ${exp.dias}d</span>`;
+                }
+
+                return `
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700 relative group cursor-pointer hover:border-indigo-400 transition-colors" onclick="window.location.href='revision.html'">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="w-full pr-2">
+                            <div class="flex items-center gap-2">
+                                <p class="text-xs font-black text-slate-800 dark:text-white truncate max-w-[130px]" title="${exp.nombre}">${exp.nombre}</p>
+                                ${badgeDias}
+                            </div>
+                            <p class="text-[9px] text-slate-500 uppercase mt-0.5">${exp.tramite}</p>
+                        </div>
+                        <span class="text-[10px] font-black ${colorClasesTexto} px-1.5 py-0.5 rounded shrink-0">${exp.pctV}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-1.5 flex overflow-hidden" title="${exp.pctV}% Validado | ${exp.pctC}% Subido">
+                        <div class="bg-emerald-500 h-full transition-all duration-700 relative" style="width: ${exp.pctV}%">
+                            <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                        </div>
+                        <div class="bg-amber-400 h-full opacity-60 transition-all duration-700" style="width: ${Math.max(0, exp.pctC - exp.pctV)}%"></div>
+                    </div>
+                    <p class="text-[9px] text-slate-400 font-bold text-right">${exp.val} validados de ${exp.tot}</p>
+                </div>
+            `}).join('');
+        };
+
+        // 🧠 APLICADOR DE FILTROS AL VUELO 🧠
+        function aplicarFiltroOrden() {
+            const selectElement = document.getElementById('sort-monitor');
+            const sortMode = selectElement ? selectElement.value : 'avance';
+            
+            // Clonamos los arreglos para ordenarlos sin destruir el original
+            let f1 = [...cacheFase1];
+            let f2 = [...cacheFase2];
+            let f3 = [...cacheFase3];
+
+            if (sortMode === 'avance') {
+                f1.sort((a, b) => b.pctC - a.pctC); 
+                f2.sort((a, b) => b.pctV - a.pctV); 
+                f3.sort((a, b) => b.val - a.val);   
+            } else if (sortMode === 'urgencia') {
+                f1.sort((a, b) => b.dias - a.dias); 
+                f2.sort((a, b) => b.dias - a.dias); 
+                f3.sort((a, b) => b.dias - a.dias);
+            } else if (sortMode === 'recientes') {
+                f1.sort((a, b) => a.dias - b.dias); 
+                f2.sort((a, b) => a.dias - b.dias); 
+                f3.sort((a, b) => a.dias - b.dias);
+            }
+
+            document.getElementById('count-fase1').innerText = f1.length;
+            document.getElementById('count-fase2').innerText = f2.length;
+            document.getElementById('count-fase3').innerText = f3.length;
+
+            renderFase(f1, 'list-fase1', 'blue');
+            renderFase(f2, 'list-fase2', 'amber');
+            renderFase(f3, 'list-fase3', 'emerald');
+        }
+
         // MOTOR INTELIGENTE DE DASHBOARD
         function iniciarMonitoreoDashboard() {
             const db = window.db || firebase.firestore(); 
             if (!db) return;
 
-            // 1. LEER SESIÓN Y PERMISOS DE VISIBILIDAD
             const stored = localStorage.getItem('leezar_user_active');
             const activeUser = stored ? JSON.parse(stored) : { rol: 'GESTOR', email: '' };
             const esOperativo = ['CAPTURISTA', 'TECNICO', 'VISITADOR', 'DIBUJANTE'].includes(activeUser.rol);
 
-            // 2. OCULTAR MÓDULOS DE JEFATURA SI ES OPERATIVO
             if (esOperativo) {
                 document.getElementById('icon-kpis').closest('.mb-6').style.display = 'none';
                 document.getElementById('icon-flujo').closest('.mb-6').style.display = 'none';
                 document.getElementById('icon-equipo').closest('.mb-6').style.display = 'none';
                 
-               // Corregido: Seleccionamos por ID para no sobreescribir el logo del menú
-            const dashTitle = document.getElementById('dash-title');
-            if(dashTitle) dashTitle.innerText = "Mi Tablero de Trabajo";
-            
-            const dashDesc = document.querySelector('header p');
-            if(dashDesc) dashDesc.innerText = "Monitorea tus expedientes asignados.";
+                const dashTitle = document.getElementById('dash-title');
+                if(dashTitle) dashTitle.innerText = "Mi Tablero de Trabajo";
+                
+                const dashDesc = document.querySelector('header p');
+                if(dashDesc) dashDesc.innerText = "Monitorea tus expedientes asignados.";
             }
 
             aplicarPreferenciasAcordeon();
@@ -279,12 +382,13 @@
                 let cDoc = 0, cVisitaDibujo = 0, cCaptura = 0;
                 let tiemposRegistrados = [];
                 let cargaPersonal = { visitadores: {}, dibujantes: {}, capturistas: {} };
-                let fase1 = [], fase2 = [], fase3 = []; 
+                
+                // Vaciamos la memoria caché en cada lectura
+                cacheFase1 = []; cacheFase2 = []; cacheFase3 = []; 
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // 🔥 FILTRO ESTRICTO PARA OPERATIVOS: Si no es su expediente, ni siquiera lo lee 🔥
                     if (esOperativo) {
                         const emailUsr = activeUser.email.toLowerCase();
                         const esMio = (
@@ -292,7 +396,7 @@
                             (data.visitador_asignado || '').toLowerCase() === emailUsr || 
                             (data.dibujante_asignado || '').toLowerCase() === emailUsr
                         );
-                        if (!esMio) return; // Se salta este expediente por completo
+                        if (!esMio) return; 
                     }
 
                     total++;
@@ -314,6 +418,16 @@
                     const tieneCapturista = !!(data.capturista_asignado || data.capturista);
                     const tieneCualquierAsignacion = tieneVisitador || tieneDibujante || tieneCapturista;
 
+                    let fechaObj = null;
+                    let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
+                    if (rawDate) {
+                        if (rawDate.toDate) fechaObj = rawDate.toDate(); 
+                        else if (rawDate._seconds) fechaObj = new Date(rawDate._seconds * 1000);
+                        else fechaObj = new Date(rawDate); 
+                    }
+                    const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
+                    const diasActivo = calcularDiasHabiles(timestamp);
+
                     if (globalStatus.includes('CONCLUIDO') || globalStatus.includes('ENTREGADO') || globalStatus === 'TERMINADO') {
                         terminados++;
                         let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
@@ -331,24 +445,24 @@
                         else if (checkCompleto && (tieneVisitador || tieneDibujante)) cVisitaDibujo++;
                         else cDoc++;
 
-                        // CLASIFICADOR DEL MONITOR EN VIVO
                         const expData = {
+                            id: doc.id,
                             nombre: data.cliente || data.nombreCliente || 'Cliente',
                             tramite: (data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
-                            pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot
+                            pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot,
+                            dias: diasActivo
                         };
 
                         if (checkCompleto && tieneVisitador && tieneDibujante && tieneCapturista) {
-                            fase3.push(expData); 
+                            cacheFase3.push(expData); 
                         } else if (checkCompleto) {
-                            fase2.push(expData); 
+                            cacheFase2.push(expData); 
                         } else if (subidos > 0) {
-                            fase1.push(expData); 
+                            cacheFase1.push(expData); 
                         }
                     }
                 });
 
-                // ACTUALIZAR PANTALLAS (Solo aplica si no es operativo)
                 if(!esOperativo) {
                     elTotal.innerText = total; elPendientes.innerText = pendientes; elProceso.innerText = enProcesoTotal; elTerminados.innerText = terminados;
                     
@@ -370,42 +484,8 @@
                     renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
                 }
 
-                // RENDERIZAR MONITOR EN VIVO (Para Todos)
-                document.getElementById('count-fase1').innerText = fase1.length;
-                document.getElementById('count-fase2').innerText = fase2.length;
-                document.getElementById('count-fase3').innerText = fase3.length;
-
-                fase1.sort((a, b) => b.pctC - a.pctC); 
-                fase2.sort((a, b) => b.pctV - a.pctV); 
-                fase3.sort((a, b) => b.val - a.val);   
-
-                const renderFase = (arr, elId, colorTheme) => {
-                    const cont = document.getElementById(elId);
-                    if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10">Bandeja Vacía</div>`; return; }
-                    
-                    const colorClasesTexto = colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
-                    const colorClasesBarra = colorTheme === 'blue' ? 'bg-blue-500' : colorTheme === 'amber' ? 'bg-amber-500' : 'bg-emerald-500';
-
-                    cont.innerHTML = arr.map(exp => `
-                        <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="w-full pr-2">
-                                    <p class="text-xs font-black text-slate-800 dark:text-white truncate" title="${exp.nombre}">${exp.nombre}</p>
-                                    <p class="text-[9px] text-slate-500 uppercase mt-0.5">${exp.tramite}</p>
-                                </div>
-                                <span class="text-[10px] font-black ${colorClasesTexto} px-1.5 py-0.5 rounded shrink-0">${elId === 'list-fase1' ? exp.pctC : exp.pctV}%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-1.5">
-                                <div class="${colorClasesBarra} h-1.5 rounded-full" style="width: ${elId === 'list-fase1' ? exp.pctC : exp.pctV}%"></div>
-                            </div>
-                            <p class="text-[9px] text-slate-400 font-bold text-right">${elId === 'list-fase1' ? `${exp.sub} subidos` : `${exp.val} validados`} de ${exp.tot}</p>
-                        </div>
-                    `).join('');
-                };
-
-                renderFase(fase1, 'list-fase1', 'blue');
-                renderFase(fase2, 'list-fase2', 'amber');
-                renderFase(fase3, 'list-fase3', 'emerald');
+                // Invocamos la función mágica que ordena y renderiza
+                aplicarFiltroOrden();
 
             }, (error) => { console.error("Error en Dashboard:", error); });
         }

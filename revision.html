@@ -8,10 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-        
-        // Inicializar Firebase
-            <script src="firebase-config.js"></script>
-
+    <script src="firebase-config.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -69,6 +66,8 @@
                         <span class="text-teal-600 dark:text-teal-400 font-bold" id="header-folio">...</span>
                         <span class="text-slate-300">|</span>
                         <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] uppercase" id="header-tramite">...</span>
+                        
+                        <span id="header-badge-dias" class="ml-1"></span>
                     </div>
                 </div>
 
@@ -134,9 +133,13 @@
 
                 <div class="flex-1 bg-slate-100 dark:bg-[#0b1121] flex flex-col relative workspace-pattern">
                     <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
+                        
                         <div id="preview-card" class="bg-white dark:bg-slate-800 shadow-2xl rounded-lg w-full max-w-[600px] aspect-[4/5] md:aspect-[3/4] flex flex-col border border-slate-200 dark:border-slate-700 relative overflow-hidden transition-all duration-300 group">
                             <div class="h-10 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase" id="preview-type">Vista Previa</span>
+                                <button id="btn-historial-doc" onclick="abrirHistorialDoc()" class="hidden items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-1 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-800 active:scale-95">
+                                    <span class="material-symbols-rounded text-[14px]">history</span> Historial de Vida
+                                </button>
                             </div>
 
                             <div class="flex-1 flex items-center justify-center bg-slate-200 dark:bg-slate-900 relative overflow-hidden">
@@ -283,6 +286,24 @@
         </div>
     </div>
 
+    <div id="modal-historial-doc" class="fixed inset-0 z-[80] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col max-h-[85vh] animate-[popIn_0.3s_ease-out]">
+            <div class="flex justify-between items-center mb-4 shrink-0 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">manage_search</span>
+                    Auditoría del Documento
+                </h3>
+                <button onclick="cerrarHistorialDoc()" class="text-slate-400 hover:text-red-500 transition-colors"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="mb-3 shrink-0 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Analizando requisito:</p>
+                <p id="historial-doc-name" class="text-sm font-black text-slate-700 dark:text-slate-200 leading-tight">...</p>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll pr-2 relative" id="historial-timeline">
+                </div>
+        </div>
+    </div>
+
     <div id="reject-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-600 transform scale-95 transition-transform">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
@@ -335,7 +356,6 @@
             document.getElementById('header-date').innerText = infoBasica.fechaDisplay || "--/--/----";
             document.getElementById('header-folio').innerText = infoBasica.id.substring(0, 8);
             
-            // CORRECCIÓN CONFIRMADA: Reemplaza guiones bajos por espacios
             document.getElementById('header-tramite').innerText = (infoBasica.tramite || "TRÁMITE").replace(/_/g, ' ');
 
             fetchDetalles(infoBasica.id);
@@ -356,7 +376,6 @@
                 const data = await res.json();
                 transformarDatos(id, data);
                 renderCurrentGroup();
-                // 🔥 LLAMAMOS A LA NUEVA FUNCIÓN
                 renderStaffPanel(data);
             } catch (e) {
                 console.error("Error cargando detalles:", e);
@@ -374,7 +393,6 @@
             const visStatus = document.getElementById('staff-visitador-status');
             const dibStatus = document.getElementById('staff-dibujante-status');
 
-            // Lógica inteligente visual (Preparando el terreno para el futuro)
             if (!data.visitador) {
                 visStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
                 visStatus.innerHTML = 'Falta Asignar';
@@ -393,6 +411,41 @@
         }
 
         function transformarDatos(id, data) {
+            // --- CALCULAR DÍAS HÁBILES PARA EL HEADER ---
+            let fechaObj = null;
+            let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha;
+            if (rawDate) {
+                if (rawDate.toDate) fechaObj = rawDate.toDate(); 
+                else if (rawDate._seconds) fechaObj = new Date(rawDate._seconds * 1000);
+                else fechaObj = new Date(rawDate); 
+            }
+            let diasAbierto = 0;
+            if (fechaObj && !isNaN(fechaObj)) {
+                let inicio = new Date(fechaObj.getTime()); let fin = new Date();
+                inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+                while (inicio < fin) {
+                    inicio.setDate(inicio.getDate() + 1);
+                    if (inicio.getDay() !== 0 && inicio.getDay() !== 6) diasAbierto++;
+                }
+            }
+
+            // --- SABER SI YA TERMINÓ PARA APAGAR EL FUEGO ---
+            const itemsValidos = Object.values(data.checklist || {}).filter(i => i.obligatorio !== false);
+            const totReq = itemsValidos.length || 1;
+            const validados = itemsValidos.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
+            const st = (data.estatus || '').toUpperCase();
+            const yaTerminado = ((validados / totReq) === 1 && itemsValidos.length > 0) || st.includes('COMPLETADO') || st.includes('FINALIZADO') || st.includes('CAPTURA');
+
+            let badgeDias = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="Días hábiles activo">⏳ ${diasAbierto}d</span>`;
+            if (yaTerminado) {
+                badgeDias = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${diasAbierto}d</span>`;
+            } else {
+                if (diasAbierto >= 3 && diasAbierto <= 5) badgeDias = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Atención requerida">⏳ ${diasAbierto}d</span>`;
+                else if (diasAbierto > 5) badgeDias = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]" title="¡CUELLO DE BOTELLA!">🔥 ${diasAbierto}d</span>`;
+            }
+            const headerBadge = document.getElementById('header-badge-dias');
+            if(headerBadge) headerBadge.innerHTML = badgeDias;
+
             expediente = {
                 id: id,
                 cliente: data.nombreCliente,
@@ -461,7 +514,7 @@
             });
         }
 
-function renderCurrentGroup() {
+        function renderCurrentGroup() {
             const container = document.getElementById('checklist-container');
             container.innerHTML = '';
             
@@ -471,17 +524,14 @@ function renderCurrentGroup() {
             const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
             document.getElementById('carousel-title').innerText = titles[currentKey];
 
-            // 1. Contar documentos válidos (Acepta 'valid' Y 'validado')
             let valid = items.filter(i => i.status === 'valid' || i.estatus === 'validado').length;
             let total = items.length;
             let percent = total > 0 ? (valid / total) * 100 : 0;
             
-            // 2. Actualizar Barra
             const progressBar = document.getElementById('group-progress-bar');
             progressBar.style.width = `${percent}%`;
             document.getElementById('group-counter').innerText = `${valid}/${total}`;
 
-            // 3. Color Verde si está completo
             if (percent === 100) {
                 progressBar.classList.remove('bg-teal-500');
                 progressBar.classList.add('bg-green-500');
@@ -490,12 +540,8 @@ function renderCurrentGroup() {
                 progressBar.classList.remove('bg-green-500');
             }
 
-            // 4. VERIFICACIÓN GLOBAL (¿Ya acabamos todo el expediente?)
             verificarProgresoGlobal();
             
-            document.getElementById('group-progress-bar').style.width = `${percent}%`;
-            document.getElementById('group-counter').innerText = `${valid}/${total}`;
-
             if(items.length === 0) {
                 container.innerHTML = '<div class="p-4 text-xs text-center text-slate-400">No hay requisitos en este grupo.</div>';
                 return;
@@ -539,17 +585,14 @@ function renderCurrentGroup() {
             });
         }
 
-        // --- MOTOR DE BOMBERAZOS (DOCUMENTOS EXTRA) ---
         async function solicitarDocumentoExtra() {
             const nombreDoc = prompt("¿Qué documento adicional necesitas pedirle al cliente? (Ej. Constancia Ejidal)");
             if (!nombreDoc) return;
 
-            // Detecta en qué pestaña estás parado (Solicitante, Propietario o Inmueble) para meterlo ahí
             const currentKey = groupKeys[activeGroupIndex]; 
             const idDoc = 'EXTRA_' + Date.now();
 
             try {
-                // Inyectamos el requisito directamente a la base de datos de este expediente
                 await db.collection('expedientes_avaluos').doc(expediente.id).set({
                     checklist: {
                         [idDoc]: {
@@ -557,14 +600,14 @@ function renderCurrentGroup() {
                             estatus: 'pendiente',
                             categoria: currentKey, 
                             obligatorio: true,
-                            tipo: 'MIXTO', // Permite PDF o Foto
+                            tipo: 'MIXTO', 
                             fechaAgregado: new Date().toISOString()
                         }
                     }
                 }, { merge: true });
                 
                 alert("¡Documento inyectado con éxito! Si el cliente actualiza su portal, ya le aparecerá.");
-                location.reload(); // Recargamos para verlo nosotros también
+                location.reload(); 
             } catch (e) {
                 console.error(e);
                 alert("Error al solicitar documento: " + e.message);
@@ -585,6 +628,18 @@ function renderCurrentGroup() {
                 document.getElementById(id)?.classList.add('hidden');
             });
 
+            // NUEVO: Lógica del botón de Historial
+            const btnHistorial = document.getElementById('btn-historial-doc');
+            if (btnHistorial) {
+                if (req.key !== 'UBICACION_MAPS') {
+                    btnHistorial.classList.remove('hidden');
+                    btnHistorial.classList.add('flex');
+                } else {
+                    btnHistorial.classList.add('hidden');
+                    btnHistorial.classList.remove('flex');
+                }
+            }
+
             if (req.key === 'UBICACION_MAPS') {
                 if (req.coordenadas) {
                     document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
@@ -596,7 +651,6 @@ function renderCurrentGroup() {
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
             }
-            
             else if (req.tipo === 'GALERIA') {
                 const grid = document.getElementById('gallery-grid');
                 const count = document.getElementById('gallery-count');
@@ -619,20 +673,17 @@ function renderCurrentGroup() {
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
             }
-
             else if (req.tipo === 'TXT') {
                 const txtArea = document.getElementById('text-viewer');
                 const contenido = req.textoPreview || (req.url ? "Cargando contenido..." : "Sin texto registrado");
                 txtArea.value = contenido.replace('CORREO: ', '');
                 txtArea.classList.remove('hidden');
             }
-
             else if (req.tipo === 'PDF' && req.url) {
                 const pdf = document.getElementById('real-pdf');
                 pdf.src = req.url;
                 pdf.classList.remove('hidden');
             }
-            
             else if (req.url) {
                 const img = document.getElementById('real-image');
                 img.src = req.url;
@@ -640,17 +691,14 @@ function renderCurrentGroup() {
                 document.getElementById('zoom-overlay').classList.remove('hidden');
                 galleryImages = [{ url: req.url, nombre: req.nombre }];
             } 
-            
             else {
                 document.getElementById('preview-placeholder').classList.remove('hidden');
             }
             
-            // 🔥 CANDADO DE SEGURIDAD: La barra solo sube si está "En Revisión" o "Rechazado"
             const bar = document.getElementById('decision-bar');
             if (['review', 'rejected'].includes(req.status)) {
                 bar.classList.remove('translate-y-full');
             } else {
-                // Si el estatus es 'valid' (o 'pending'), la barra se esconde y bloquea la decisión
                 bar.classList.add('translate-y-full');
             }
         }
@@ -669,6 +717,11 @@ function renderCurrentGroup() {
                 const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
                 
                 if(item) item.status = nuevoEstado === 'rechazado' ? 'rejected' : 'valid';
+
+                await registrarLog(
+                    nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO',
+                    motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios.'
+                );
                 
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
@@ -702,19 +755,15 @@ function renderCurrentGroup() {
         function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
         function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
 
-// --- FUNCIONES DE ASIGNACIÓN (NUEVAS) ---
-
         function verificarProgresoGlobal() {
             if (!expediente || !expediente.grupos) return;
 
             let totalGlobal = 0;
             let validGlobal = 0;
 
-            // Recorrer todos los grupos para ver si falta algo
             Object.values(expediente.grupos).forEach(grupo => {
                 grupo.forEach(doc => {
                     totalGlobal++;
-                    // Checa ambos posibles valores de estatus
                     if (doc.status === 'valid' || doc.estatus === 'validado') {
                         validGlobal++;
                     }
@@ -723,7 +772,6 @@ function renderCurrentGroup() {
 
             const btnContainer = document.getElementById('action-container');
             if (btnContainer) {
-                // Si hay documentos y todos están validados -> Mostrar botón
                 if (totalGlobal > 0 && validGlobal === totalGlobal) {
                     btnContainer.classList.remove('hidden');
                 } else {
@@ -744,7 +792,6 @@ function renderCurrentGroup() {
             lista.innerHTML = '<div class="text-center p-4"><span class="material-symbols-rounded animate-spin text-indigo-500">sync</span></div>';
 
             try {
-                // 1. Traemos TODOS los usuarios para filtrar manualmente y evitar errores de mayúsculas
                 const snapshot = await db.collection('usuarios').get();
                 
                 lista.innerHTML = '';
@@ -752,10 +799,8 @@ function renderCurrentGroup() {
 
                 snapshot.forEach(doc => {
                     const u = doc.data();
-                    // Normalizamos a mayúsculas para comparar
                     const rol = (u.rol || '').toUpperCase().trim();
 
-                    // --- FILTRO ESTRICTO: SOLO CAPTURISTAS ---
                     if (rol === 'CAPTURISTA') {
                         encontrados++;
                         const inicial = (u.nombre || 'U').charAt(0).toUpperCase();
@@ -764,12 +809,10 @@ function renderCurrentGroup() {
                         div.className = 'flex items-center gap-3 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg cursor-pointer transition-colors border border-transparent';
                         
                         div.onclick = () => {
-                            capturistaSeleccionado = doc.id; // Guardamos el ID (email)
-                            // Limpiar selección visual previa
+                            capturistaSeleccionado = doc.id; 
                             Array.from(lista.children).forEach(c => {
                                 c.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/40');
                             });
-                            // Marcar actual
                             div.classList.add('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/40');
                         };
 
@@ -810,7 +853,6 @@ function renderCurrentGroup() {
             btn.disabled = true;
 
             try {
-                // CAMBIO DE ESTATUS Y ASIGNACIÓN
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
                     estatus: 'EN CAPTURA',
                     capturista_asignado: capturistaSeleccionado,
@@ -828,7 +870,107 @@ function renderCurrentGroup() {
             }
         }
 
-    
+        // --- NUEVAS FUNCIONES DE HISTORIAL DE AUDITORÍA ---
+        async function abrirHistorialDoc() {
+            if(!selectedReqKey) return;
+            document.getElementById('modal-historial-doc').classList.remove('hidden');
+            document.getElementById('modal-historial-doc').classList.add('flex');
+            document.getElementById('historial-doc-name').innerText = document.getElementById('selected-doc-name').innerText;
+            
+            const timeline = document.getElementById('historial-timeline');
+            timeline.innerHTML = '<div class="text-center p-10"><span class="material-symbols-rounded animate-spin text-indigo-500 text-4xl mb-2">sync</span><p class="text-xs text-slate-400 font-bold mt-2">Buscando rastros seguros...</p></div>';
+
+            try {
+                // CONSULTA SEGURA: Solo pedimos los del expediente actual y documento seleccionado
+                const snapshot = await db.collection('logs')
+                    .where('expedienteId', '==', expediente.id)
+                    .where('itemKey', '==', selectedReqKey)
+                    .get();
+
+                let logs = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let dateVal = 0;
+                    if(data.fecha && data.fecha.seconds) dateVal = data.fecha.seconds;
+                    else if(data.fecha) dateVal = new Date(data.fecha).getTime() / 1000;
+                    logs.push({ ...data, _ts: dateVal });
+                });
+
+                // Ordenamos del más nuevo al más viejo en el cliente
+                logs.sort((a, b) => b._ts - a._ts);
+
+                if (logs.length === 0) {
+                    timeline.innerHTML = `
+                        <div class="flex flex-col items-center justify-center p-8 opacity-60 mt-10">
+                            <span class="material-symbols-rounded text-5xl mb-3 text-slate-300">history_toggle_off</span>
+                            <p class="text-sm font-bold text-slate-500 text-center mb-1">Sin historial reciente</p>
+                            <p class="text-[10px] text-slate-400 text-center">(Los registros a partir de hoy aparecerán aquí).</p>
+                        </div>`;
+                    return;
+                }
+
+                let html = '<div class="relative border-l-2 border-indigo-100 dark:border-indigo-900/50 ml-3 mt-4 space-y-6 pb-4">';
+                
+                logs.forEach(log => {
+                    let fechaStr = "Hace un momento";
+                    if (log._ts > 0) {
+                        fechaStr = new Date(log._ts * 1000).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+                    }
+                    
+                    let iconObj = { icon: 'info', color: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400' };
+                    if(log.accion.includes('RECHAZO')) iconObj = { icon: 'cancel', color: 'bg-red-500', text: 'text-red-600 dark:text-red-400' };
+                    if(log.accion.includes('VALIDA')) iconObj = { icon: 'check_circle', color: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' };
+
+                    let badgeAccion = `<span class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-slate-100 dark:bg-slate-800 ${iconObj.text}">${log.accion}</span>`;
+
+                    html += `
+                        <div class="relative pl-6 animate-[fadeIn_0.3s_ease-out]">
+                            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full ${iconObj.color} border-2 border-white dark:border-slate-800 shadow-sm"></div>
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 mb-1.5">
+                                ${badgeAccion}
+                                <span class="text-[10px] text-slate-400 font-mono ml-auto">${fechaStr}</span>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">${log.detalle}</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[11px]">person</span> ${log.usuario}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                timeline.innerHTML = html;
+
+            } catch(e) {
+                console.error(e);
+                timeline.innerHTML = '<p class="text-xs font-bold text-red-500 text-center mt-10">Error de seguridad al cargar historial.</p>';
+            }
+        }
+
+        function cerrarHistorialDoc() {
+            document.getElementById('modal-historial-doc').classList.add('hidden');
+            document.getElementById('modal-historial-doc').classList.remove('flex');
+        }
+        
+        async function registrarLog(accion, detalle) {
+            try {
+                const userData = localStorage.getItem('leezar_user_active');
+                let usuario = 'Mesa de Control';
+                if(userData) usuario = JSON.parse(userData).email || 'Mesa de Control';
+                
+                await db.collection('logs').add({
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    usuario: usuario,
+                    accion: accion,
+                    detalle: detalle,
+                    expedienteId: expediente.id, // LLAVE MAESTRA DE SEGURIDAD
+                    itemKey: selectedReqKey      // LLAVE DEL DOCUMENTO
+                });
+            } catch (e) { console.error("Error log:", e); }
+        }
 
     </script>
 
