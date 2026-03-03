@@ -144,9 +144,7 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                
-                // URL oficial y limpia de Google Maps
-                let linkGoogleMaps = coordsFinales ? "https://www.google.com/maps?q=" + coordsFinales : '#'; 
+                let linkGoogleMaps = coordsFinales ? `https://maps.google.com/?q=$${coordsFinales}` : '#'; 
 
                 // 🔥 UX NUEVA: Detectar si ya hay archivos subidos para cambiar el botón
                 let prevFiles = 0;
