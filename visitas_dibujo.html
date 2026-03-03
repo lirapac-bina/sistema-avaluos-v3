@@ -9,6 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
 
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { leezar: { 500: '#0d9488', 600: '#0f766e' } } } } }
@@ -44,10 +46,10 @@
         <div class="px-6 mb-6">
             <div class="flex border-b border-slate-200 dark:border-slate-800">
                 <button onclick="switchTab('visitas')" id="tab-visitas" class="flex-1 pb-3 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-all">
-                    VISITAS (FOTOGRAFÍAS)
+                    VISITAS (Fotos)
                 </button>
                 <button onclick="switchTab('dibujos')" id="tab-dibujos" class="flex-1 pb-3 text-xs font-bold text-slate-400 border-b-2 border-transparent transition-all">
-                    DIBUJO (PROYECTO ARQUITECTÓNICO)
+                    DIBUJO (Proyecto Arquitectónico)
                 </button>
             </div>
         </div>
@@ -78,7 +80,7 @@
                     <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-400 mt-4 font-medium">Por favor, no cierres esta pantalla.</p>
+            <p class="text-[10px] text-slate-400 mt-4 font-medium" id="upload-warning">Por favor, no cierres esta pantalla.</p>
         </div>
     </div>
 
@@ -89,6 +91,9 @@
         const db = firebase.firestore();
         let misExpedientes = [];
         let vistaActual = 'visitas';
+        
+        // 🔥 TU URL DE GOOGLE APPS SCRIPT
+        const SCRIPT_SUBIDA_URL = 'https://script.google.com/macros/s/AKfycbw8FRLtEIxNMw0eGmMlwm66ZIyLkgU0eCjq-k7-TFR7lOHH1bDgt-jOALnH5LyH681-9w/exec'; 
 
         async function iniciarMotorBusqueda() {
             const userJson = localStorage.getItem('leezar_user_active');
@@ -100,7 +105,6 @@
                 .onSnapshot(snapshot => {
                     misExpedientes = snapshot.docs.map(doc => {
                         const data = doc.data();
-                        
                         let coords = data.coordenadas || null;
                         if (!coords && data.checklist && data.checklist.UBICACION_MAPS) coords = data.checklist.UBICACION_MAPS.coordenadas || null;
 
@@ -117,7 +121,6 @@
 
                     renderizarTareas();
 
-                    // Quitar la Bóveda una vez validados los datos
                     document.getElementById('main-content').style.visibility = 'visible';
                     const secLoader = document.getElementById('security-loader');
                     if (secLoader && !secLoader.classList.contains('opacity-0')) {
@@ -139,19 +142,15 @@
             misExpedientes.forEach(exp => {
                 const colorBase = vistaActual === 'visitas' ? 'indigo' : 'orange';
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
-                
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                let linkGoogleMaps = '#';
-                if (coordsFinales) linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${coordsFinales}`; 
+                let linkGoogleMaps = coordsFinales ? "https://www.google.com/maps/search/?api=1&query=$" + coordsFinales : '#'; 
 
                 const card = `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600">
-                                    <span class="material-symbols-rounded text-xl">${icon}</span>
-                                </div>
+                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600"><span class="material-symbols-rounded text-xl">${icon}</span></div>
                                 <div>
                                     <h4 class="text-sm font-black text-slate-800 dark:text-white leading-tight">${exp.clienteNombre || exp.cliente || 'Sin Nombre'}</h4>
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${exp.folio || exp.id.substring(0,6)}</p>
@@ -166,15 +165,8 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <a href="${linkGoogleMaps}" target="_blank" class="flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all ${!coordsFinales ? 'opacity-50 pointer-events-none' : ''}">
-                                <span class="material-symbols-rounded text-lg text-slate-600 dark:text-slate-300">map</span>
-                                <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">VER MAPA</span>
-                            </a>
-                            <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" 
-                                class="flex items-center justify-center gap-2 py-3 bg-${colorBase}-600 hover:bg-${colorBase}-700 text-white rounded-xl shadow-lg shadow-${colorBase}-500/20 transition-all">
-                                <span class="material-symbols-rounded text-lg">${vistaActual === 'visitas' ? 'add_a_photo' : 'upload_file'}</span>
-                                <span class="text-[11px] font-bold uppercase">SUBIR</span>
-                            </button>
+                            <a href="${linkGoogleMaps}" target="_blank" class="flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all ${!coordsFinales ? 'opacity-50 pointer-events-none' : ''}"><span class="material-symbols-rounded text-lg text-slate-600 dark:text-slate-300">map</span><span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">VER MAPA</span></a>
+                            <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" class="flex items-center justify-center gap-2 py-3 bg-${colorBase}-600 hover:bg-${colorBase}-700 text-white rounded-xl shadow-lg shadow-${colorBase}-500/20 transition-all"><span class="material-symbols-rounded text-lg">${vistaActual === 'visitas' ? 'add_a_photo' : 'upload_file'}</span><span class="text-[11px] font-bold uppercase">SUBIR</span></button>
                         </div>
                     </div>`;
                 container.innerHTML += card;
@@ -195,7 +187,7 @@
             else document.getElementById('input-dibujo').click();
         }
 
-        // 🔥 MOTOR DE SUBIDA CLONADO DEL PORTAL DEL CLIENTE (Soporta archivos pesados y mantiene GPS)
+        // 🔥 MOTOR DE SUBIDA EN COLA PARA GOOGLE DRIVE
         async function procesarArchivos(event, tipo) {
             const files = Array.from(event.target.files);
             if(files.length === 0) return;
@@ -203,41 +195,75 @@
             const modal = document.getElementById('modal-upload');
             const status = document.getElementById('upload-status');
             const bar = document.getElementById('upload-progress');
-            document.getElementById('upload-title').innerText = tipo === 'VISITA' ? '📸 Subiendo Fotos...' : '📐 Subiendo Planos...';
-            
+            document.getElementById('upload-title').innerText = tipo === 'VISITA' ? '📸 Subiendo a Drive...' : '📐 Subiendo Planos...';
+            document.getElementById('upload-warning').innerText = "Subiendo archivos uno por uno para garantizar el GPS. Por favor espera.";
             modal.classList.remove('hidden'); modal.classList.add('flex');
 
             try {
+                const docRef = await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).get();
+                const dataDb = docRef.data();
+                
+                let folderIdDestino = null;
+                if (dataDb.driveSubfolders) {
+                    folderIdDestino = tipo === 'VISITA' ? dataDb.driveSubfolders['Fotografías'] : dataDb.driveSubfolders['Proy Arq'];
+                }
+
                 let archivosSubidos = [];
 
+                // 🌟 FILA INDIA: Subimos una por una para no saturar a Google
                 for (let i = 0; i < files.length; i++) {
                     const f = files[i];
-                    status.innerText = `Subiendo archivo ${i+1} de ${files.length}...\n${f.name}`;
+                    status.innerText = `Optimizando archivo ${i+1} de ${files.length}...\n${f.name}`;
                     
-                    // Creamos llaves únicas
-                    const fileKey = `STAFF_${tipo}_${Date.now()}_${i}`;
-                    const finalName = `${tipo}_${i+1}_${Date.now()}_${f.name}`;
+                    let cleanBase64;
+                    let mimeParaGoogle = f.type;
 
-                    // 1. Pedir URL firmada a Netlify (Igual que el Portal)
-                    const res = await fetch('/.netlify/functions/get-upload-url', {
+                    if (f.type.startsWith('image/')) {
+                        const options = { maxSizeMB: 1, maxWidthOrHeight: 1600, useWebWorker: true, preserveExif: true };
+                        try {
+                            const compressedFile = await imageCompression(f, options);
+                            const base64Data = await fileToBase64(compressedFile);
+                            cleanBase64 = base64Data.split(',')[1];
+                            mimeParaGoogle = compressedFile.type;
+                        } catch (e) {
+                            const base64Data = await fileToBase64(f);
+                            cleanBase64 = base64Data.split(',')[1];
+                        }
+                    } else {
+                        const base64Data = await fileToBase64(f);
+                        cleanBase64 = base64Data.split(',')[1];
+                    }
+
+                    status.innerText = `Enviando a Drive ${i+1} de ${files.length}...\n${f.name}`;
+
+                    const response = await fetch(SCRIPT_SUBIDA_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ expedienteId: expActivoParaSubida.id, itemKey: fileKey, fileName: finalName, mimeType: f.type })
+                        body: JSON.stringify({ 
+                            filename: f.name, 
+                            mimeType: mimeParaGoogle, 
+                            base64: cleanBase64, 
+                            folderId: folderIdDestino 
+                        })
                     });
                     
-                    if (!res.ok) throw new Error("Fallo al obtener ruta de subida.");
-                    const { uploadUrl, filePath } = await res.json();
+                    const responseText = await response.text();
+                    try {
+                        const result = JSON.parse(responseText);
+                        if (result.exito) {
+                            archivosSubidos.push({ nombre: f.name, url: result.url });
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (parseErr) {
+                        throw new Error("El Script de Google rechazó la subida. Verifica los permisos de tu App Web.");
+                    }
 
-                    // 2. Subir directamente al Bucket en crudo (Velocidad máxima + Conserva EXIF/GPS)
-                    await fetch(uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } });
-
-                    archivosSubidos.push({ nombre: f.name, url: filePath });
                     bar.style.width = `${((i+1)/files.length)*100}%`;
                 }
 
                 status.innerText = `Organizando Entregables Internos...`;
                 
-                // 🔥 SE GUARDAN EN LA ZONA DE STAFF (Lejos del cliente)
+                // 🔥 SE GUARDAN EN LA ZONA DE STAFF (Lejos de los docs del cliente)
                 let entregables = expActivoParaSubida.entregables || {};
                 if (tipo === 'VISITA') {
                     entregables.visita = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosSubidos };
@@ -251,7 +277,7 @@
                 });
 
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                alert(`✅ ¡Éxito! Se subieron ${files.length} archivos a Mesa de Control.`);
+                alert(`✅ ¡Éxito! Se subieron ${files.length} archivos a tu Google Drive.`);
                 event.target.value = '';
 
             } catch (error) {
@@ -260,6 +286,15 @@
                 modal.classList.add('hidden'); modal.classList.remove('flex');
                 event.target.value = '';
             }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
         }
 
         window.onload = iniciarMotorBusqueda;

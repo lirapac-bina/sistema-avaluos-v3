@@ -383,7 +383,7 @@
             }
         }
 
-        // 🔥 FUNCION MEJORADA: Ahora sí lee los archivos de los entregables del Visitador y Dibujante
+        // 🔥 FUNCION MEJORADA: Lee los entregables del Visitador y Dibujante
         function renderStaffPanel(data) {
             const visName = data.visitador ? data.visitador.split('@')[0] : 'SIN ASIGNAR';
             const dibName = data.dibujante ? data.dibujante.split('@')[0] : 'SIN ASIGNAR';
@@ -394,7 +394,7 @@
             const visStatus = document.getElementById('staff-visitador-status');
             const dibStatus = document.getElementById('staff-dibujante-status');
 
-            // 🔥 BOTÓN VISITA: Extrae las fotos y activa el botón verde
+            // 🔥 BOTÓN VISITA: Extrae las fotos de "entregables" y activa el botón verde
             if (data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado') {
                 visStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
                 visStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Fotos';
@@ -421,7 +421,7 @@
             }
         }
 
-        // 🔥 FUNCIÓN NUEVA: Inyecta los archivos del Staff al visualizador central adaptando URLs de Google Drive
+        // 🔥 FUNCIÓN NUEVA: Convierte URLs de Drive a imágenes visibles y las muestra
         function verEntregablesStaff(archivos, tipo) {
             if (!archivos || archivos.length === 0) return alert("No hay archivos subidos.");
             
@@ -433,8 +433,8 @@
             document.getElementById('card-filename').innerText = archivos.length + " archivo(s) entregados";
             document.getElementById('decision-bar').classList.add('translate-y-full');
 
-            // 🌟 TRUCO MAESTRO: Convierte la URL de "Vista" de Drive a una URL de "Imagen Real"
-            const fixDriveUrl = (url) => {
+            // 🌟 EL TRUCO MAGISTRAL: Transformador de URLs de Google Drive
+            const transformDriveUrl = (url) => {
                 if (!url) return '';
                 if (url.includes('drive.google.com/file/d/')) {
                     const match = url.match(/\/d\/(.+?)\//);
@@ -442,15 +442,15 @@
                         return `https://drive.google.com/uc?export=view&id=${match[1]}`;
                     }
                 }
-                return url;
+                return url; 
             };
 
             if (tipo === 'GALERIA') {
                 const grid = document.getElementById('gallery-grid');
                 document.getElementById('gallery-count').innerText = `${archivos.length} fotos`;
                 
-                // Actualizamos las URLs en la memoria global para que el Zoom también funcione
-                galleryImages = archivos.map(foto => ({ url: fixDriveUrl(foto.url), nombre: foto.nombre })); 
+                // Actualizamos las URLs globales para que el zoom también funcione
+                galleryImages = archivos.map(foto => ({ url: transformDriveUrl(foto.url), nombre: foto.nombre })); 
                 grid.innerHTML = '';
                 
                 galleryImages.forEach((foto, index) => {
@@ -465,9 +465,10 @@
                 if(archivos.length > 1) alert("Se subieron varios planos. Mostrando el primero.");
                 const pdf = document.getElementById('real-pdf');
                 
-                // En Drive, los PDF se pueden incrustar cambiando /view por /preview
                 let pdfUrl = archivos[0].url;
-                if (pdfUrl.includes('/view')) pdfUrl = pdfUrl.replace('/view', '/preview');
+                if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
+                    pdfUrl = pdfUrl.replace('/view', '/preview');
+                }
                 
                 pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');

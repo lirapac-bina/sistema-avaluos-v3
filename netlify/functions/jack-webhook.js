@@ -115,9 +115,9 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
 
-// Fijos inquebrantables (AHORA SÍ PARA SIEMPRE)
+        // Fijos inquebrantables
         checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
-        checklistFinal['DETALLES_INMUEBLE'] = { nombre: 'Detalles del Inmueble', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'TXT', id: 'DETALLES_INMUEBLE' };
+        
         // 🧠 --- FIN LÓGICA DE CHECKLIST ---
 
         // 🔥 CREACIÓN DEL EXPEDIENTE
