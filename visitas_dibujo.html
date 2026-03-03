@@ -26,7 +26,14 @@
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen relative">
+
+    <div id="security-loader" class="fixed inset-0 z-[9999] bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-300">
+        <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex items-center justify-center mb-4 border border-slate-200 dark:border-slate-700">
+            <span class="material-symbols-rounded animate-spin text-4xl text-indigo-500">lock_open</span>
+        </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Verificando Accesos...</p>
+    </div>
 
     <main class="max-w-md mx-auto pb-24">
         <header class="p-6">
@@ -82,33 +89,29 @@
         const db = firebase.firestore();
         let misExpedientes = [];
         let vistaActual = 'visitas';
-        const SCRIPT_SUBIDA_URL = 'https://script.google.com/macros/s/AKfycbw8FRLtEIxNMw0eGmMlwm66ZIyLkgU0eCjq-k7-TFR7lOHH1bDgt-jOALnH5LyH681-9w/exec'; // Reemplaza con tu URL real
+        const SCRIPT_SUBIDA_URL = 'https://script.google.com/macros/s/AKfycbw8FRLtEIxNMw0eGmMlwm66ZIyLkgU0eCjq-k7-TFR7lOHH1bDgt-jOALnH5LyH681-9w/exec'; 
 
         async function iniciarMotorBusqueda() {
             const userJson = localStorage.getItem('leezar_user_active');
             if(!userJson) return;
             const user = JSON.parse(userJson);
 
-            // Escuchar cambios en tiempo real
             db.collection('expedientes_avaluos')
                 .where('estatus', 'in', ['VISITA PROGRAMADA', 'EN DIBUJO', 'PENDIENTE', 'EN REVISIÓN'])
                 .onSnapshot(snapshot => {
                     misExpedientes = snapshot.docs.map(doc => {
                         const data = doc.data();
                         
-                        // 🔥 1. CAZADOR DE COORDENADAS 
                         let coords = data.coordenadas || null;
                         if (!coords && data.checklist && data.checklist.UBICACION_MAPS) {
                             coords = data.checklist.UBICACION_MAPS.coordenadas || null;
                         }
 
-                        // 🔥 2. CAZADOR DE DIRECCIÓN
                         let dir = data.ubicacion || data.direccion || data.municipio;
                         if ((!dir || dir === 'Sin dirección') && data.checklist && data.checklist.UBICACION_MAPS) {
                             dir = data.checklist.UBICACION_MAPS.direccion || data.checklist.UBICACION_MAPS.ubicacion || data.checklist.UBICACION_MAPS.address;
                         }
                         
-                        // 🔥 3. MAGIA VISUAL: Si no hay calle, pero hay GPS, mostramos un mensaje bonito
                         if (!dir || dir === 'Sin dirección' || dir === 'Dirección no registrada') {
                             dir = coords ? `📍 Ubicación por GPS guardada` : 'Dirección no registrada';
                         }
@@ -126,6 +129,13 @@
                     });
 
                     renderizarTareas();
+
+                    // 🔓 Retirar la Bóveda de Seguridad suavemente
+                    const secLoader = document.getElementById('security-loader');
+                    if (secLoader && !secLoader.classList.contains('opacity-0')) {
+                        secLoader.classList.add('opacity-0', 'pointer-events-none');
+                        setTimeout(() => secLoader.remove(), 400);
+                    }
                 });
         }
 
@@ -152,10 +162,10 @@
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
 
-                // 🔥 LINK UNIVERSAL (Abre la App de Google Maps directo en Android/iOS)
+                // 🔥 Enlace blindado por concatenación (Nunca fallará)
                 let linkGoogleMaps = '#';
                 if (coordsFinales) {
-                    linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${coordsFinales}`; 
+                    linkGoogleMaps = "https://www.google.com/maps/search/?api=1&query=" + coordsFinales; 
                 }
 
                 const card = `
@@ -213,6 +223,35 @@
             else document.getElementById('input-dibujo').click();
         }
 
+        // 🔥 MOTOR DE COMPRESIÓN (Evita el error 500 de Google)
+        const comprimirImagen = (file) => new Promise((resolve, reject) => {
+            if (!file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const MAX_WIDTH = 1200; 
+                    const scale = Math.min(MAX_WIDTH / img.width, 1);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% calidad
+                };
+            };
+            reader.onerror = error => reject(error);
+        });
+
         async function procesarArchivos(event, tipo) {
             const files = event.target.files;
             if(!files || files.length === 0) return;
@@ -237,31 +276,39 @@
 
                 for(let i=0; i<files.length; i++) {
                     const file = files[i];
-                    status.innerText = `Subiendo ${i+1} de ${files.length}...\n${file.name}`;
+                    status.innerText = `Procesando ${i+1} de ${files.length}...\n${file.name}`;
                     
-                    const base64Data = await fileToBase64(file);
+                    // Comprimimos al vuelo
+                    const base64Data = await comprimirImagen(file);
                     const cleanBase64 = base64Data.split(',')[1];
+                    const mimeParaGoogle = file.type.startsWith('image/') ? 'image/jpeg' : file.type;
 
-                    // 🔥 VERSIÓN PRODUCCIÓN: Lee la URL real de Google Drive
+                    status.innerText = `Enviando a Drive ${i+1} de ${files.length}...\n${file.name}`;
+
                     const response = await fetch(SCRIPT_SUBIDA_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({
                             filename: file.name,
-                            mimeType: file.type,
+                            mimeType: mimeParaGoogle,
                             base64: cleanBase64,
                             folderId: folderIdDestino
                         })
                     });
 
                     const result = await response.json();
-                    if(result.exito) archivosSubidos.push({ nombre: file.name, url: result.url });
+                    if(result.exito) {
+                        archivosSubidos.push({ nombre: file.name, url: result.url });
+                    } else {
+                        throw new Error(result.error);
+                    }
                     bar.style.width = `${((i+1)/files.length)*100}%`;
                 }
 
+                status.innerText = `Notificando a Mesa de Control...`;
+                
                 let actualizaciones = { estatus: 'EN REVISIÓN' };
                 if (tipo === 'VISITA') {
-                    // 🔥 BAUTIZO: Le damos nombre para que no diga "Sin nombre" en Mesa de Control
                     actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.nombre'] = 'Reporte Fotográfico de Campo';
                     actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.categoria'] = 'inmueble';
                     actualizaciones['checklist.FOTOS_INTERIORES_GENERAL.estatus'] = 'revision';
@@ -288,7 +335,7 @@
 
             } catch (error) {
                 console.error(error);
-                alert("❌ Error al subir archivos. Verifica tu conexión.");
+                alert("❌ Falló la subida. Asegúrate de haber publicado una 'Nueva versión' en tu Google Script.");
                 modal.classList.add('hidden'); modal.classList.remove('flex');
             }
         }
