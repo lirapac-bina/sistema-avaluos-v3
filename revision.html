@@ -372,14 +372,25 @@
         
         async function fetchDetalles(id) {
             try {
-                const res = await fetch(`/.netlify/functions/get-expediente-details?id=${id}&t=${Date.now()}`); 
-                const data = await res.json();
+                // 🔥 EL FIX FINAL: Leer directamente de Firebase para no perder los Entregables
+                const docRef = await db.collection('expedientes_avaluos').doc(id).get();
+                
+                if (!docRef.exists) {
+                    throw new Error("Expediente no encontrado en la base de datos.");
+                }
+
+                const data = docRef.data();
+                
+                // Fallback de seguridad por si el nombre está guardado en otro campo
+                data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
+
                 transformarDatos(id, data);
                 renderCurrentGroup();
                 renderStaffPanel(data);
+
             } catch (e) {
                 console.error("Error cargando detalles:", e);
-                alert("No se pudieron cargar los requisitos.");
+                alert("No se pudieron cargar los datos del expediente. " + e.message);
             }
         }
 
@@ -433,14 +444,15 @@
             document.getElementById('card-filename').innerText = archivos.length + " archivo(s) entregados";
             document.getElementById('decision-bar').classList.add('translate-y-full');
 
-            // 🌟 EL TRUCO MAGISTRAL: Transformador de URLs de Google Drive
+            // 🌟 TRUCO MAESTRO DEFINITIVO (Concatenación Segura 2024)
             const transformDriveUrl = (url) => {
                 if (!url) return '';
-                if (url.includes('drive.google.com/file/d/')) {
-                    const match = url.match(/\/d\/(.+?)\//);
-                    if (match && match[1]) {
-                        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-                    }
+                // Extrae el ID de la foto de Google Drive
+                const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                if (match && match[1]) {
+                    const fileId = match[1];
+                    // Renderizador oficial de Google en alta calidad
+                    return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
                 }
                 return url; 
             };
@@ -456,7 +468,7 @@
                 galleryImages.forEach((foto, index) => {
                     grid.innerHTML += `
                         <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
-                            <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                            <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
                             <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre}</div>
                         </div>`;
                 });
@@ -689,7 +701,7 @@
                 if (req.coordenadas) {
                     document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
                     document.getElementById('map-coords-text').innerText = req.coordenadas;
-                    const embedUrl = `https://www.google.com/maps?q=$${req.coordenadas}&t=k&z=19&output=embed`;
+                    const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
                     document.getElementById('google-map-embed').src = embedUrl;
                     document.getElementById('map-container').classList.remove('hidden');
                 } else {

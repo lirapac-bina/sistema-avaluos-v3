@@ -144,7 +144,7 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                let linkGoogleMaps = coordsFinales ? "https://www.google.com/maps/search/?api=1&query=$" + coordsFinales : '#'; 
+                let linkGoogleMaps = coordsFinales ? `https://maps.google.com/?q=${coordsFinales}` : '#'; 
 
                 const card = `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
@@ -204,8 +204,33 @@
                 const dataDb = docRef.data();
                 
                 let folderIdDestino = null;
+                
+                // 🌟 BUSCADOR INTELIGENTE DE CARPETAS
                 if (dataDb.driveSubfolders) {
-                    folderIdDestino = tipo === 'VISITA' ? dataDb.driveSubfolders['Fotografías'] : dataDb.driveSubfolders['Proy Arq'];
+                    const llavesFirebase = Object.keys(dataDb.driveSubfolders);
+                    
+                    // Función para encontrar carpetas ignorando mayúsculas y acentos
+                    const encontrarCarpeta = (palabrasClave) => {
+                        for (let llave of llavesFirebase) {
+                            let llaveLimpia = llave.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            for (let palabra of palabrasClave) {
+                                if (llaveLimpia.includes(palabra)) return dataDb.driveSubfolders[llave];
+                            }
+                        }
+                        return null;
+                    };
+
+                    if (tipo === 'VISITA') {
+                        folderIdDestino = encontrarCarpeta(['fotos', 'fotografias']);
+                    } else {
+                        folderIdDestino = encontrarCarpeta(['proy', 'dibujo', 'planos']);
+                    }
+                }
+
+                // 2. SEGURO ANTI-RAÍZ CON REPORTE EXACTO
+                if (!folderIdDestino) {
+                    let carpetasExistentes = dataDb.driveSubfolders ? Object.keys(dataDb.driveSubfolders).join(', ') : 'Ninguna';
+                    throw new Error(`Falta la carpeta para ${tipo}. Carpetas registradas en Firebase: [${carpetasExistentes}]. Revisa tu webhook.`);
                 }
 
                 let archivosSubidos = [];
