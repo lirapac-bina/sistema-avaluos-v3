@@ -242,7 +242,7 @@
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">photo_camera</span></div>
                             <div>
-                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Visita de Campo</p>
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Visita (fotografías)</p>
                                 <p class="text-[9px] text-slate-400 uppercase font-bold" id="staff-visitador-name">Cargando...</p>
                             </div>
                         </div>
@@ -253,7 +253,7 @@
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><span class="material-symbols-rounded text-sm">architecture</span></div>
                             <div>
-                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Gabinete</p>
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-xs">Dibujo (Proyecto Arquitectónico)</p>
                                 <p class="text-[9px] text-slate-400 uppercase font-bold" id="staff-dibujante-name">Cargando...</p>
                             </div>
                         </div>
@@ -383,6 +383,7 @@
             }
         }
 
+        // 🔥 FUNCION MEJORADA: Ahora sí lee los archivos de los entregables del Visitador y Dibujante
         function renderStaffPanel(data) {
             const visName = data.visitador ? data.visitador.split('@')[0] : 'SIN ASIGNAR';
             const dibName = data.dibujante ? data.dibujante.split('@')[0] : 'SIN ASIGNAR';
@@ -393,25 +394,87 @@
             const visStatus = document.getElementById('staff-visitador-status');
             const dibStatus = document.getElementById('staff-dibujante-status');
 
-            if (!data.visitador) {
+            // 🔥 BOTÓN VISITA: Extrae las fotos y activa el botón verde
+            if (data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado') {
+                visStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
+                visStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Fotos';
+                visStatus.onclick = () => verEntregablesStaff(data.entregables.visita.archivos, 'GALERIA');
+            } else if (!data.visitador) {
                 visStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
                 visStatus.innerHTML = 'Falta Asignar';
             } else {
-                visStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900 flex items-center gap-1';
+                visStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 flex items-center gap-1';
                 visStatus.innerHTML = '<span class="material-symbols-rounded text-[10px] animate-spin">sync</span> Esperando App';
             }
 
-            if (!data.dibujante) {
+            // 🔥 BOTÓN DIBUJO: Extrae los planos y activa el botón verde
+            if (data.entregables && data.entregables.dibujo && data.entregables.dibujo.estatus === 'completado') {
+                dibStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
+                dibStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Planos';
+                dibStatus.onclick = () => verEntregablesStaff(data.entregables.dibujo.archivos, 'PDF');
+            } else if (!data.dibujante) {
                 dibStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
                 dibStatus.innerHTML = 'Falta Asignar';
             } else {
-                dibStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900';
+                dibStatus.className = 'text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400';
                 dibStatus.innerHTML = '<span class="material-symbols-rounded text-[10px] animate-spin">sync</span> DWG Pendiente';
             }
         }
 
+        // 🔥 FUNCIÓN NUEVA: Inyecta los archivos del Staff al visualizador central adaptando URLs de Google Drive
+        function verEntregablesStaff(archivos, tipo) {
+            if (!archivos || archivos.length === 0) return alert("No hay archivos subidos.");
+            
+            ['preview-placeholder', 'error-fallback', 'real-image', 'real-pdf', 'map-container', 'text-viewer', 'zoom-overlay', 'gallery-container'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+            
+            document.getElementById('selected-doc-name').innerText = "Entregables de Staff";
+            document.getElementById('card-filename').innerText = archivos.length + " archivo(s) entregados";
+            document.getElementById('decision-bar').classList.add('translate-y-full');
+
+            // 🌟 TRUCO MAESTRO: Convierte la URL de "Vista" de Drive a una URL de "Imagen Real"
+            const fixDriveUrl = (url) => {
+                if (!url) return '';
+                if (url.includes('drive.google.com/file/d/')) {
+                    const match = url.match(/\/d\/(.+?)\//);
+                    if (match && match[1]) {
+                        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+                    }
+                }
+                return url;
+            };
+
+            if (tipo === 'GALERIA') {
+                const grid = document.getElementById('gallery-grid');
+                document.getElementById('gallery-count').innerText = `${archivos.length} fotos`;
+                
+                // Actualizamos las URLs en la memoria global para que el Zoom también funcione
+                galleryImages = archivos.map(foto => ({ url: fixDriveUrl(foto.url), nombre: foto.nombre })); 
+                grid.innerHTML = '';
+                
+                galleryImages.forEach((foto, index) => {
+                    grid.innerHTML += `
+                        <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
+                            <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                            <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre}</div>
+                        </div>`;
+                });
+                document.getElementById('gallery-container').classList.remove('hidden');
+            } else if (tipo === 'PDF') {
+                if(archivos.length > 1) alert("Se subieron varios planos. Mostrando el primero.");
+                const pdf = document.getElementById('real-pdf');
+                
+                // En Drive, los PDF se pueden incrustar cambiando /view por /preview
+                let pdfUrl = archivos[0].url;
+                if (pdfUrl.includes('/view')) pdfUrl = pdfUrl.replace('/view', '/preview');
+                
+                pdf.src = pdfUrl;
+                pdf.classList.remove('hidden');
+            }
+        }
+
         function transformarDatos(id, data) {
-            // --- CALCULAR DÍAS HÁBILES PARA EL HEADER ---
             let fechaObj = null;
             let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha;
             if (rawDate) {
@@ -429,7 +492,6 @@
                 }
             }
 
-            // --- SABER SI YA TERMINÓ PARA APAGAR EL FUEGO ---
             const itemsValidos = Object.values(data.checklist || {}).filter(i => i.obligatorio !== false);
             const totReq = itemsValidos.length || 1;
             const validados = itemsValidos.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
@@ -455,17 +517,6 @@
 
             const checklist = data.checklist || {};
             
-            let fotosExtras = [];
-            Object.keys(checklist).forEach(k => {
-                if(k.includes('FOTO_EXTRA_')) {
-                    const item = checklist[k];
-                    const url = item.archivoUrl || item.url || item.driveLink || item.link;
-                    if(url) {
-                        fotosExtras.push({ url: url, nombre: item.nombre || 'Foto Extra' });
-                    }
-                }
-            });
-
             Object.keys(checklist).forEach(key => {
                 if(key.includes('FOTO_EXTRA_')) return; 
 
@@ -481,36 +532,29 @@
                 if(item.estatus === 'revision' || item.estatus === 'en_revision') uiStatus = 'review';
 
                 let tipoArchivo = '---';
-                let fotosGaleria = null;
 
                 if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
-                else if (key === 'FOTOS_INTERIORES_GENERAL') {
-                    tipoArchivo = 'GALERIA';
-                    item.nombre = item.nombre || 'Reporte Fotográfico'; // 🔥 Repara el "Sin nombre"
-                    fotosGaleria = fotosExtras; 
-                    if(fotosExtras.length > 0) {
-                        if(uiStatus === 'pending') uiStatus = 'review'; 
-                    }
-                }
                 else if (urlReal) {
                     if (urlReal.toLowerCase().includes('.pdf') || (item.mimeType && item.mimeType.includes('pdf'))) tipoArchivo = 'PDF';
                     else if (key.includes('CORREO') || item.mimeType === 'text/plain') tipoArchivo = 'TXT';
                     else tipoArchivo = 'IMG';
                 }
 
-                if(expediente.grupos[cat]) {
-                    expediente.grupos[cat].push({
-                        key: key,
-                        nombre: item.nombre || 'Sin nombre',
-                        tipo: tipoArchivo,
-                        status: uiStatus,
-                        url: urlReal,
-                        coordenadas: item.coordenadas,
-                        direccion: item.direccion,
-                        textoPreview: item.textoPreview,
-                        fotos: fotosGaleria
-                    });
+                // Filtrar Fotos Interiores (ahora están en entregables)
+                if (key !== 'FOTOS_INTERIORES_GENERAL') {
+                    if(expediente.grupos[cat]) {
+                        expediente.grupos[cat].push({
+                            key: key,
+                            nombre: item.nombre || 'Sin nombre',
+                            tipo: tipoArchivo,
+                            status: uiStatus,
+                            url: urlReal,
+                            coordenadas: item.coordenadas,
+                            direccion: item.direccion,
+                            textoPreview: item.textoPreview
+                        });
+                    }
                 }
             });
         }
@@ -629,7 +673,6 @@
                 document.getElementById(id)?.classList.add('hidden');
             });
 
-            // NUEVO: Lógica del botón de Historial
             const btnHistorial = document.getElementById('btn-historial-doc');
             if (btnHistorial) {
                 if (req.key !== 'UBICACION_MAPS') {
@@ -645,31 +688,9 @@
                 if (req.coordenadas) {
                     document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
                     document.getElementById('map-coords-text').innerText = req.coordenadas;
-                    const embedUrl = `https://www.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
+                    const embedUrl = `https://www.google.com/maps?q=$${req.coordenadas}&t=k&z=19&output=embed`;
                     document.getElementById('google-map-embed').src = embedUrl;
                     document.getElementById('map-container').classList.remove('hidden');
-                } else {
-                    document.getElementById('preview-placeholder').classList.remove('hidden');
-                }
-            }
-            else if (req.tipo === 'GALERIA') {
-                const grid = document.getElementById('gallery-grid');
-                const count = document.getElementById('gallery-count');
-                galleryImages = req.fotos || [];
-
-                if (req.fotos && req.fotos.length > 0) {
-                    count.innerText = `${req.fotos.length} fotos`;
-                    grid.innerHTML = '';
-                    
-                    req.fotos.forEach((foto, index) => {
-                        grid.innerHTML += `
-                            <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
-                                <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
-                                <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre}</div>
-                            </div>
-                        `;
-                    });
-                    document.getElementById('gallery-container').classList.remove('hidden');
                 } else {
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
@@ -882,7 +903,6 @@
             timeline.innerHTML = '<div class="text-center p-10"><span class="material-symbols-rounded animate-spin text-indigo-500 text-4xl mb-2">sync</span><p class="text-xs text-slate-400 font-bold mt-2">Buscando rastros seguros...</p></div>';
 
             try {
-                // CONSULTA SEGURA: Solo pedimos los del expediente actual y documento seleccionado
                 const snapshot = await db.collection('logs')
                     .where('expedienteId', '==', expediente.id)
                     .where('itemKey', '==', selectedReqKey)
@@ -897,7 +917,6 @@
                     logs.push({ ...data, _ts: dateVal });
                 });
 
-                // Ordenamos del más nuevo al más viejo en el cliente
                 logs.sort((a, b) => b._ts - a._ts);
 
                 if (logs.length === 0) {
@@ -967,8 +986,8 @@
                     usuario: usuario,
                     accion: accion,
                     detalle: detalle,
-                    expedienteId: expediente.id, // LLAVE MAESTRA DE SEGURIDAD
-                    itemKey: selectedReqKey      // LLAVE DEL DOCUMENTO
+                    expedienteId: expediente.id, 
+                    itemKey: selectedReqKey      
                 });
             } catch (e) { console.error("Error log:", e); }
         }
