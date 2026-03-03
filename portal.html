@@ -422,10 +422,12 @@
         // 1. SEGURIDAD (CERO TRUST + VAULT + SESIÓN)
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
-            if (expedienteId && localStorage.getItem('auth_' + expedienteId) === 'true') {
+            // 🔥 FIX: Revisamos si tenemos el PIN guardado, no solo un "true"
+            const savedPin = localStorage.getItem('auth_pin_' + expedienteId);
+            if (expedienteId && savedPin) {
                 document.getElementById('securityLock').classList.add('hidden');
                 document.getElementById('loading-card').classList.remove('hidden');
-                cargarDatosEnSesion(); 
+                cargarDatosEnSesion(savedPin); 
             } else {
                 const secInput = document.getElementById('security-input');
                 if (secInput) {
@@ -437,10 +439,17 @@
             }
         });
 
-        async function cargarDatosEnSesion() {
+        // 🔥 FIX: Ahora enviamos el PIN en cada recarga
+        async function cargarDatosEnSesion(pinSecreto) {
             try {
-                const response = await fetch(`/.netlify/functions/get-expediente-details?id=${expedienteId}&t=${Date.now()}`);
-                if (!response.ok) throw new Error("Error de conexión");
+                const response = await fetch('/.netlify/functions/get-expediente-details', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId: expedienteId, accessCode: pinSecreto })
+                });
+
+                if (!response.ok) throw new Error("Acceso denegado o sesión expirada");
+                
                 const data = await response.json();
                 expedienteGlobal = data;
                 
@@ -450,7 +459,7 @@
                 verificarEstadoLegal();
             } catch (e) {
                 console.error(e);
-                localStorage.removeItem('auth_' + expedienteId);
+                localStorage.removeItem('auth_pin_' + expedienteId);
                 location.reload();
             }
         }
@@ -484,7 +493,8 @@
                 const data = await response.json();
                 expedienteGlobal = data;
 
-                localStorage.setItem('auth_' + expedienteId, 'true');
+                // 🔥 FIX: Guardamos el PIN en la bóveda local, no un simple 'true'
+                localStorage.setItem('auth_pin_' + expedienteId, code);
 
                 document.getElementById('securityLock').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -1126,13 +1136,48 @@ let downloadLink = '';
         function cerrarMapa() { document.getElementById('mapModal').classList.add('hidden'); }
         
         function usarMiUbicacion() { 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p => { 
+            if (!navigator.geolocation) {
+                alert("Tu navegador o dispositivo no soporta GPS.");
+                return;
+            }
+            
+            // 1. Feedback visual: Le decimos al cliente que estamos buscando el GPS
+            const btn = document.getElementById('btn-my-location');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Buscando GPS...';
+            btn.disabled = true;
+
+            // 2. Petición de grado comercial a los satélites
+            navigator.geolocation.getCurrentPosition(
+                (p) => { 
                     const pos = { lat: p.coords.latitude, lng: p.coords.longitude }; 
                     map.setCenter(pos); 
+                    map.setZoom(19); // Hacemos un zoom profundo
                     actualizaPos(pos.lat, pos.lng); 
-                }); 
-            }
+                    
+                    // Restauramos el botón
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 
+                (error) => {
+                    console.warn("Error de GPS:", error);
+                    let msg = "No se pudo obtener la ubicación GPS exacta.";
+                    if (error.code === 1) msg = "Permiso denegado. Por favor, permite el acceso a la ubicación en las ventanas emergentes o ajustes de tu navegador.";
+                    if (error.code === 2) msg = "Señal de GPS no disponible (Intenta acercarte a una ventana o salir de la app de WhatsApp/Facebook).";
+                    if (error.code === 3) msg = "Tiempo de espera agotado. El GPS del dispositivo tardó demasiado.";
+                    
+                    alert("⚠️ " + msg);
+                    
+                    // Restauramos el botón
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 
+                { 
+                    enableHighAccuracy: true, // ¡Vital para tablets y celulares!
+                    timeout: 15000,           // Le damos 15 segundos para encontrar el satélite
+                    maximumAge: 0             // Evita que nos dé una ubicación vieja guardada en caché
+                }
+            ); 
         }
         
         function actualizaPos(lat, lng) { 

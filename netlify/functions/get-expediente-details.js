@@ -15,30 +15,27 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 exports.handler = async (event) => {
-    // 1. Cabeceras correctas para evitar errores de CORS
     const headers = { 
         "Access-Control-Allow-Origin": "*", 
         "Access-Control-Allow-Headers": "Content-Type", 
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS" 
+        "Access-Control-Allow-Methods": "POST, OPTIONS" 
     };
 
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
+    // 🔥 BLINDAJE: Solo aceptamos POST. Si intentan hacer GET para saltarse el PIN, los bloqueamos.
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Método no permitido. Acceso denegado.' }) };
+    }
+
     try {
-        let expedienteId, accessCode;
+        const body = JSON.parse(event.body);
+        const expedienteId = body.expedienteId;
+        const accessCode = body.accessCode;
 
-        // 2. ENRUTADOR INTELIGENTE (POST para Portal, GET para Mesa de Gestión)
-        if (event.httpMethod === 'POST') {
-            const body = JSON.parse(event.body);
-            expedienteId = body.expedienteId;
-            accessCode = body.accessCode;
-        } else if (event.httpMethod === 'GET') {
-            expedienteId = event.queryStringParameters.id;
-        } else {
-            return { statusCode: 405, headers, body: 'Method Not Allowed' };
+        if (!expedienteId || !accessCode) {
+            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan credenciales de acceso' }) };
         }
-
-        if (!expedienteId) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Falta ID' }) };
 
         let docRef = db.collection('expedientes_avaluos').doc(expedienteId);
         let doc = await docRef.get();
@@ -48,28 +45,26 @@ exports.handler = async (event) => {
 
         const data = doc.data();
 
-        // 3. SEGURIDAD CERO TRUST (SOLO APLICA AL PORTAL CLIENTE / POST)
-        if (event.httpMethod === 'POST') {
-            const telefonoRaw = String(data.telefono || data.phone || '0000');
-            const telefonoReal = telefonoRaw.replace(/\D/g, ''); 
-            let ultimos4 = telefonoReal.slice(-4);
-            if (telefonoReal.length < 4) ultimos4 = telefonoRaw.trim(); 
+        // 🔥 VALIDACIÓN OBLIGATORIA DEL PIN
+        const telefonoRaw = String(data.telefono || data.phone || '0000');
+        const telefonoReal = telefonoRaw.replace(/\D/g, ''); 
+        let ultimos4 = telefonoReal.slice(-4);
+        if (telefonoReal.length < 4) ultimos4 = telefonoRaw.trim(); 
 
-            const inputCode = String(accessCode).trim();
+        const inputCode = String(accessCode).trim();
 
-            if (inputCode !== ultimos4) {
-                // Consultar Bóveda de Llave Maestra
-                const seguridadRef = db.collection('configuracion').doc('seguridad');
-                const seguridadDoc = await seguridadRef.get();
-                let llaveMaestra = seguridadDoc.exists ? seguridadDoc.data().llave_maestra : null;
+        if (inputCode !== ultimos4) {
+            // Consultar Bóveda de Llave Maestra
+            const seguridadRef = db.collection('configuracion').doc('seguridad');
+            const seguridadDoc = await seguridadRef.get();
+            let llaveMaestra = seguridadDoc.exists ? seguridadDoc.data().llave_maestra : null;
 
-                if (!llaveMaestra || inputCode !== String(llaveMaestra).trim()) {
-                    return { statusCode: 403, headers, body: JSON.stringify({ error: 'Código incorrecto' }) };
-                }
+            if (!llaveMaestra || inputCode !== String(llaveMaestra).trim()) {
+                return { statusCode: 403, headers, body: JSON.stringify({ error: 'Código incorrecto o acceso no autorizado.' }) };
             }
         }
 
-        // 4. DATOS DEVUELTOS (¡Aquí va la unidad para el Logo!)
+        // Si pasó la seguridad, enviamos los datos
         const responseData = {
             id: doc.id,
             nombreCliente: data.nombreCliente || data.cliente || '',
@@ -81,7 +76,7 @@ exports.handler = async (event) => {
             estatusGeneral: data.estatus || 'ACTIVO',
             direccion: data.direccion || '',
             coordenadas: data.coordenadas || null,
-            unidad: data.unidad || 'AVE', // <-- ESTO REPARA LOS LOGOS PNA / EME
+            unidad: data.unidad || 'AVE', 
             visitador: data.visitador || null,
             dibujante: data.dibujante || null
         };
@@ -90,6 +85,6 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error("Error get-expediente-details:", error);
-        return { statusCode: 500, headers, body: JSON.stringify({ error: "Error interno" }) };
+        return { statusCode: 500, headers, body: JSON.stringify({ error: "Error interno del servidor" }) };
     }
 };

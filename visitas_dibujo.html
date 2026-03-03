@@ -144,7 +144,23 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                let linkGoogleMaps = coordsFinales ? `https://maps.google.com/?q=${coordsFinales}` : '#'; 
+                
+                // URL oficial y limpia de Google Maps
+                let linkGoogleMaps = coordsFinales ? "https://www.google.com/maps?q=" + coordsFinales : '#'; 
+
+                // 🔥 UX NUEVA: Detectar si ya hay archivos subidos para cambiar el botón
+                let prevFiles = 0;
+                if (exp.entregables) {
+                    if (vistaActual === 'visitas' && exp.entregables.visita && exp.entregables.visita.archivos) {
+                        prevFiles = exp.entregables.visita.archivos.length;
+                    } else if (vistaActual === 'dibujos' && exp.entregables.dibujo && exp.entregables.dibujo.archivos) {
+                        prevFiles = exp.entregables.dibujo.archivos.length;
+                    }
+                }
+                
+                let btnText = prevFiles > 0 ? `AGREGAR MÁS (${prevFiles})` : `SUBIR`;
+                let btnBgColor = prevFiles > 0 ? `emerald` : colorBase; // Se pone verde si ya hay fotos
+                let btnIcon = prevFiles > 0 ? `library_add` : (vistaActual === 'visitas' ? 'add_a_photo' : 'upload_file');
 
                 const card = `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
@@ -166,7 +182,11 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <a href="${linkGoogleMaps}" target="_blank" class="flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all ${!coordsFinales ? 'opacity-50 pointer-events-none' : ''}"><span class="material-symbols-rounded text-lg text-slate-600 dark:text-slate-300">map</span><span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">VER MAPA</span></a>
-                            <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" class="flex items-center justify-center gap-2 py-3 bg-${colorBase}-600 hover:bg-${colorBase}-700 text-white rounded-xl shadow-lg shadow-${colorBase}-500/20 transition-all"><span class="material-symbols-rounded text-lg">${vistaActual === 'visitas' ? 'add_a_photo' : 'upload_file'}</span><span class="text-[11px] font-bold uppercase">SUBIR</span></button>
+                            
+                            <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" class="flex items-center justify-center gap-2 py-3 bg-${btnBgColor}-600 hover:bg-${btnBgColor}-700 text-white rounded-xl shadow-lg shadow-${btnBgColor}-500/20 transition-all">
+                                <span class="material-symbols-rounded text-lg">${btnIcon}</span>
+                                <span class="text-[11px] font-bold uppercase">${btnText}</span>
+                            </button>
                         </div>
                     </div>`;
                 container.innerHTML += card;
@@ -181,8 +201,25 @@
         }
 
         let expActivoParaSubida = null;
+        
         function abrirSubida(idExpediente, tipo) {
             expActivoParaSubida = misExpedientes.find(e => e.id === idExpediente);
+            
+            // 🔥 UX NUEVA: Confirmación si ya existen archivos (Evita subidas accidentales)
+            let prevFiles = 0;
+            if (expActivoParaSubida.entregables) {
+                if (tipo === 'VISITA' && expActivoParaSubida.entregables.visita && expActivoParaSubida.entregables.visita.archivos) {
+                    prevFiles = expActivoParaSubida.entregables.visita.archivos.length;
+                } else if (tipo === 'DIBUJO' && expActivoParaSubida.entregables.dibujo && expActivoParaSubida.entregables.dibujo.archivos) {
+                    prevFiles = expActivoParaSubida.entregables.dibujo.archivos.length;
+                }
+            }
+            
+            if (prevFiles > 0) {
+                const conf = confirm(`Ya hay ${prevFiles} archivo(s) de ${tipo} guardados en este expediente.\n\n¿Deseas AGREGAR más archivos a la colección actual?`);
+                if (!conf) return; // Si cancela, detenemos el proceso
+            }
+
             if(tipo === 'VISITA') document.getElementById('input-visita').click();
             else document.getElementById('input-dibujo').click();
         }
@@ -208,8 +245,6 @@
                 // 🌟 BUSCADOR INTELIGENTE DE CARPETAS
                 if (dataDb.driveSubfolders) {
                     const llavesFirebase = Object.keys(dataDb.driveSubfolders);
-                    
-                    // Función para encontrar carpetas ignorando mayúsculas y acentos
                     const encontrarCarpeta = (palabrasClave) => {
                         for (let llave of llavesFirebase) {
                             let llaveLimpia = llave.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -220,20 +255,23 @@
                         return null;
                     };
 
-                    if (tipo === 'VISITA') {
-                        folderIdDestino = encontrarCarpeta(['fotos', 'fotografias']);
-                    } else {
-                        folderIdDestino = encontrarCarpeta(['proy', 'dibujo', 'planos']);
-                    }
+                    if (tipo === 'VISITA') folderIdDestino = encontrarCarpeta(['fotos', 'fotografias']);
+                    else folderIdDestino = encontrarCarpeta(['proy', 'dibujo', 'planos']);
                 }
 
-                // 2. SEGURO ANTI-RAÍZ CON REPORTE EXACTO
+                // 🔥 EL ESLABÓN PERDIDO: Extraer SOLO EL ID si el webhook guardó la URL completa
+                if (folderIdDestino && folderIdDestino.includes('drive.google.com')) {
+                    const matchId = folderIdDestino.match(/(?:folders\/|id=)([a-zA-Z0-9_-]{15,})/);
+                    if (matchId && matchId[1]) folderIdDestino = matchId[1];
+                }
+
+                // SEGURO ANTI-RAÍZ CON REPORTE EXACTO
                 if (!folderIdDestino) {
                     let carpetasExistentes = dataDb.driveSubfolders ? Object.keys(dataDb.driveSubfolders).join(', ') : 'Ninguna';
                     throw new Error(`Falta la carpeta para ${tipo}. Carpetas registradas en Firebase: [${carpetasExistentes}]. Revisa tu webhook.`);
                 }
 
-                let archivosSubidos = [];
+                let archivosSubidosNuevos = [];
 
                 // 🌟 FILA INDIA: Subimos una por una para no saturar a Google
                 for (let i = 0; i < files.length; i++) {
@@ -263,22 +301,14 @@
 
                     const response = await fetch(SCRIPT_SUBIDA_URL, {
                         method: 'POST',
-                        body: JSON.stringify({ 
-                            filename: f.name, 
-                            mimeType: mimeParaGoogle, 
-                            base64: cleanBase64, 
-                            folderId: folderIdDestino 
-                        })
+                        body: JSON.stringify({ filename: f.name, mimeType: mimeParaGoogle, base64: cleanBase64, folderId: folderIdDestino })
                     });
                     
                     const responseText = await response.text();
                     try {
                         const result = JSON.parse(responseText);
-                        if (result.exito) {
-                            archivosSubidos.push({ nombre: f.name, url: result.url });
-                        } else {
-                            throw new Error(result.error);
-                        }
+                        if (result.exito) archivosSubidosNuevos.push({ nombre: f.name, url: result.url });
+                        else throw new Error(result.error);
                     } catch (parseErr) {
                         throw new Error("El Script de Google rechazó la subida. Verifica los permisos de tu App Web.");
                     }
@@ -288,12 +318,24 @@
 
                 status.innerText = `Organizando Entregables Internos...`;
                 
-                // 🔥 SE GUARDAN EN LA ZONA DE STAFF (Lejos de los docs del cliente)
+                // 🔥 NUEVO: CONCATENAR CON ARCHIVOS PREVIOS EN VEZ DE BORRARLOS
                 let entregables = expActivoParaSubida.entregables || {};
+                let archivosAnteriores = [];
+                
+                if (tipo === 'VISITA' && entregables.visita && entregables.visita.archivos) {
+                    archivosAnteriores = entregables.visita.archivos;
+                }
+                if (tipo === 'DIBUJO' && entregables.dibujo && entregables.dibujo.archivos) {
+                    archivosAnteriores = entregables.dibujo.archivos;
+                }
+
+                // Sumamos los viejos y los nuevos
+                const archivosFinales = [...archivosAnteriores, ...archivosSubidosNuevos];
+
                 if (tipo === 'VISITA') {
-                    entregables.visita = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosSubidos };
+                    entregables.visita = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales };
                 } else {
-                    entregables.dibujo = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosSubidos };
+                    entregables.dibujo = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales };
                 }
 
                 await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).update({
@@ -301,8 +343,11 @@
                     estatus: 'EN REVISIÓN'
                 });
 
+                // 🔥 NUEVO: REGISTRO EN HISTORIAL
+                await registrarLog(`ENTREGABLE DE ${tipo}`, `El equipo subió ${archivosSubidosNuevos.length} archivo(s) nuevo(s). Total en sistema: ${archivosFinales.length} archivo(s).`, expActivoParaSubida.id);
+
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                alert(`✅ ¡Éxito! Se subieron ${files.length} archivos a tu Google Drive.`);
+                alert(`✅ ¡Éxito! Se agregaron ${files.length} archivos a la colección actual.`);
                 event.target.value = '';
 
             } catch (error) {
@@ -310,6 +355,29 @@
                 alert("❌ Falló la subida: " + error.message);
                 modal.classList.add('hidden'); modal.classList.remove('flex');
                 event.target.value = '';
+            }
+        }
+
+        // 🔥 NUEVO: SISTEMA DE AUDITORÍA PARA VISITADORES
+        async function registrarLog(accion, detalle, expedienteId) {
+            try {
+                const userJson = localStorage.getItem('leezar_user_active');
+                let usuario = 'Staff en Campo';
+                if(userJson) {
+                    const parsed = JSON.parse(userJson);
+                    usuario = parsed.nombre || parsed.email || 'Staff';
+                }
+                
+                await db.collection('logs').add({
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    usuario: usuario,
+                    accion: accion,
+                    detalle: detalle,
+                    expedienteId: expedienteId, 
+                    itemKey: 'ENTREGABLES_STAFF'      
+                });
+            } catch (e) { 
+                console.error("Error al registrar log:", e); 
             }
         }
 
