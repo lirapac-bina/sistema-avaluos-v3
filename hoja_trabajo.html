@@ -30,8 +30,11 @@
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
         .dark body { background-color: #0f172a; color: #cbd5e1; }
         
-        .leezar-input { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.35rem 0.5rem; font-size: 0.8rem; background-color: #fff; }
+        .leezar-input { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.35rem 0.5rem; font-size: 0.8rem; background-color: #fff; text-align: right; transition: all 0.2s;}
         .dark .leezar-input { background-color: #1e293b; border-color: #334155; color: white; }
+        .leezar-input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 2px rgba(13,148,136,0.2); }
+        .leezar-input.\!text-left { text-align: left !important; }
+
         .leezar-label { display: block; font-size: 0.75rem; font-weight: 700; color: #4b5563; margin-bottom: 0.25rem; text-transform: uppercase; }
         .dark .leezar-label { color: #94a3b8; }
         
@@ -43,21 +46,59 @@
         .dark th { background-color: #0f172a; color: #cbd5e1; border-color: #334155; }
         td { padding: 0.25rem; border: 1px solid #e5e7eb; font-size: 0.8rem; }
         .dark td { border-color: #334155; color: #94a3b8; }
-        .currency-wrap { position: relative; display: flex; align-items: center; }
-        .currency-symbol { position: absolute; left: 6px; font-size: 0.75rem; color: #9ca3af; }
-        .currency-input { padding-left: 1.2rem !important; text-align: right; }
         
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
         .thin-scroll::-webkit-scrollbar { width: 6px; }
         .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 6px; }
+
+        /* Estilos Integrados de Comparables */
+        .section-header { font-size: 1.25rem; font-weight: 800; background-color: #e5e7eb; color: #111827; padding: 0.75rem; border-radius: 0.5rem 0.5rem 0 0; text-transform: uppercase; text-align: center; border-bottom: 4px solid #0d9488; margin-bottom: 1rem; }
+        .dark .section-header { background-color: #1e293b; color: white; border-color: #2dd4bf; }
+        
+        .sujeto-box { background-color: #fff; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .dark .sujeto-box { background-color: #0f172a; border-color: #334155; }
+        
+        .sujeto-rango { background-color: #eff6ff; padding: 0.5rem 1rem; border-radius: 0.375rem; text-align: center; border: 1px solid #bfdbfe; }
+        .dark .sujeto-rango { background-color: #1e3a8a; border-color: #1e40af; color: #bfdbfe;}
+        
+        .dispersion-box { background-color: #fff; padding: 1rem; border-radius: 0 0 0.5rem 0.5rem; border: 1px solid #e5e7eb; border-top: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; text-align: center; margin-bottom: 2rem;}
+        .dark .dispersion-box { background-color: #0f172a; border-color: #334155; }
+
+        .rango-ok { font-size: 0.7rem; font-weight: 700; color: #15803d; background-color: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 9999px; }
+        .dark .rango-ok { background-color: #064e3b; color: #4ade80; }
+        .rango-error { font-size: 0.7rem; font-weight: 700; color: #b91c1c; background-color: #fee2e2; padding: 0.25rem 0.5rem; border-radius: 9999px; }
+        .dark .rango-error { background-color: #7f1d1d; color: #f87171; }
+
+        .unit-value-max { background-color: #fee2e2; color: #991b1c !important; }
+        .dark .unit-value-max { background-color: #7f1d1d; color: #fecaca !important; }
+        .unit-value-min { background-color: #dcfce7; color: #166534 !important; }
+        .dark .unit-value-min { background-color: #064e3b; color: #bbf7d0 !important; }
+        .sortable-header { cursor: pointer; user-select: none; }
+        .sortable-header:hover { background-color: #d1d5db; }
+        .dark .sortable-header:hover { background-color: #475569; }
+
+        /* Estilos Integrados Notas Infonavit */
+        .notas-input-group { display: flex; flex-direction: column; margin-bottom: 0.75rem;}
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+        .checkbox-label { display: flex; align-items: center; padding: 0.5rem; background-color: #f9fafb; border-radius: 0.375rem; border: 1px solid #e5e7eb; cursor: pointer; font-size: 0.75rem; font-weight: 600;}
+        .dark .checkbox-label { background-color: #1e293b; border-color: #334155; color: #cbd5e1;}
+        .conditional-fields { background-color: #f9fafb; border: 1px solid #d1d5db; padding: 1rem; margin-top: -0.25rem; margin-bottom: 1rem; border-radius: 0 0 0.375rem 0.375rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;}
+        .dark .conditional-fields { background-color: #0f172a; border-color: #334155; }
+        .notas-output { width: 100%; height: 300px; font-family: monospace; font-size: 0.8rem; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 1rem; white-space: pre-wrap; }
+        .dark .notas-output { background-color: #020617; border-color: #334155; color: #38bdf8; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            #pdf-content { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        }
     </style>
 </head>
 <body class="transition-colors duration-300 min-h-screen">
     
     <main class="p-6 max-w-7xl mx-auto relative">
-        <header class="bg-white border-b border-gray-200 py-4 flex items-center justify-between px-8 shadow-sm rounded-t-xl mb-6 dark:bg-[#1e293b] dark:border-slate-700">
+        <header class="bg-white border-b border-gray-200 py-4 flex items-center justify-between px-8 shadow-sm rounded-t-xl mb-6 dark:bg-[#1e293b] dark:border-slate-700 no-print">
             <div>
                 <h1 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
                     <span class="material-symbols-rounded text-leezar-500">assignment</span> Hoja de Trabajo (Captura)
@@ -70,64 +111,222 @@
                     <span class="material-symbols-rounded text-sm">swap_horiz</span> Cambiar Expediente
                 </button>
                 <button onclick="guardarProgreso()" class="bg-leezar-600 hover:bg-leezar-500 text-white text-xs px-4 py-2 rounded-md font-bold flex items-center gap-2 shadow-md transition">
-                    <span class="material-symbols-rounded text-sm">save</span> Guardar Avance
+                    <span class="material-symbols-rounded text-sm">cloud_upload</span> Guardar Avance
                 </button>
             </div>
         </header>
 
         <div id="workspace-container" class="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden opacity-50 pointer-events-none transition-opacity duration-300">
-            <div class="flex space-x-8 px-6 pt-4 border-b border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                <button onclick="switchTab('datos')" id="btn-datos" class="tab-btn active"><span class="material-symbols-rounded text-sm align-middle mr-1">quick_reference_all</span> 1. Datos para Avalúo</button>
-                <button onclick="switchTab('notas')" id="btn-notas" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">edit_note</span> 2. Notas del Avalúo</button>
-                <button onclick="switchTab('mercado')" id="btn-mercado" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">real_estate_agent</span> 3. Mercado</button>
-                <button onclick="switchTab('docjust')" id="btn-docjust" class="tab-btn"><span class="material-symbols-rounded text-sm align-middle mr-1">checklist</span> 4. Lista Doc Just</button>
+            
+            <div class="flex space-x-8 px-6 pt-4 border-b border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 no-print overflow-x-auto">
+                <button onclick="switchTab('datos')" id="btn-datos" class="tab-btn active whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">quick_reference_all</span> 1. Datos Generales</button>
+                <button onclick="switchTab('notas')" id="btn-notas" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">edit_note</span> 2. Generador de Notas</button>
+                <button onclick="switchTab('mercado')" id="btn-mercado" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">real_estate_agent</span> 3. Estudio Mercado</button>
+                <button onclick="switchTab('docjust')" id="btn-docjust" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">checklist</span> 4. Checklist Doc</button>
             </div>
 
             <div class="p-6">
-                <div id="tab-datos" class="block fade-in">
+                <div id="tab-datos" class="block fade-in no-print">
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 mb-6">
-                        <h3 class="text-xs font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-4">Información del Cliente e Inmueble</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label class="leezar-label">Nombre del Solicitante</label><input type="text" id="info-cliente" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
-                            <div><label class="leezar-label">Entidad Federativa</label><input type="text" id="info-entidad" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
-                            <div><label class="leezar-label">Tipo de Inmueble</label><input type="text" id="info-inmueble" class="leezar-input bg-gray-100 cursor-not-allowed font-bold" readonly></div>
+                        <h3 class="text-xs font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-4">Información del Expediente</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div><label class="leezar-label">Folio GYS</label><input type="text" id="folio-gys" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
+                            <div><label class="leezar-label">Nombre del Solicitante</label><input type="text" id="info-cliente" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
+                            <div><label class="leezar-label">Entidad Federativa</label><input type="text" id="info-entidad" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
+                            <div><label class="leezar-label">Tipo Trámite</label><input type="text" id="info-tramite" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold text-indigo-600 dark:text-indigo-400" readonly></div>
                         </div>
-                    </div>
-                    <div class="text-center py-10 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
-                        <span class="material-symbols-rounded text-4xl text-gray-400 mb-2">document_scanner</span>
-                        <p class="text-sm font-bold text-gray-500">Área de Extracción de Datos de Documentos.</p>
-                        <p class="text-xs text-gray-400">Aquí se conectará el resumen de lo que el cliente subió.</p>
                     </div>
                 </div>
 
-                <div id="tab-notas" class="hidden fade-in">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Configuración de Notas</h3>
-                        <span id="badge-tramite" class="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full text-xs font-bold border border-purple-200 dark:border-purple-800">Trámite</span>
+                <div id="tab-notas" class="hidden fade-in no-print">
+                    <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-6 bg-white dark:bg-[#0f172a]">
+                        <h2 class="text-lg font-black text-leezar-600 dark:text-leezar-400 mb-6 flex items-center gap-2"><span class="material-symbols-rounded">magic_button</span> Generador de Notas Infonavit</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="notas-input-group"><label class="leezar-label">Fecha de la Visita</label><input type="text" id="nota-fecha-visita" class="leezar-input !text-left" placeholder="Ej. 24 de octubre de 2025"></div>
+                            <div class="notas-input-group"><label class="leezar-label">Código Postal (CP)</label><input type="text" id="nota-cp" class="leezar-input !text-left" placeholder="Ej. 91194"></div>
+                            <div class="notas-input-group"><label class="leezar-label">Asentamiento (SEPOMEX)</label><input type="text" id="nota-cp-asentamiento" class="leezar-input !text-left" placeholder="Ej. Fracc Valle Real, Xalapa"></div>
+                        </div>
+
+                        <fieldset class="mb-6 p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                            <legend class="leezar-label px-2">Documentos Proporcionados (Copias Simples)</legend>
+                            <div class="checkbox-grid mb-4">
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Escritura" class="mr-2" onchange="toggleConditionalFields('escritura')"> Escritura</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Cédula Catastral" class="mr-2" onchange="toggleConditionalFields('cedula')"> Cédula Catastral</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Boleta Predial" class="mr-2" onchange="toggleConditionalFields('predial')"> Boleta Predial</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Constancia de Alineamiento y Número Oficial" class="mr-2" onchange="toggleConditionalFields('alineamiento')"> Alineamiento y Num Oficial</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Constancia de Datos Catastrales" class="mr-2" onchange="toggleConditionalFields('datos')"> Datos Catastrales</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Recibo de Agua" class="mr-2" onchange="toggleConditionalFields('agua')"> Recibo de Agua</label>
+                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Recibo de Servicio de Energía Eléctrica" class="mr-2"> Recibo de Luz</label>
+                            </div>
+
+                            <div id="conditional-fields-escritura" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Num Escritura</label><input type="text" id="nota-esc-numero" class="leezar-input !text-left" placeholder="Ej. 30,308"></div>
+                                <div><label class="leezar-label">Libro (Opcional)</label><input type="text" id="nota-esc-libro" class="leezar-input !text-left" placeholder="Ej. 1059"></div>
+                                <div><label class="leezar-label">Fecha Escritura</label><input type="text" id="nota-esc-fecha" class="leezar-input !text-left" placeholder="Ej. 26 de febrero de 2019"></div>
+                                <div><label class="leezar-label">Notario (Nombre)</label><input type="text" id="nota-esc-notario" class="leezar-input !text-left" placeholder="Ej. Lic. Francisco Saucedo"></div>
+                                <div><label class="leezar-label">Num Notaría</label><input type="text" id="nota-esc-notaria-num" class="leezar-input !text-left" placeholder="Ej. 3"></div>
+                                <div><label class="leezar-label">Ciudad Notaría</label><input type="text" id="nota-esc-notaria-ciudad" class="leezar-input !text-left" placeholder="Ej. Coatepec, Ver."></div>
+                            </div>
+                            <div id="conditional-fields-cedula" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Fecha Cédula</label><input type="text" id="nota-cedula-fecha" class="leezar-input !text-left" placeholder="Ej. 2 sep 2025"></div>
+                                <div><label class="leezar-label">Folio Cédula</label><input type="text" id="nota-cedula-folio" class="leezar-input !text-left" placeholder="Ej. 05949/25"></div>
+                                <div><label class="leezar-label">Ayuntamiento</label><input type="text" id="nota-cedula-ayuntamiento" class="leezar-input !text-left" placeholder="Ej. Xalapa, Ver"></div>
+                                <div><label class="leezar-label">Edad (Cédula)</label><input type="text" id="nota-cedula-edad" class="leezar-input !text-left" placeholder="Ej. 6 años"></div>
+                            </div>
+                            <div id="conditional-fields-predial" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Clave Catastral</label><input type="text" id="nota-predial-clave" class="leezar-input !text-left" placeholder="Ej. 30-03-200..."></div>
+                                <div><label class="leezar-label">Folio Predial</label><input type="text" id="nota-predial-folio" class="leezar-input !text-left" placeholder="Ej. WM96531"></div>
+                                <div><label class="leezar-label">Fecha Predial</label><input type="text" id="nota-predial-fecha" class="leezar-input !text-left" placeholder="Ej. 3 ene 2025"></div>
+                            </div>
+                            <div id="conditional-fields-alineamiento" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Num Oficio Alineamiento</label><input type="text" id="nota-alin-oficio" class="leezar-input !text-left" placeholder="Ej. DDU/1826/2025"></div>
+                                <div><label class="leezar-label">Fecha Alineamiento</label><input type="text" id="nota-alin-fecha" class="leezar-input !text-left" placeholder="Ej. 7 ago 2025"></div>
+                            </div>
+                            <div id="conditional-fields-datos" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Num Oficio Datos Cat.</label><input type="text" id="nota-datos-oficio" class="leezar-input !text-left" placeholder="Ej. TMDI-DC-1786/2025"></div>
+                                <div><label class="leezar-label">Fecha Datos Cat.</label><input type="text" id="nota-datos-fecha" class="leezar-input !text-left" placeholder="Ej. 22 ago 2025"></div>
+                            </div>
+                            <div id="conditional-fields-agua" class="conditional-fields" style="display: none;">
+                                <div><label class="leezar-label">Num Cuenta Agua</label><input type="text" id="nota-agua-cuenta" class="leezar-input !text-left" placeholder="Ej. 161196"></div>
+                                <div><label class="leezar-label">Folio Agua</label><input type="text" id="nota-agua-folio" class="leezar-input !text-left" placeholder="Ej. 165"></div>
+                                <div><label class="leezar-label">Fecha Agua</label><input type="text" id="nota-agua-fecha" class="leezar-input !text-left" placeholder="Ej. 23 jul 2025"></div>
+                                <div><label class="leezar-label">Expedido por</label><input type="text" id="nota-agua-expedido" class="leezar-input !text-left" placeholder="Ej. CMAS"></div>
+                            </div>
+                        </fieldset>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <fieldset class="p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                                <legend class="leezar-label px-2">Servicios del Inmueble</legend>
+                                <div class="checkbox-grid">
+                                    <label class="checkbox-label"><input type="checkbox" name="nota-serv" value="Luz" class="mr-2"> Luz</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="nota-serv" value="Agua Potable" class="mr-2"> Agua Potable</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="nota-serv" value="Drenaje" class="mr-2"> Drenaje</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="nota-serv" value="Fosa Séptica" class="mr-2"> Fosa Séptica</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="nota-serv" value="Pozo" class="mr-2"> Pozo</label>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                                <legend class="leezar-label px-2">Superficies Levantamiento</legend>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="leezar-label">Área Privativa Const</label><input type="text" id="nota-sup-privativa" class="leezar-input !text-left" placeholder="Ej. 41.03 m2"></div>
+                                    <div><label class="leezar-label">Sup Accesoria</label><input type="text" id="nota-sup-accesoria" class="leezar-input !text-left" placeholder="Ej. 3.11 m2"></div>
+                                    <div class="col-span-2"><label class="leezar-label">Desc. Accesoria</label><input type="text" id="nota-sup-accesoria-desc" class="leezar-input !text-left" placeholder="Ej. cuarto de servicio"></div>
+                                    <div><label class="leezar-label">Área Total Vendible</label><input type="text" id="nota-sup-vendible" class="leezar-input !text-left" placeholder="Ej. 41.03 m2"></div>
+                                    <div><label class="leezar-label">Sup Const Total</label><input type="text" id="nota-sup-total" class="leezar-input !text-left" placeholder="Ej. 44.13 m2"></div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="text-center mb-6">
+                            <button onclick="generarTextoNotas()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition">Generar y Previsualizar Notas</button>
+                        </div>
+                        
+                        <div>
+                            <label class="leezar-label text-indigo-600 dark:text-indigo-400">Resultado Final (Se guardará en Firebase)</label>
+                            <textarea id="texto-notas-tramite" class="notas-output"></textarea>
+                        </div>
                     </div>
-                    <textarea id="texto-notas-tramite" rows="15" class="w-full border border-gray-300 p-4 rounded-xl text-sm bg-white shadow-inner focus:ring-2 focus:ring-leezar-500 focus:outline-none dark:bg-[#0f172a] dark:text-white dark:border-slate-600" placeholder="Escribe aquí las observaciones del avalúo..."></textarea>
                 </div>
 
                 <div id="tab-mercado" class="hidden fade-in">
-                    <div class="mb-8 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                        <div class="bg-slate-50 dark:bg-slate-800 p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><span class="text-xl">⛰️</span> Homologación de Terreno</h3>
-                            <div class="flex items-center gap-2">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase">Sup. Sujeto (m²)</label>
-                                <input type="text" id="terreno-sujeto-sup" class="w-24 leezar-input font-bold text-blue-700 dark:text-blue-400" placeholder="0.00" oninput="calcAll('terreno', 4)" onblur="formatInput(this)">
-                            </div>
-                        </div>
-                        <div class="p-4 bg-white dark:bg-[#0f172a] overflow-x-auto">
-                            <table class="w-full mb-4 border-collapse"><thead><tr><th class="w-8">#</th><th class="w-32">Precio ($)</th><th class="w-20">Sup (m²)</th><th class="w-28">$/m² Original</th><th class="w-16">F. Neg</th><th class="w-16 text-purple-700">F. Sup</th><th class="w-16">F. Zona</th><th class="w-24 bg-blue-50 dark:bg-blue-900">Resultante</th></tr></thead><tbody id="terreno-rows"></tbody></table>
-                            <div class="flex justify-end gap-4 mt-2">
-                                <div class="text-right"><span class="block text-[10px] font-bold text-gray-500">PROMEDIO $/m²</span><span id="terreno-avg-homologado" class="text-lg font-black text-slate-800 dark:text-white">$0.00</span></div>
-                                <div class="text-right bg-leezar-50 dark:bg-leezar-900/30 px-4 py-1 rounded border border-leezar-200 dark:border-leezar-800"><span class="block text-[10px] font-bold text-leezar-600 dark:text-leezar-400">VALOR TOTAL TERRENO</span><span id="terreno-total-value" class="text-lg font-black text-leezar-700 dark:text-leezar-300">$0.00</span></div>
-                            </div>
-                        </div>
+                    
+                    <div class="flex justify-end mb-4 no-print">
+                        <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition">
+                            <span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF
+                        </button>
                     </div>
-                </div>
 
-                <div id="tab-docjust" class="hidden fade-in">
+                    <div id="pdf-content" class="bg-white dark:bg-slate-900 p-2 md:p-6 rounded-xl border border-gray-200 dark:border-slate-700">
+                        <section id="section-terreno" class="mb-10">
+                            <h2 class="section-header">⛰️ HOMOLOGACIÓN TERRENO</h2>
+                            <div class="sujeto-box">
+                                <div><label class="leezar-label">Sup. Sujeto (m²)</label><input type="text" id="terreno-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('terreno')" onblur="this.value = formatInput(this.value, false)"></div>
+                                <div class="sujeto-rango"><span class="leezar-label !mb-0 text-blue-800 dark:text-blue-300">Rango (±30%):</span><span id="terreno-sujeto-rango" class="font-bold text-lg">N/A</span></div>
+                            </div>
+                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
+                                <table class="w-full text-xs">
+                                    <thead><tr>
+                                        <th class="w-8">#</th><th class="w-24">Precio ($)</th><th class="w-20">Sup (m²)</th><th class="w-16">Rango</th>
+                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('terreno', 4)">$/m² Orig.</th>
+                                        <th>URL</th><th>Acortada</th>
+                                    </tr></thead>
+                                    <tbody id="terreno-rows"></tbody>
+                                    <tfoot><tr>
+                                        <td colspan="4" class="text-right font-bold py-2">Promedio:</td>
+                                        <td id="terreno-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
+                                        <td colspan="2"></td>
+                                    </tr></tfoot>
+                                </table>
+                            </div>
+                            <div class="dispersion-box text-xs">
+                                <div><span class="leezar-label">Disp. Permitida</span><span id="terreno-dispersion-permitida" class="font-black text-base">1.30</span></div>
+                                <div><span class="leezar-label">Disp. Calculada</span><span id="terreno-dispersion-value" class="font-black text-base">N/A</span></div>
+                                <div><span class="leezar-label">Estado</span><span id="terreno-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
+                            </div>
+                        </section>
+
+                        <section id="section-mercado" class="mb-10">
+                            <h2 class="section-header">🏠 COMPARABLES MERCADO</h2>
+                            <div class="sujeto-box">
+                                <div><label class="leezar-label">Sup. Const Sujeto</label><input type="text" id="mercado-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, false)"></div>
+                                <div><label class="leezar-label">Edad Sujeto</label><input type="text" id="mercado-sujeto-edad" class="leezar-input" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, true)"></div>
+                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Sup:</span><span id="mercado-sujeto-rango-sup" class="font-bold">N/A</span></div>
+                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Edad:</span><span id="mercado-sujeto-rango-edad" class="font-bold">N/A</span></div>
+                            </div>
+                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
+                                <table class="w-full text-xs">
+                                    <thead><tr>
+                                        <th class="w-8">#</th><th class="w-24">Precio ($)</th><th class="w-16">Terr.</th><th class="w-16">Const.</th><th class="w-12">Edad</th><th class="w-16">Rango</th>
+                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('mercado', 6)">$/m²C</th>
+                                        <th>URL</th><th>Acortada</th>
+                                    </tr></thead>
+                                    <tbody id="mercado-rows"></tbody>
+                                    <tfoot><tr>
+                                        <td colspan="6" class="text-right font-bold py-2">Promedio:</td>
+                                        <td id="mercado-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
+                                        <td colspan="2"></td>
+                                    </tr></tfoot>
+                                </table>
+                            </div>
+                            <div class="dispersion-box text-xs">
+                                <div><span class="leezar-label">Disp. Permitida</span><span id="mercado-dispersion-permitida" class="font-black text-base">1.30</span></div>
+                                <div><span class="leezar-label">Disp. Calculada</span><span id="mercado-dispersion-value" class="font-black text-base">N/A</span></div>
+                                <div><span class="leezar-label">Estado</span><span id="mercado-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
+                            </div>
+                        </section>
+
+                        <section id="section-rentas">
+                            <h2 class="section-header">💰 COMPARABLES RENTAS</h2>
+                            <div class="sujeto-box">
+                                <div><label class="leezar-label">Sup. Const Sujeto</label><input type="text" id="rentas-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, false)"></div>
+                                <div><label class="leezar-label">Edad Sujeto</label><input type="text" id="rentas-sujeto-edad" class="leezar-input" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, true)"></div>
+                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Sup:</span><span id="rentas-sujeto-rango-sup" class="font-bold">N/A</span></div>
+                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Edad:</span><span id="rentas-sujeto-rango-edad" class="font-bold">N/A</span></div>
+                            </div>
+                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
+                                <table class="w-full text-xs">
+                                    <thead><tr>
+                                        <th class="w-8">#</th><th class="w-24">Renta ($)</th><th class="w-16">Terr.</th><th class="w-16">Const.</th><th class="w-12">Edad</th><th class="w-16">Rango</th>
+                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('rentas', 6)">$/m²C/Mes</th>
+                                        <th>URL</th><th>Acortada</th>
+                                    </tr></thead>
+                                    <tbody id="rentas-rows"></tbody>
+                                    <tfoot><tr>
+                                        <td colspan="6" class="text-right font-bold py-2">Promedio:</td>
+                                        <td id="rentas-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
+                                        <td colspan="2"></td>
+                                    </tr></tfoot>
+                                </table>
+                            </div>
+                            <div class="dispersion-box text-xs">
+                                <div><span class="leezar-label">Disp. Permitida</span><span id="rentas-dispersion-permitida" class="font-black text-base">1.30</span></div>
+                                <div><span class="leezar-label">Disp. Calculada</span><span id="rentas-dispersion-value" class="font-black text-base">N/A</span></div>
+                                <div><span class="leezar-label">Estado</span><span id="rentas-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
+                            </div>
+                        </section>
+                    </div> </div> <div id="tab-docjust" class="hidden fade-in no-print">
                     <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800 mb-6 flex items-start gap-3">
                         <span class="material-symbols-rounded text-amber-500 text-2xl">warning</span>
                         <div>
@@ -141,8 +340,8 @@
         </div>
 
         <div id="modal-expedientes" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[80vh]" id="modal-content">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
                     <div>
                         <h2 class="text-xl font-black text-slate-800 dark:text-white">Bandeja de Asignaciones</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona el expediente en el que vas a trabajar.</p>
@@ -151,8 +350,8 @@
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
-                <div class="p-6 max-h-[60vh] overflow-y-auto thin-scroll grid grid-cols-1 md:grid-cols-2 gap-4" id="lista-expedientes-modal">
-                    <div class="text-center py-10 col-span-full"><span class="material-symbols-rounded animate-spin text-slate-300 text-3xl">sync</span><p class="text-sm text-slate-400 mt-2">Buscando tus asignaciones...</p></div>
+                <div class="p-6 overflow-y-auto thin-scroll grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="lista-expedientes-modal">
+                    <div class="text-center py-10 col-span-full"><span class="material-symbols-rounded animate-spin text-slate-300 text-3xl">sync</span></div>
                 </div>
             </div>
         </div>
@@ -161,216 +360,255 @@
     </main>
 
     <script>
-        // VARIABLES GLOBALES
+        // --- 1. VARIABLES Y MOTOR DE COMPARABLES ---
         let currentFolioId = null;
         let misExpedientes = {};
+        const MAX_DISPERSION = 1.30;
 
-        // LA LISTA EXACTA DEL EXCEL (En Altas y Bajas, sin el título)
-        const LISTA_DOC_JUST = [
-            "Alineamiento y Número Oficial", "Licencia de Construcción",
-            "Boleta Agua", "Recibo de Luz", "Boleta Predial", "Código Postal", "Cédula Catastral", 
-            "Costo Paramétrico", "Datos de Escritura", "Medidas y Colindancias", "Edad", 
-            "Constancia de No Adeudo CMAS", "Constancia de Datos Catastrales", 
-            "Proyecto Arquitectónico Planta Baja/Alta/Única", "Áreas Proy Arq Planta", 
-            "Med y Col Macrolote", "Ubicación Cisterna", "Ubicación Pozo", "Ubicación Biodigestor", 
-            "Indiviso", "Edad Efectiva", "Para Yucatán", "Info Catastral", "Plano Catastral", 
-            "Edad INSEJUPY", "Para Cofinavit / Infonavit", "Detalle de Registro Cédula MAI (Pag 1 de 2)",
-            "Solicitud Infonavit", "Solicitud AVE"
-        ];
-
-       // 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
-        document.addEventListener('DOMContentLoaded', () => {
-            renderListaExcel(); 
-
-            const storedUser = localStorage.getItem('leezar_user_active');
-            if (!storedUser) return window.location.href = "index.html";
-
-            const activeUser = JSON.parse(storedUser);
-            const userRole = (activeUser.rol || '').toLowerCase(); 
-            
-            const rolesPermitidos = ['capturista', 'admin', 'super admin', 'super_admin'];
-            
-            if (!rolesPermitidos.includes(userRole)) {
-                alert("Acceso Denegado. Esta hoja de trabajo es exclusiva para la Mesa de Captura.");
-                window.location.href = "dashboard.html"; 
-                return;
-            }
-
-            iniciarHojaTrabajo(activeUser); // Pasamos el perfil completo
-        });
-
-        // 2. FUNCIÓN QUE DIBUJA LAS CASILLAS
-        function renderListaExcel() {
-            const container = document.getElementById('contenedor-excel-docs');
-            container.innerHTML = LISTA_DOC_JUST.map((item, index) => `
-                <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:border-leezar-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm bg-white dark:bg-[#1e293b]">
-                    <input type="checkbox" id="chk-docjust-${index}" class="w-5 h-5 text-leezar-600 bg-gray-100 border-gray-300 rounded focus:ring-leezar-500 shrink-0">
-                    <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-tight">${item}</span>
-                </label>
-            `).join('');
-        }
-
-        // 3. BUSCAR ASIGNACIONES (VÍA CONSULTA RELACIONAL EXACTA A LA BASE DE DATOS)
-        async function iniciarHojaTrabajo(activeUser) {
-    const db = window.db || firebase.firestore();
-    if (!db) return;
-
-    // Normalizamos el rol del usuario a MAYÚSCULAS y quitamos espacios
-    const rolUsuario = (activeUser.rol || '').toUpperCase().trim();
-    
-    // Definimos quiénes tienen permiso total (Admin y Super Admin)
-    const esAdmin = ['SUPER ADMIN', 'ADMIN'].includes(rolUsuario);
-    
-    console.log("🛠️ Sistema de Roles:");
-    console.log("👤 Usuario:", activeUser.email);
-    console.log("🔑 Rol Normalizado:", rolUsuario);
-    console.log("🛡️ ¿Es Admin?:", esAdmin);
-
-    let query = db.collection('expedientes_avaluos');
-
-    query.onSnapshot((snapshot) => {
-        misExpedientes = {};
-        let htmlModal = '';
-        let expedientesEncontrados = 0;
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const estatus = (data.estatus || '').toUpperCase();
-            
-            // 1. Filtro de terminados
-            if (estatus.includes('FINALIZADO') || estatus.includes('ENTREGADO') || estatus.includes('COMPLETADO')) return;
-
-            // 2. LÓGICA DE VISIBILIDAD
-            if (!esAdmin) {
-                // Comparamos el campo 'capturista' (según vimos en tu BD)
-                const asignadoEnBD = (data.capturista || '').toLowerCase().trim();
-                const miEmail = (activeUser.email || '').toLowerCase().trim();
-                const miNombre = (activeUser.nombre || '').toLowerCase().trim();
-
-                // Si no es admin y no es el suyo, lo ignoramos
-                if (asignadoEnBD !== miEmail && asignadoEnBD !== miNombre) return;
-            } 
-
-            // Si llegó aquí, es porque debe verlo
-            expedientesEncontrados++;
-            const id = doc.id;
-            misExpedientes[id] = data; 
-            
-            const unidad = data.unidad || 'AVE';
-            const numExp = data.folio_gestora || data.folio_numerico || id.substring(0,5).toUpperCase();
-            const entidad = (data.entidad || data.estado || 'S/E').toUpperCase();
-            const etiqueta = `GYS ${unidad} ${numExp} (${entidad})`;
-
-            const tieneAvance = !!(data.fecha_actualizacion_captura || data.notas_captura);
-            const badgeStatus = tieneAvance 
-                ? `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200 ml-2">EN PROGRESO</span>`
-                : `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 ml-2">SIN INICIAR</span>`;
-
-            htmlModal += `
-            <div onclick="seleccionarExpediente('${id}', '${etiqueta}')" class="p-4 border border-slate-200 rounded-xl hover:border-leezar-500 hover:bg-leezar-50 cursor-pointer transition flex justify-between items-center mb-2 shadow-sm">
-                <div>
-                    <div class="flex items-center mb-1">
-                        <h4 class="font-black text-slate-800 text-sm">${etiqueta}</h4>
-                        ${badgeStatus}
-                    </div>
-                    <p class="text-[11px] text-slate-500">
-                        <span class="font-bold text-slate-700">${data.cliente || 'Sin Cliente'}</span>
-                        <br>Responsable: <span class="text-leezar-600 font-medium">${data.capturista || 'Sin asignar'}</span>
-                    </p>
-                </div>
-                <span class="material-symbols-rounded text-slate-300">chevron_right</span>
-            </div>`;
-        });
-
-        const contenedor = document.getElementById('lista-expedientes-modal');
-        if (contenedor) {
-            if (expedientesEncontrados === 0) {
-                contenedor.innerHTML = `<div class="text-center py-10 text-slate-500 col-span-full"><p class="font-bold">No hay expedientes pendientes</p></div>`;
-            } else {
-                contenedor.innerHTML = htmlModal;
-            }
-            if (!currentFolioId) abrirModalExpedientes(true);
-        }
-    });
-
-    if (typeof initTable === "function") initTable('terreno', 4);
-        }
-
-        // 4. ABRIR Y CERRAR MODAL
-        function abrirModalExpedientes(esObligatorio = false) {
-            const modal = document.getElementById('modal-expedientes');
-            const content = document.getElementById('modal-content');
-            const btnCerrar = document.getElementById('btn-cerrar-modal');
-            
-            if(esObligatorio) btnCerrar.classList.add('hidden');
-            else btnCerrar.classList.remove('hidden');
-
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
-        }
-
-        function cerrarModalExpedientes() {
-            const modal = document.getElementById('modal-expedientes');
-            const content = document.getElementById('modal-content');
-            modal.classList.add('opacity-0'); content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        // 5. CARGAR EXPEDIENTE E INYECTAR DATOS GUARDADOS
-        function seleccionarExpediente(id, etiqueta) {
-            currentFolioId = id;
-            const data = misExpedientes[id];
-            
-            document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
-            document.getElementById('active-expediente-label').innerHTML = `<span class="text-leezar-600 dark:text-leezar-400">${etiqueta}</span> <span class="text-slate-300 mx-1">|</span> ${data.cliente || 'Sin Nombre'}`;
-            
-            document.getElementById('info-cliente').value = data.cliente || 'Sin Nombre';
-            document.getElementById('info-entidad').value = data.entidad || data.estado || 'S/E';
-            document.getElementById('info-inmueble').value = data.tipoInmueble || 'CASA';
-            
-            const tramite = (data.tipoTramite || data.tramite || 'TRÁMITE GENERAL').toUpperCase();
-            document.getElementById('badge-tramite').textContent = tramite;
-            
-            const areaNotas = document.getElementById('texto-notas-tramite');
-            if (data.notas_captura) {
-                areaNotas.value = data.notas_captura;
-            } else if(tramite.includes('INFONAVIT')) {
-                areaNotas.value = "NOTAS INFONAVIT:\n- Cumple con ecotecnologías requeridas.\n- Vida útil remanente aplicable según normatividad.\n- El inmueble no se encuentra en zona de riesgo.\n- ...";
-            } else {
-                areaNotas.value = "OBSERVACIONES GENERALES:\n- Se realizó la visita ocular sin contratiempos.\n- ...";
-            }
-
-            if (data.mercado_terreno) {
-                document.getElementById('terreno-sujeto-sup').value = data.mercado_terreno.sujeto_sup || '';
-                for(let i=1; i<=4; i++) {
-                    if(data.mercado_terreno.rows && data.mercado_terreno.rows[i-1]) {
-                        const r = data.mercado_terreno.rows[i-1];
-                        document.getElementById(`terreno-precio-${i}`).value = r.precio || '';
-                        document.getElementById(`terreno-sup-${i}`).value = r.sup || '';
-                        document.getElementById(`terreno-fneg-${i}`).value = r.fneg || '1.00';
-                        document.getElementById(`terreno-fzona-${i}`).value = r.fzona || '1.00';
-                    }
+        window.comps = {
+            'terreno': {
+                count: 4, avgId: 'terreno-promedio-unitario', sujetoFields: ['sup'],
+                cols: [ { id: 'precio', isCurrency: true }, { id: 'sup', isCurrency: false, isInteger: false } ],
+                calcUnitario: (data) => { const p = data['terreno-precio']||0, s = data['terreno-sup']||0; return s>0 ? p/s : 0; },
+                validateRango: (data, sujeto) => {
+                    const s = data['terreno-sup']||0, ss = sujeto['terreno-sujeto-sup']||0;
+                    if(ss===0) return {ok:true, msg:'N/A'};
+                    const ok = (s >= ss*0.7 && s <= ss*1.3);
+                    return {ok, msg: ok?'CUMPLE':'NO CUMPLE'};
                 }
-            } else {
-                document.getElementById('terreno-sujeto-sup').value = '';
-                for(let i=1; i<=4; i++) {
-                    document.getElementById(`terreno-precio-${i}`).value = ''; document.getElementById(`terreno-sup-${i}`).value = '';
-                    document.getElementById(`terreno-fneg-${i}`).value = '1.00'; document.getElementById(`terreno-fzona-${i}`).value = '1.00';
+            },
+            'mercado': {
+                count: 6, avgId: 'mercado-promedio-unitario', sujetoFields: ['sup', 'edad'],
+                cols: [ { id: 'precio', isCurrency: true }, { id: 'sup-terreno', isCurrency: false }, { id: 'sup-const', isCurrency: false }, { id: 'edad', isCurrency: false, isInteger: true } ],
+                calcUnitario: (data) => { const p = data['mercado-precio']||0, sc = data['mercado-sup-const']||0; return sc>0 ? p/sc : 0; },
+                validateRango: (data, sujeto) => {
+                    const sc = data['mercado-sup-const']||0, ed = data['mercado-edad']||0;
+                    const ss = sujeto['mercado-sujeto-sup']||0, es = sujeto['mercado-sujeto-edad']||0;
+                    let sok = true, eok = true;
+                    if(ss>0) sok = (sc >= ss*0.7 && sc <= ss*1.3);
+                    if(es>0) eok = (ed >= es-5 && ed <= es+5);
+                    if(ss===0 && es===0) return {ok:true, msg:'N/A'};
+                    if(sok && eok) return {ok:true, msg:'CUMPLE'};
+                    if(!sok && !eok) return {ok:false, msg:'AMBOS ERROR'};
+                    return {ok:false, msg: !sok?'SUP ERROR':'EDAD ERROR'};
+                }
+            },
+            'rentas': {
+                count: 4, avgId: 'rentas-promedio-unitario', sujetoFields: ['sup', 'edad'],
+                cols: [ { id: 'precio', isCurrency: true }, { id: 'sup-terreno', isCurrency: false }, { id: 'sup-const', isCurrency: false }, { id: 'edad', isCurrency: false, isInteger: true } ],
+                calcUnitario: (data) => { const r = data['rentas-precio']||0, sc = data['rentas-sup-const']||0; return sc>0 ? r/sc : 0; },
+                validateRango: (data, sujeto) => {
+                    const sc = data['rentas-sup-const']||0, ed = data['rentas-edad']||0;
+                    const ss = sujeto['rentas-sujeto-sup']||0, es = sujeto['rentas-sujeto-edad']||0;
+                    let sok = true, eok = true;
+                    if(ss>0) sok = (sc >= ss*0.7 && sc <= ss*1.3);
+                    if(es>0) eok = (ed >= es-5 && ed <= es+5);
+                    if(ss===0 && es===0) return {ok:true, msg:'N/A'};
+                    if(sok && eok) return {ok:true, msg:'CUMPLE'};
+                    if(!sok && !eok) return {ok:false, msg:'AMBOS ERROR'};
+                    return {ok:false, msg: !sok?'SUP ERROR':'EDAD ERROR'};
                 }
             }
-            calcAll('terreno', 4);
+        };
 
-            // Cargar Checklist de Excel guardado
-            LISTA_DOC_JUST.forEach((_, index) => {
-                const el = document.getElementById(`chk-docjust-${index}`);
-                if (el) {
-                    el.checked = data.docjust ? (data.docjust[`item_${index}`] || false) : false;
+        const formatCurrency = (val) => new Intl.NumberFormat('es-MX', {style: 'currency', currency: 'MXN'}).format(isNaN(val)?0:val);
+        const formatNumber = (val, dec=2) => new Intl.NumberFormat('es-MX', {minimumFractionDigits:dec, maximumFractionDigits:dec}).format(isNaN(val)?0:val);
+        const getNumericValue = (id) => { const el=document.getElementById(id); return el ? (parseFloat(el.value.replace(/[^0-9.-]+/g,''))||0) : 0; };
+        
+        window.formatInput = (val, isInt=false) => { const n = parseFloat(val.replace(/[^0-9.-]+/g,'')); return isNaN(n)?'':formatNumber(n, isInt?0:2); };
+        window.formatInputCurrency = (val) => { const n = parseFloat(val.replace(/[^0-9.-]+/g,'')); return isNaN(n)?'':formatNumber(n, 2); };
+
+        window.recalculateRow = (type, index) => {
+            const config = window.comps[type];
+            const rowData = {}, sujetoData = {};
+            config.cols.forEach(col => rowData[`${type}-${col.id}`] = getNumericValue(`${type}-${col.id}-${index}`));
+            config.sujetoFields.forEach(f => sujetoData[`${type}-sujeto-${f}`] = getNumericValue(`${type}-sujeto-${f}`));
+            
+            const unitario = config.calcUnitario(rowData);
+            const uEl = document.getElementById(`${type}-unitario-${index}`);
+            if(uEl) { uEl.textContent = (unitario===0||!isFinite(unitario))?'#DIV/0!':formatCurrency(unitario); uEl.dataset.value = unitario||0; }
+            
+            const rEl = document.getElementById(`${type}-rango-${index}`);
+            if(rEl) { const r = config.validateRango(rowData, sujetoData); rEl.textContent=r.msg; rEl.className=r.ok?'rango-ok':'rango-error'; }
+            
+            recalculateSection(type);
+        };
+
+        const recalculateSection = (type) => {
+            const config = window.comps[type];
+            let sum = 0, count = 0, arr = [];
+            for(let i=1; i<=config.count; i++){
+                const el = document.getElementById(`${type}-unitario-${i}`);
+                if(el){
+                    el.classList.remove('unit-value-max','unit-value-min');
+                    const v = parseFloat(el.dataset.value||0);
+                    if(v>0 && isFinite(v)){ sum+=v; count++; arr.push({v, el}); }
                 }
+            }
+            document.getElementById(config.avgId).textContent = formatCurrency(count>0 ? sum/count : 0);
+            
+            const dVal = document.getElementById(`${type}-dispersion-value`), dStat = document.getElementById(`${type}-dispersion-status`);
+            if(arr.length >= 2){
+                arr.sort((a,b)=>a.v - b.v);
+                arr[0].el.classList.add('unit-value-min');
+                arr[arr.length-1].el.classList.add('unit-value-max');
+                const disp = arr[0].v>0 ? (arr[arr.length-1].v / arr[0].v) : 0;
+                dVal.textContent = formatNumber(disp, 4);
+                if(disp < MAX_DISPERSION && disp > 0){ dStat.textContent='CUMPLE (<1.30)'; dStat.className='font-black text-base text-emerald-600';}
+                else { dStat.textContent='NO CUMPLE (≥1.30)'; dStat.className='font-black text-base text-rose-600'; }
+            } else {
+                dVal.textContent='N/A'; dStat.textContent='Faltan datos'; dStat.className='font-black text-base text-gray-500';
+            }
+        };
+
+        window.handleSujetoChange = (type) => {
+            const config = window.comps[type];
+            const sd = {}; config.sujetoFields.forEach(f => sd[f] = getNumericValue(`${type}-sujeto-${f}`));
+            
+            if(type==='terreno'){
+                document.getElementById('terreno-sujeto-rango').textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+            } else {
+                document.getElementById(`${type}-sujeto-rango-sup`).textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+                document.getElementById(`${type}-sujeto-rango-edad`).textContent = sd.edad>0 ? `${formatNumber(sd.edad-5,0)} a ${formatNumber(sd.edad+5,0)}` : 'N/A';
+            }
+            for(let i=1; i<=config.count; i++) recalculateRow(type, i);
+        };
+
+        window.sortTable = (type, colIndex) => {
+            const tbody = document.getElementById(`${type}-rows`);
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const newDir = tbody.dataset.sortCol===colIndex.toString() && tbody.dataset.sortDir==='desc' ? 'asc' : 'desc';
+            tbody.dataset.sortCol = colIndex; tbody.dataset.sortDir = newDir;
+            
+            document.querySelectorAll(`#section-${type} .sortable-header`).forEach(th => th.innerHTML = th.innerHTML.replace(' ↓','').replace(' ↑',''));
+            document.querySelector(`#section-${type} th:nth-child(${colIndex+1})`).innerHTML += newDir==='desc'?' ↓':' ↑';
+
+            rows.sort((a,b) => {
+                const av = parseFloat(a.querySelector(`td:nth-child(${colIndex+1})`).dataset.value||0);
+                const bv = parseFloat(b.querySelector(`td:nth-child(${colIndex+1})`).dataset.value||0);
+                return newDir==='desc' ? bv-av : av-bv;
             });
+            rows.forEach(r => tbody.appendChild(r));
+            recalculateSection(type);
+        };
+
+        const createTableRows = () => {
+            Object.keys(window.comps).forEach(type => {
+                const config = window.comps[type];
+                const tbody = document.getElementById(`${type}-rows`);
+                if(!tbody) return;
+                let html = '';
+                for(let i=1; i<=config.count; i++){
+                    html+=`<tr><td class="text-center font-mono text-gray-400">${i}</td>`;
+                    config.cols.forEach(col => {
+                        const id = `${type}-${col.id}-${i}`;
+                        const ob = col.isCurrency ? `this.value=formatInputCurrency(this.value)` : `this.value=formatInput(this.value, ${col.isInteger})`;
+                        html+=`<td class="p-1">${col.isCurrency?'<span class="absolute ml-2 mt-1.5 text-gray-400">$</span>':''}<input type="text" id="${id}" class="leezar-input ${col.isCurrency?'!pl-6':''}" oninput="recalculateRow('${type}',${i})" onblur="${ob}"></td>`;
+                    });
+                    html+=`<td class="p-1 text-center"><span id="${type}-rango-${i}" class="rango-ok">N/A</span></td>`;
+                    html+=`<td id="${type}-unitario-${i}" data-value="0" class="text-right font-bold bg-slate-50 dark:bg-slate-800/50">#DIV/0!</td>`;
+                    html+=`<td class="p-1"><input type="text" id="${type}-url-completa-${i}" class="leezar-input !text-left !text-[10px]" placeholder="https://..."></td>`;
+                    html+=`<td class="p-1"><input type="text" id="${type}-liga-acortada-${i}" class="leezar-input !text-left !text-[10px]" placeholder="bit.ly/..."></td></tr>`;
+                }
+                tbody.innerHTML = html;
+                document.getElementById(`${type}-dispersion-permitida`).textContent = formatNumber(MAX_DISPERSION, 2);
+            });
+        };
+
+        // --- 2. LÓGICA DEL GENERADOR DE NOTAS ---
+        window.toggleConditionalFields = (type) => {
+            const div = document.getElementById(`conditional-fields-${type}`);
+            const chk = document.querySelector(`input[onchange="toggleConditionalFields('${type}')"]`);
+            div.style.display = chk.checked ? 'grid' : 'none';
+        };
+
+        window.generarTextoNotas = () => {
+            const getV = (id, pl='[PENDIENTE]', opt=false) => { const el=document.getElementById(id); return (el&&el.value.trim()!=="") ? `**${el.value.trim().toUpperCase()}**` : (opt?'':pl); };
+            const getC = (name, pl='[PENDIENTE]') => { 
+                const chk = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(c=>c.value.toUpperCase());
+                if(chk.length===0) return pl; if(chk.length===1) return `**${chk[0]}**`;
+                const last = chk.pop(); return `**${chk.join(', ')} Y ${last}**`;
+            };
+
+            const fV = getV('nota-fecha-visita'), cp = getV('nota-cp'), cpAs = getV('nota-cp-asentamiento');
+            const docs = getC('nota-doc'), servs = getC('nota-serv');
+            const eNum = getV('nota-esc-numero'), eLib = getV('nota-esc-libro','',true), eFec = getV('nota-esc-fecha'), eNot = getV('nota-esc-notario'), eNumN = getV('nota-esc-notaria-num'), eCiu = getV('nota-esc-notaria-ciudad');
+            const cFec = getV('nota-cedula-fecha'), cFol = getV('nota-cedula-folio'), cAyu = getV('nota-cedula-ayuntamiento'), cEda = getV('nota-cedula-edad');
+            const pCla = getV('nota-predial-clave'), pFol = getV('nota-predial-folio'), pFec = getV('nota-predial-fecha');
+            const aOfi = getV('nota-alin-oficio'), aFec = getV('nota-alin-fecha');
+            const dOfi = getV('nota-datos-oficio','',true), dFec = getV('nota-datos-fecha');
+            const agCu = getV('nota-agua-cuenta'), agFo = getV('nota-agua-folio'), agFe = getV('nota-agua-fecha'), agEx = getV('nota-agua-expedido');
+            const sPri = getV('nota-sup-privativa'), sAcc = getV('nota-sup-accesoria'), sAcD = getV('nota-sup-accesoria-desc'), sVen = getV('nota-sup-vendible'), sTot = getV('nota-sup-total');
+
+            let txt = `DECLARACIONES Y ADVERTENCIAS:\n-LA VISITA SE REALIZÓ EL DÍA ${fV}.\n-EL CLIENTE PROPORCIONÓ COPIAS SIMPLES DE ${docs}.\n-EL INMUEBLE CUENTA CON VENTILACIÓN NATURAL Y/O MECÁNICA EN TODOS LOS ESPACIOS ARQUITECTÓNICOS.\n-EL INMUEBLE CUENTA CON LOS SERVICIOS DE ${servs}, AL MOMENTO DE LA INSPECCIÓN.\n-EN LA VISITA SE VERIFICÓ QUE EL INMUEBLE CUENTA CON SERVICIO DE AGUA POTABLE ACREDITADO CON RECIBO NÚMERO ${agCu} FOLIO ${agFo}, FECHA ${agFe}, EXPEDIDO POR ${agEx}.\n-LA DIRECCIÓN SE OBTIENE DE ESCRITURA PÚBLICA ${eNum}${eLib?`, LIBRO ${eLib}`:''}, FECHA ${eFec}, ANTE LA FE DE ${eNot}, NOTARIA ${eNumN} DE ${eCiu}, COMPLEMENTADA CON ALINEAMIENTO OFICIO ${aOfi}, FECHA ${aFec}.\n-EL CÓDIGO POSTAL ES ${cp}, VERIFICADO EN SEPOMEX COMO ${cpAs}.\n-LA CLAVE CATASTRAL ES ${pCla}, BOLETA PREDIAL FOLIO ${pFol}, FECHA ${pFec}.\n`;
+            if(dOfi) txt += `-CONFORME A CONSTANCIA DE DATOS CATASTRALES OFICIO ${dOfi}, FECHA ${dFec}, SEÑALA LA RELACIÓN ENTRE CLAVE CATASTRAL Y LOTE/MANZANA.\n`;
+            txt += `-ÁREA PRIVATIVA CONSTRUIDA DE ${sPri} Y SUPERFICIE ACCESORIA DE ${sAcc} (${sAcD}), ÁREA TOTAL VENDIBLE ${sVen}, SUPERFICIE TOTAL ${sTot}.\n-CONFORME A CÉDULA CATASTRAL DE FECHA ${cFec}, FOLIO ${cFol} DEL AYUNTAMIENTO DE ${cAyu}, LA EDAD ES DE ${cEda}.`;
             
-            cerrarModalExpedientes();
-            showToast("Expediente Cargado Correctamente", "success");
-        }
+            document.getElementById('texto-notas-tramite').value = txt;
+        };
+
+        // --- 3. EXPORTAR A PDF ---
+        window.exportToPDF = () => {
+            const fGys = document.getElementById('folio-gys').value || 'Sin_Folio';
+            const html = document.createElement('div');
+            html.style = "padding:20px; font-family:sans-serif; background:#fff; color:#000; font-size:10px;";
+            html.innerHTML = `<h2 style="color:#0d9488; text-align:center; font-size:18px; margin-bottom:10px;">Estudio de Mercado - Folio: ${fGys}</h2>`;
+            
+            ['terreno', 'mercado', 'rentas'].forEach(type => {
+                const sec = document.getElementById(`section-${type}`);
+                if(!sec) return;
+                html.innerHTML += `<div style="background:#f3f4f6; padding:8px; margin-top:15px; font-weight:bold; text-transform:uppercase;">${sec.querySelector('h2').innerText}</div>`;
+                
+                // Info Sujeto
+                let sujHTML = `<div style="padding:5px; border:1px solid #ddd; display:flex; justify-content:space-between; margin-bottom:5px;">`;
+                window.comps[type].sujetoFields.forEach(f => {
+                    sujHTML += `<span><b>Sujeto ${f}:</b> ${document.getElementById(`${type}-sujeto-${f}`).value}</span>`;
+                });
+                html.innerHTML += sujHTML + `</div>`;
+
+                // Clonar Tabla
+                const table = sec.querySelector('table').cloneNode(true);
+                // Limpiar inputs, pasar a texto
+                table.querySelectorAll('input').forEach(inp => {
+                    const txt = document.createTextNode(inp.value);
+                    inp.parentNode.replaceChild(txt, inp);
+                });
+                table.style = "width:100%; border-collapse:collapse; text-align:center; border: 1px solid #ccc;";
+                table.querySelectorAll('th, td').forEach(c => c.style="border:1px solid #ccc; padding:4px;");
+                html.appendChild(table);
+
+                // Dispersión
+                html.innerHTML += `<div style="text-align:right; font-size:11px; margin-top:5px;"><b>Dispersión Calculada:</b> ${document.getElementById(`${type}-dispersion-value`).innerText} | <b>Estado:</b> ${document.getElementById(`${type}-dispersion-status`).innerText}</div>`;
+            });
+
+            document.body.appendChild(html);
+            html2pdf().from(html).set({ margin: 10, filename: `Mercado_${fGys}.pdf`, image: {type: 'jpeg', quality: 0.98}, html2canvas: {scale: 2}, jsPDF: {unit: 'mm', format: 'a4', orientation: 'landscape'} }).save().then(() => html.remove());
+        };
+
+        // --- 4. INTEGRACIÓN FIREBASE & UI ---
+        const LISTA_DOC_JUST = [
+        "Alineamiento y Número Oficial", "Licencia de Construcción",
+        "Boleta Agua", "Recibo de Luz", "Boleta Predial", "Código Postal", "Cédula Catastral", 
+        "Costo Paramétrico", "Datos de Escritura", "Medidas y Colindancias", "Edad", 
+        "Constancia de No Adeudo CMAS", "Constancia de Datos Catastrales", 
+        "Proyecto Arquitectónico Planta Baja/Alta/Única", "Áreas Proy Arq Planta", 
+        "Med y Col Macrolote", "Ubicación Cisterna", "Ubicación Pozo", "Ubicación Biodigestor", 
+        "Indiviso", "Edad Efectiva", "Para Yucatán", "Info Catastral", "Plano Catastral", 
+        "Edad INSEJUPY", "Para Cofinavit / Infonavit", "Detalle de Registro Cédula MAI (Pag 1 de 2)",
+        "Solicitud Infonavit", "Solicitud AVE"
+        ];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const userJson = localStorage.getItem('leezar_user_active');
+            if(!userJson) return window.location.href = "index.html";
+            const user = JSON.parse(userJson);
+            
+            // Render Lista Docs
+            document.getElementById('contenedor-excel-docs').innerHTML = LISTA_DOC_JUST.map((item, i) => `<label class="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded"><input type="checkbox" id="chk-docjust-${i}"> <span class="text-xs font-bold">${item}</span></label>`).join('');
+            
+            createTableRows(); // Crea las 3 tablas de mercado
+            iniciarHojaTrabajo(user);
+        });
 
         function switchTab(tabId) {
             ['datos', 'notas', 'mercado', 'docjust'].forEach(id => {
@@ -381,100 +619,155 @@
             document.getElementById('btn-' + tabId).classList.add('active');
         }
 
-        // FUNCIONES DE TABLA MERCADO
-        function initTable(type, count) { 
-            const tbody = document.getElementById(`${type}-rows`); 
-            if(!tbody) return; 
-            let html = ''; 
-            for(let i=1; i<=count; i++) { 
-                html += `<tr>
-                    <td class="text-center text-xs font-mono text-gray-400">${i}</td>
-                    <td class="p-0"><div class="currency-wrap"><span class="currency-symbol">$</span><input id="${type}-precio-${i}" class="leezar-input currency-input border-0" onblur="formatInput(this)" oninput="calcAll('${type}', ${count})"></div></td>
-                    <td class="p-0"><input id="${type}-sup-${i}" class="leezar-input text-right border-0" oninput="calcAll('${type}', ${count})"></td>
-                    <td class="text-right text-xs px-2 text-gray-500 bg-gray-50 dark:bg-slate-900 align-middle" id="${type}-orig-${i}">$0.00</td>
-                    <td class="p-0"><input id="${type}-fneg-${i}" class="leezar-input text-center bg-yellow-50 dark:bg-yellow-900/30 border-0" value="1.00" oninput="calcAll('${type}', ${count})"></td>
-                    <td class="text-center text-xs font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 align-middle" id="${type}-fsup-${i}">1.00</td>
-                    <td class="p-0"><input id="${type}-fzona-${i}" class="leezar-input text-center bg-yellow-50 dark:bg-yellow-900/30 border-0" value="1.00" oninput="calcAll('${type}', ${count})"></td>
-                    <td class="text-right font-bold text-xs px-2 bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300 align-middle" id="${type}-res-${i}">$0.00</td>
-                </tr>`; 
-            } 
-            tbody.innerHTML = html; 
+        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':'bg-emerald-600'}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
+
+        // MÓDULO DE CARGA FIREBASE
+        async function iniciarHojaTrabajo(activeUser) {
+            const db = window.db || firebase.firestore();
+            const rolUsuario = (activeUser.rol || '').toUpperCase().trim();
+            const esAdmin = ['SUPER ADMIN', 'ADMIN'].includes(rolUsuario);
+
+            db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
+                misExpedientes = {};
+                let htmlModal = '', cont = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const est = (data.estatus||'').toUpperCase();
+                    if(est.includes('FINALIZADO')||est.includes('ENTREGADO')) return;
+                    
+                    if(!esAdmin) {
+                        const asig = (data.capturista||'').toLowerCase().trim();
+                        if(asig !== (activeUser.email||'').toLowerCase() && asig !== (activeUser.nombre||'').toLowerCase()) return;
+                    }
+
+                    cont++; misExpedientes[doc.id] = data;
+                    const fGys = data.folio_gestora || doc.id.substring(0,6).toUpperCase();
+                    const label = `GYS ${data.unidad||'AVE'} ${fGys} (${data.entidad||'S/E'})`;
+                    const statusUI = data.notas_captura ? `<span class="bg-emerald-100 text-emerald-700 px-2 rounded text-[10px]">EN PROGRESO</span>` : `<span class="bg-slate-100 px-2 rounded text-[10px]">SIN INICIAR</span>`;
+
+                    htmlModal += `<div onclick="seleccionarExpediente('${doc.id}', '${label}')" class="p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-teal-500 cursor-pointer bg-white dark:bg-slate-900 shadow-sm">
+                        <div class="flex justify-between items-center mb-2"><h4 class="font-black text-sm dark:text-white">${label}</h4>${statusUI}</div>
+                        <p class="text-xs text-slate-500">${data.cliente||'Sin Cliente'} <br>Resp: ${data.capturista||'N/A'}</p>
+                    </div>`;
+                });
+
+                document.getElementById('lista-expedientes-modal').innerHTML = cont>0 ? htmlModal : `<div class="col-span-full text-center py-10">Bandeja Vacía</div>`;
+                if(!currentFolioId) abrirModalExpedientes(true);
+            });
         }
 
-        window.calcAll = (type, count) => { 
-            const subjSup = getVal(`${type}-sujeto-sup`); 
-            let totalHomologado = 0, validCount = 0; 
-            for(let i=1; i<=count; i++) { 
-                const precio = getVal(`${type}-precio-${i}`), sup = getVal(`${type}-sup-${i}`); 
-                let unitario = (sup > 0) ? precio / sup : 0; 
-                document.getElementById(`${type}-orig-${i}`).textContent = formatMoney(unitario); 
-                
-                let fsup = 1.00; 
-                if(subjSup > 0 && sup > 0) fsup = Math.pow((sup / subjSup), 1/6); 
-                document.getElementById(`${type}-fsup-${i}`).textContent = fsup.toFixed(4); 
-                
-                const fneg = getVal(`${type}-fneg-${i}`) || 1; 
-                const fextra = getVal(`${type}-fzona-${i}`) || 1; 
-                const resultante = unitario * fneg * fsup * fextra; 
-                
-                document.getElementById(`${type}-res-${i}`).textContent = formatMoney(resultante); 
-                if(resultante > 0) { totalHomologado += resultante; validCount++; } 
-            } 
-            const avg = validCount > 0 ? totalHomologado / validCount : 0; 
-            document.getElementById(`${type}-avg-homologado`).textContent = formatMoney(avg); 
-            document.getElementById(`${type}-total-value`).textContent = formatMoney(avg * subjSup); 
-        };
+        function seleccionarExpediente(id, etiqueta) {
+            currentFolioId = id; const d = misExpedientes[id];
+            document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
+            cerrarModalExpedientes(); showToast("Expediente Cargado", "success");
 
-        function getVal(id) { return parseFloat(document.getElementById(id)?.value.replace(/[^0-9.-]+/g,'') || 0); }
-        function formatMoney(n) { return new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN'}).format(n); }
-        window.formatInput = (el) => { const v = parseFloat(el.value.replace(/[^0-9.-]+/g,'')); if(!isNaN(v)) el.value = new Intl.NumberFormat('en-US').format(v); };
-        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':(type==='success'?'bg-emerald-600':'bg-gray-800')}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
+            // DATOS GENERALES
+            document.getElementById('active-expediente-label').innerText = etiqueta;
+            document.getElementById('folio-gys').value = d.folio_gestora || id.substring(0,6).toUpperCase();
+            document.getElementById('info-cliente').value = d.cliente || '';
+            document.getElementById('info-entidad').value = d.entidad || '';
+            document.getElementById('info-tramite').value = d.tipoTramite || 'INFONAVIT';
 
-        // 6. GUARDAR AVANCES
+            // NOTAS
+            document.getElementById('texto-notas-tramite').value = d.notas_captura || '';
+
+            // MERCADO (Recuperar las 3 tablas si existen)
+            ['terreno', 'mercado', 'rentas'].forEach(type => {
+                const md = d[`mercado_${type}`];
+                if(md) {
+                    window.comps[type].sujetoFields.forEach(f => {
+                        const el = document.getElementById(`${type}-sujeto-${f}`);
+                        if(el) { el.value = md.sujeto[`sujeto-${f}`] || ''; el.blur(); } // dispara el formatInput
+                    });
+                    
+                    if(md.rows) {
+                        for(let i=1; i<=window.comps[type].count; i++) {
+                            const r = md.rows[i-1];
+                            if(r) {
+                                window.comps[type].cols.forEach(col => {
+                                    const el = document.getElementById(`${type}-${col.id}-${i}`);
+                                    if(el) { el.value = r[col.id] || ''; el.blur(); }
+                                });
+                                const elUrl = document.getElementById(`${type}-url-completa-${i}`);
+                                const elLig = document.getElementById(`${type}-liga-acortada-${i}`);
+                                if(elUrl) elUrl.value = r.url || '';
+                                if(elLig) elLig.value = r.liga || '';
+                            }
+                        }
+                    }
+                } else {
+                    // Limpiar si no hay datos en BD
+                    window.comps[type].sujetoFields.forEach(f => document.getElementById(`${type}-sujeto-${f}`).value = '');
+                    for(let i=1; i<=window.comps[type].count; i++) {
+                        window.comps[type].cols.forEach(c => document.getElementById(`${type}-${c.id}-${i}`).value = '');
+                        document.getElementById(`${type}-url-completa-${i}`).value = '';
+                        document.getElementById(`${type}-liga-acortada-${i}`).value = '';
+                    }
+                }
+                handleSujetoChange(type); // Recalcula visuales
+            });
+
+            // CHECKLIST
+            LISTA_DOC_JUST.forEach((_, i) => {
+                const el = document.getElementById(`chk-docjust-${i}`);
+                if(el) el.checked = d.docjust ? (d.docjust[`item_${i}`] || false) : false;
+            });
+        }
+
+        // MÓDULO DE GUARDADO
         async function guardarProgreso() {
-            if(!currentFolioId) return showToast("Debes abrir un expediente primero.", "error");
-            
-            const db = window.db || firebase.firestore();
+            if(!currentFolioId) return showToast("Abre un expediente primero.", "error");
             const btn = document.querySelector('button[onclick="guardarProgreso()"]');
             btn.innerHTML = `<span class="material-symbols-rounded text-sm animate-spin">sync</span> Guardando...`;
             btn.disabled = true;
 
-            const notasVal = document.getElementById('texto-notas-tramite').value;
-            
-            const mercado_terreno = {
-                sujeto_sup: document.getElementById('terreno-sujeto-sup').value, 
-                rows: []
+            const payload = {
+                fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp(),
+                notas_captura: document.getElementById('texto-notas-tramite').value,
+                docjust: {}
             };
-            for(let i=1; i<=4; i++) {
-                mercado_terreno.rows.push({
-                    precio: document.getElementById(`terreno-precio-${i}`).value,
-                    sup: document.getElementById(`terreno-sup-${i}`).value,
-                    fneg: document.getElementById(`terreno-fneg-${i}`).value,
-                    fzona: document.getElementById(`terreno-fzona-${i}`).value
-                });
-            }
 
-            // Recolectar las 31 casillas generadas del Excel
-            const docjustVal = {};
-            LISTA_DOC_JUST.forEach((_, index) => {
-                docjustVal[`item_${index}`] = document.getElementById(`chk-docjust-${index}`).checked;
+            // Recolectar DOCS
+            LISTA_DOC_JUST.forEach((_, i) => payload.docjust[`item_${i}`] = document.getElementById(`chk-docjust-${i}`).checked);
+
+            // Recolectar las 3 TABLAS DE MERCADO
+            ['terreno', 'mercado', 'rentas'].forEach(type => {
+                const tData = { sujeto: {}, rows: [] };
+                window.comps[type].sujetoFields.forEach(f => tData.sujeto[`sujeto-${f}`] = getNumericValue(`${type}-sujeto-${f}`));
+                
+                for(let i=1; i<=window.comps[type].count; i++) {
+                    const row = {};
+                    window.comps[type].cols.forEach(c => row[c.id] = getNumericValue(`${type}-${c.id}-${i}`));
+                    row.url = document.getElementById(`${type}-url-completa-${i}`)?.value || '';
+                    row.liga = document.getElementById(`${type}-liga-acortada-${i}`)?.value || '';
+                    tData.rows.push(row);
+                }
+                payload[`mercado_${type}`] = tData;
             });
 
             try {
-                await db.collection('expedientes_avaluos').doc(currentFolioId).update({
-                    notas_captura: notasVal,
-                    mercado_terreno: mercado_terreno,
-                    docjust: docjustVal,
-                    fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                showToast("Avance guardado en la nube ☁️", "success");
-            } catch (error) {
-                console.error("Error guardando:", error);
-                showToast("Error al conectar con la base de datos", "error");
+                await db.collection('expedientes_avaluos').doc(currentFolioId).update(payload);
+                showToast("Guardado Exitoso ☁️", "success");
+            } catch (e) {
+                console.error(e); showToast("Error al guardar", "error");
             } finally {
-                btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Avance`;
+                btn.innerHTML = `<span class="material-symbols-rounded text-sm">cloud_upload</span> Guardar Avance`;
                 btn.disabled = false;
             }
+        }
+
+        function abrirModalExpedientes(esObligatorio = false) {
+            const m = document.getElementById('modal-expedientes');
+            const c = document.getElementById('modal-content');
+            if(esObligatorio) document.getElementById('btn-cerrar-modal').classList.add('hidden');
+            else document.getElementById('btn-cerrar-modal').classList.remove('hidden');
+            m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+        }
+        function cerrarModalExpedientes() {
+            const m = document.getElementById('modal-expedientes');
+            const c = document.getElementById('modal-content');
+            m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300);
         }
     </script>
 </body>

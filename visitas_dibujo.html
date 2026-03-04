@@ -39,7 +39,7 @@
 
     <main id="main-content" class="max-w-md mx-auto pb-24" style="visibility: hidden;">
         <header class="p-6">
-            <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-1">Mis Tareas</h1>
+            <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-1">Mis Asignaciones</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Gestión de levantamientos y planos</p>
         </header>
 
@@ -144,11 +144,10 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                // Se usa la URL estándar de Google Maps para coordenadas
-                let linkGoogleMaps=coordsFinales?`https://www.google.com/maps?q=${coordsFinales.replace(/\s/g,'')}`:'#'; 
                 
+                // URL corregida con ${} y formato universal para Google Maps
+                let linkGoogleMaps = coordsFinales ? `https://www.google.com/maps/search/?api=1&query=${coordsFinales.replace(/\s/g, '')}` : '#'; 
 
-                // 🔥 UX NUEVA: Detectar si ya hay archivos subidos para cambiar el botón
                 let prevFiles = 0;
                 if (exp.entregables) {
                     if (vistaActual === 'visitas' && exp.entregables.visita && exp.entregables.visita.archivos) {
@@ -158,15 +157,17 @@
                     }
                 }
                 
-                let btnText = prevFiles > 0 ? `AGREGAR MÁS (${prevFiles})` : `SUBIR`;
-                let btnBgColor = prevFiles > 0 ? `emerald` : colorBase; // Se pone verde si ya hay fotos
+                let btnText = prevFiles > 0 ? `AGREGAR MÁS (${prevFiles})` : `SUBIR ARCHIVOS`;
+                let btnBgColor = prevFiles > 0 ? `emerald` : colorBase;
                 let btnIcon = prevFiles > 0 ? `library_add` : (vistaActual === 'visitas' ? 'add_a_photo' : 'upload_file');
 
                 const card = `
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600"><span class="material-symbols-rounded text-xl">${icon}</span></div>
+                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600">
+                                    <span class="material-symbols-rounded text-xl">${icon}</span>
+                                </div>
                                 <div>
                                     <h4 class="text-sm font-black text-slate-800 dark:text-white leading-tight">${exp.clienteNombre || exp.cliente || 'Sin Nombre'}</h4>
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${exp.folio || exp.id.substring(0,6)}</p>
@@ -174,20 +175,30 @@
                             </div>
                             <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[9px] font-black text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase">${exp.estatus}</span>
                         </div>
+
                         <div class="space-y-2 mb-5">
                             <div class="flex items-start gap-2">
                                 <span class="material-symbols-rounded text-sm ${coordsFinales ? 'text-emerald-500' : 'text-slate-400'} mt-0.5">location_on</span>
-                                <p class="text-[11px] ${coordsFinales && direccionFinal.includes('GPS') ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'} leading-relaxed">${direccionFinal}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">${direccionFinal}</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <a href="${linkGoogleMaps}" target="_blank" class="flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all ${!coordsFinales ? 'opacity-50 pointer-events-none' : ''}"><span class="material-symbols-rounded text-lg text-slate-600 dark:text-slate-300">map</span><span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">VER MAPA</span></a>
+
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <a href="${linkGoogleMaps}" target="_blank" class="flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all ${!coordsFinales ? 'opacity-50 pointer-events-none' : ''}">
+                                <span class="material-symbols-rounded text-lg text-slate-600 dark:text-slate-300">map</span>
+                                <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">CÓMO LLEGAR</span>
+                            </a>
                             
-                            <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" class="flex items-center justify-center gap-2 py-3 bg-${btnBgColor}-600 hover:bg-${btnBgColor}-700 text-white rounded-xl shadow-lg shadow-${btnBgColor}-500/20 transition-all">
-                                <span class="material-symbols-rounded text-lg">${btnIcon}</span>
-                                <span class="text-[11px] font-bold uppercase">${btnText}</span>
+                            <button onclick="confirmarUbicacionReal('${exp.id}')" class="flex items-center justify-center gap-2 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-100 transition-all">
+                                <span class="material-symbols-rounded text-lg">where_to_vote</span>
+                                <span class="text-[11px] font-bold uppercase">UBICACIÓN REAL</span>
                             </button>
                         </div>
+
+                        <button onclick="abrirSubida('${exp.id}', '${vistaActual === 'visitas' ? 'VISITA' : 'DIBUJO'}')" class="w-full flex items-center justify-center gap-2 py-4 bg-${btnBgColor}-600 hover:bg-${btnBgColor}-700 text-white rounded-2xl shadow-lg shadow-${btnBgColor}-500/20 transition-all">
+                            <span class="material-symbols-rounded text-lg">${btnIcon}</span>
+                            <span class="text-[11px] font-bold uppercase tracking-wider">${btnText}</span>
+                        </button>
                     </div>`;
                 container.innerHTML += card;
             });
@@ -428,6 +439,33 @@
                     opciones
                 );
             });
+        }
+
+        async function confirmarUbicacionReal(idExpediente) {
+            if(!confirm("¿Estás físicamente en el inmueble? Se guardará tu ubicación GPS actual como referencia oficial de la visita.")) return;
+            
+            const modal = document.getElementById('modal-upload');
+            const status = document.getElementById('upload-status');
+            document.getElementById('upload-title').innerText = '📍 Validando Posición...';
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+
+            try {
+                status.innerText = "Obteniendo coordenadas de alta precisión...";
+                const coords = await obtenerUbicacion();
+                
+                await db.collection('expedientes_avaluos').doc(idExpediente).update({
+                    coordenadas: coords,
+                    fecha_gps_confirmado: new Date().toISOString()
+                });
+
+                await registrarLog("GPS_CONFIRMADO", `El visitador confirmó estar en el sitio. Coordenadas: ${coords}`, idExpediente);
+                
+                modal.classList.add('hidden');
+                alert("✅ Ubicación confirmada con éxito.");
+            } catch (error) {
+                modal.classList.add('hidden');
+                alert("❌ Error de GPS: " + error);
+            }
         }
 
         function fileToBase64(file) {
