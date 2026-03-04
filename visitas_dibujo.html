@@ -144,7 +144,9 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                let linkGoogleMaps = coordsFinales ? `https://maps.google.com/?q=$${coordsFinales}` : '#'; 
+                // Se usa la URL estándar de Google Maps para coordenadas
+                let linkGoogleMaps=coordsFinales?`https://www.google.com/maps?q=${coordsFinales.replace(/\s/g,'')}`:'#'; 
+                
 
                 // 🔥 UX NUEVA: Detectar si ya hay archivos subidos para cambiar el botón
                 let prevFiles = 0;
@@ -190,6 +192,25 @@
                 container.innerHTML += card;
             });
         }
+        
+        function filtrarTareas() {
+            const termino = document.getElementById('busqueda').value.toLowerCase();
+            const cards = document.querySelectorAll('#contenedor-tareas > div');
+
+            misExpedientes.forEach((exp, index) => {
+                const nombre = (exp.clienteNombre || exp.cliente || '').toLowerCase();
+                const folio = (exp.folio || exp.id).toLowerCase();
+                const tarjeta = cards[index];
+
+                if (tarjeta) {
+                    if (nombre.includes(termino) || folio.includes(termino)) {
+                        tarjeta.style.display = 'block';
+                    } else {
+                        tarjeta.style.display = 'none';
+                    }
+                }
+            });
+        }
 
         function switchTab(tab) {
             vistaActual = tab;
@@ -222,7 +243,7 @@
             else document.getElementById('input-dibujo').click();
         }
 
-        // 🔥 MOTOR DE SUBIDA EN COLA PARA GOOGLE DRIVE
+        // 🔥 MOTOR DE SUBIDA EN COLA PARA GOOGLE DRIVE (CORREGIDO)
         async function procesarArchivos(event, tipo) {
             const files = Array.from(event.target.files);
             if(files.length === 0) return;
@@ -235,12 +256,21 @@
             modal.classList.remove('hidden'); modal.classList.add('flex');
 
             try {
+                // 📍 CAPTURAR GPS
+                status.innerText = "Capturando coordenadas GPS de alta precisión...";
+                let ubicacionCapturada = null;
+                try {
+                    ubicacionCapturada = await obtenerUbicacion();
+                } catch (gpsError) {
+                    console.warn("No se pudo obtener GPS:", gpsError);
+                    // Opcional: alert("No se pudo obtener el GPS, se subirá sin coordenadas.");
+                }
+
                 const docRef = await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).get();
                 const dataDb = docRef.data();
                 
                 let folderIdDestino = null;
                 
-                // 🌟 BUSCADOR INTELIGENTE DE CARPETAS
                 if (dataDb.driveSubfolders) {
                     const llavesFirebase = Object.keys(dataDb.driveSubfolders);
                     const encontrarCarpeta = (palabrasClave) => {
@@ -257,24 +287,21 @@
                     else folderIdDestino = encontrarCarpeta(['proy', 'dibujo', 'planos']);
                 }
 
-                // 🔥 EL ESLABÓN PERDIDO: Extraer SOLO EL ID si el webhook guardó la URL completa
                 if (folderIdDestino && folderIdDestino.includes('drive.google.com')) {
                     const matchId = folderIdDestino.match(/(?:folders\/|id=)([a-zA-Z0-9_-]{15,})/);
                     if (matchId && matchId[1]) folderIdDestino = matchId[1];
                 }
 
-                // SEGURO ANTI-RAÍZ CON REPORTE EXACTO
                 if (!folderIdDestino) {
                     let carpetasExistentes = dataDb.driveSubfolders ? Object.keys(dataDb.driveSubfolders).join(', ') : 'Ninguna';
-                    throw new Error(`Falta la carpeta para ${tipo}. Carpetas registradas en Firebase: [${carpetasExistentes}]. Revisa tu webhook.`);
+                    throw new Error(`Falta la carpeta para ${tipo}. Carpetas: [${carpetasExistentes}]`);
                 }
 
                 let archivosSubidosNuevos = [];
 
-                // 🌟 FILA INDIA: Subimos una por una para no saturar a Google
                 for (let i = 0; i < files.length; i++) {
                     const f = files[i];
-                    status.innerText = `Optimizando archivo ${i+1} de ${files.length}...\n${f.name}`;
+                    status.innerText = `Optimizando ${i+1} de ${files.length}...\n${f.name}`;
                     
                     let cleanBase64;
                     let mimeParaGoogle = f.type;
@@ -295,7 +322,7 @@
                         cleanBase64 = base64Data.split(',')[1];
                     }
 
-                    status.innerText = `Enviando a Drive ${i+1} de ${files.length}...\n${f.name}`;
+                    status.innerText = `Enviando a Drive ${i+1} de ${files.length}...`;
 
                     const response = await fetch(SCRIPT_SUBIDA_URL, {
                         method: 'POST',
@@ -303,56 +330,51 @@
                     });
                     
                     const responseText = await response.text();
-                    try {
-                        const result = JSON.parse(responseText);
-                        if (result.exito) archivosSubidosNuevos.push({ nombre: f.name, url: result.url });
-                        else throw new Error(result.error);
-                    } catch (parseErr) {
-                        throw new Error("El Script de Google rechazó la subida. Verifica los permisos de tu App Web.");
-                    }
+                    const result = JSON.parse(responseText);
+                    if (result.exito) archivosSubidosNuevos.push({ nombre: f.name, url: result.url });
 
                     bar.style.width = `${((i+1)/files.length)*100}%`;
                 }
 
-                status.innerText = `Organizando Entregables Internos...`;
+                // 💾 GUARDAR EN FIREBASE CON COORDENADAS
+                status.innerText = `Guardando en Base de Datos...`;
                 
-                // 🔥 NUEVO: CONCATENAR CON ARCHIVOS PREVIOS EN VEZ DE BORRARLOS
                 let entregables = expActivoParaSubida.entregables || {};
                 let archivosAnteriores = [];
                 
-                if (tipo === 'VISITA' && entregables.visita && entregables.visita.archivos) {
-                    archivosAnteriores = entregables.visita.archivos;
-                }
-                if (tipo === 'DIBUJO' && entregables.dibujo && entregables.dibujo.archivos) {
-                    archivosAnteriores = entregables.dibujo.archivos;
-                }
+                if (tipo === 'VISITA' && entregables.visita && entregables.visita.archivos) archivosAnteriores = entregables.visita.archivos;
+                if (tipo === 'DIBUJO' && entregables.dibujo && entregables.dibujo.archivos) archivosAnteriores = entregables.dibujo.archivos;
 
-                // Sumamos los viejos y los nuevos
                 const archivosFinales = [...archivosAnteriores, ...archivosSubidosNuevos];
 
-                if (tipo === 'VISITA') {
-                    entregables.visita = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales };
-                } else {
-                    entregables.dibujo = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales };
-                }
-
-                await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).update({
+                const datosUpdate = {
                     entregables: entregables,
                     estatus: 'EN REVISIÓN'
-                });
+                };
 
-                // 🔥 NUEVO: REGISTRO EN HISTORIAL
-                await registrarLog(`ENTREGABLE DE ${tipo}`, `El equipo subió ${archivosSubidosNuevos.length} archivo(s) nuevo(s). Total en sistema: ${archivosFinales.length} archivo(s).`, expActivoParaSubida.id);
+                // ✨ ESTO ES LO QUE FALTABA: Guardamos la ubicación real en el campo coordenadas
+                if (ubicacionCapturada) {
+                    datosUpdate.coordenadas = ubicacionCapturada;
+                }
+
+                if (tipo === 'VISITA') {
+                    entregables.visita = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales, gps_entrega: ubicacionCapturada };
+                } else {
+                    entregables.dibujo = { estatus: 'completado', fecha: new Date().toISOString(), archivos: archivosFinales, gps_entrega: ubicacionCapturada };
+                }
+
+                await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).update(datosUpdate);
+
+                await registrarLog(`ENTREGABLE DE ${tipo}`, `Subida de ${archivosSubidosNuevos.length} archivos. Ubicación: ${ubicacionCapturada || 'No disponible'}`, expActivoParaSubida.id);
 
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                alert(`✅ ¡Éxito! Se agregaron ${files.length} archivos a la colección actual.`);
+                alert(`✅ ¡Éxito! Se guardó la ubicación y los archivos.`);
                 event.target.value = '';
 
             } catch (error) {
                 console.error(error);
-                alert("❌ Falló la subida: " + error.message);
+                alert("❌ Error: " + error.message);
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                event.target.value = '';
             }
         }
 
@@ -377,6 +399,35 @@
             } catch (e) { 
                 console.error("Error al registrar log:", e); 
             }
+        }
+
+        // Pégalo justo antes de function fileToBase64(file)
+        function obtenerUbicacion() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject("Tu navegador no soporta geolocalización");
+                    return;
+                }
+
+                const opciones = {
+                    enableHighAccuracy: true, // Forzar GPS
+                    timeout: 10000,           // 10 segundos máximo
+                    maximumAge: 0             // No usar caché
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const coords = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+                        resolve(coords);
+                    },
+                    (error) => {
+                        let mensaje = "Error de GPS";
+                        if(error.code === 1) mensaje = "Permiso de ubicación denegado por el usuario.";
+                        reject(mensaje);
+                    },
+                    opciones
+                );
+            });
         }
 
         function fileToBase64(file) {

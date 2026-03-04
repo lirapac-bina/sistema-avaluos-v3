@@ -178,17 +178,15 @@
             "Solicitud Infonavit", "Solicitud AVE"
         ];
 
-// 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
+       // 1. INICIALIZAR CHECKLIST Y SEGURIDAD AL CARGAR PÁGINA
         document.addEventListener('DOMContentLoaded', () => {
-            renderListaExcel(); // Dibuja las 31 casillas en la pestaña 4
+            renderListaExcel(); 
 
-            // LEER LA SESIÓN ESTANDARIZADA
             const storedUser = localStorage.getItem('leezar_user_active');
             if (!storedUser) return window.location.href = "index.html";
 
             const activeUser = JSON.parse(storedUser);
-            const userRole = activeUser.rol.toLowerCase(); 
-            const userEmail = activeUser.email.toLowerCase();
+            const userRole = (activeUser.rol || '').toLowerCase(); 
             
             const rolesPermitidos = ['capturista', 'admin', 'super admin', 'super_admin'];
             
@@ -198,7 +196,7 @@
                 return;
             }
 
-            iniciarHojaTrabajo(userEmail, userRole);
+            iniciarHojaTrabajo(activeUser); // Pasamos el perfil completo
         });
 
         // 2. FUNCIÓN QUE DIBUJA LAS CASILLAS
@@ -212,65 +210,90 @@
             `).join('');
         }
 
-        // 3. BUSCAR ASIGNACIONES (AHORA CON SEMÁFORO DE ESTADO)
-        function iniciarHojaTrabajo(currentUserEmail, userRole) {
-            const db = window.db || firebase.firestore();
-            if (!db) return showToast("Error conectando a BD", "error");
+        // 3. BUSCAR ASIGNACIONES (VÍA CONSULTA RELACIONAL EXACTA A LA BASE DE DATOS)
+        async function iniciarHojaTrabajo(activeUser) {
+    const db = window.db || firebase.firestore();
+    if (!db) return;
 
-            let query = db.collection('expedientes_avaluos');
-            if (userRole !== 'admin' && userRole !== 'superadmin') {
-                query = query.where('capturista_asignado', '==', currentUserEmail); 
+    // Normalizamos el rol del usuario a MAYÚSCULAS y quitamos espacios
+    const rolUsuario = (activeUser.rol || '').toUpperCase().trim();
+    
+    // Definimos quiénes tienen permiso total (Admin y Super Admin)
+    const esAdmin = ['SUPER ADMIN', 'ADMIN'].includes(rolUsuario);
+    
+    console.log("🛠️ Sistema de Roles:");
+    console.log("👤 Usuario:", activeUser.email);
+    console.log("🔑 Rol Normalizado:", rolUsuario);
+    console.log("🛡️ ¿Es Admin?:", esAdmin);
+
+    let query = db.collection('expedientes_avaluos');
+
+    query.onSnapshot((snapshot) => {
+        misExpedientes = {};
+        let htmlModal = '';
+        let expedientesEncontrados = 0;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const estatus = (data.estatus || '').toUpperCase();
+            
+            // 1. Filtro de terminados
+            if (estatus.includes('FINALIZADO') || estatus.includes('ENTREGADO') || estatus.includes('COMPLETADO')) return;
+
+            // 2. LÓGICA DE VISIBILIDAD
+            if (!esAdmin) {
+                // Comparamos el campo 'capturista' (según vimos en tu BD)
+                const asignadoEnBD = (data.capturista || '').toLowerCase().trim();
+                const miEmail = (activeUser.email || '').toLowerCase().trim();
+                const miNombre = (activeUser.nombre || '').toLowerCase().trim();
+
+                // Si no es admin y no es el suyo, lo ignoramos
+                if (asignadoEnBD !== miEmail && asignadoEnBD !== miNombre) return;
+            } 
+
+            // Si llegó aquí, es porque debe verlo
+            expedientesEncontrados++;
+            const id = doc.id;
+            misExpedientes[id] = data; 
+            
+            const unidad = data.unidad || 'AVE';
+            const numExp = data.folio_gestora || data.folio_numerico || id.substring(0,5).toUpperCase();
+            const entidad = (data.entidad || data.estado || 'S/E').toUpperCase();
+            const etiqueta = `GYS ${unidad} ${numExp} (${entidad})`;
+
+            const tieneAvance = !!(data.fecha_actualizacion_captura || data.notas_captura);
+            const badgeStatus = tieneAvance 
+                ? `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200 ml-2">EN PROGRESO</span>`
+                : `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 ml-2">SIN INICIAR</span>`;
+
+            htmlModal += `
+            <div onclick="seleccionarExpediente('${id}', '${etiqueta}')" class="p-4 border border-slate-200 rounded-xl hover:border-leezar-500 hover:bg-leezar-50 cursor-pointer transition flex justify-between items-center mb-2 shadow-sm">
+                <div>
+                    <div class="flex items-center mb-1">
+                        <h4 class="font-black text-slate-800 text-sm">${etiqueta}</h4>
+                        ${badgeStatus}
+                    </div>
+                    <p class="text-[11px] text-slate-500">
+                        <span class="font-bold text-slate-700">${data.cliente || 'Sin Cliente'}</span>
+                        <br>Responsable: <span class="text-leezar-600 font-medium">${data.capturista || 'Sin asignar'}</span>
+                    </p>
+                </div>
+                <span class="material-symbols-rounded text-slate-300">chevron_right</span>
+            </div>`;
+        });
+
+        const contenedor = document.getElementById('lista-expedientes-modal');
+        if (contenedor) {
+            if (expedientesEncontrados === 0) {
+                contenedor.innerHTML = `<div class="text-center py-10 text-slate-500 col-span-full"><p class="font-bold">No hay expedientes pendientes</p></div>`;
+            } else {
+                contenedor.innerHTML = htmlModal;
             }
+            if (!currentFolioId) abrirModalExpedientes(true);
+        }
+    });
 
-            query.onSnapshot((snapshot) => {
-                misExpedientes = {};
-                let htmlModal = '';
-
-                if (snapshot.empty) {
-                    htmlModal = `<div class="text-center py-10 text-slate-500 col-span-full"><span class="material-symbols-rounded text-5xl mb-3 opacity-20">inbox</span><p class="font-bold">Bandeja Vacía</p><p class="text-xs mt-1">No tienes expedientes asignados en este momento.</p></div>`;
-                } else {
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const id = doc.id;
-                        misExpedientes[id] = data; 
-                        
-                        const unidad = data.unidad || 'AVE';
-                        const numExp = data.folio_gestora || data.folio_numerico || id.substring(0,5).toUpperCase();
-                        const entidad = (data.entidad || data.estado || 'S/E').toUpperCase();
-                        const etiqueta = `GYS ${unidad} ${numExp} (${entidad})`;
-
-                        // 🔥 SEMÁFORO MÁGICO 🔥
-                        // Detectamos si el capturista ya guardó datos antes
-                        const tieneAvance = !!(data.fecha_actualizacion_captura || data.notas_captura);
-                        
-                        const badgeStatus = tieneAvance 
-                            ? `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200 ml-2 shrink-0"><span class="material-symbols-rounded text-[10px] align-middle mr-0.5">draw</span> EN PROGRESO</span>`
-                            : `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600 ml-2 shrink-0">SIN INICIAR</span>`;
-
-                        const borderClass = tieneAvance 
-                            ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-900/10" 
-                            : "border-slate-200 dark:border-slate-700";
-
-                        const iconColor = tieneAvance ? "text-emerald-500" : "text-slate-300";
-
-                        htmlModal += `
-                        <div onclick="seleccionarExpediente('${id}', '${etiqueta}')" class="p-4 ${borderClass} rounded-xl hover:border-leezar-500 hover:bg-leezar-50 dark:hover:bg-leezar-900/20 cursor-pointer transition group shadow-sm flex justify-between items-center">
-                            <div>
-                                <div class="flex items-center mb-1">
-                                    <h4 class="font-black text-slate-800 dark:text-white group-hover:text-leezar-600 dark:group-hover:text-leezar-400 text-sm truncate">${etiqueta}</h4>
-                                    ${badgeStatus}
-                                </div>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400"><span class="font-bold text-slate-700 dark:text-slate-300">${data.cliente || 'Sin Cliente'}</span> • ${data.tipoTramite || data.tramite || 'Trámite'}</p>
-                            </div>
-                            <span class="material-symbols-rounded ${iconColor} group-hover:text-leezar-500 transition-colors">chevron_right</span>
-                        </div>`;
-                    });
-                }
-                document.getElementById('lista-expedientes-modal').innerHTML = htmlModal;
-                if (!currentFolioId) abrirModalExpedientes(true);
-            });
-
-            initTable('terreno', 4);
+    if (typeof initTable === "function") initTable('terreno', 4);
         }
 
         // 4. ABRIR Y CERRAR MODAL
