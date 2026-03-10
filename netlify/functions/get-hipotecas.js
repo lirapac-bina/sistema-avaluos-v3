@@ -1,4 +1,6 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
 // --- INICIALIZACIÓN BLINDADA PARA PROYECTO HIPOTECAS ---
 // Usamos 'hipotecasApp' para no chocar con la app de Avalúos
@@ -13,14 +15,14 @@ if (!admin.apps.length || !admin.apps.find(app => app.name === 'hipotecasApp')) 
         catch (e) { console.error("Error ENV Hipoteca:", e); }
     }
     
-    // 2. Archivo Local (PC) para pruebas - USANDO REQUIRE
+    // 2. Archivo Local (PC) para pruebas - Usando 'fs'
     if (!serviceAccount) {
         try {
-            // Esto obliga a Netlify a empaquetar el JSON
-            serviceAccount = require('./serviceAccountKeyHipoteca.json');
-        } catch (e) { 
-            console.warn("No se encontró JSON local de hipotecas."); 
-        }
+            const keyPath = path.resolve(__dirname, 'serviceAccountKeyHipoteca.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { console.warn("No se encontró JSON local de hipotecas."); }
     }
 
     if (serviceAccount) {
@@ -34,7 +36,6 @@ if (!admin.apps.length || !admin.apps.find(app => app.name === 'hipotecasApp')) 
     hipotecasApp = admin.app('hipotecasApp');
 }
 
-// Si la app se inicializó correctamente, sacamos la base de datos
 const db = hipotecasApp ? hipotecasApp.firestore() : null;
 // ------------------------------------------------
 

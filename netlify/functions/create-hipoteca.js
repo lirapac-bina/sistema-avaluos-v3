@@ -1,4 +1,6 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
 // --- INICIALIZACIÓN BLINDADA PARA PROYECTO HIPOTECAS ---
 let hipotecasApp;
@@ -6,19 +8,20 @@ let hipotecasApp;
 if (!admin.apps.length || !admin.apps.find(app => app.name === 'hipotecasApp')) {
     let serviceAccount;
     
-    // 1. Variable de Entorno (Nube)
+    // 1. Variable de Entorno (Nube) para producción en Netlify
     if (process.env.FIREBASE_SERVICE_ACCOUNT_HIPOTECA) {
         try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_HIPOTECA); } 
         catch (e) { console.error("Error ENV Hipoteca:", e); }
     }
     
-    // 2. Archivo Local (PC) para pruebas - USANDO REQUIRE
+    // 2. Archivo Local (PC) - Usando 'fs' para que Netlify no lo exija al compilar
     if (!serviceAccount) {
         try {
-            serviceAccount = require('./serviceAccountKeyHipoteca.json');
-        } catch (e) { 
-            console.warn("No se encontró JSON local de hipotecas."); 
-        }
+            const keyPath = path.resolve(__dirname, 'serviceAccountKeyHipoteca.json');
+            if (fs.existsSync(keyPath)) {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            }
+        } catch (e) { console.warn("No se encontró JSON local de hipotecas."); }
     }
 
     if (serviceAccount) {
