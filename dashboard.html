@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+        // --- RUTEADOR DEL ECOSISTEMA LEEZAR ---
+        // Si el usuario venía del botón de Hipotecas, lo redirigimos instantáneamente
+        if (sessionStorage.getItem('modulo_destino') === 'hipotecas') {
+            sessionStorage.removeItem('modulo_destino'); // Limpiamos la memoria
+            window.location.replace('gestion-hipotecas.html'); // Salto invisible para el usuario
+        }
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Avalúos</title>

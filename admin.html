@@ -747,14 +747,17 @@
                 const docSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
                 if (docSnap.exists) {
                     catalogoData = docSnap.data();
-                    if (!catalogoData.diccionario) catalogoData.diccionario = {};
-                    if (!catalogoData.matriz) catalogoData.matriz = {};
-                } else {
-                    catalogoData = { diccionario: {}, matriz: {} };
                 }
+                
+                // Paracaídas 1: Asegurar que nunca sea null
+                if (!catalogoData) catalogoData = {};
+                if (!catalogoData.diccionario) catalogoData.diccionario = {};
+                if (!catalogoData.matriz) catalogoData.matriz = {};
+                
             } catch (e) { 
                 console.error(e); 
-                alert("Error cargando la matriz desde Firebase."); 
+                alert("Problema de conexión con Firebase. Cargando entorno seguro."); 
+                catalogoData = { diccionario: {}, matriz: {} }; 
             }
         }
 
@@ -765,7 +768,7 @@
                 return true;
             } catch (e) { 
                 console.error(e);
-                alert("Error al guardar cambios permanentemente."); 
+                alert("Error al guardar cambios permanentemente. Revisa tus permisos."); 
                 return false; 
             }
         }
@@ -844,7 +847,8 @@
             
             const docsCat = { solicitante: [], propietario: [], inmueble: [] };
             items.forEach(([id, doc]) => {
-                if(docsCat[doc.categoria]) docsCat[doc.categoria].push({id, ...doc});
+                const cat = doc.categoria || 'solicitante';
+                if(docsCat[cat]) docsCat[cat].push({id, ...doc});
                 else docsCat['solicitante'].push({id, ...doc});
             });
 
@@ -959,11 +963,15 @@
             
             delete catalogoData.diccionario[id];
             
+            // Paracaídas 2: Soporte para datos legacy
             for (const ent in catalogoData.matriz) {
                 for (const tr in catalogoData.matriz[ent]) {
                     ['solicitante', 'propietario', 'inmueble'].forEach(cat => {
                         if (catalogoData.matriz[ent][tr][cat]) {
-                            catalogoData.matriz[ent][tr][cat] = catalogoData.matriz[ent][tr][cat].filter(i => i.id !== id);
+                            catalogoData.matriz[ent][tr][cat] = catalogoData.matriz[ent][tr][cat].filter(i => {
+                                const itemId = typeof i === 'string' ? i : i.id;
+                                return itemId !== id;
+                            });
                         }
                     });
                 }
@@ -1046,8 +1054,14 @@
                 const docsCat = Object.entries(dicc).filter(([k, v]) => v.categoria === col.id);
                 const arrActual = matrizActual[col.id] || [];
                 
-                const incluidos = arrActual.map(item => ({ id: item.id, obligatorio: item.obligatorio, meta: dicc[item.id] })).filter(i => i.meta);
-                const excluidos = docsCat.filter(([docId]) => !arrActual.find(i => i.id === docId)).map(([docId, meta]) => ({ id: docId, obligatorio: false, meta: meta }));
+                // Paracaídas 3: Procesar datos legacy (strings) para que no crashee
+                const incluidos = arrActual.map(item => {
+                    if (typeof item === 'string') return { id: item, obligatorio: false, meta: dicc[item] };
+                    return { id: item.id, obligatorio: item.obligatorio, meta: dicc[item.id] };
+                }).filter(i => i.meta);
+                
+                const excluidos = docsCat.filter(([docId]) => !arrActual.find(i => (typeof i === 'string' ? i : i.id) === docId))
+                    .map(([docId, meta]) => ({ id: docId, obligatorio: false, meta: meta }));
                 
                 const docsList = [...incluidos, ...excluidos];
 
@@ -1056,7 +1070,7 @@
                 docsList.forEach((doc) => {
                     const docId = doc.id;
                     const docMeta = doc.meta;
-                    const isIncluded = arrActual.some(i => i.id === docId);
+                    const isIncluded = arrActual.some(i => (typeof i === 'string' ? i : i.id) === docId);
                     const isMandatory = doc.obligatorio;
 
                     listHtml += `
@@ -1096,7 +1110,6 @@
 
             colContainer.innerHTML = html;
 
-            // Activar Drag & Drop evitando los checkboxes
             columnas.forEach(col => {
                 const el = document.getElementById(`sort-matriz-${col.id}`);
                 if (el) {
@@ -1118,8 +1131,11 @@
             const nuevosIncluidos = [];
             
             todosLosIds.forEach(id => {
-                const itemOriginal = arrActual.find(i => i.id === id);
-                if(itemOriginal) nuevosIncluidos.push(itemOriginal);
+                const itemOriginal = arrActual.find(i => (typeof i === 'string' ? i : i.id) === id);
+                if(itemOriginal) {
+                    if (typeof itemOriginal === 'string') nuevosIncluidos.push({ id: itemOriginal, obligatorio: false });
+                    else nuevosIncluidos.push(itemOriginal);
+                }
             });
 
             catalogoData.matriz[currentEntidad][currentServicio][categoria] = nuevosIncluidos;
@@ -1133,7 +1149,7 @@
             if (isChecked) { 
                 arr.push({ id: docId, obligatorio: true }); 
             } else { 
-                const idx = arr.findIndex(i => i.id === docId); 
+                const idx = arr.findIndex(i => (typeof i === 'string' ? i : i.id) === docId); 
                 if(idx > -1) arr.splice(idx, 1); 
             }
             await saveCatalogo();
@@ -1142,8 +1158,16 @@
 
         async function toggleMatrizObligatorio(categoria, docId, isMandatory) {
             const arr = catalogoData.matriz[currentEntidad][currentServicio][categoria];
-            const item = arr.find(i => i.id === docId);
-            if(item) { item.obligatorio = isMandatory; await saveCatalogo(); renderColumnasMatriz(); }
+            const itemIndex = arr.findIndex(i => (typeof i === 'string' ? i : i.id) === docId);
+            if(itemIndex > -1) {
+                if (typeof arr[itemIndex] === 'string') {
+                    arr[itemIndex] = { id: arr[itemIndex], obligatorio: isMandatory };
+                } else {
+                    arr[itemIndex].obligatorio = isMandatory;
+                }
+                await saveCatalogo(); 
+                renderColumnasMatriz(); 
+            }
         }
 
         async function nuevaEntidadMatriz() {
@@ -1187,6 +1211,7 @@
             currentServicio = skeys.length > 0 ? skeys[0] : null;
             await saveCatalogo(); renderMatriz();
         }
+
 
         // ==========================================
         // 🧩 LEGAL, BITACORA Y UNIDADES

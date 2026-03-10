@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Crediticia | Hipoteca Fácil - Leezar</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' },
+                        teal: { 500: '#14b8a6', 600: '#0d9488' },
+                        indigo: { 500: '#6366f1', 600: '#4f46e5' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                } 
+            } 
+        }
+    </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Scrollbar delgada para las columnas del Kanban */
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .dark .thin-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-leezar-900 text-white flex flex-col hidden md:flex shrink-0 shadow-xl z-20">
+        <div class="p-6 flex items-center gap-3 border-b border-white/10">
+            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-bold text-xl border border-white/20 shadow-inner">L</div>
+            <div>
+                <h1 class="font-bold text-sm tracking-wide">ECOSISTEMA LEEZAR</h1>
+                <p class="text-[10px] text-teal-400 font-mono">Módulo Hipotecas</p>
+            </div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto thin-scroll">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-leezar-600/50 rounded-xl text-sm font-medium border border-white/10 text-white shadow-sm transition-all">
+                <span class="material-symbols-rounded text-teal-400">account_balance</span>
+                Pipeline Créditos
+            </a>
+            <a href="gestion.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all">
+                <span class="material-symbols-rounded">engineering</span>
+                Módulo Avalúos
+            </a>
+        </nav>
+        <div class="p-4 border-t border-white/10">
+            <div class="flex items-center gap-3 px-4 py-2">
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold">AL</div>
+                <div class="text-xs">
+                    <p class="font-bold">Alonso (Admin)</p>
+                    <p class="text-slate-400 text-[10px]">Arquitectura</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-slate-500"><span class="material-symbols-rounded">menu</span></button>
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <span class="material-symbols-rounded text-leezar-500">real_estate_agent</span> 
+                    Gestión Crediticia
+                </h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="cargarHipotecas()" class="p-2 text-slate-400 hover:text-leezar-500 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-700" title="Actualizar">
+                    <span class="material-symbols-rounded">refresh</span>
+                </button>
+                <button onclick="window.location.href='nuevo-expediente-hipoteca.html'" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all active:scale-95">
+                    <span class="material-symbols-rounded text-lg">add</span> Nuevo Crédito
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-gray-50/50 dark:bg-slate-900 flex gap-6 items-start">
+            
+            <div class="w-80 shrink-0 flex flex-col max-h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Pre-calificación
+                    </h3>
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full" id="count-perfilamiento">0</span>
+                </div>
+                <div id="col-perfilamiento" class="flex-1 overflow-y-auto thin-scroll space-y-3 pb-4">
+                    </div>
+            </div>
+
+            <div class="w-80 shrink-0 flex flex-col max-h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Ingreso Expediente
+                    </h3>
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full" id="count-ingreso">0</span>
+                </div>
+                <div id="col-ingreso" class="flex-1 overflow-y-auto thin-scroll space-y-3 pb-4"></div>
+            </div>
+
+            <div class="w-80 shrink-0 flex flex-col max-h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Autorizado
+                    </h3>
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full" id="count-autorizado">0</span>
+                </div>
+                <div id="col-autorizado" class="flex-1 overflow-y-auto thin-scroll space-y-3 pb-4"></div>
+            </div>
+
+            <div class="w-80 shrink-0 flex flex-col max-h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> En Firma Notarial
+                    </h3>
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full" id="count-firma">0</span>
+                </div>
+                <div id="col-firma" class="flex-1 overflow-y-auto thin-scroll space-y-3 pb-4"></div>
+            </div>
+
+            <div class="w-80 shrink-0 flex flex-col max-h-full">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Fondeado / Cobrado
+                    </h3>
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full" id="count-fondeado">0</span>
+                </div>
+                <div id="col-fondeado" class="flex-1 overflow-y-auto thin-scroll space-y-3 pb-4 pr-4"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Lógica Core del CRM de Hipotecas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar tema oscuro de sistema
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            cargarHipotecas();
+        });
+
+        async function cargarHipotecas() {
+            mostrarCargando();
+            
+            try {
+                // ¡Llamamos a nuestro NUEVO endpoint exclusivo de hipotecas!
+                const response = await fetch('/.netlify/functions/get-hipotecas');
+                
+                if (!response.ok) throw new Error("Fallo en la respuesta del servidor");
+                
+                const data = await response.json();
+                
+                // Pasamos los datos reales a nuestro tablero Kanban
+                renderizarTablero(data);
+                
+            } catch (error) {
+                console.error("Error cargando hipotecas:", error);
+                // Si falla o no hay datos, limpiamos el tablero y mostramos un error sutil
+                renderizarTablero([]);
+                alert("Error de conexión al servidor de Hipotecas. Verifica la consola.");
+            }
+        }
+
+        function mostrarCargando() {
+            const columnas = ['perfilamiento', 'ingreso', 'autorizado', 'firma', 'fondeado'];
+            columnas.forEach(col => {
+                document.getElementById(`col-${col}`).innerHTML = `
+                    <div class="flex justify-center p-4">
+                        <span class="material-symbols-rounded animate-spin text-slate-300 text-3xl">sync</span>
+                    </div>
+                `;
+            });
+        }
+
+        function renderizarTablero(expedientes) {
+            // 1. Limpiar columnas
+            const columnas = {
+                'PERFILAMIENTO': { id: 'col-perfilamiento', countId: 'count-perfilamiento', html: '', count: 0 },
+                'INGRESO': { id: 'col-ingreso', countId: 'count-ingreso', html: '', count: 0 },
+                'AUTORIZADO': { id: 'col-autorizado', countId: 'count-autorizado', html: '', count: 0 },
+                'FIRMA': { id: 'col-firma', countId: 'count-firma', html: '', count: 0 },
+                'FONDEADO': { id: 'col-fondeado', countId: 'count-fondeado', html: '', count: 0 }
+            };
+
+            // 2. Distribuir tarjetas
+            expedientes.forEach((exp, index) => {
+                const tarjetaHtml = generarTarjeta(exp, index);
+                if (columnas[exp.estatus]) {
+                    columnas[exp.estatus].html += tarjetaHtml;
+                    columnas[exp.estatus].count++;
+                }
+            });
+
+            // 3. Pintar en el DOM
+            Object.keys(columnas).forEach(clave => {
+                const col = columnas[clave];
+                const contenedor = document.getElementById(col.id);
+                contenedor.innerHTML = col.html || `<div class="p-4 text-center border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-slate-400 text-xs font-bold">Sin expedientes</div>`;
+                document.getElementById(col.countId).innerText = col.count;
+            });
+        }
+
+        function generarTarjeta(expediente, delayIndex) {
+            // Retardo escalonado para la animación
+            const animDelay = delayIndex * 50; 
+            
+            return `
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group animate-fade-in relative overflow-hidden" style="animation-delay: ${animDelay}ms" onclick="abrirExpediente('${expediente.id}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-800">
+                            ${expediente.tramite}
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-mono">${expediente.fecha}</span>
+                    </div>
+                    
+                    <h4 class="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-leezar-500 transition-colors">${expediente.cliente}</h4>
+                    
+                    <div class="mt-3 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-1 text-slate-500">
+                            <span class="material-symbols-rounded text-[14px]">account_balance</span> ${expediente.banco}
+                        </div>
+                        <div class="font-bold text-slate-700 dark:text-slate-300">
+                            ${expediente.monto}
+                        </div>
+                    </div>
+                    
+                    <div class="absolute top-0 right-0 h-full bg-gradient-to-l from-white via-white to-transparent dark:from-slate-800 dark:via-slate-800 flex items-center justify-end pr-3 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+                        <button class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors shadow-sm">
+                            <span class="material-symbols-rounded text-[18px]">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function abrirExpediente(id) {
+            // Lógica de ruteo al detalle del expediente hipotecario
+            console.log("Abriendo expediente:", id);
+            // window.location.href = `detalle-hipoteca.html?id=${id}`;
+        }
+    </script>
+</body>
+</html>

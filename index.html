@@ -88,22 +88,20 @@
                 </button>
 
                 <div class="relative w-full">
-                    <button onclick="mostrarAlerta('hipoteca-badge')" 
-                            class="w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:bg-gray-50 transition-all opacity-70 hover:opacity-100 cursor-not-allowed">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-house-chimney-medical"></i>
-                            </div>
-                            <div class="text-left">
-                                <h4 class="text-gray-800 font-bold text-base">Hipoteca Fácil</h4>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Gestión Crediticia</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-lock text-gray-300"></i>
-                    </button>
-                    <div id="hipoteca-badge" class="stage-badge absolute top-[-8px] right-2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md z-20">
-                        DISPONIBLE EN ETAPA 2
-                    </div>
+                <button id="btn-hipoteca" onclick="iniciarSesionHipotecas()" 
+                class="group w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg hover:border-emerald-500 transition-all duration-300 relative overflow-hidden cursor-pointer">
+        
+                <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-house-chimney-medical"></i>
+                </div>
+                <div class="text-left">
+                <h4 class="text-gray-900 font-bold text-base group-hover:text-emerald-700 transition-colors">Hipoteca Fácil</h4>
+                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Gestión Crediticia</p>
+                </div>
+                </div>
+                <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-emerald-500 transition-colors"></i>
+                </button>
                 </div>
 
                 <div class="relative w-full">
@@ -193,6 +191,51 @@
                 setTimeout(() => {
                     errorDiv.classList.add('hidden');
                 }, 4000);
+            }
+        }
+
+        // --- 2.1 Lógica de Autenticación (Hipotecas) ---
+        async function iniciarSesionHipotecas() {
+            const errorDiv = document.getElementById('error-msg');
+            const errorText = document.getElementById('error-text');
+            const btn = document.getElementById('btn-hipoteca'); // Buscamos el ID exacto
+            
+            const originalContent = btn ? btn.innerHTML : '';
+            
+            if (btn) {
+                btn.innerHTML = '<div class="flex items-center justify-center w-full text-emerald-600 font-medium text-sm"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Conectando...</div>';
+                btn.disabled = true;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/auth-start');
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.authUrl) {
+                    sessionStorage.setItem('modulo_destino', 'hipotecas');
+                    window.location.href = data.authUrl;
+                } else {
+                    throw new Error('Sin URL de autorización');
+                }
+
+            } catch (error) {
+                console.error("Debug Auth Hipotecas:", error);
+                
+                if (btn) {
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
+
+                if (errorText && errorDiv) {
+                    errorText.innerText = "Error: Sistema de autenticación no disponible.";
+                    errorDiv.classList.remove('hidden');
+                    setTimeout(() => errorDiv.classList.add('hidden'), 4000);
+                }
             }
         }
 
