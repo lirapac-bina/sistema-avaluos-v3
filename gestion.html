@@ -381,7 +381,8 @@
                             colonia: data.colonia || '',
                             origen: data.origen || '', 
                             unidad: data.unidad || 'POR ASIGNAR',
-                            checklist: data.checklist || {} // 🔥 EL FIX: Traemos la checklist para calcular %
+                            checklist: data.checklist || {}, // 🔥 ¡AQUÍ ESTÁ LA COMA QUE FALTABA!
+                            visitaAgendada: data.visitaAgendada || null
                         });
                     });
 
@@ -587,12 +588,21 @@
                     </div>`;
                 }
 
+                // --- ALERTA DE CITA SOLICITADA ---
+                let alertaCita = '';
+                if (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA') {
+                    alertaCita = `
+                    <div class="mt-1.5 inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm border border-indigo-200 dark:border-indigo-700 animate-pulse">
+                        <span class="material-symbols-rounded text-[11px]">event_available</span> CITA: ${exp.visitaAgendada.fecha} (${exp.visitaAgendada.hora.split(' ')[0]})
+                    </div>`;
+                }
+
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
                             <div class="truncate">${exp.cliente}</div>
                             ${alertaJack}
-                        </td>
+                            ${alertaCita} </td>
                         
                         <td class="px-4 py-3 text-center">
                             <span class="bg-slate-100 dark:bg-transparent text-slate-600 dark:text-slate-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-slate-200 dark:border-slate-600">
@@ -639,6 +649,11 @@
                                 <button onclick="irARevision('${exp.id}')" class="text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group">
                                     <span class="material-symbols-rounded text-sm">fact_check</span>
                                     <span class="hidden xl:inline">Revisar</span>
+                                </button>
+
+                                <button onclick="agendarVisita('${exp.id}')" class="text-sky-600 dark:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group ml-1" title="Agendar Visita en Google Calendar">
+                                    <span class="material-symbols-rounded text-sm">calendar_month</span>
+                                    <span class="hidden xl:inline">Agendar</span>
                                 </button>
 
                                <a href="captura-avaluo.html?id=${exp.id}" target="_blank" class="text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 decoration-0 group ml-1" title="Capturar Avalúo">
@@ -791,6 +806,54 @@
                 window.location.href = 'revision.html';
             } else { alert("Error: No se encontraron datos del expediente."); }
         }
+
+        // 📅 FUNCIÓN PARA AGENDAR EN GOOGLE CALENDAR (100% ESCALABLE)
+        async function agendarVisita(id) {
+            const exp = dbExpedientes.find(e => e.id === id);
+            if (!exp) return;
+
+            // 🔥 TRUCO MAGISTRAL: Buscar el correo dinámicamente en el Catálogo
+            let correoUnidad = '';
+            try {
+                const db = window.db || firebase.firestore();
+                const docUnidad = await db.collection('unidades_valuacion').doc(exp.unidad).get();
+                if(docUnidad.exists) {
+                    correoUnidad = docUnidad.data().correo_calendario || '';
+                }
+            } catch(e) { 
+                console.error("No se pudo obtener el correo de la unidad", e); 
+            }
+
+            const titulo = encodeURIComponent(`📍 Visita Avalúo: ${exp.cliente}`);
+            
+            let detalles = `Detalles del Servicio:\n`;
+            detalles += `Folio: ${exp.id}\n`;
+            detalles += `Trámite: ${exp.tramite}\n`;
+            if (exp.telefono) detalles += `Contacto: ${exp.telefono}\n`;
+            detalles += `Unidad: ${exp.unidad}\n\n`;
+
+            let linkParams = `&text=${titulo}`;
+            
+            // Inyectamos la fecha que el cliente seleccionó
+            if (exp.visitaAgendada) {
+                detalles += `⚠️ ATENCIÓN - EL CLIENTE SOLICITÓ:\n`;
+                detalles += `Fecha: ${exp.visitaAgendada.fecha}\n`;
+                detalles += `Horario: ${exp.visitaAgendada.hora}\n\n`;
+
+                const fechaLimpia = exp.visitaAgendada.fecha.replace(/-/g, '');
+                linkParams += `&dates=${fechaLimpia}T160000Z/${fechaLimpia}T170000Z`;
+            }
+
+            detalles += `(Recuerda ajustar la hora final en la parte superior antes de guardar)`;
+
+            let url = `https://calendar.google.com/calendar/render?action=TEMPLATE${linkParams}&details=${encodeURIComponent(detalles)}`;
+            
+            // Si la unidad tiene un correo asignado en Firebase, lo metemos como invitado
+            if (correoUnidad) url += `&add=${correoUnidad}`;
+            
+            window.open(url, '_blank');
+        }
+
     </script>
 </body>
 </html>

@@ -3,13 +3,6 @@ const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
 
-// --- CONFIGURACIÓN DE CARPETAS MAESTRAS (DRIVE) ---
-const DRIVE_FOLDERS = {
-    'PNA': '1s_Q8ZOk2GtaAbKmT7bY23G-IYgb-fZU-', 
-    'EME': '1DLn4ZzxuzPlxI3M8tirndubZvNQtJwV-',
-    'AVE': '1CKOOORFock0TsVbdgHmh4P9FSke2J75r'
-};
-
 // --- 1. INICIALIZACIÓN BLINDADA (CORREGIDA PARA NETLIFY) ---
 let serviceAccount = null;
 
@@ -52,13 +45,12 @@ async function crearSubcarpeta(drive, nombre, parentId) {
     return file.data.id;
 }
 
-async function crearCarpetaDrive(nombreCliente, unidad) {
+// NUEVO: Recibe el parentFolderId dinámicamente desde la BD, ya no depende de variables fijas
+async function crearCarpetaDrive(nombreCliente, parentFolderId) {
     if (!serviceAccount || !serviceAccount.client_email) return null;
+    if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) return null;
 
     try {
-        const parentFolderId = DRIVE_FOLDERS[unidad] || DRIVE_FOLDERS['AVE'];
-        if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) return null;
-
         const cleanKey = (serviceAccount.private_key || '').replace(/\\n/g, '\n');
 
         const auth = new google.auth.GoogleAuth({
@@ -94,7 +86,10 @@ async function crearCarpetaDrive(nombreCliente, unidad) {
             subfolders: { expediente: idExpediente, docJust: idDocJust, fotos: idFotos, proyArq: idProyArq, comparables: idComparables, inmueble: idInmueble, propietario: idPropietario, solicitante: idSolicitante }
         };
 
-    } catch (error) { return null; }
+    } catch (error) { 
+        console.error("Error al crear carpeta en Google Drive:", error);
+        return null; 
+    }
 }
 
 const PLANTILLA_RESPALDO = {
@@ -109,7 +104,7 @@ exports.handler = async (event, context) => {
     try {
         const data = JSON.parse(event.body);
         
-        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (CEREBRO RELACIONAL) ---
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO ---
         const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
         const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
         const numSol = parseInt(data.numSolicitantes) || 1;
@@ -125,18 +120,13 @@ exports.handler = async (event, context) => {
                 const dbData = docSnap.data();
                 diccionarioGlobal = dbData.diccionario || {};
                 const matriz = dbData.matriz || {};
-                
-                // 1. Buscar la entidad DENTRO de la Matriz
                 let plantillaEntidad = matriz[entidadBusqueda] || matriz[Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda)];
-                
-                // 2. Buscar el trámite
                 if (plantillaEntidad) {
                     plantilla = plantillaEntidad[tramiteBusqueda] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramiteBusqueda)];
                 }
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
-        // Si la base de datos falla, usamos el respaldo de emergencia
         if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
         let checklistFinal = {};
@@ -144,9 +134,7 @@ exports.handler = async (event, context) => {
         const procesarItems = (items, categoria, cantidad = 1) => {
             if (!items) return;
             items.forEach(item => {
-                // 3. CRUZAR CON EL DICCIONARIO para obtener nombre real, tipo y plantilla
                 const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
-                
                 const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
                 
                 for (let i = 0; i < loop; i++) {
@@ -162,8 +150,6 @@ exports.handler = async (event, context) => {
                         tipo: infoDic.tipo || 'MIXTO', 
                         originalId: item.id
                     };
-                    
-                    // Si el diccionario tiene una plantilla PDF, se la pasamos al cliente
                     if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
                 }
             });
@@ -172,21 +158,27 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'solicitante'), 'solicitante', numSol);
         procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
-
-       // Fijos inquebrantables
         checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
         
-        // 🧠 --- FIN LÓGICA DE CHECKLIST ---
-        
+        // --- CONFIGURACIÓN DE UNIDAD Y GOOGLE DRIVE 100% DINÁMICO ---
         const nombreClienteFinal = data.nombre || data.cliente || "CLIENTE NUEVO";
         const unidadDestino = data.unidad || 'AVE'; 
 
-        // --- CREACIÓN DE CARPETAS EN GOOGLE DRIVE ---
         let driveFolderId = null;
         let driveSubfolders = {}; 
+        let parentFolderId = null;
 
-        if (serviceAccount) {
-            const driveResult = await crearCarpetaDrive(nombreClienteFinal, unidadDestino);
+        // CONSULTAR EL ID EN FIREBASE BASADO EN LA UNIDAD SELECCIONADA EN EL FRONTEND
+        try {
+            const unidadDoc = await db.collection('unidades_valuacion').doc(unidadDestino).get();
+            if (unidadDoc.exists) {
+                parentFolderId = unidadDoc.data().drive_id;
+            }
+        } catch (e) { console.error("Error al buscar unidad en DB:", e); }
+
+        // CREAR CARPETAS SI EXISTE EL ID
+        if (serviceAccount && parentFolderId) {
+            const driveResult = await crearCarpetaDrive(nombreClienteFinal, parentFolderId);
             if (driveResult) {
                 driveFolderId = driveResult.main;
                 driveSubfolders = driveResult.subfolders;

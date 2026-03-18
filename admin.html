@@ -1390,21 +1390,41 @@
             if(btnNext) { btnNext.disabled = currentPage >= totalPages; btnNext.classList.toggle('opacity-30', currentPage >= totalPages); }
         }
 
+        // ==========================================
+        // 🧩 MÓDULO: UNIDADES DE VALUACIÓN (DRIVE, CALENDAR Y COLOR)
+        // ==========================================
         async function renderUnidades(container) {
             container.innerHTML = `
                 <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
                     <div class="flex items-center gap-4 mb-6">
                         <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
-                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Unidades de Valuación</h2><p class="text-xs text-slate-400">Catálogo maestro de empresas.</p></div>
+                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Unidades de Valuación</h2><p class="text-xs text-slate-400">Configura IDs, Correos y Colores de la interfaz.</p></div>
                     </div>
-                    <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-2xl mx-auto w-full">
-                        <div class="flex gap-2 mb-6">
-                            <input type="text" id="nueva-unidad" placeholder="Agrega solo siglas" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 uppercase">
-                            <button onclick="agregarUnidad()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2 rounded-xl transition-colors flex items-center gap-2">
-                                <span class="material-symbols-rounded">add</span> Agregar
+                    <div class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-5xl mx-auto w-full overflow-y-auto custom-scroll">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-t-xl border-x border-t border-slate-100 dark:border-slate-700">
+                            <input type="text" id="nueva-unidad" placeholder="Siglas" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 uppercase font-bold">
+                            <input type="text" id="nuevo-nombre-unidad" placeholder="Nombre Completo" class="w-full md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            <input type="email" id="nuevo-correo-cal" placeholder="Correo con Google Calendar" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-b-xl border-x border-b border-slate-100 dark:border-slate-700">
+                            <input type="text" id="nuevo-drive-id" placeholder="ID de Carpeta Google Drive (Ej: 1s_Q8ZOk2...)" class="flex-1 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/50 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-indigo-600 dark:text-indigo-400">
+                            
+                            <select id="nuevo-color" class="w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 font-bold cursor-pointer">
+                                <option value="emerald" class="text-emerald-600">🟢 Verde</option>
+                                <option value="indigo" class="text-indigo-600">🟣 Morado</option>
+                                <option value="amber" class="text-amber-600">🟠 Naranja</option>
+                                <option value="rose" class="text-rose-600">🔴 Rojo</option>
+                                <option value="cyan" class="text-cyan-600">🔵 Cyan</option>
+                                <option value="blue" class="text-blue-600">🔵 Azul</option>
+                            </select>
+
+                            <button onclick="agregarUnidad()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                                <span class="material-symbols-rounded">save</span> Guardar
                             </button>
                         </div>
-                        <div id="lista-unidades" class="space-y-2"><div class="text-center py-8"><span class="material-symbols-rounded animate-spin text-emerald-500">sync</span></div></div>
+
+                        <div id="lista-unidades" class="space-y-3"><div class="text-center py-8"><span class="material-symbols-rounded animate-spin text-emerald-500">sync</span></div></div>
                     </div>
                 </div>
             `;
@@ -1413,30 +1433,96 @@
 
         async function cargarListaUnidades() {
             const lista = document.getElementById('lista-unidades');
+            
+            // Mapeo seguro para Tailwind CDN
+            const colorMap = {
+                'emerald': 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800',
+                'indigo': 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800',
+                'amber': 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800',
+                'rose': 'bg-rose-100 text-rose-600 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800',
+                'cyan': 'bg-cyan-100 text-cyan-600 border-cyan-200 dark:bg-cyan-900/30 dark:border-cyan-800',
+                'blue': 'bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800'
+            };
+
             try {
                 const snapshot = await db.collection('unidades_valuacion').orderBy('nombre').get();
-                if (snapshot.empty) { lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">No hay unidades.</p>'; return; }
+                if (snapshot.empty) { lista.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">No hay unidades registradas.</p>'; return; }
                 lista.innerHTML = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    const descripcion = data.descripcion || '';
+                    const driveId = data.drive_id || ''; 
+                    const correo = data.correo_calendario || '';
+                    const colorSeleccionado = data.color_interfaz || 'emerald';
+                    const clasesColor = colorMap[colorSeleccionado] || colorMap['emerald'];
+                    
                     lista.innerHTML += `
-                        <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs mr-3">${data.nombre.substring(0,2)}</div>
-                            <span class="font-bold text-slate-700 dark:text-slate-200">${data.nombre}</span>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm border-2 ${clasesColor}">${data.nombre.substring(0,3)}</div>
+                                <div>
+                                    <span class="font-bold text-slate-700 dark:text-slate-200 block">${data.nombre} <span class="font-normal text-slate-500 text-xs">${descripcion ? `(${descripcion})` : ''}</span></span>
+                                    <div class="mt-1 flex gap-2 flex-wrap">
+                                        ${correo ? `<span class="text-[10px] text-teal-500 font-mono flex items-center gap-1 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded border border-teal-200 dark:border-teal-800"><span class="material-symbols-rounded text-[12px]">calendar_month</span> ${correo}</span>` : `<span class="text-[10px] text-red-400 font-mono flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">event_busy</span> Sin Correo</span>`}
+                                        ${driveId ? `<span class="text-[10px] text-indigo-500 font-mono flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800"><span class="material-symbols-rounded text-[12px]">folder</span> ID: ${driveId}</span>` : `<span class="text-[10px] text-red-500 font-mono flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">warning</span> Sin Drive ID</span>`}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 sm:mt-0 flex gap-2 shrink-0">
+                                <button onclick="prepararEdicionUnidad('${doc.id}', '${descripcion}', '${driveId}', '${correo}', '${colorSeleccionado}')" class="text-indigo-400 hover:text-indigo-600 text-xs font-bold px-3 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">Editar</button>
+                                <button onclick="eliminarUnidad('${doc.id}')" class="text-red-400 hover:text-red-600 text-xs font-bold px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Eliminar</button>
+                            </div>
                         </div>`;
                 });
             } catch (e) { lista.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar.</p>'; }
         }
 
+        function prepararEdicionUnidad(siglas, descActual, driveActual, correoActual, colorActual) {
+            document.getElementById('nueva-unidad').value = siglas;
+            document.getElementById('nuevo-nombre-unidad').value = descActual === 'undefined' ? '' : descActual;
+            document.getElementById('nuevo-drive-id').value = driveActual === 'undefined' ? '' : driveActual;
+            document.getElementById('nuevo-correo-cal').value = correoActual === 'undefined' ? '' : correoActual;
+            document.getElementById('nuevo-color').value = colorActual === 'undefined' ? 'emerald' : colorActual;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('nuevo-correo-cal').focus();
+        }
+
         async function agregarUnidad() {
-            const input = document.getElementById('nueva-unidad');
-            const nombre = input.value.trim().toUpperCase();
-            if (!nombre) return alert("Escribe un nombre.");
+            const inputSiglas = document.getElementById('nueva-unidad');
+            const inputNombre = document.getElementById('nuevo-nombre-unidad');
+            const inputDrive = document.getElementById('nuevo-drive-id');
+            const inputCorreo = document.getElementById('nuevo-correo-cal');
+            const inputColor = document.getElementById('nuevo-color');
+            
+            const nombre = inputSiglas.value.trim().toUpperCase();
+            const desc = inputNombre.value.trim();
+            const driveId = inputDrive.value.trim();
+            const correo = inputCorreo.value.trim().toLowerCase();
+            const color = inputColor.value;
+
+            if (!nombre) return alert("Escribe las siglas de la unidad (Ej: PNA).");
+            
             try {
-                await db.collection('unidades_valuacion').doc(nombre).set({ nombre: nombre, creado: firebase.firestore.FieldValue.serverTimestamp() });
-                await registrarLog('CATÁLOGO', `Se agregó la unidad: ${nombre}`);
-                input.value = ''; cargarListaUnidades();
+                await db.collection('unidades_valuacion').doc(nombre).set({ 
+                    nombre: nombre, 
+                    descripcion: desc,
+                    drive_id: driveId,
+                    correo_calendario: correo,
+                    color_interfaz: color,
+                    creado: firebase.firestore.FieldValue.serverTimestamp() 
+                }, { merge: true }); 
+                
+                await registrarLog('CATÁLOGO', `Se actualizó la unidad: ${nombre} con Drive, Correo y Color`);
+                inputSiglas.value = ''; inputNombre.value = ''; inputDrive.value = ''; inputCorreo.value = ''; inputColor.value = 'emerald';
+                cargarListaUnidades();
             } catch (e) { alert("Error al guardar."); }
+        }
+        
+        async function eliminarUnidad(id) {
+            if(confirm(`¿Seguro que deseas eliminar la unidad ${id}?`)) {
+                await db.collection('unidades_valuacion').doc(id).delete();
+                cargarListaUnidades();
+            }
         }
 
     </script>

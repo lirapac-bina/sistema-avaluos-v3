@@ -1007,6 +1007,25 @@ let downloadLink = '';
             });
             
             updateProgressBars(completados, revisionCount, totalRequisitos);
+
+            // --- NUEVA LÓGICA: DISPARADOR DE AGENDA ---
+            const validacionCompleta = (completados === totalRequisitos && totalRequisitos > 0);
+            
+            if (validacionCompleta && !data.visitaAgendada) {
+                // Configuramos la fecha mínima como el día de mañana
+                const mañana = new Date();
+                mañana.setDate(mañana.getDate() + 1);
+                document.getElementById('agenda-fecha').min = mañana.toISOString().split('T')[0];
+                
+                document.getElementById('agendaModal').classList.remove('hidden');
+                document.getElementById('agendaModal').classList.add('flex');
+            } else if (validacionCompleta && data.visitaAgendada) {
+                // Si ya agendó, le mostramos un pequeño aviso en la cabecera
+                document.getElementById('estado-badge').innerHTML = `
+                <div class="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold mt-2 shadow-sm">
+                    <span class="material-symbols-rounded text-sm">event</span> Visita Solicitada: ${data.visitaAgendada.fecha} (${data.visitaAgendada.hora})
+                </div>`;
+            }
             
             // 🔥 MAGIA UX: Leer la memoria y abrir la pestaña en la que se quedó el cliente
             const pestañaGuardada = localStorage.getItem('activeTab_' + expedienteId) || 'solicitante';
@@ -1400,7 +1419,76 @@ let downloadLink = '';
                 console.error("Error al registrar log:", e); 
             }
         }
+        //Nueva función de citas
+        async function guardarCita() {
+            const fecha = document.getElementById('agenda-fecha').value;
+            const hora = document.getElementById('agenda-hora').value;
+            
+            if (!fecha || !hora) {
+                alert("Por favor, selecciona una fecha y un horario.");
+                return;
+            }
+            
+            const btn = document.getElementById('btn-guardar-cita');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
+            
+            try {
+                await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                    visitaAgendada: {
+                        fecha: fecha,
+                        hora: hora,
+                        estatus: 'SOLICITADA'
+                    }
+                });
+                
+                await registrarLog('VISITA SOLICITADA', `El cliente agendó inspección para el ${fecha} en horario de ${hora}.`, 'UBICACION_MAPS');
+                
+                document.getElementById('agendaModal').classList.add('hidden');
+                document.getElementById('agendaModal').classList.remove('flex');
+                
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                alert("¡Tu solicitud ha sido enviada exitosamente! Nos pondremos en contacto contigo si hay algún detalle con el horario.");
+                location.reload();
+            } catch (e) {
+                console.error(e);
+                alert("Hubo un error al agendar la visita: " + e.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Solicitar Visita <span class="material-symbols-rounded text-lg">arrow_forward</span>';
+            }
+        }
 
     </script>
+
+    <div id="agendaModal" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md justify-center items-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md p-8 rounded-3xl text-center shadow-2xl relative animate-[popIn_0.3s_ease-out]">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-700 shadow-lg">
+                <span class="material-symbols-rounded text-4xl">event_available</span>
+            </div>
+            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-2">¡Expediente Validado! 🎉</h3>
+            <p class="text-slate-500 dark:text-slate-300 text-sm mb-6">Tu documentación está completa al 100%. Selecciona el día y horario de tu preferencia para la visita de inspección del perito.</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Fecha deseada:</label>
+                    <input type="date" id="agenda-fecha" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:bg-slate-900 dark:border-slate-600 dark:text-white cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Horario preferido:</label>
+                    <select id="agenda-hora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:bg-slate-900 dark:border-slate-600 dark:text-white cursor-pointer">
+                        <option value="">Selecciona un horario...</option>
+                        <option value="09:00 - 11:00">Mañana (09:00 AM - 11:00 AM)</option>
+                        <option value="11:00 - 13:00">Mediodía (11:00 AM - 01:00 PM)</option>
+                        <option value="13:00 - 15:00">Tarde Temprano (01:00 PM - 03:00 PM)</option>
+                        <option value="15:00 - 18:00">Tarde (03:00 PM - 06:00 PM)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="guardarCita()" id="btn-guardar-cita" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl text-base shadow-lg shadow-indigo-500/30 active:scale-95 transition-all mt-8 flex justify-center items-center gap-2">
+                Solicitar Visita <span class="material-symbols-rounded text-lg">arrow_forward</span>
+            </button>
+        </div>
+    </div>
 </body>
 </html>
