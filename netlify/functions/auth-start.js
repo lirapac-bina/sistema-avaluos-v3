@@ -62,7 +62,7 @@ exports.handler = async (event, context) => {
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      prompt: 'consent',
+      //prompt: 'consent',
       scope: scopes
     });
 
