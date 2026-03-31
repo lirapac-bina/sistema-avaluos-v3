@@ -432,7 +432,19 @@
             }
         }
 
-        // 🔥 FUNCIÓN NUEVA: Convierte URLs de Drive a imágenes visibles y las muestra
+        // 🌟 TRUCO MAESTRO DEFINITIVO (URL a Imagen de Alta Calidad)
+        const transformDriveUrl = (url) => {
+            if (!url) return '';
+            const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+            if (match && match[1]) {
+                const fileId = match[1];
+                // Usamos el endpoint 'thumbnail' que burla las restricciones de Google Drive
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
+            }
+            return url; 
+        };
+
+        // 🔥 FUNCIÓN MEJORADA Y LIMPIA: Muestra la Galería y los Planos del equipo
         function verEntregablesStaff(archivos, tipo) {
             if (!archivos || archivos.length === 0) return alert("No hay archivos subidos.");
             
@@ -444,24 +456,11 @@
             document.getElementById('card-filename').innerText = archivos.length + " archivo(s) entregados";
             document.getElementById('decision-bar').classList.add('translate-y-full');
 
-            // 🌟 TRUCO MAESTRO DEFINITIVO (Concatenación Segura 2024)
-            const transformDriveUrl = (url) => {
-                if (!url) return '';
-                // Extrae el ID de la foto de Google Drive
-                const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
-                if (match && match[1]) {
-                    const fileId = match[1];
-                    // Renderizador oficial de Google en alta calidad
-                    return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
-                }
-                return url; 
-            };
-
             if (tipo === 'GALERIA') {
                 const grid = document.getElementById('gallery-grid');
                 document.getElementById('gallery-count').innerText = `${archivos.length} fotos`;
                 
-                // Actualizamos las URLs globales para que el zoom también funcione
+                // Aplicamos el transformador a todas las fotos
                 galleryImages = archivos.map(foto => ({ url: transformDriveUrl(foto.url), nombre: foto.nombre })); 
                 grid.innerHTML = '';
                 
@@ -716,15 +715,22 @@
             }
             else if (req.tipo === 'PDF' && req.url) {
                 const pdf = document.getElementById('real-pdf');
-                pdf.src = req.url;
+                let pdfUrl = req.url;
+                if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
+                    pdfUrl = pdfUrl.replace('/view', '/preview');
+                }
+                pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');
             }
             else if (req.url) {
+                // 🔥 AQUÍ ESTÁ LA ACTUALIZACIÓN: Usamos el transformador para las imágenes
                 const img = document.getElementById('real-image');
-                img.src = req.url;
+                const urlTransformada = transformDriveUrl(req.url);
+                
+                img.src = urlTransformada;
                 img.classList.remove('hidden');
                 document.getElementById('zoom-overlay').classList.remove('hidden');
-                galleryImages = [{ url: req.url, nombre: req.nombre }];
+                galleryImages = [{ url: urlTransformada, nombre: req.nombre }];
             } 
             else {
                 document.getElementById('preview-placeholder').classList.remove('hidden');
@@ -810,27 +816,70 @@
                 if (totalGlobal > 0 && validGlobal === totalGlobal) {
                     btnContainer.classList.remove('hidden');
                     
-                    // 🔥 NUEVA LÓGICA: ¿Ya agendó el cliente?
                     const btn = btnContainer.querySelector('button');
-                    
-                    // Necesitamos leer visitaAgendada directamente desde la base de datos local
                     const datosLocal = JSON.parse(localStorage.getItem('expediente_activo')) || {};
                     
                     if (datosLocal.visitaAgendada && datosLocal.visitaAgendada.estatus === 'SOLICITADA') {
-                        // El cliente ya agendó -> Liberar botón para asignar
+                        // El cliente ya eligió -> Liberar botón para asignar
                         btn.innerHTML = `<span class="material-symbols-rounded">assignment_ind</span> ASIGNAR A CAPTURA`;
                         btn.onclick = abrirModalAsignacion;
                         btn.className = "bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center gap-2 animate-bounce";
+                    } else if (datosLocal.fechasPropuestas && datosLocal.fechasPropuestas.length > 0) {
+                        // Ya le mandaste opciones, esperando que él elija en su portal
+                        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO AL CLIENTE`;
+                        btn.onclick = null;
+                        btn.className = "bg-amber-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center gap-2 cursor-not-allowed opacity-90";
                     } else {
-                        // 100% validado pero esperando al cliente
-                        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO CITA CLIENTE`;
-                        btn.onclick = null; // Desactivar clic
-                        btn.className = "bg-amber-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-amber-500/30 flex items-center gap-2 cursor-not-allowed opacity-90";
+                        // 100% validado -> Te toca proponer fechas
+                        btn.innerHTML = `<span class="material-symbols-rounded">calendar_month</span> PROPONER FECHAS`;
+                        btn.onclick = () => {
+                            document.getElementById('modal-proponer-fechas').classList.remove('hidden');
+                            document.getElementById('modal-proponer-fechas').classList.add('flex');
+                        };
+                        btn.className = "bg-teal-600 hover:bg-teal-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-teal-500/30 flex items-center gap-2 animate-bounce";
                     }
-
                 } else {
                     btnContainer.classList.add('hidden');
                 }
+            }
+        }
+
+        // 🔥 NUEVA FUNCIÓN: Guarda las fechas en Firebase
+        async function guardarFechasPropuestas() {
+            const propuestas = [];
+            for(let i=1; i<=3; i++) {
+                const f = document.getElementById(`prop-fecha-${i}`).value;
+                const h = document.getElementById(`prop-hora-${i}`).value;
+                if(f && h) propuestas.push({ fecha: f, hora: h });
+            }
+
+            if(propuestas.length === 0) return alert("Por favor propone al menos una fecha y horario.");
+
+            const btn = document.getElementById('btn-enviar-fechas');
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Enviando...';
+            btn.disabled = true;
+
+            try {
+                await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                    fechasPropuestas: propuestas
+                });
+                
+                // Actualizar la memoria local para que la vista cambie de inmediato
+                const datosLocal = JSON.parse(localStorage.getItem('expediente_activo')) || {};
+                datosLocal.fechasPropuestas = propuestas;
+                localStorage.setItem('expediente_activo', JSON.stringify(datosLocal));
+                
+                await registrarLog('FECHAS PROPUESTAS', `La mesa de control propuso ${propuestas.length} opciones de fecha para el levantamiento.`);
+                
+                document.getElementById('modal-proponer-fechas').classList.add('hidden');
+                document.getElementById('modal-proponer-fechas').classList.remove('flex');
+                verificarProgresoGlobal(); // Refrescar botón de la cabecera
+                
+            } catch (e) {
+                console.error(e);
+                alert("Error al guardar: " + e.message);
+                btn.innerHTML = '<span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente';
+                btn.disabled = false;
             }
         }
 
@@ -1053,6 +1102,55 @@
         </div>
     </div>
 </div>
+
+<div id="modal-proponer-fechas" class="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-teal-500">calendar_month</span> Proponer Fechas
+                </h3>
+                <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Propón hasta 3 opciones de fecha y horario para que el cliente elija.</p>
+            
+            <div class="space-y-3 mb-6">
+                <div class="flex gap-2">
+                    <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                    <select id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                        <option value="">Horario...</option>
+                        <option value="09:00 - 11:00">09:00 - 11:00</option>
+                        <option value="11:00 - 13:00">11:00 - 13:00</option>
+                        <option value="13:00 - 15:00">13:00 - 15:00</option>
+                        <option value="15:00 - 18:00">15:00 - 18:00</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                    <select id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                        <option value="">Horario...</option>
+                        <option value="09:00 - 11:00">09:00 - 11:00</option>
+                        <option value="11:00 - 13:00">11:00 - 13:00</option>
+                        <option value="13:00 - 15:00">13:00 - 15:00</option>
+                        <option value="15:00 - 18:00">15:00 - 18:00</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                    <select id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                        <option value="">Horario...</option>
+                        <option value="09:00 - 11:00">09:00 - 11:00</option>
+                        <option value="11:00 - 13:00">11:00 - 13:00</option>
+                        <option value="13:00 - 15:00">13:00 - 15:00</option>
+                        <option value="15:00 - 18:00">15:00 - 18:00</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
+            </button>
+        </div>
+    </div>
 
 </body>
 </html>

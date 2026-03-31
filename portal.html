@@ -12,6 +12,7 @@
     <script src="firebase-config.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -543,7 +544,7 @@
         }
 
         // ==========================================
-        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 4.0 (Con Bóveda Global)
+        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos)
         // ==========================================
         async function subirArchivo(itemKey, nombreItem, categoria, input) {
             const files = Array.from(input.files);
@@ -569,50 +570,53 @@
                 let finalName = files[0].name;
                 let finalType = files[0].type;
 
-                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS
+                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS (FUSIÓN UNIVERSAL)
                 if (totalArchivos > 1) {
-                    const hasPDF = files.some(f => f.type === 'application/pdf');
-                    if (hasPDF) throw new Error("Por favor, sube los PDF de 1 en 1, o selecciona únicamente fotos para que el sistema las una por ti.");
-
-                    const validImages = files.every(f => f.type.startsWith('image/'));
-                    if (!validImages) throw new Error("Solo se pueden fusionar Fotos (JPG/PNG).");
-
-                    showLoader(`Uniendo ${totalArchivos} fotos en un solo PDF...`);
+                    showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF maestro...`);
                     
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-                    const maxW = 190, maxH = 277;
+                    const { PDFDocument } = window.PDFLib;
+                    const masterPdf = await PDFDocument.create();
 
                     for (let i = 0; i < totalArchivos; i++) {
-                        showLoader(`Procesando foto ${i+1} de ${totalArchivos}...`);
-                        const imgData = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve(e.target.result);
-                            reader.readAsDataURL(files[i]);
-                        });
+                        showLoader(`Procesando archivo ${i+1} de ${totalArchivos}...`);
+                        const file = files[i];
+                        const arrayBuffer = await file.arrayBuffer();
 
-                        const imgObj = await new Promise((resolve) => {
-                            const img = new Image();
-                            img.src = imgData;
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                const scale = Math.min(800 / img.width, 1); 
-                                canvas.width = img.width * scale;
-                                canvas.height = img.height * scale;
-                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                resolve({ data: canvas.toDataURL('image/jpeg', 0.6), w: canvas.width, h: canvas.height });
-                            };
-                        });
-
-                        let imgH = (imgObj.h * maxW) / imgObj.w;
-                        if (imgH > maxH) imgH = maxH; 
-
-                        if (i > 0) doc.addPage();
-                        doc.addImage(imgObj.data, 'JPEG', 10, 10, maxW, imgH);
+                        if (file.type === 'application/pdf') {
+                            // Si es PDF, extraemos sus páginas y las pegamos al maestro
+                            const pdfToMerge = await PDFDocument.load(arrayBuffer);
+                            const copiedPages = await masterPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+                            copiedPages.forEach((page) => masterPdf.addPage(page));
+                        } else if (file.type.startsWith('image/')) {
+                            // Si es Imagen, la convertimos en una nueva página del PDF
+                            let img;
+                            if (file.type === 'image/png') {
+                                img = await masterPdf.embedPng(arrayBuffer);
+                            } else {
+                                // Para JPGs o cualquier otro formato lo forzamos a JPG
+                                img = await masterPdf.embedJpg(arrayBuffer);
+                            }
+                            
+                            // Ajustamos tamaño tamaño estándar (A4)
+                            const page = masterPdf.addPage();
+                            const { width, height } = page.getSize();
+                            const scale = Math.min((width - 40) / img.width, (height - 40) / img.height, 1);
+                            
+                            const imgWidth = img.width * scale;
+                            const imgHeight = img.height * scale;
+                            // Centramos la imagen en la hoja
+                            const x = (width / 2) - (imgWidth / 2);
+                            const y = (height / 2) - (imgHeight / 2);
+                            
+                            page.drawImage(img, { x, y, width: imgWidth, height: imgHeight });
+                        } else {
+                            throw new Error(`El archivo ${file.name} no es válido. Solo sube PDFs o Fotos.`);
+                        }
                     }
 
-                    fileToUpload = doc.output('blob');
+                    // Generamos el archivo final
+                    const pdfBytes = await masterPdf.save();
+                    fileToUpload = new Blob([pdfBytes], { type: 'application/pdf' });
                     finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
                     finalType = 'application/pdf';
 
@@ -660,7 +664,7 @@
                 if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
             
                 // 🔥 REGISTRO DE AUDITORÍA
-                await registrarLog('NUEVO DOCUMENTO', `El cliente subió un archivo desde su dispositivo.`, itemKey);
+                await registrarLog('NUEVO DOCUMENTO', `El cliente subió y fusionó ${totalArchivos} archivo(s).`, itemKey);
 
                 location.reload();
 
@@ -1008,22 +1012,39 @@ let downloadLink = '';
             
             updateProgressBars(completados, revisionCount, totalRequisitos);
 
-            // --- NUEVA LÓGICA: DISPARADOR DE AGENDA ---
+            // --- NUEVA LÓGICA: DISPARADOR DE AGENDA CONTROLADA ---
             const validacionCompleta = (completados === totalRequisitos && totalRequisitos > 0);
             
             if (validacionCompleta && !data.visitaAgendada) {
-                // Configuramos la fecha mínima como el día de mañana
-                const mañana = new Date();
-                mañana.setDate(mañana.getDate() + 1);
-                document.getElementById('agenda-fecha').min = mañana.toISOString().split('T')[0];
-                
-                document.getElementById('agendaModal').classList.remove('hidden');
-                document.getElementById('agendaModal').classList.add('flex');
+                // Solo le abrimos el modal si la Mesa de Control ya propuso fechas
+                if (data.fechasPropuestas && data.fechasPropuestas.length > 0) {
+                    let opcionesHtml = '<label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Opciones Disponibles:</label>';
+                    
+                    data.fechasPropuestas.forEach((prop, index) => {
+                        opcionesHtml += `
+                        <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group">
+                            <input type="radio" name="fecha_seleccionada" value="${prop.fecha}|${prop.hora}" class="w-5 h-5 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600">
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm">${prop.fecha}</p>
+                                <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">Horario: ${prop.hora}</p>
+                            </div>
+                        </label>`;
+                    });
+                    
+                    document.getElementById('lista-fechas-propuestas').innerHTML = opcionesHtml;
+                    document.getElementById('agendaModal').classList.remove('hidden');
+                    document.getElementById('agendaModal').classList.add('flex');
+                } else {
+                    // Si el 100% está validado pero la mesa aún no propone fechas, le avisamos
+                    document.getElementById('estado-badge').innerHTML = `
+                    <div class="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-3 py-1.5 rounded-lg text-xs font-bold mt-2 shadow-sm animate-pulse">
+                        <span class="material-symbols-rounded text-sm">hourglass_top</span> Validado. Esperando opciones de fecha...
+                    </div>`;
+                }
             } else if (validacionCompleta && data.visitaAgendada) {
-                // Si ya agendó, le mostramos un pequeño aviso en la cabecera
                 document.getElementById('estado-badge').innerHTML = `
                 <div class="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold mt-2 shadow-sm">
-                    <span class="material-symbols-rounded text-sm">event</span> Visita Solicitada: ${data.visitaAgendada.fecha} (${data.visitaAgendada.hora})
+                    <span class="material-symbols-rounded text-sm">event</span> Visita Confirmada: ${data.visitaAgendada.fecha} (${data.visitaAgendada.hora})
                 </div>`;
             }
             
@@ -1419,21 +1440,26 @@ let downloadLink = '';
                 console.error("Error al registrar log:", e); 
             }
         }
-        //Nueva función de citas
+
+        // Nueva función de citas (CONECTADA AL CALENDARIO CONTROLADO)
         async function guardarCita() {
-            const fecha = document.getElementById('agenda-fecha').value;
-            const hora = document.getElementById('agenda-hora').value;
+            // Buscamos cuál opción eligió el cliente
+            const seleccion = document.querySelector('input[name="fecha_seleccionada"]:checked');
             
-            if (!fecha || !hora) {
-                alert("Por favor, selecciona una fecha y un horario.");
+            if (!seleccion) {
+                alert("Por favor, selecciona una de las opciones disponibles.");
                 return;
             }
             
+            // Separamos el valor (ej. "2026-03-30|09:00 - 11:00")
+            const [fecha, hora] = seleccion.value.split('|');
+            
             const btn = document.getElementById('btn-guardar-cita');
             btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando y Agendando...';
             
             try {
+                // 1. Guardar en Base de Datos
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
                     visitaAgendada: {
                         fecha: fecha,
@@ -1441,20 +1467,72 @@ let downloadLink = '';
                         estatus: 'SOLICITADA'
                     }
                 });
+                // ... Todo el resto del código (Google Calendar, etc) se queda exactamente igual.;
                 
                 await registrarLog('VISITA SOLICITADA', `El cliente agendó inspección para el ${fecha} en horario de ${hora}.`, 'UBICACION_MAPS');
                 
+                // 🌟 2. MAGIA DE GOOGLE CALENDAR
+                // Extraemos la hora de inicio del bloque (ej. "09:00 - 11:00" -> "09:00")
+                const horaInicio = hora.split(' ')[0]; 
+                const fechaISO = `${fecha}T${horaInicio}:00`; // Formato: YYYY-MM-DDTHH:MM:00
+                
+                const nombreCliente = (typeof expedienteGlobal !== 'undefined' && expedienteGlobal && expedienteGlobal.cliente) ? expedienteGlobal.cliente : 'Cliente';
+                
+                // Extraemos la dirección de Google Maps que guardó el cliente
+                let direccion = "Dirección pendiente";
+                if (expedienteGlobal && expedienteGlobal.checklist && expedienteGlobal.checklist['UBICACION_MAPS']) {
+                    direccion = expedienteGlobal.checklist['UBICACION_MAPS'].direccion || expedienteGlobal.checklist['UBICACION_MAPS'].ubicacion || "Ubicación en GPS";
+                }
+
+                // 🚀 Disparamos el robot de Google
+                await agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion);
+
+                // 3. Finalizar Interfaz
                 document.getElementById('agendaModal').classList.add('hidden');
                 document.getElementById('agendaModal').classList.remove('flex');
                 
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-                alert("¡Tu solicitud ha sido enviada exitosamente! Nos pondremos en contacto contigo si hay algún detalle con el horario.");
+                alert("¡Tu solicitud ha sido enviada exitosamente y la cita ha sido apartada! Nos pondremos en contacto contigo si hay algún detalle con el horario.");
                 location.reload();
             } catch (e) {
                 console.error(e);
                 alert("Hubo un error al agendar la visita: " + e.message);
                 btn.disabled = false;
                 btn.innerHTML = 'Solicitar Visita <span class="material-symbols-rounded text-lg">arrow_forward</span>';
+            }
+        }
+
+        // 🔥 CONECTOR OFICIAL CON GOOGLE CALENDAR
+        const SCRIPT_CALENDARIO_URL = 'https://script.google.com/macros/s/AKfycbwa0RH7xJbOq5NgVBq1YOCbEjWa3PuNbYaIzeTkUodd0nABseJeN9BxzKexLW6IuSclWA/exec';
+
+        async function agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion) {
+            try {
+                const payload = {
+                    accion: 'AGENDAR_CITA',
+                    titulo: `📐 Levantamiento: ${nombreCliente}`,
+                    fechaISO: fechaISO, 
+                    ubicacion: direccion || "Dirección pendiente de confirmar",
+                    descripcion: "Cita agendada automáticamente desde el Portal del Cliente Leezar."
+                };
+
+                // Enviamos la orden al robot de Google
+                const response = await fetch(SCRIPT_CALENDARIO_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.exito) {
+                    console.log("✅ Éxito: Evento creado en Google Calendar con ID:", result.eventoId);
+                    return true;
+                } else {
+                    console.error("❌ Google Calendar rechazó la cita:", result.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error("❌ Error de comunicación con el Calendario:", error);
+                return false;
             }
         }
 
@@ -1466,27 +1544,14 @@ let downloadLink = '';
                 <span class="material-symbols-rounded text-4xl">event_available</span>
             </div>
             <h3 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-2">¡Expediente Validado! 🎉</h3>
-            <p class="text-slate-500 dark:text-slate-300 text-sm mb-6">Tu documentación está completa al 100%. Selecciona el día y horario de tu preferencia para la visita de inspección del perito.</p>
+            <p class="text-slate-500 dark:text-slate-300 text-sm mb-6">Tu documentación está completa al 100%. Selecciona una de las opciones de fecha disponibles para tu visita de inspección.</p>
             
-            <div class="space-y-4 text-left">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Fecha deseada:</label>
-                    <input type="date" id="agenda-fecha" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:bg-slate-900 dark:border-slate-600 dark:text-white cursor-pointer">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Horario preferido:</label>
-                    <select id="agenda-hora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:bg-slate-900 dark:border-slate-600 dark:text-white cursor-pointer">
-                        <option value="">Selecciona un horario...</option>
-                        <option value="09:00 - 11:00">Mañana (09:00 AM - 11:00 AM)</option>
-                        <option value="11:00 - 13:00">Mediodía (11:00 AM - 01:00 PM)</option>
-                        <option value="13:00 - 15:00">Tarde Temprano (01:00 PM - 03:00 PM)</option>
-                        <option value="15:00 - 18:00">Tarde (03:00 PM - 06:00 PM)</option>
-                    </select>
-                </div>
+            <div id="lista-fechas-propuestas" class="space-y-3 text-left">
+                <div class="text-center py-4"><span class="material-symbols-rounded animate-spin text-indigo-500">sync</span></div>
             </div>
             
             <button onclick="guardarCita()" id="btn-guardar-cita" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl text-base shadow-lg shadow-indigo-500/30 active:scale-95 transition-all mt-8 flex justify-center items-center gap-2">
-                Solicitar Visita <span class="material-symbols-rounded text-lg">arrow_forward</span>
+                Confirmar Cita <span class="material-symbols-rounded text-lg">check_circle</span>
             </button>
         </div>
     </div>
