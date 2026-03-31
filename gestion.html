@@ -801,6 +801,19 @@
             localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
         }
 
+        // 🔍 FUNCIÓN PUENTE: ENVIAR A MESA DE REVISIÓN
+        function irARevision(id) {
+            const exp = dbExpedientes.find(e => e.id === id);
+            if (exp) {
+                // Guardamos los datos básicos en la memoria local para que revision.html sepa qué abrir
+                localStorage.setItem('expediente_activo', JSON.stringify(exp));
+                // Redirigimos a la mesa de control
+                window.location.href = 'revision.html';
+            } else {
+                alert("Error: No se encontró el expediente en la memoria.");
+            }
+        }
+
 
         // 📅 FUNCIÓN PARA AGENDAR EN GOOGLE CALENDAR (100% ESCALABLE)
         async function agendarVisita(id) {

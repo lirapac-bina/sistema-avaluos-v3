@@ -877,11 +877,15 @@ let downloadLink = '';
             document.getElementById('loading-card').classList.add('hidden');
             
             const unidad = data.unidad || 'AVE';
+            
+            // 🔥 DICCIONARIO DE IDENTIDADES CORREGIDO (Nombres y Colores)
             const brands = {
-                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-indigo-600', name: 'Unidad EME' },
-                'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-gray-600', name: 'Asesoría Valuación y Estudios - Representante en Veracruz' },
-                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-leezar-500', name: 'Ingeniería Leezar' }
+                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-rose-700', name: 'EME LEEZAR' },
+                'APN': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA' },
+                'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA' }, // Soporte para expedientes viejos
+                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-emerald-700', name: 'GYS AVE EME' }
             };
+            
             const config = brands[unidad] || brands['AVE'];
             
             const logoImg = document.getElementById('brand-logo');
