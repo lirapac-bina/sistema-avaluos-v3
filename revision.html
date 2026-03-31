@@ -529,6 +529,15 @@
 
             const checklist = data.checklist || {};
             
+            // 🔥 RECOLECTOR DE LA GALERÍA DEL CLIENTE
+            const fotosGaleria = [];
+            Object.keys(checklist).forEach(key => {
+                if (key.includes('FOTO_EXTRA_')) {
+                    const url = checklist[key].archivoUrl || checklist[key].driveLink || checklist[key].url;
+                    if (url) fotosGaleria.push({ url: transformDriveUrl(url), nombre: checklist[key].nombre || 'Foto' });
+                }
+            });
+
             Object.keys(checklist).forEach(key => {
                 if(key.includes('FOTO_EXTRA_')) return; 
 
@@ -536,6 +545,7 @@
                 
                 let cat = item.categoria || 'solicitante';
                 if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
+                if (key === 'FOTOS_INTERIORES_GENERAL') { cat = 'inmueble'; item.nombre = 'Fotos Interiores y Entorno'; }
 
                 const urlReal = item.archivoUrl || item.driveLink || item.url;
                 let uiStatus = 'pending';
@@ -546,6 +556,7 @@
                 let tipoArchivo = '---';
 
                 if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
+                else if(key === 'FOTOS_INTERIORES_GENERAL') tipoArchivo = 'GALERIA';
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (urlReal) {
                     if (urlReal.toLowerCase().includes('.pdf') || (item.mimeType && item.mimeType.includes('pdf'))) tipoArchivo = 'PDF';
@@ -553,20 +564,19 @@
                     else tipoArchivo = 'IMG';
                 }
 
-                // Filtrar Fotos Interiores (ahora están en entregables)
-                if (key !== 'FOTOS_INTERIORES_GENERAL') {
-                    if(expediente.grupos[cat]) {
-                        expediente.grupos[cat].push({
-                            key: key,
-                            nombre: item.nombre || 'Sin nombre',
-                            tipo: tipoArchivo,
-                            status: uiStatus,
-                            url: urlReal,
-                            coordenadas: item.coordenadas,
-                            direccion: item.direccion,
-                            textoPreview: item.textoPreview
-                        });
-                    }
+                // 🔥 YA NO OCULTAMOS LA GALERÍA, LA INYECTAMOS EN PANTALLA
+                if(expediente.grupos[cat]) {
+                    expediente.grupos[cat].push({
+                        key: key,
+                        nombre: item.nombre || 'Sin nombre',
+                        tipo: tipoArchivo,
+                        status: uiStatus,
+                        url: urlReal,
+                        coordenadas: item.coordenadas,
+                        direccion: item.direccion,
+                        textoPreview: item.textoPreview,
+                        fotos: key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null
+                    });
                 }
             });
         }
@@ -722,8 +732,28 @@
                 pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');
             }
+            // 🔥 NUEVO REPRODUCTOR DE GALERÍA
+            else if (req.tipo === 'GALERIA') {
+                if (req.fotos && req.fotos.length > 0) {
+                    const grid = document.getElementById('gallery-grid');
+                    document.getElementById('gallery-count').innerText = `${req.fotos.length} fotos`;
+                    
+                    galleryImages = req.fotos; 
+                    grid.innerHTML = '';
+                    
+                    galleryImages.forEach((foto, index) => {
+                        grid.innerHTML += `
+                            <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
+                                <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
+                                <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre || 'Foto'}</div>
+                            </div>`;
+                    });
+                    document.getElementById('gallery-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('preview-placeholder').classList.remove('hidden');
+                }
+            }
             else if (req.url) {
-                // 🔥 AQUÍ ESTÁ LA ACTUALIZACIÓN: Usamos el transformador para las imágenes
                 const img = document.getElementById('real-image');
                 const urlTransformada = transformDriveUrl(req.url);
                 

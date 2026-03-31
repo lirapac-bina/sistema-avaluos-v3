@@ -591,17 +591,34 @@
                     </div>`;
                 }
 
-                // 🔥 LÓGICA DEL CANDADO PARA AGENDAR
+                // 🔥 LÓGICA INTELIGENTE DEL BOTÓN DE AGENDA
                 let botonAgendar = '';
-                if (pctValidados === 100 || yaTerminado) {
+                
+                if (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA') {
+                    // Ya agendó el cliente -> Botón verde sólido
                     botonAgendar = `
-                    <button onclick="agendarVisita('${exp.id}')" class="text-sky-600 dark:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group ml-1" title="Agendar Visita en Google Calendar">
+                    <button onclick="agendarVisita('${exp.id}')" class="text-emerald-700 bg-emerald-100 border border-emerald-300 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group ml-1" title="Ver en Google Calendar">
+                        <span class="material-symbols-rounded text-sm">event_available</span>
+                        <span class="hidden xl:inline">Confirmada</span>
+                    </button>`;
+                } else if (exp.fechasPropuestas && exp.fechasPropuestas.length > 0) {
+                    // Ya propusiste fechas -> Botón amarillo con spinner
+                    botonAgendar = `
+                    <button disabled class="text-amber-700 bg-amber-50 border border-amber-300 px-2 py-1 rounded text-[10px] font-bold opacity-90 cursor-not-allowed flex items-center gap-1 ml-1" title="Esperando a que el cliente elija">
+                        <span class="material-symbols-rounded text-sm animate-spin">sync</span>
+                        <span class="hidden xl:inline">Esperando</span>
+                    </button>`;
+                } else if (pctValidados === 100 || yaTerminado) {
+                    // 100% Validado -> ¡LATIDO! Mandar a Mesa de Control a proponer fechas
+                    botonAgendar = `
+                    <button onclick="irARevision('${exp.id}')" class="text-white bg-indigo-600 hover:bg-indigo-500 border border-indigo-700 px-3 py-1 rounded text-[10px] font-bold shadow-[0_0_10px_rgba(79,70,229,0.5)] transition-all animate-pulse flex items-center gap-1 group ml-1" title="¡Listo para proponer fechas!">
                         <span class="material-symbols-rounded text-sm">calendar_month</span>
-                        <span class="hidden xl:inline">Agendar</span>
+                        <span class="hidden xl:inline">Proponer Fechas</span>
                     </button>`;
                 } else {
+                    // Incompleto -> Candado Gris
                     botonAgendar = `
-                    <button disabled class="text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded text-[10px] font-bold cursor-not-allowed flex items-center gap-1 group ml-1" title="Requiere 100% de documentos para agendar">
+                    <button disabled class="text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded text-[10px] font-bold cursor-not-allowed flex items-center gap-1 group ml-1" title="Requiere 100% para agendar">
                         <span class="material-symbols-rounded text-sm">lock</span>
                         <span class="hidden xl:inline">Agendar</span>
                     </button>`;

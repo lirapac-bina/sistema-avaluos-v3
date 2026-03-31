@@ -291,19 +291,50 @@
                 }
 
                 const json = await response.json();
+                const finalId = json.id || json.expedienteId; 
 
+                // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE ENTRA EN ACCIÓN
+                btn.innerHTML = `<span class="animate-spin material-symbols-rounded">sync</span> Construyendo Carpetas en Drive...`;
+
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycby6BDx7PwdNv9wIHcdz_YZny-iS6lTulBptum32c0cLdzP0-5HZ7IIWInRMPyXKtntq/exec';
+                const urlConDatos = `${scriptUrl}?cliente=${encodeURIComponent(nombreInput)}&unidad=${encodeURIComponent(valorUnidad)}`;
+
+                let driveFolderIdLocal = null;
+
+                try {
+                    const peticionAlbanil = await fetch(urlConDatos);
+                    const respuestaAlbanil = await peticionAlbanil.json();
+
+                    if (respuestaAlbanil.exito) {
+                        driveFolderIdLocal = respuestaAlbanil.main;
+                        
+                        // Actualizamos el expediente en Firebase con las llaves de Drive
+                        await firebase.firestore().collection('expedientes_avaluos').doc(finalId).update({
+                            carpeta_drive: respuestaAlbanil.url,
+                            driveFolderId: respuestaAlbanil.main,
+                            driveSubfolders: respuestaAlbanil.subfolders || {}
+                        });
+                        console.log("✅ Carpetas creadas y vinculadas correctamente.");
+                    } else {
+                        console.error("❌ Error del Albañil:", respuestaAlbanil.error);
+                    }
+                } catch (errDrive) {
+                    console.error("❌ Falló la conexión con el Albañil de Drive:", errDrive);
+                }
+
+                // MOSTRAR RESULTADOS AL USUARIO
                 document.getElementById('form-nuevo').classList.add('hidden');
                 document.getElementById('resultado').classList.remove('hidden');
                 
-                const finalId = json.id;
                 const cleanUrl = `${window.location.origin}/portal.html?id=${finalId}`;
                 
                 document.getElementById('liga-generada').value = cleanUrl;
                 document.getElementById('btn-ver-portal').href = cleanUrl;
 
-                if(json.driveFolderId) {
+                const targetFolder = driveFolderIdLocal || json.driveFolderId;
+                if (targetFolder) {
                     const linkDrive = document.getElementById('link-drive');
-                    linkDrive.href = `https://drive.google.com/drive/folders/${json.driveFolderId}`;
+                    linkDrive.href = `https://drive.google.com/drive/folders/${targetFolder}`;
                     linkDrive.classList.remove('hidden');
                     linkDrive.classList.add('inline-flex');
                 }
