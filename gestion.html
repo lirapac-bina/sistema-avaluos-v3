@@ -112,22 +112,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
     
-    <div id="jack-notification" class="fishing-bar">
-        <div class="fishing-info">
-            <div class="jack-container">
-                <div class="jack-bg-glow"></div>
-                <img src="img/jack-pesca.png" alt="Jack - Mascota Leezar" class="jack-img"> 
-            </div>
-            <div class="fishing-text">
-                <h3>¡Jack pescó nuevos datos!</h3>
-                <p>El Chatbot tiene prospectos listos en Google Sheets.</p>
-            </div>
-        </div>
-        <button class="btn-fish" onclick="importarDatosSheet()">
-            <span>⬇ Importar</span>
-            <span class="fish-count" id="fish-count-number">0</span>
-        </button>
-    </div>
 
     <main class="p-6 transition-all duration-300 flex-1 mt-4">
         
@@ -146,9 +130,7 @@
             </div>
             
             <div class="flex gap-2">
-                <button onclick="simularLlegadaDatos()" class="bg-indigo-100 text-indigo-700 px-4 py-3 rounded-xl font-bold text-xs hover:bg-indigo-200 transition-colors border border-indigo-200 shadow-sm flex items-center gap-2">
-                    <span>🎣</span> Test Jack
-                </button>
+            
 
                 <a href="nuevo-expediente.html" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-teal-200/50 dark:shadow-none flex items-center gap-2 transition-all transform hover:-translate-y-0.5 group">
                     <span class="material-symbols-rounded group-hover:rotate-90 transition-transform">add_circle</span> 
@@ -180,6 +162,14 @@
                             <option value="200">200</option>
                         </select>
                     </div>
+
+                    <select id="filter-unidad" onchange="filtrarTabla()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer font-bold w-full md:w-auto">
+                        <option value="">Todas las Unidades</option>
+                        <option value="APN">APN</option>
+                        <option value="AVE">AVE</option>
+                        <option value="EME">EME</option>
+                        <option value="POR ASIGNAR">Por Asignar</option>
+                    </select>
 
                     <select id="filter-status" onchange="filtrarTabla()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer font-bold w-full md:w-auto">
                         <option value="">Todos los Estatus</option>
@@ -263,9 +253,9 @@
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
                     <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
                         <option value="POR ASIGNAR">POR ASIGNAR</option>
-                        <option value="EME">EME (LEEZAR)</option>
-                        <option value="AVE">GYS EME (AVE)</option>
-                        <option value="PNA">PNA (AVE)</option>
+                        <option value="PNA">AVALÚOS PAMELA NOGUEIRA</option>
+                        <option value="AVE">GYS AVE EME</option>
+                        <option value="EME">EME LEEZAR</option>
                     </select>
                 </div>
             </div>
@@ -465,10 +455,27 @@
         function filtrarTabla(maintainPage = false) {
             const texto = document.getElementById('search-input').value.toUpperCase();
             const statusFilter = document.getElementById('filter-status').value;
+            // Capturamos el filtro de unidad
+            const unidadFilter = document.getElementById('filter-unidad') ? document.getElementById('filter-unidad').value : '';
 
             datosFiltrados = dbExpedientes.filter(e => {
                 const dataString = `${e.cliente} ${e.id} ${e.capturista || ''} ${e.visitador || ''} ${e.dibujante || ''}`.toUpperCase();
-                return dataString.includes(texto) && (statusFilter === "" || e.status === statusFilter);
+                
+                const matchTexto = dataString.includes(texto);
+                const matchStatus = statusFilter === "" || e.status === statusFilter;
+                
+                // Evaluamos la unidad de valuación
+                const uniStr = (e.unidad || 'POR ASIGNAR').toUpperCase();
+                let matchUnidad = true;
+                if (unidadFilter !== "") {
+                    if (unidadFilter === 'APN') {
+                        matchUnidad = uniStr.includes('APN') || uniStr.includes('PNA');
+                    } else {
+                        matchUnidad = uniStr.includes(unidadFilter);
+                    }
+                }
+
+                return matchTexto && matchStatus && matchUnidad;
             });
             
             if (!maintainPage) currentPage = 1;
@@ -552,7 +559,6 @@
                 else if(st.includes('COMPLETADO') || st.includes('VALIDA') || st.includes('FINALIZADO') || st.includes('CAPTURA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
 
-                // 🔥 CÁLCULO DE AVANCE PARA EVITAR PÁNICO INNECESARIO
                 const items = Object.values(exp.checklist || {});
                 const totReq = items.length || 1;
                 const subidos = items.filter(d => ['revision', 'validado'].includes((d.estatus || '').toLowerCase())).length;
@@ -563,32 +569,20 @@
                 
                 const yaTerminado = (pctValidados === 100 && items.length > 0) || st.includes('COMPLETADO') || st.includes('FINALIZADO') || st.includes('CAPTURA');
 
-                // --- LÓGICA DE DÍAS HÁBILES Y CUELLO DE BOTELLA ---
                 const diasAbierto = exp.timestamp ? calcularDiasHabiles(exp.timestamp) : 0;
                 let badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="Días hábiles activo">⏳ ${diasAbierto}d</span>`;
                 
                 if (yaTerminado) {
-                    // Si ya está completado, apagar el fuego (Color Neutro/Gris)
                     badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${diasAbierto}d</span>`;
                 } else {
                     if (diasAbierto >= 3 && diasAbierto <= 5) {
                         badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Atención requerida">⏳ ${diasAbierto}d</span>`;
                     } else if (diasAbierto > 5) {
-                        // Solo arde si tiene > 5 días Y NO HA TERMINADO
                         badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]" title="¡CUELLO DE BOTELLA!">🔥 ${diasAbierto}d</span>`;
                     }
                 }
 
-                // --- LA ALERTA DE JACK 🐶 ---
-                let alertaJack = '';
-                if (exp.origen === 'JACK_FORMULARIO' && exp.unidad === 'POR ASIGNAR') {
-                    alertaJack = `
-                    <div class="mt-1.5 inline-flex items-center gap-1.5 bg-amber-400 text-amber-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-[0_0_15px_rgba(251,191,36,0.9)] border-2 border-amber-200 animate-pulse">
-                        <span class="text-sm">🐶</span> ¡ASIGNAR UNIDAD!
-                    </div>`;
-                }
-
-                // --- ALERTA DE CITA SOLICITADA ---
+                // 🔴 ALERTAS
                 let alertaCita = '';
                 if (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA') {
                     alertaCita = `
@@ -597,12 +591,47 @@
                     </div>`;
                 }
 
+                // 🔥 LÓGICA DEL CANDADO PARA AGENDAR
+                let botonAgendar = '';
+                if (pctValidados === 100 || yaTerminado) {
+                    botonAgendar = `
+                    <button onclick="agendarVisita('${exp.id}')" class="text-sky-600 dark:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group ml-1" title="Agendar Visita en Google Calendar">
+                        <span class="material-symbols-rounded text-sm">calendar_month</span>
+                        <span class="hidden xl:inline">Agendar</span>
+                    </button>`;
+                } else {
+                    botonAgendar = `
+                    <button disabled class="text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded text-[10px] font-bold cursor-not-allowed flex items-center gap-1 group ml-1" title="Requiere 100% de documentos para agendar">
+                        <span class="material-symbols-rounded text-sm">lock</span>
+                        <span class="hidden xl:inline">Agendar</span>
+                    </button>`;
+                }
+
+                // 🔥 LÓGICA VISUAL DE COLORES DE LA UNIDAD
+                let unidadColorClass = '';
+                const uniStr = (exp.unidad || '').toUpperCase();
+                if (uniStr.includes('APN') || uniStr.includes('PNA')) {
+                    unidadColorClass = 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/30 dark:border-orange-800 dark:text-orange-400';
+                } else if (uniStr.includes('AVE')) {
+                    unidadColorClass = 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400';
+                } else if (uniStr.includes('EME')) {
+                    unidadColorClass = 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400';
+                } else {
+                    unidadColorClass = 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400';
+                }
+
+                // 🔥 RENDERIZADO DE LA FILA
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
                             <div class="truncate">${exp.cliente}</div>
-                            ${alertaJack}
-                            ${alertaCita} </td>
+                            
+                            <div class="inline-block mt-1 px-1.5 py-0.5 border rounded text-[9px] font-black tracking-widest uppercase ${unidadColorClass}">
+                                🏢 ${exp.unidad}
+                            </div>
+                            
+                            ${alertaCita} 
+                        </td>
                         
                         <td class="px-4 py-3 text-center">
                             <span class="bg-slate-100 dark:bg-transparent text-slate-600 dark:text-slate-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-slate-200 dark:border-slate-600">
@@ -651,10 +680,7 @@
                                     <span class="hidden xl:inline">Revisar</span>
                                 </button>
 
-                                <button onclick="agendarVisita('${exp.id}')" class="text-sky-600 dark:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group ml-1" title="Agendar Visita en Google Calendar">
-                                    <span class="material-symbols-rounded text-sm">calendar_month</span>
-                                    <span class="hidden xl:inline">Agendar</span>
-                                </button>
+                                ${botonAgendar}
 
                                <a href="captura-avaluo.html?id=${exp.id}" target="_blank" class="text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 decoration-0 group ml-1" title="Capturar Avalúo">
                                     <span class="material-symbols-rounded text-sm">calculate</span>
@@ -775,37 +801,6 @@
             localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
         }
 
-        function mostrarJack(cantidad) {
-            const barra = document.getElementById('jack-notification');
-            const contador = document.getElementById('fish-count-number');
-            contador.textContent = cantidad;
-            barra.classList.add('active'); 
-        }
-
-        function importarDatosSheet() {
-            const btn = document.querySelector('.btn-fish');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Trayendo...`;
-            btn.disabled = true;
-
-            setTimeout(() => {
-                alert("✅ ¡Expedientes importados exitosamente!");
-                document.getElementById('jack-notification').classList.remove('active');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                iniciarEscuchaRealtime(); 
-            }, 2000);
-        }
-
-        function simularLlegadaDatos() { mostrarJack(5); }
-
-        function irARevision(id) {
-            const expedienteSeleccionado = dbExpedientes.find(e => e.id === id);
-            if (expedienteSeleccionado) {
-                localStorage.setItem('expediente_activo', JSON.stringify(expedienteSeleccionado));
-                window.location.href = 'revision.html';
-            } else { alert("Error: No se encontraron datos del expediente."); }
-        }
 
         // 📅 FUNCIÓN PARA AGENDAR EN GOOGLE CALENDAR (100% ESCALABLE)
         async function agendarVisita(id) {
