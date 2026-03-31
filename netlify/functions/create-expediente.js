@@ -67,19 +67,16 @@ async function crearCarpetaDrive(nombreCliente, parentFolderId) {
         
         const mainFolderId = mainFolder.data.id;
 
-        const [idExpediente, idDocJust, idFotos, idProyArq, idComparables] = await Promise.all([
-            crearSubcarpeta(drive, 'EXPEDIENTE', mainFolderId),
-            crearSubcarpeta(drive, 'DOC JUST', mainFolderId),
-            crearSubcarpeta(drive, 'FOTOS', mainFolderId),
-            crearSubcarpeta(drive, 'PROY ARQ', mainFolderId),
-            crearSubcarpeta(drive, 'COMPARABLES', mainFolderId)
-        ]);
+        // 🇨🇭 MODO RELOJ SUIZO: Creación Secuencial para evitar el bloqueo por SPAM de Google
+        const idExpediente = await crearSubcarpeta(drive, 'EXPEDIENTE', mainFolderId);
+        const idDocJust = await crearSubcarpeta(drive, 'DOC JUST', mainFolderId);
+        const idFotos = await crearSubcarpeta(drive, 'FOTOS', mainFolderId);
+        const idProyArq = await crearSubcarpeta(drive, 'PROY ARQ', mainFolderId);
+        const idComparables = await crearSubcarpeta(drive, 'COMPARABLES', mainFolderId);
 
-        const [idInmueble, idPropietario, idSolicitante] = await Promise.all([
-            crearSubcarpeta(drive, 'INMUEBLE', idExpediente),
-            crearSubcarpeta(drive, 'PROPIETARIO', idExpediente),
-            crearSubcarpeta(drive, 'SOLICITANTE', idExpediente)
-        ]);
+        const idInmueble = await crearSubcarpeta(drive, 'INMUEBLE', idExpediente);
+        const idPropietario = await crearSubcarpeta(drive, 'PROPIETARIO', idExpediente);
+        const idSolicitante = await crearSubcarpeta(drive, 'SOLICITANTE', idExpediente);
         
         return {
             main: mainFolderId,
