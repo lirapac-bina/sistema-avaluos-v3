@@ -176,6 +176,7 @@
                         <option value="ACTIVO">Activos</option>
                         <option value="PENDIENTE">Pendientes</option>
                         <option value="REVISION">En Revisión</option>
+                        <option value="INCIDENCIA">⚠️ Incidencias</option>
                         <option value="COMPLETADO">Completados</option>
                     </select>
 
@@ -253,10 +254,14 @@
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
                     <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
                         <option value="POR ASIGNAR">POR ASIGNAR</option>
-                        <option value="PNA">AVALÚOS PAMELA NOGUEIRA</option>
-                        <option value="AVE">GYS AVE EME</option>
-                        <option value="EME">EME LEEZAR</option>
+                        <option value="APN">APN</option>
+                        <option value="AVE">AVE</option>
+                        <option value="EME">EME</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Anotación / Identificador Interno</label>
+                    <input type="text" id="edit-anotacion" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-medium transition-all text-sm uppercase">
                 </div>
             </div>
 
@@ -341,6 +346,10 @@
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
+                        if (data.eliminado === true) return; // 🔥 SI ESTÁ ELIMINADO, NO LO CARGUES
+
+                        // 🔥 SOFT DELETE: Ignorar los eliminados para que no salgan en la tabla
+                        if (data.eliminado === true) return;
                         
                         let fechaObj = null;
                         let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
@@ -371,8 +380,9 @@
                             colonia: data.colonia || '',
                             origen: data.origen || '', 
                             unidad: data.unidad || 'POR ASIGNAR',
-                            checklist: data.checklist || {}, // 🔥 ¡AQUÍ ESTÁ LA COMA QUE FALTABA!
-                            visitaAgendada: data.visitaAgendada || null
+                            checklist: data.checklist || {},
+                            visitaAgendada: data.visitaAgendada || null,
+                            anotacion: data.anotacion || '' // 🔥 NUEVA VARIABLE
                         });
                     });
 
@@ -555,6 +565,7 @@
                 let badgeClass = '';
                 const st = (exp.status || '').toUpperCase();
                 if(st === 'ACTIVO' || st === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
+                else if(st.includes('INCIDENCIA')) badgeClass = 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/40 dark:text-red-400 font-black animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'; // 🔴 ESTA ES LA ALERTA ROJA
                 else if(st.includes('REVISI')) badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
                 else if(st.includes('COMPLETADO') || st.includes('VALIDA') || st.includes('FINALIZADO') || st.includes('CAPTURA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
                 else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
@@ -624,27 +635,41 @@
                     </button>`;
                 }
 
-                // 🔥 LÓGICA VISUAL DE COLORES DE LA UNIDAD
+                // 🔥 LÓGICA VISUAL DE COLORES DE LA UNIDAD (SOLO SIGLAS)
                 let unidadColorClass = '';
+                let siglaUnidad = 'POR ASIGNAR'; 
+                let iconoUnidad = '🏢';
+
                 const uniStr = (exp.unidad || '').toUpperCase();
-                if (uniStr.includes('APN') || uniStr.includes('PNA')) {
+                
+                // Limpieza automática para registros viejos (forzamos la sigla corta)
+                if (uniStr.includes('APN') || uniStr.includes('PNA') || uniStr.includes('PAMELA')) {
                     unidadColorClass = 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/30 dark:border-orange-800 dark:text-orange-400';
+                    siglaUnidad = 'APN';
                 } else if (uniStr.includes('AVE')) {
                     unidadColorClass = 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400';
+                    siglaUnidad = 'AVE';
                 } else if (uniStr.includes('EME')) {
                     unidadColorClass = 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400';
+                    siglaUnidad = 'EME';
                 } else {
-                    unidadColorClass = 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400';
+                    // 🐶 EL PERRITO ANIMADO VUELVE A LA VIDA
+                    unidadColorClass = 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-400 animate-pulse shadow-sm';
+                    siglaUnidad = 'POR ASIGNAR';
+                    iconoUnidad = '🐶';
                 }
 
                 // 🔥 RENDERIZADO DE LA FILA
+                const anotacionUI = exp.anotacion ? `<div class="text-[10px] text-slate-400 mt-1 italic leading-tight normal-case">"${exp.anotacion}"</div>` : '';
+
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
                             <div class="truncate">${exp.cliente}</div>
+                            ${anotacionUI}
                             
                             <div class="inline-block mt-1 px-1.5 py-0.5 border rounded text-[9px] font-black tracking-widest uppercase ${unidadColorClass}">
-                                🏢 ${exp.unidad}
+                                ${iconoUnidad} ${siglaUnidad}
                             </div>
                             
                             ${alertaCita} 
@@ -682,7 +707,7 @@
                         
                         <td class="px-4 py-3 text-right">
                             <div class="flex justify-end gap-1 items-center">
-                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}')" 
+                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}', '${exp.anotacion || ''}')" 
                                     class="text-amber-500 hover:text-amber-600 p-1.5 rounded transition-all hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                                     title="Editar">
                                     <span class="material-symbols-rounded text-lg">edit</span>
@@ -703,6 +728,10 @@
                                     <span class="material-symbols-rounded text-sm">calculate</span>
                                     <span class="hidden xl:inline">Capturar</span>
                                 </a>
+
+                                <button onclick="borrarExpediente('${exp.id}')" class="text-red-400 hover:text-red-600 p-1.5 rounded transition-all hover:bg-red-50 dark:hover:bg-red-900/20 ml-1" title="Eliminar Expediente (Ocultar)">
+                                    <span class="material-symbols-rounded text-lg">delete</span>
+                                </button>
                             </div>
                         </td>
                     </tr>`;
@@ -710,7 +739,7 @@
             });
         }
 
-            function abrirModalEditar(id, nombre, telefono, unidad) {
+            function abrirModalEditar(id, nombre, telefono, unidad, anotacion) {
             const userStr = localStorage.getItem('leezar_user_active');
             const user = userStr ? JSON.parse(userStr) : {};
             const rol = (user.rol || '').toUpperCase();
@@ -723,10 +752,20 @@
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-nombre').value = nombre;
             document.getElementById('edit-telefono').value = (telefono && telefono !== 'undefined' && telefono !== 'null') ? telefono : '';
-            document.getElementById('edit-unidad').value = unidad || 'POR ASIGNAR';
+            
+            // TRADUCTOR A SIGLAS
+            let siglaUnidadModal = 'POR ASIGNAR';
+            const uniStrModal = (unidad || '').toUpperCase();
+            if (uniStrModal.includes('APN') || uniStrModal.includes('PNA') || uniStrModal.includes('PAMELA')) siglaUnidadModal = 'APN';
+            else if (uniStrModal.includes('AVE')) siglaUnidadModal = 'AVE';
+            else if (uniStrModal.includes('EME')) siglaUnidadModal = 'EME';
+            
+            document.getElementById('edit-unidad').value = siglaUnidadModal;
+            // 🔥 CARGAMOS LA ANOTACIÓN
+            document.getElementById('edit-anotacion').value = (anotacion && anotacion !== 'undefined' && anotacion !== 'null') ? anotacion : '';
 
             document.getElementById('modal-editar-cliente').classList.remove('hidden');
-            }
+        }
 
         function cerrarModalEditar() { document.getElementById('modal-editar-cliente').classList.add('hidden'); }
 
@@ -735,6 +774,7 @@
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
             const unidad = document.getElementById('edit-unidad').value;
+            const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase(); // 🔥 ATRAPAMOS ANOTACIÓN
             const btn = document.getElementById('btn-save-edit');
 
             if (!nombre) { alert("El nombre es obligatorio"); return; }
@@ -751,7 +791,8 @@
                 let updateData = {
                     cliente: nombre,
                     telefono: telefono,
-                    unidad: unidad
+                    unidad: unidad,
+                    anotacion: anotacion // 🔥 ESTO FALTABA PARA GUARDAR LA ANOTACIÓN
                 };
 
                 // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE (Versión Antibloqueo GET con más carpetas)
@@ -877,6 +918,21 @@
             if (correoUnidad) url += `&add=${correoUnidad}`;
             
             window.open(url, '_blank');
+        }
+
+        // 🗑️ FUNCIÓN DE SOFT DELETE: Oculta el expediente pero no lo borra físicamente
+        async function borrarExpediente(id) {
+            if (!confirm("⚠️ ¿Estás seguro de ocultar este expediente? Ya no aparecerá en tu tabla principal.")) return;
+            try {
+                const db = window.db || firebase.firestore();
+                await db.collection('expedientes_avaluos').doc(id).update({ 
+                    eliminado: true 
+                });
+                registrarLogEnBitacora("ELIMINACIÓN", `Se ocultó el expediente con ID: ${id}`);
+                // Firebase Realtime se encargará de quitarlo de la vista automáticamente
+            } catch (e) {
+                alert("Error al intentar ocultar: " + e.message);
+            }
         }
 
     </script>

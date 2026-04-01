@@ -72,9 +72,14 @@
                 </div>
 
                 <div class="flex gap-2 items-center self-start md:self-center">
+                    <button onclick="declararIncidencia()" class="h-10 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-red-800" title="Detener trámite y reportar problema">
+                        <span class="material-symbols-rounded text-lg">warning</span>
+                        <span class="hidden md:inline">Incidencia</span>
+                    </button>
+
                     <button onclick="reenviarLiga()" class="h-10 flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-blue-900" title="Reenviar acceso al cliente por WhatsApp">
                         <span class="material-symbols-rounded text-lg">send</span>
-                        <span>Reenviar Liga</span>
+                        <span class="hidden md:inline">Reenviar Liga</span>
                     </button>
 
                     <button onclick="location.reload()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" title="Recargar datos">
@@ -1101,6 +1106,30 @@
                     itemKey: selectedReqKey      
                 });
             } catch (e) { console.error("Error log:", e); }
+        }
+
+        // 🔴 FUNCIÓN PARA DECLARAR INCIDENCIA Y REGRESAR A GESTIÓN
+        async function declararIncidencia() {
+            const motivo = prompt("⚠️ DECLARAR INCIDENCIA\nEl trámite se detendrá. Por favor, describe detalladamente el problema con este expediente:");
+            
+            // Si le da a cancelar o no escribe nada, abortamos
+            if (!motivo) return;
+
+            try {
+                // Actualizamos Firebase
+                await db.collection('expedientes_avaluos').doc(expediente.id).update({
+                    status: 'INCIDENCIA', // Lo ponemos en estado de emergencia
+                    anotacion: `INCIDENCIA: ${motivo}` // Guardamos el motivo como anotación para que se vea rápido en gestión
+                });
+                
+                // Lo guardamos en la auditoría
+                await registrarLog("INCIDENCIA DECLARADA", `El revisor detuvo el proceso. Motivo: ${motivo}`);
+                
+                alert("Expediente marcado con INCIDENCIA correctamente. Regresando a la tabla principal...");
+                window.location.href = 'gestion.html'; // Lo sacamos de la mesa y lo mandamos a ver su alerta roja
+            } catch (e) {
+                alert("Error al declarar incidencia: " + e.message);
+            }
         }
 
     </script>

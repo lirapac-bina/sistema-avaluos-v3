@@ -175,9 +175,10 @@
                     html += `
                     <label class="cursor-pointer group relative">
                         <input type="radio" name="unidad" value="${doc.id}" ${isChecked} class="peer hidden">
-                        <div class="h-full py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center transition-all flex flex-col items-center justify-center gap-2 ${colorClasses}">
-                            <span class="material-symbols-rounded text-3xl">domain</span>
-                            <span class="text-[10px] md:text-xs uppercase">${labelLargo}</span>
+                        <div class="h-full py-4 px-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 font-bold text-center transition-all flex flex-col items-center justify-center gap-1 ${colorClasses}">
+                            <span class="material-symbols-rounded text-3xl mb-1">domain</span>
+                            <span class="text-sm md:text-base font-extrabold uppercase tracking-widest">${doc.id}</span>
+                            <span class="text-[9px] md:text-[10px] uppercase opacity-70">(${labelLargo})</span>
                         </div>
                     </label>`;
                 });
@@ -292,6 +293,32 @@
                 const json = await response.json();
                 const finalId = json.id || json.expedienteId; 
 
+                // 🛡️ EL ALBAÑIL DE DRIVE AL RESCATE (SISTEMA HÍBRIDO)
+                let targetFolder = json.driveFolderId;
+
+                // Si Netlify falla (targetFolder es undefined), llamamos al Script interno de Google
+                if (!targetFolder) {
+                    btn.innerHTML = `<span class="animate-spin material-symbols-rounded">sync</span> Forzando creación en Drive...`;
+                    const scriptUrl = 'https://script.google.com/macros/s/AKfycby6BDx7PwdNv9wIHcdz_YZny-iS6lTulBptum32c0cLdzP0-5HZ7IIWInRMPyXKtntq/exec';
+                    const urlConDatos = `${scriptUrl}?cliente=${encodeURIComponent(nombreInput)}&unidad=${encodeURIComponent(valorUnidad)}`;
+                    
+                    try {
+                        const peticionAlbanil = await fetch(urlConDatos);
+                        const respuestaAlbanil = await peticionAlbanil.json();
+                        if (respuestaAlbanil.exito) {
+                            targetFolder = respuestaAlbanil.main;
+                            // Actualizamos Firebase con el ID rescatado
+                            await firebase.firestore().collection('expedientes_avaluos').doc(finalId).update({
+                                carpeta_drive: respuestaAlbanil.url,
+                                driveFolderId: respuestaAlbanil.main,
+                                driveSubfolders: respuestaAlbanil.subfolders || {}
+                            });
+                        }
+                    } catch (e) { 
+                        console.error("El albañil falló:", e); 
+                    }
+                }
+
                 // MOSTRAR RESULTADOS AL USUARIO
                 document.getElementById('form-nuevo').classList.add('hidden');
                 document.getElementById('resultado').classList.remove('hidden');
@@ -301,15 +328,13 @@
                 document.getElementById('liga-generada').value = cleanUrl;
                 document.getElementById('btn-ver-portal').href = cleanUrl;
 
-                // 🏗️ LEEMOS LA RESPUESTA DIRECTA DEL SERVIDOR NETLIFY
-                if (json.driveFolderId) {
+                if (targetFolder) {
                     const linkDrive = document.getElementById('link-drive');
-                    linkDrive.href = `https://drive.google.com/drive/folders/${json.driveFolderId}`;
+                    linkDrive.href = `https://drive.google.com/drive/folders/${targetFolder}`;
                     linkDrive.classList.remove('hidden');
                     linkDrive.classList.add('inline-flex');
                 } else {
-                    // Si el servidor no mandó el ID, te avisamos para que no te quedes ciego
-                    alert("⚠️ Expediente creado en Base de Datos, pero falló la creación de carpetas en Google Drive.\n\nPosibles causas:\n1. La Unidad seleccionada no tiene un 'drive_id' en la base de datos.\n2. La carpeta madre en Drive no está compartida con permisos de 'Editor' al correo de tu servidor Netlify.");
+                    alert("⚠️ El expediente se guardó en la base de datos, pero los escudos de Google Drive bloquearon la creación de la carpeta. Deberás crearla manualmente.");
                 }
                 
                 const mensaje = `Hola *${nombreInput}*, hemos generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
