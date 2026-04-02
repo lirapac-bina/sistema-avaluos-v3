@@ -46,7 +46,8 @@ exports.handler = async (event) => {
     try {
         const body = JSON.parse(event.body);
         
-        const { expedienteId, itemKey, nuevoEstado, archivoPath, categoriaItem, motivo } = body;
+        // Atrapamos las nuevas variables de los JPGs
+        const { expedienteId, itemKey, nuevoEstado, archivoPath, categoriaItem, motivo, autoConvertJpg, pathsJpg } = body;
 
         console.log(`📡 [STATUS] Petición recibida -> Item: ${itemKey} | Nuevo Estatus: ${nuevoEstado}`);
 
@@ -89,15 +90,43 @@ exports.handler = async (event) => {
             console.log(`✅ [FIREBASE] Token generado para visualización en el Portal.`);
         }
 
+        // 🌟 NUEVO: PROCESAMOS LOS JPGs DE DOC JUST (Generamos sus enlaces públicos) 🌟
+        if (autoConvertJpg && pathsJpg && pathsJpg.length > 0) {
+            let urlsJpgGeneradas = [];
+            for (let pathJpg of pathsJpg) {
+                // Si la imagen es la original, reusamos el enlace
+                if (pathJpg === archivoPath) {
+                    urlsJpgGeneradas.push(firebaseUrl);
+                } else {
+                    const tokenJpg = crypto.randomUUID();
+                    await bucket.file(pathJpg).setMetadata({
+                        metadata: { firebaseStorageDownloadTokens: tokenJpg }
+                    });
+                    const encodedPathJpg = encodeURIComponent(pathJpg);
+                    const urlJpg = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPathJpg}?alt=media&token=${tokenJpg}`;
+                    urlsJpgGeneradas.push(urlJpg);
+                }
+            }
+            updateData[`checklist.${itemKey}.autoConvertJpg`] = true;
+            updateData[`checklist.${itemKey}.urlsJpg`] = urlsJpgGeneradas;
+            console.log(`📸 [FIREBASE] Generados ${urlsJpgGeneradas.length} enlaces JPG para DOC JUST.`);
+        }
+
         // ========================================================
         // 🌟 MAGIA MASIVA: TRANSFERENCIA A DRIVE VÍA PUENTE MÁGICO 🌟
         // ========================================================
         let archivosAPasar = [];
         
-        // Si detecta la galería de fotos, recolecta todas las hijas (FOTO_EXTRA_)
-        if (itemKey === 'FOTOS_INTERIORES_GENERAL') {
+        // 🧠 LECTURA DINÁMICA: Consultamos el tipo de requisito directamente de la BD
+        const tipoRequisito = itemAnterior.tipo || 'MIXTO';
+
+        // Si el Admin dictaminó que este requisito es una GALERÍA, recolectamos dinámicamente
+        if (tipoRequisito === 'GALERIA') {
+            console.log(`📸 [GALERÍA DETECTADA] Requisito dinámico: ${itemKey}`);
+            
             Object.keys(docData.checklist).forEach(k => {
-                if (k.includes('FOTO_EXTRA_')) {
+                // Atrapamos dinámicamente cualquier foto hija que pertenezca a una galería
+                if (k.includes('FOTO_EXTRA_') || k.includes('EXTRA_')) {
                     const fotoItem = docData.checklist[k];
                     const urlReal = fotoItem.url || fotoItem.archivoUrl;
                     if (urlReal) {
@@ -113,8 +142,20 @@ exports.handler = async (event) => {
                     }
                 }
             });
+            
+            // (Opcional) Si el "padre" también llegara a tener una foto principal, la sumamos
+            if (firebaseUrl) {
+                archivosAPasar.push({
+                    key: itemKey,
+                    url: firebaseUrl,
+                    nombreBase: itemAnterior.nombre || itemKey,
+                    categoria: categoriaItem || itemAnterior.categoria || 'inmueble',
+                    pathEnNube: pathEnNube
+                });
+            }
+            
         } else {
-            // Archivo normal individual
+            // Archivo normal individual (PDF, IMG, MIXTO, etc.)
             if (firebaseUrl) {
                 archivosAPasar.push({
                     key: itemKey,
@@ -129,8 +170,9 @@ exports.handler = async (event) => {
         if ((nuevoEstado === 'validado' || nuevoEstado === 'VALIDADO') && archivosAPasar.length > 0) {
             console.log(`🚀 [DRIVE] Estatus 'Validado'. Procesando ${archivosAPasar.length} archivo(s) en paralelo...`);
             
-            // Enviamos todo a Drive en PARALELO para no superar el límite de tiempo de Netlify
-            const promesasDrive = archivosAPasar.map(async (archivo) => {
+            // 🛡️ ESCUDO ANTI-SPAM: Enviamos los archivos a Drive UNO POR UNO (Secuencial)
+            for (let i = 0; i < archivosAPasar.length; i++) {
+                const archivo = archivosAPasar[i];
                 let catDrive = (archivo.categoria || 'solicitante').toLowerCase();
                 const driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[catDrive] : null;
 
@@ -168,10 +210,64 @@ exports.handler = async (event) => {
                         console.error(`❌ [DRIVE] Falla de conexión con ${fileNameDrive}:`, err.message);
                     }
                 }
-            });
-
-            // Esperamos a que TODAS las subidas de Drive terminen
-            await Promise.all(promesasDrive);
+                
+                // 🛡️ PAUSA DE 500ms ENTRE CADA FOTO PARA NO ENOJAR A GOOGLE (ANTI-SPAM)
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // 🌟 MAGIA: REPARTIDOR SECUENCIAL A "DOC JUST" (ANTI-SPAM) 🌟
+            if (itemAnterior.autoConvertJpg && itemAnterior.urlsJpg && itemAnterior.urlsJpg.length > 0 && !itemAnterior.docJustUrl) {
+                // Buscamos la carpeta docJust sin importar mayúsculas o espacios
+                let docJustFolderId = null;
+                if (docData.driveSubfolders) {
+                    const llaves = Object.keys(docData.driveSubfolders);
+                    for (let llave of llaves) {
+                        if (llave.toLowerCase().replace(/\s/g, '') === 'docjust') {
+                            docJustFolderId = docData.driveSubfolders[llave];
+                            break;
+                        }
+                    }
+                }
+                
+                if (docJustFolderId) {
+                    console.log(`🚀 [DRIVE] Subiendo ${itemAnterior.urlsJpg.length} copias JPG a DOC JUST de forma secuencial...`);
+                    
+                    // Ciclo for tradicional (Uno por uno) para no activar los bloqueos de Google
+                    for (let i = 0; i < itemAnterior.urlsJpg.length; i++) {
+                        const urlJpg = itemAnterior.urlsJpg[i];
+                        const cleanName = (itemAnterior.nombre || itemKey).replace(/[/\\?%*:|"<>]/g, '-').trim();
+                        // Si hay varias hojas, les pone número, si es una sola, deja el nombre limpio
+                        const finalName = itemAnterior.urlsJpg.length > 1 ? `${cleanName} Pag_${i+1}.jpg` : `${cleanName}.jpg`;
+                        
+                        try {
+                            const scriptResp = await fetch(APPS_SCRIPT_WEBHOOK, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    secretToken: "LeezarMagia2026",
+                                    fileUrl: urlJpg,
+                                    fileName: finalName,
+                                    mimeType: 'image/jpeg',
+                                    folderId: docJustFolderId
+                                })
+                            });
+                            
+                            const scriptData = await scriptResp.json();
+                            if (scriptData.success) {
+                                console.log(`✅ [DRIVE] JPG Subido a DOC JUST: ${finalName}`);
+                            } else {
+                                console.error(`❌ [DRIVE] Error JPG en DOC JUST:`, scriptData.error);
+                            }
+                        } catch(e) {
+                            console.error(`❌ [DRIVE] Falla de conexión JPG DOC JUST:`, e.message);
+                        }
+                        
+                        // 🛡️ ESCUDO ANTI-SPAM: Pausa de medio segundo antes de subir la siguiente página
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    updateData[`checklist.${itemKey}.docJustUrl`] = true; // Sellamos para que no se duplique al validar de nuevo
+                }
+            }
         }
         // ========================================================
 

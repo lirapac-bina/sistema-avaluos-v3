@@ -14,6 +14,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
@@ -581,7 +585,7 @@
         }
 
         // ==========================================
-        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos)
+        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos + DOC JUST)
         // ==========================================
         async function subirArchivo(itemKey, nombreItem, categoria, input) {
             const files = Array.from(input.files);
@@ -591,7 +595,32 @@
             showLoader(`Iniciando subida...`);
 
             try {
-                // 🌟 REGLA ESTRICTA: ESCÁNER DE COLOR 
+                // 🌟 MAGIA 1: LECTURA DE CONFIGURACIÓN DOC JUST AL INICIO (MODO DEBUG)
+                let autoConvert = false;
+                try {
+                    const configSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
+                    if (configSnap.exists) {
+                        const diccionario = configSnap.data().diccionario || {};
+                        
+                        // 🧠 Buscador Inteligente: Buscamos la llave exacta y la raíz
+                        let baseKey = itemKey;
+                        if (itemKey.includes('_')) {
+                            baseKey = itemKey.split('_')[0]; 
+                        }
+                        
+                        // Busca primero la llave exacta (ej. CURP_SOLICITANTE), si no, la raíz (ej. CURP)
+                        const configItem = diccionario[itemKey] || diccionario[baseKey] || {};
+                        autoConvert = configItem.autoConvertJpg === true;
+                        
+                        // 🕵️‍♂️ LOG DE DETECTIVE: Esto imprimirá la verdad en tu consola F12
+                        console.log(`🔍 [DOC JUST DEBUG] Subiendo Item: ${itemKey}`);
+                        console.log(`🔍 [DOC JUST DEBUG] Raíz detectada: ${baseKey}`);
+                        console.log(`🔍 [DOC JUST DEBUG] ¿Existe en Diccionario?:`, !!configItem.nombre);
+                        console.log(`🔍 [DOC JUST DEBUG] ¿Switch Auto-JPG Activado?:`, autoConvert);
+                    }
+                } catch(e) { console.warn("Error leyendo config", e); }
+
+                // 🌟 REGLA ESTRICTA: ESCÁNER DE COLOR (INTACTO)
                 const nameUpper = String(nombreItem).toUpperCase();
                 if (nameUpper.includes('INE') || nameUpper.includes('SOLICITUD')) {
                     showLoader(`Analizando color original...`);
@@ -607,7 +636,7 @@
                 let finalName = files[0].name;
                 let finalType = files[0].type;
 
-                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS (FUSIÓN UNIVERSAL)
+                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS / FUSIÓN UNIVERSAL (INTACTA)
                 if (totalArchivos > 1) {
                     showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF maestro...`);
                     
@@ -620,28 +649,23 @@
                         const arrayBuffer = await file.arrayBuffer();
 
                         if (file.type === 'application/pdf') {
-                            // Si es PDF, extraemos sus páginas y las pegamos al maestro
                             const pdfToMerge = await PDFDocument.load(arrayBuffer);
                             const copiedPages = await masterPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
                             copiedPages.forEach((page) => masterPdf.addPage(page));
                         } else if (file.type.startsWith('image/')) {
-                            // Si es Imagen, la convertimos en una nueva página del PDF
                             let img;
                             if (file.type === 'image/png') {
                                 img = await masterPdf.embedPng(arrayBuffer);
                             } else {
-                                // Para JPGs o cualquier otro formato lo forzamos a JPG
                                 img = await masterPdf.embedJpg(arrayBuffer);
                             }
                             
-                            // Ajustamos tamaño tamaño estándar (A4)
                             const page = masterPdf.addPage();
                             const { width, height } = page.getSize();
                             const scale = Math.min((width - 40) / img.width, (height - 40) / img.height, 1);
                             
                             const imgWidth = img.width * scale;
                             const imgHeight = img.height * scale;
-                            // Centramos la imagen en la hoja
                             const x = (width / 2) - (imgWidth / 2);
                             const y = (height / 2) - (imgHeight / 2);
                             
@@ -651,14 +675,13 @@
                         }
                     }
 
-                    // Generamos el archivo final
                     const pdfBytes = await masterPdf.save();
                     fileToUpload = new Blob([pdfBytes], { type: 'application/pdf' });
                     finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
                     finalType = 'application/pdf';
 
                 } else {
-                    // 🌟 LÓGICA DE 1 SOLO ARCHIVO
+                    // 🌟 LÓGICA DE 1 SOLO ARCHIVO (INTACTA)
                     const f = files[0];
                     if (f.type !== 'application/pdf' && !f.type.startsWith('image/')) {
                          throw new Error("Formato inválido. Solo se admiten PDFs o Fotos (JPG/PNG).");
@@ -690,12 +713,60 @@
                     throw new Error("Fallo de red. Revisa tu conexión a internet.");
                 }
 
+                // 🌟 MAGIA 2: RENDERIZADO A JPG PARA DOC JUST (VÍA NUBE SEGURA)
+                let pathsJpg = [];
+                if (autoConvert) {
+                    showLoader(`Renderizando documento para DOC JUST...`);
+                    
+                    if (finalType === 'application/pdf') {
+                        try {
+                            const imagenesJpgBase64 = await convertirPdfAJpgs(fileToUpload);
+                            for (let j = 0; j < imagenesJpgBase64.length; j++) {
+                                showLoader(`Guardando copia HD ${j+1} de ${imagenesJpgBase64.length}...`);
+                                const resJpg = await fetch(imagenesJpgBase64[j]);
+                                const blobJpg = await resJpg.blob();
+                                const jpgName = `DOCJUST_${itemKey}_${Date.now()}_pag${j+1}.jpg`;
+
+                                // Pedimos permiso a Netlify para subir la foto de forma segura
+                                const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
+                                });
+                                
+                                if (resPermiso.ok) {
+                                    const dataPermiso = await resPermiso.json();
+                                    await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
+                                    pathsJpg.push(dataPermiso.filePath);
+                                }
+                            }
+                        } catch(errPdf) { console.error("Error convirtiendo PDF", errPdf); }
+                    } else if (finalType.startsWith('image/')) {
+                        // Si ya es imagen, mandamos la misma ruta del archivo original
+                        pathsJpg.push(filePath);
+                    }
+                }
+
                 showLoader('Guardando estatus...');
                 
+                const bodyPayload = { 
+                    expedienteId, 
+                    itemKey, 
+                    nuevoEstado: 'revision', 
+                    archivoPath: filePath, 
+                    categoriaItem: categoria 
+                };
+                
+                // Inyectamos las rutas de los JPGs en el paquete para Netlify
+                if (autoConvert && pathsJpg.length > 0) {
+                    bodyPayload.autoConvertJpg = true;
+                    bodyPayload.pathsJpg = pathsJpg;
+                }
+
                 const updateRes = await fetch('/.netlify/functions/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                    body: JSON.stringify(bodyPayload)
                 });
 
                 if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
@@ -1630,6 +1701,33 @@ let downloadLink = '';
                 console.error("❌ Error de comunicación con el Calendario:", error);
                 return false;
             }
+        }
+
+
+        // 🌟 MÁQUINA DE RENDERIZADO: Convierte el PDF a JPG en el equipo del cliente
+        async function convertirPdfAJpgs(file) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    const images = [];
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        // 🛠️ OPTIMIZACIÓN 1: Escala 1.5x (Tamaño perfecto para leer texto sin inflar el peso)
+                        const viewport = page.getViewport({ scale: 1.5 }); 
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                        // 🛠️ OPTIMIZACIÓN 2: Calidad JPEG al 65% (Baja drásticamente los MB sin notarse en pantalla)
+                        images.push(canvas.toDataURL('image/jpeg', 0.65));
+                    }
+                    resolve(images);
+                } catch (error) {
+                    reject(error);
+                }
+            });
         }
 
     </script>

@@ -77,9 +77,9 @@
                         <span class="hidden md:inline">Incidencia</span>
                     </button>
 
-                    <button onclick="reenviarLiga()" class="h-10 flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-blue-900" title="Reenviar acceso al cliente por WhatsApp">
-                        <span class="material-symbols-rounded text-lg">send</span>
-                        <span class="hidden md:inline">Reenviar Liga</span>
+                    <button onclick="abrirCarpetaDrive()" class="h-10 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-amber-700" title="Abrir carpeta del cliente en Google Drive">
+                        <span class="material-symbols-rounded text-lg">folder_open</span>
+                        <span class="hidden md:inline">Ver Drive</span>
                     </button>
 
                     <button onclick="location.reload()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" title="Recargar datos">
@@ -478,16 +478,37 @@
                 });
                 document.getElementById('gallery-container').classList.remove('hidden');
             } else if (tipo === 'PDF') {
-                if(archivos.length > 1) alert("Se subieron varios planos. Mostrando el primero.");
-                const pdf = document.getElementById('real-pdf');
-                
-                let pdfUrl = archivos[0].url;
-                if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
-                    pdfUrl = pdfUrl.replace('/view', '/preview');
-                }
-                
-                pdf.src = pdfUrl;
-                pdf.classList.remove('hidden');
+                // 🔥 NUEVA LÓGICA: Lista inteligente de archivos (PDFs y DWGs)
+                const grid = document.getElementById('gallery-grid');
+                document.getElementById('gallery-count').innerText = `${archivos.length} archivos`;
+                grid.innerHTML = '';
+
+                archivos.forEach((file) => {
+                    const isPdf = file.nombre.toLowerCase().endsWith('.pdf');
+                    const icon = isPdf ? 'picture_as_pdf' : 'architecture';
+                    const iconColor = isPdf ? 'text-red-500' : 'text-blue-500';
+                    const bgColor = isPdf ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20';
+
+                    let fileUrl = file.url;
+                    // Si es PDF y viene de Drive, lo forzamos a que abra la vista previa nativa de Google
+                    if (isPdf && fileUrl.includes('drive.google.com') && fileUrl.includes('/view')) {
+                        fileUrl = fileUrl.replace('/view', '/preview');
+                    }
+
+                    // Creamos una "Tarjeta" de archivo
+                    grid.innerHTML += `
+                        <a href="${fileUrl}" target="_blank" class="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-all gap-3 text-center group shadow-sm">
+                            <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center ${iconColor} group-hover:scale-110 transition-transform shadow-inner">
+                                <span class="material-symbols-rounded text-2xl">${icon}</span>
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${file.nombre}">${file.nombre}</p>
+                            <span class="text-[9px] text-slate-400 uppercase font-black bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 flex items-center gap-1 group-hover:text-indigo-500 group-hover:border-indigo-200 transition-colors shadow-sm">
+                                <span class="material-symbols-rounded text-[10px]">open_in_new</span> Abrir
+                            </span>
+                        </a>`;
+                });
+
+                document.getElementById('gallery-container').classList.remove('hidden');
             }
         }
 
@@ -529,6 +550,8 @@
                 id: id,
                 cliente: data.nombreCliente,
                 telefono: data.telefono,
+                // 🔥 Inyectamos la URL de Drive para el botón
+                carpeta_drive: data.carpeta_drive || (data.driveFolderId ? `https://drive.google.com/drive/folders/${data.driveFolderId}` : null),
                 grupos: { solicitante: [], propietario: [], inmueble: [] }
             };
 
@@ -813,7 +836,14 @@
         function cerrarRechazo() { document.getElementById('reject-modal').classList.add('hidden'); document.getElementById('reject-modal').classList.remove('flex'); }
         function usarError(texto) { document.getElementById('reject-reason').value = texto; }
         function agregarError() { const nuevo = prompt("Escribe el nuevo motivo:"); if(nuevo) { usarError(nuevo); } }
-        function reenviarLiga() { const msg = `Hola ${expediente.cliente}, te reenvío la liga de tu expediente ${expediente.id}.`; window.open(`https://wa.me/${expediente.telefono}?text=${encodeURIComponent(msg)}`, '_blank'); }
+        // 🔥 NUEVA FUNCIÓN: Abre la carpeta de Drive
+        function abrirCarpetaDrive() {
+            if (expediente && expediente.carpeta_drive) {
+                window.open(expediente.carpeta_drive, '_blank');
+            } else {
+                alert("⚠️ No se encontró el enlace de Google Drive para este expediente.");
+            }
+        }
         
         function abrirZoom(url = null, isSingle = false) { 
             if(selectedReqKey === 'UBICACION_MAPS') return;
