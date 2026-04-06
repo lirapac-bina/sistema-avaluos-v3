@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
         const { mensaje, seccionContexto, imagenBase64 } = JSON.parse(event.body);
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1' });
 
         const systemPrompt = `
             Eres Jack, el asistente experto en valuación inmobiliaria de la empresa Leezar.
