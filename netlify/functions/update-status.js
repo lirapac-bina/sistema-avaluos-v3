@@ -180,10 +180,9 @@ exports.handler = async (event) => {
                     const extension = archivo.pathEnNube && archivo.pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
                     const mimeType = extension === '.pdf' ? 'application/pdf' : 'image/jpeg';
                     
-                    // Limitamos el nombre si es muy largo y agregamos un identificador único para no sobrescribir
-                    const nomCorto = archivo.nombreBase.substring(0, 30).trim();
-                    const hashCorto = Math.random().toString(36).substring(2, 6).toUpperCase();
-                    const fileNameDrive = `${nomCorto}_${hashCorto}_${docData.cliente}${extension}`;
+                    // Limitamos el nombre si es muy largo (Nombres Limpios sin hash aleatorio)
+                    const nomCorto = archivo.nombreBase.substring(0, 40).trim();
+                    const fileNameDrive = `${nomCorto}_${docData.cliente}${extension}`;
 
                     try {
                         const scriptResponse = await fetch(APPS_SCRIPT_WEBHOOK, {

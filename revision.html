@@ -69,6 +69,13 @@
                         
                         <span id="header-badge-dias" class="ml-1"></span>
                     </div>
+
+                    <div id="header-anotacion-container" class="hidden mt-3 ml-3 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 p-2.5 rounded-lg max-w-xl shadow-sm">
+                        <p class="text-[10px] font-extrabold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-[14px]">edit_note</span> Anotaciones Internas
+                        </p>
+                        <p id="header-anotacion-text" class="text-xs font-medium text-amber-800 dark:text-amber-200 leading-tight">...</p>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 items-center self-start md:self-center">
@@ -359,7 +366,8 @@
             document.getElementById('header-client-name').innerText = infoBasica.cliente || "Sin Nombre";
             document.getElementById('header-client-name').classList.remove('animate-pulse');
             document.getElementById('header-date').innerText = infoBasica.fechaDisplay || "--/--/----";
-            document.getElementById('header-folio').innerText = infoBasica.id.substring(0, 8);
+            // 🌟 MAGIA: Mostramos el Folio Operativo si existe, sino el ID recortado
+            document.getElementById('header-folio').innerText = infoBasica.folioOperativo && infoBasica.folioOperativo !== "SIN FOLIO" ? infoBasica.folioOperativo : infoBasica.id.substring(0, 8);
             
             document.getElementById('header-tramite').innerText = (infoBasica.tramite || "TRÁMITE").replace(/_/g, ' ');
 
@@ -443,8 +451,9 @@
             const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
             if (match && match[1]) {
                 const fileId = match[1];
-                // Usamos el endpoint 'thumbnail' que burla las restricciones de Google Drive
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
+                // 🚀 NUEVO: Usamos el servidor de distribución directa de Google (lh3)
+                // Este servidor no bloquea por CORS ni pide Cookies.
+                return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
             }
             return url; 
         };
@@ -607,6 +616,14 @@
                     });
                 }
             });
+
+            // 🔥 ENCENDIDO DE ANOTACIONES EN MESA DE CONTROL
+            if (data.anotacion && data.anotacion.trim() !== '') {
+                document.getElementById('header-anotacion-container').classList.remove('hidden');
+                document.getElementById('header-anotacion-text').innerText = data.anotacion;
+            } else {
+                document.getElementById('header-anotacion-container').classList.add('hidden');
+            }
         }
 
         function renderCurrentGroup() {
@@ -754,14 +771,21 @@
             else if (req.tipo === 'PDF' && req.url) {
                 const pdf = document.getElementById('real-pdf');
                 let pdfUrl = req.url;
+                
                 if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
                     pdfUrl = pdfUrl.replace('/view', '/preview');
+                } else if (pdfUrl.includes('firebasestorage')) {
+                    // 🌟 FIX: Obligamos al navegador a usar el visor interno para los enlaces nativos de Firebase
+                    if(!pdfUrl.includes('#toolbar=0')) {
+                        pdfUrl = pdfUrl + (pdfUrl.includes('?') ? '&' : '?') + '#toolbar=0&navpanes=0';
+                    }
                 }
+                
                 pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');
             }
             // 🔥 NUEVO REPRODUCTOR DE GALERÍA
-            else if (req.tipo === 'GALERIA') {
+            else if (req.tipo === 'GALERIA' ) {
                 if (req.fotos && req.fotos.length > 0) {
                     const grid = document.getElementById('gallery-grid');
                     document.getElementById('gallery-count').innerText = `${req.fotos.length} fotos`;
@@ -805,11 +829,24 @@
         async function actualizarEstadoBackend(nuevoEstado, motivo = null) {
             const btnConfirm = document.getElementById('btn-confirm-reject');
             const btnValid = document.getElementById('btn-validar');
+            
             try {
-                if(nuevoEstado === 'rechazado') { btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnConfirm.disabled = true; } 
-                else { btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span>'; btnValid.disabled = true; }
+                if(nuevoEstado === 'rechazado') { 
+                    btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span> Descartando...'; 
+                    btnConfirm.disabled = true; 
+                } else { 
+                    // 🌟 MAGIA UX: Le avisamos al analista que estamos trabajando en Drive
+                    btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span> Guardando en Drive...'; 
+                    btnValid.classList.add('bg-teal-800', 'scale-95'); // Efecto visual de "trabajando"
+                    btnValid.disabled = true; 
+                }
                 
-                const res = await fetch('/.netlify/functions/update-status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ expedienteId: expediente.id, itemKey: selectedReqKey, nuevoEstado: nuevoEstado, motivo: motivo }) });
+                const res = await fetch('/.netlify/functions/update-status', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ expedienteId: expediente.id, itemKey: selectedReqKey, nuevoEstado: nuevoEstado, motivo: motivo }) 
+                });
+                
                 if(!res.ok) throw new Error("Error en servidor");
                 
                 const currentKey = groupKeys[activeGroupIndex];
@@ -819,15 +856,23 @@
 
                 await registrarLog(
                     nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO',
-                    motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios.'
+                    motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios y fue respaldado en Drive.'
                 );
                 
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
                 if(nuevoEstado === 'rechazado') cerrarRechazo();
 
-            } catch(e) { console.error(e); alert("Error al guardar estado: " + e.message); } 
-            finally { btnConfirm.innerHTML = 'Confirmar Descarte'; btnConfirm.disabled = false; btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; btnValid.disabled = false; }
+            } catch(e) { 
+                console.error(e); 
+                alert("Error al guardar estado: " + e.message); 
+            } finally { 
+                btnConfirm.innerHTML = 'Confirmar Descarte'; 
+                btnConfirm.disabled = false; 
+                btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; 
+                btnValid.classList.remove('bg-teal-800', 'scale-95');
+                btnValid.disabled = false; 
+            }
         }
         
         function validarDocumento() { if(selectedReqKey && confirm("¿Aprobar documento?")) actualizarEstadoBackend('validado'); }

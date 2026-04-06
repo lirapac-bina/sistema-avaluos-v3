@@ -1,5 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     // =================================================================
+    // 0. MEMORIA DEL MENÚ CONTRAÍDO
+    // =================================================================
+    const isSidebarCollapsed = localStorage.getItem('sidebar_state') === 'collapsed';
+    if (isSidebarCollapsed) document.body.classList.add('sidebar-collapsed');
+
+    // =================================================================
     // 1. GESTIÓN DE SESIÓN Y AUTO-SANIDAD
     // =================================================================
     const SESSION_KEY = 'leezar_user_active';
@@ -133,21 +139,39 @@ document.addEventListener("DOMContentLoaded", () => {
         style.id = 'layout-resources';
         style.innerHTML = `
             body { font-family: 'Inter', sans-serif; display: flex; min-height: 100vh; overflow-x: hidden; }
-            #app-sidebar { width: 16rem; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; transition: transform 0.3s ease-in-out; }
-            main { margin-left: 16rem; width: calc(100% - 16rem); flex: 1; display: flex; flex-direction: column; min-height: 100vh; transition: margin 0.3s; }
+            #app-sidebar { width: 16rem; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; transition: width 0.3s ease-in-out, transform 0.3s ease-in-out; overflow-x: hidden; }
+            main { margin-left: 16rem; width: calc(100% - 16rem); flex: 1; display: flex; flex-direction: column; min-height: 100vh; transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out; }
+            
+            /* --- MODO CONTRAÍDO (DESKTOP) --- */
+            @media (min-width: 769px) {
+                body.sidebar-collapsed #app-sidebar { width: 5rem; }
+                body.sidebar-collapsed main { margin-left: 5rem; width: calc(100% - 5rem); }
+                body.sidebar-collapsed .sidebar-text { display: none; }
+                body.sidebar-collapsed .sidebar-header { justify-content: center; flex-direction: column; padding-top: 1.2rem; height: auto; gap: 1rem; }
+                body.sidebar-collapsed .sidebar-logo-text { display: none; }
+                body.sidebar-collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+                body.sidebar-collapsed .nav-item .material-symbols-rounded { margin-right: 0; font-size: 1.5rem; }
+                body.sidebar-collapsed .sidebar-section-title { font-size: 0; height: 2px; background: #e2e8f0; margin: 1.5rem 1rem 1rem 1rem; padding: 0; border: none; color: transparent; }
+                .dark body.sidebar-collapsed .sidebar-section-title { background: #334155; }
+                body.sidebar-collapsed .theme-toggle-btn { justify-content: center; }
+                body.sidebar-collapsed .profile-container { justify-content: center; padding: 0.5rem; }
+                body.sidebar-collapsed .profile-info { display: none; }
+                body.sidebar-collapsed .profile-settings-icon { display: none; }
+                body.sidebar-collapsed #sidebar-toggle-btn { margin: 0 auto; transform: rotate(180deg); }
+            }
+
+            /* --- MODO MOBILE --- */
             #mobile-header { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 60px; z-index: 40; align-items: center; justify-content: space-between; padding: 0 1rem; backdrop-filter: blur(10px); }
             @media (max-width: 768px) { 
-                #app-sidebar { transform: translateX(-100%); box-shadow: none; }
+                #app-sidebar { width: 16rem !important; transform: translateX(-100%); box-shadow: none; }
                 #app-sidebar.open { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.3); }
-                main { margin-left: 0; width: 100%; padding-top: 60px; }
+                main { margin-left: 0 !important; width: 100% !important; padding-top: 60px; }
                 #mobile-header { display: flex; }
                 #sidebar-overlay.active { display: block; }
+                #sidebar-toggle-btn { display: none; } /* Ocultar botón de contraer en móvil */
             }
             #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 45; }
-            .nav-item:hover { background-color: #f1f5f9; color: #0d9488; }
-            .nav-item.active { background: linear-gradient(90deg, rgba(20, 184, 166, 0.1) 0%, transparent 100%); border-right: 2px solid #14b8a6; color: #0f766e; }
             .dark { color-scheme: dark; }
-            .dark .nav-item:hover { background-color: #1e293b; color: #2dd4bf; }
             .modal-scale { animation: scaleIn 0.2s ease-out forwards; }
             @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
             .fade-in { animation: fadeIn 0.3s ease-out forwards; }
@@ -163,33 +187,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const fotoSrc = activeUser.photo || activeUser.photoUrl || activeUser.fotoUrl || '';
     
     const avatarHTML = fotoSrc 
-        ? `<img src="${fotoSrc}" alt="Perfil" class="w-10 h-10 rounded-full object-cover border-2 border-leezar-500 shadow-sm">` 
-        : `<div class="w-10 h-10 rounded-full bg-leezar-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">${activeUser.iniciales || 'U'}</div>`;
+        ? `<img src="${fotoSrc}" alt="Perfil" class="w-10 h-10 rounded-full object-cover border-2 border-leezar-500 shadow-sm shrink-0">` 
+        : `<div class="w-10 h-10 rounded-full bg-leezar-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">${activeUser.iniciales || 'U'}</div>`;
 
     const menuAdminHTML = esAltoMando ? `
         <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
-            <p class="px-4 text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1">Admin <span class="material-symbols-rounded text-[12px]">lock</span></p>
-            <a href="admin.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg group hover:text-indigo-600 dark:hover:text-white transition-all ${file.includes('admin') ? 'active' : ''}">
-                <span class="material-symbols-rounded mr-3 text-[20px] text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-white">settings_suggest</span>Configuración
+            <p class="px-4 text-[10px] font-extrabold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1 sidebar-section-title"><span class="sidebar-text">Admin</span> <span class="material-symbols-rounded text-[12px] sidebar-text">shield_person</span></p>
+            <a href="admin.html" title="Configuración" class="w-full flex items-center px-4 py-2.5 font-medium text-sm rounded-lg group transition-all ${file.includes('admin') ? 'bg-gradient-to-r from-indigo-500/10 to-transparent border-r-2 border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400'}">
+                <span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('admin') ? 'text-indigo-600 dark:text-indigo-400' : 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}">settings_suggest</span>
+                <span class="sidebar-text">Configuración</span>
             </a>
         </div>
     ` : '';
 
     let menuOperacionesHTML = '';
-    if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('dashboard') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">dashboard</span>Tablero de Trabajo</a></li>`;
-    if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('gestion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">folder_shared</span>Expedientes</a></li>`;
-    if(accesosRuta.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('revision') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">fact_check</span>Mesa de Control</a></li>`;
+    const opBase = "w-full flex items-center px-4 py-2.5 font-medium text-sm rounded-lg group transition-all";
+    const opHover = "text-slate-600 dark:text-slate-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400";
+    const opActive = "bg-gradient-to-r from-teal-500/10 to-transparent border-r-2 border-teal-500 text-teal-700 dark:text-teal-400";
+
+    if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" title="Tablero de Trabajo" class="${opBase} ${file.includes('dashboard') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('dashboard') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">dashboard</span><span class="sidebar-text">Tablero de Trabajo</span></a></li>`;
+    if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" title="Gestión de Expedientes" class="${opBase} ${file.includes('gestion') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('gestion') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">folder_shared</span><span class="sidebar-text">Expedientes</span></a></li>`;
+    if(accesosRuta.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" title="Mesa de Control" class="${opBase} ${file.includes('revision') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('revision') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">fact_check</span><span class="sidebar-text">Mesa de Control</span></a></li>`;
 
     let menuTecnicoHTML = '';
-    if(accesosRuta.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">architecture</span>Hoja de Trabajo</a></li>`;
-    
-    // 🔥 NUEVO BOTÓN: visitas y Dibujo
+    const tecBase = "w-full flex items-center px-4 py-2.5 font-medium text-sm rounded-lg group transition-all";
+    const tecHover = "text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400";
+    const tecActive = "bg-gradient-to-r from-rose-500/10 to-transparent border-r-2 border-rose-500 text-rose-700 dark:text-rose-400";
+
+    if(accesosRuta.includes('hoja_trabajo')) menuTecnicoHTML += `<li><a href="hoja_trabajo.html" title="Hoja de Trabajo" class="${tecBase} ${file.includes('hoja_trabajo') || file.includes('operacion') ? tecActive : tecHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('hoja_trabajo') || file.includes('operacion') ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-rose-600 dark:group-hover:text-rose-400'}">architecture</span><span class="sidebar-text">Hoja de Trabajo</span></a></li>`;
     if (['VISITADOR', 'DIBUJANTE', 'CAPTURISTA', 'TECNICO', 'ADMIN', 'SUPER ADMIN', 'GESTOR'].includes(activeUser.rol)) {
-        menuTecnicoHTML += `<li><a href="visitas_dibujo.html" class="nav-item w-full flex items-center px-4 py-2.5 text-slate-600 dark:text-slate-400 font-medium text-sm rounded-lg transition-all ${file.includes('visitas_dibujo') ? 'active' : ''}"><span class="material-symbols-rounded mr-3 text-[20px]">explore</span>Visitas y Dibujo</a></li>`;
+        menuTecnicoHTML += `<li><a href="visitas_dibujo.html" title="Visitas y Dibujo" class="${tecBase} ${file.includes('visitas_dibujo') ? tecActive : tecHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('visitas_dibujo') ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-rose-600 dark:group-hover:text-rose-400'}">explore</span><span class="sidebar-text">Visitas y Dibujo</span></a></li>`;
     }
 
-    const renderOperaciones = menuOperacionesHTML ? `<div><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Operaciones</p><ul class="space-y-1">${menuOperacionesHTML}</ul></div>` : '';
-    const renderTecnico = menuTecnicoHTML ? `<div class="mt-6"><p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Técnico</p><ul class="space-y-1">${menuTecnicoHTML}</ul></div>` : '';
+    const renderOperaciones = menuOperacionesHTML ? `<div><p class="px-4 text-[10px] font-extrabold text-teal-500 dark:text-teal-400 uppercase tracking-widest mb-2 flex items-center gap-1 sidebar-section-title"><span class="sidebar-text">Operaciones</span> <span class="material-symbols-rounded text-[12px] sidebar-text">monitoring</span></p><ul class="space-y-1">${menuOperacionesHTML}</ul></div>` : '';
+    const renderTecnico = menuTecnicoHTML ? `<div class="mt-6"><p class="px-4 text-[10px] font-extrabold text-rose-500 dark:text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-1 sidebar-section-title"><span class="sidebar-text">Técnico</span> <span class="material-symbols-rounded text-[12px] sidebar-text">build</span></p><ul class="space-y-1">${menuTecnicoHTML}</ul></div>` : '';
+
+    const iconToggleStr = isSidebarCollapsed ? 'menu' : 'menu_open';
 
     const layoutHTML = `
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -202,12 +235,19 @@ document.addEventListener("DOMContentLoaded", () => {
         <div onclick="abrirMiPerfil()" class="cursor-pointer">${avatarHTML}</div>
     </div>
 
-    <aside id="app-sidebar" class="bg-white border-r border-gray-200 dark:bg-[#0b1121] dark:border-slate-800 flex flex-col transition-colors duration-300">
-        <div class="h-20 flex items-center px-6 shrink-0 md:flex hidden">
-            <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-teal-500/30">
-                <span class="material-symbols-rounded text-white text-xl">apartment</span>
+    <aside id="app-sidebar" class="bg-white border-r border-gray-200 dark:bg-[#0b1121] dark:border-slate-800 flex flex-col transition-all duration-300">
+        
+        <div class="h-20 flex items-center px-4 shrink-0 md:flex hidden justify-between sidebar-header">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center shadow-lg shadow-teal-500/30 shrink-0">
+                    <span class="material-symbols-rounded text-white text-xl">apartment</span>
+                </div>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white ml-3 sidebar-logo-text">SISTEMA <span class="text-teal-500">AVALÚOS</span></h1>
             </div>
-            <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white">SISTEMA <span class="text-teal-500">AVALÚOS</span></h1>
+            
+            <button id="sidebar-toggle-btn" onclick="toggleDesktopSidebar()" class="text-slate-400 hover:text-teal-600 transition-all p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Contraer/Expandir menú">
+                <span class="material-symbols-rounded transition-transform" id="sidebar-toggle-icon">${iconToggleStr}</span>
+            </button>
         </div>
         
         <div class="h-16 md:hidden"></div>
@@ -218,22 +258,30 @@ document.addEventListener("DOMContentLoaded", () => {
             ${menuAdminHTML}
         </div>
         
-        <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#0b1121] space-y-3">
-            <button onclick="toggleTheme()" class="w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 hover:border-teal-500 transition-colors">
-                <span>Modo Oscuro</span> 
+        <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#0b1121] space-y-3 flex flex-col items-center">
+            <button onclick="toggleTheme()" class="w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 hover:border-teal-500 transition-colors theme-toggle-btn" title="Modo Oscuro / Claro">
+                <span class="sidebar-text">Modo Oscuro</span> 
                 <span class="material-symbols-rounded text-lg">${document.documentElement.classList.contains('dark') ? 'dark_mode' : 'light_mode'}</span>
             </button>
             
-            <div class="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group" onclick="abrirMiPerfil()">
+            <button onclick="limpiarCachéProfunda()" class="w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 hover:border-teal-500 transition-colors theme-toggle-btn group" title="Limpiar Caché y Refrescar Scripts">
+                <span class="sidebar-text">Limpiar Caché</span> 
+                <span class="material-symbols-rounded text-lg text-teal-600 dark:text-teal-400 group-hover:rotate-12 transition-transform">mop</span>
+            </button>
+            
+            <div class="w-full flex items-center gap-3 cursor-pointer p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group profile-container" onclick="abrirMiPerfil()" title="Configuración de Mi Perfil">
                 ${avatarHTML}
-                <div class="flex-1 overflow-hidden">
+                <div class="flex-1 overflow-hidden profile-info">
                     <p class="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-teal-600 transition-colors">${activeUser.nombre}</p>
                     <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold truncate uppercase">${activeUser.rol}</p>
                 </div>
-                <span class="material-symbols-rounded text-slate-400 text-lg group-hover:text-teal-500">settings</span>
+                <span class="material-symbols-rounded text-slate-400 text-lg group-hover:text-teal-500 profile-settings-icon">settings</span>
             </div>
             
-            <button onclick="cerrarSesion()" class="w-full text-center text-[10px] text-red-400 hover:text-red-600 font-bold mt-1 transition-colors py-1">CERRAR SESIÓN</button>
+            <button onclick="cerrarSesion()" class="w-full flex justify-center items-center gap-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-bold mt-1 transition-colors py-2" title="Cerrar Sesión">
+                <span class="material-symbols-rounded text-lg">logout</span>
+                <span class="text-[10px] sidebar-text uppercase">Cerrar Sesión</span>
+            </button>
         </div>
     </aside>
 
@@ -277,9 +325,47 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. FUNCIONES GLOBALES DE INTERFAZ
     // =================================================================
     
+    // 🧹 BOMBA ANTI-CACHÉ GLOBAL (Disponible en todas las páginas)
+    window.limpiarCachéProfunda = () => {
+        console.log("🧹 Pasando la escoba anti-caché...");
+        const scripts = ['js/layout.js', 'firebase-config.js'];
+        scripts.forEach(src => {
+            const viejo = document.querySelector(`script[src^="${src}"]`);
+            if (viejo) {
+                const nuevo = document.createElement('script');
+                nuevo.src = `${src}?v=${Date.now()}`;
+                viejo.parentNode.replaceChild(nuevo, viejo);
+            }
+        });
+        
+        // Si la página tiene Firebase Realtime, forzamos sincronización, si no, recargamos la página.
+        if (typeof iniciarEscuchaRealtime === 'function') {
+            iniciarEscuchaRealtime();
+        } else {
+            window.location.reload(true);
+        }
+        alert("🧹 ¡Caché de scripts limpiuada!");
+    };
+
+    // Toggle para versión Móvil
     window.toggleSidebar = () => { 
         document.getElementById('app-sidebar').classList.toggle('open'); 
         document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    };
+
+    // 🔥 NUEVO: Toggle para versión Escritorio (Contraer/Expandir)
+    window.toggleDesktopSidebar = () => {
+        document.body.classList.toggle('sidebar-collapsed');
+        const isCol = document.body.classList.contains('sidebar-collapsed');
+        
+        // Guardamos la preferencia en la memoria local
+        localStorage.setItem('sidebar_state', isCol ? 'collapsed' : 'expanded');
+        
+        // Cambiamos el icono del botón
+        const iconElement = document.getElementById('sidebar-toggle-icon');
+        if (iconElement) {
+            iconElement.innerText = isCol ? 'menu' : 'menu_open';
+        }
     };
 
     window.toggleTheme = () => {
@@ -360,6 +446,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (main) {
         const originalContent = main.innerHTML;
         main.innerHTML = `<div class="flex-1 h-full overflow-y-auto p-4 md:p-8 fade-in w-full custom-scroll">${originalContent}</div>`;
-        main.className = "flex-1 flex flex-col h-full relative overflow-hidden bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300";
+        main.className = "flex-1 flex flex-col h-full relative overflow-hidden bg-slate-50 dark:bg-[#0f172a] transition-all duration-300";
     }
 });

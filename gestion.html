@@ -113,7 +113,7 @@
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
     
 
-    <main class="p-6 transition-all duration-300 flex-1 mt-4">
+    <main class="p-6 md:px-12 lg:px-16 transition-all duration-300 flex-1 mt-4 max-w-[1800px] mx-auto w-full">
         
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
@@ -173,17 +173,33 @@
 
                     <select id="filter-status" onchange="filtrarTabla()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer font-bold w-full md:w-auto">
                         <option value="">Todos los Estatus</option>
-                        <option value="ACTIVO">Activos</option>
-                        <option value="PENDIENTE">Pendientes</option>
-                        <option value="REVISION">En Revisión</option>
-                        <option value="INCIDENCIA">⚠️ Incidencias</option>
-                        <option value="COMPLETADO">Completados</option>
+                        <option value="NUEVO">1. Nuevo (Por Asignar)</option>
+                        <option value="PORTAL-REVISION">2. Portal - Revisión</option>
+                        <option value="ASIGNACION_TECNICA">3. Asignación Técnica</option>
+                        <option value="CAPTURA">4. En Captura</option>
+                        <option value="INCIDENCIA">5. Incidencia</option>
+                        <option value="FINALIZADO">6. Finalizado</option>
                     </select>
 
-                    <button onclick="iniciarEscuchaRealtime()" class="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200 font-bold text-sm flex items-center gap-1 transition-colors px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/30" title="Forzar sincronización">
-                        <span class="material-symbols-rounded">sync</span>
+                    <button id="btn-jack-pescador" onclick="pescarExpedientes()" class="hidden relative flex-shrink-0 items-center gap-3.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 p-2 rounded-2xl transition-all group shadow-inner" title="¡Pescar expedientes nuevos!">
+                        
+                        <img src="img/jack.png" alt="Jack" class="w-12 h-12 rounded-full object-cover border-2 border-indigo-300 dark:border-indigo-500 shadow-sm group-hover:scale-105 transition-transform shrink-0">
+                        
+                        <div class="relative shrink-0 flex items-center justify-center">
+                            <span class="material-symbols-rounded text-slate-400 dark:text-slate-500 text-3xl opacity-40">phishing</span>
+                            <span class="material-symbols-rounded absolute text-indigo-500 text-3xl transition-all duration-700 group-hover:translate-y-2 group-hover:scale-110">phishing</span>
+                        </div>
+                        
+                        <span class="text-xs font-black text-indigo-700 dark:text-indigo-300 sidebar-text pr-2">POR ASIGNAR</span>
+
+                        <span id="jack-counter" class="absolute -top-3 -right-3 bg-rose-500 text-white text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-full shadow-md animate-pulse border-2 border-slate-50 dark:border-slate-800">0</span>
                     </button>
                 </div>
+            </div>
+
+            <div class="px-6 py-2.5 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <span id="total-records" class="font-medium">Cargando...</span>
+                <span id="last-update" class="bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-full hidden md:inline-block font-bold">Actualizado: --:--</span>
             </div>
 
             <div class="overflow-x-auto w-full">
@@ -194,12 +210,10 @@
                             <th class="px-4 py-4 text-center" onclick="ordenarTabla('tramite')">Trámite <span class="align-middle text-lg opacity-30">↕</span></th>
                             <th class="px-4 py-4 text-center" onclick="ordenarTabla('timestamp')">Fecha <span class="align-middle text-lg opacity-30">↕</span></th>
                             
-                            <th class="px-2 py-4 text-center text-blue-600 dark:text-blue-400 min-w-[110px]">Captura</th>
-                            <th class="px-2 py-4 text-center text-indigo-600 dark:text-indigo-400 min-w-[110px]">Visita</th>
-                            <th class="px-2 py-4 text-center text-purple-600 dark:text-purple-400 min-w-[110px]">Dibujo</th>
+                            <th class="px-4 py-4 text-center text-indigo-600 dark:text-indigo-400 min-w-[140px]">Asignaciones de Equipo Técnico</th>
                             
                             <th class="px-4 py-4 text-center" onclick="ordenarTabla('status')">Estatus <span class="align-middle text-lg opacity-30">↕</span></th>
-                            <th class="px-4 py-4 text-right">Acciones</th>
+                            <th class="px-4 py-4 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="table-body" class="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300 font-medium">
@@ -207,23 +221,16 @@
                 </table>
             </div>
             
-            <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-xs text-slate-400 dark:text-slate-500 flex flex-col md:flex-row justify-between items-center gap-4 px-6">
-                <div class="flex items-center gap-2">
-                    <span id="total-records" class="font-medium">Cargando...</span>
-                    <span id="last-update" class="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full hidden md:inline-block">Actualizado: --:--</span>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button onclick="cambiarPagina(-1)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition-colors shadow-sm text-slate-600 dark:text-slate-300 disabled:opacity-50" id="btn-prev">
-                        Anterior
-                    </button>
-                    <span id="page-indicator" class="font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                        1
-                    </span>
-                    <button onclick="cambiarPagina(1)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition-colors shadow-sm text-slate-600 dark:text-slate-300 disabled:opacity-50" id="btn-next">
-                        Siguiente
-                    </button>
-                </div>
+            <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-center items-center gap-4 px-6">
+                <button onclick="cambiarPagina(-1)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition-colors shadow-sm text-slate-600 dark:text-slate-300 disabled:opacity-50 text-xs" id="btn-prev">
+                    Anterior
+                </button>
+                <span id="page-indicator" class="font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm text-xs">
+                    1
+                </span>
+                <button onclick="cambiarPagina(1)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition-colors shadow-sm text-slate-600 dark:text-slate-300 disabled:opacity-50 text-xs" id="btn-next">
+                    Siguiente
+                </button>
             </div>
         </div>
     </main>
@@ -240,6 +247,10 @@
             
             <div class="space-y-5">
                 <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Folio Operativo</label>
+                    <input type="text" id="edit-folio" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-bold text-amber-600 dark:text-amber-400 transition-all uppercase placeholder:text-slate-300" placeholder="SIN FOLIO">
+                </div>
+                <div>
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Nombre del Cliente</label>
                     <input type="text" id="edit-nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-bold transition-all uppercase">
                 </div>
@@ -248,7 +259,6 @@
                     <input type="tel" id="edit-telefono" maxlength="10" placeholder="Ej: 5512345678" 
                         class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-mono font-bold tracking-widest text-lg transition-all"
                         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
-                    <p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><span class="material-symbols-rounded text-xs">lock</span> Solo números, exacto 10 dígitos.</p>
                 </div>
                 <div>
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
@@ -260,8 +270,17 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Anotación / Identificador Interno</label>
-                    <input type="text" id="edit-anotacion" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-medium transition-all text-sm uppercase">
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Anotación Interna (Máx 140 caracteres)</label>
+                    <textarea id="edit-anotacion" maxlength="140" rows="3" placeholder="Escribe aquí observaciones importantes..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-medium transition-all text-sm uppercase resize-none custom-scroll placeholder:text-slate-400" oninput="document.getElementById('char-counter').innerText = this.value.length;"></textarea>
+                    
+                    <div class="flex justify-between items-center mt-1 px-1">
+                        <p class="text-[9px] text-slate-400 font-medium text-left flex items-center gap-1">
+                            <span class="material-symbols-rounded text-[10px]">lock</span> El sistema bloqueará al llegar al límite.
+                        </p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                            <span id="char-counter" class="text-amber-500">0</span> / 140
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -274,9 +293,46 @@
         </div>
     </div>
 
+    <div id="modal-pin-seguro" class="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl shadow-2xl p-6 text-center border border-slate-200 dark:border-slate-700 animate-[popIn_0.2s_ease-out]">
+            <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800">
+                <span class="material-symbols-rounded text-3xl">lock</span>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1 tracking-tight">Autorización</h3>
+            <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-5 leading-tight px-2">Ingresa tu PIN Maestro para modificar esta asignación.</p>
+            
+            <input type="password" id="input-pin-seguro" class="w-full text-center tracking-[0.5em] font-mono text-2xl py-3 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:border-amber-500 dark:focus:border-amber-500 dark:text-white mb-5 transition-colors" maxlength="4" placeholder="••••">
+            
+            <div class="flex gap-2">
+                <button id="btn-cancel-pin" class="flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
+                <button id="btn-confirm-pin" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/30 transition-transform active:scale-95 uppercase">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-equipo-tecnico" class="fixed inset-0 z-[75] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative modal-anim">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">groups</span> Asignar Equipo
+                </h3>
+                <button onclick="cerrarModalEquipo()" class="text-slate-400 hover:text-red-500 transition bg-slate-100 hover:bg-red-50 dark:bg-slate-700 dark:hover:bg-red-900/30 p-1.5 rounded-lg"><span class="material-symbols-rounded text-sm">close</span></button>
+            </div>
+            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-6 bg-slate-50 dark:bg-slate-900/50 p-2 rounded border border-slate-100 dark:border-slate-700 truncate" id="equipo-cliente-nombre">...</p>
+            
+            <div class="space-y-3" id="equipo-selectores">
+                </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 text-center">
+                <button onclick="cerrarModalEquipo()" class="text-[10px] uppercase font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Cerrar Ventana</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- VARIABLES GLOBALES ---
-        let dbExpedientes = []; 
+        let dbExpedientes = [];
+        
         let datosFiltrados = [];
         let currentPage = 1;
         let rowsPerPage = 25;
@@ -331,6 +387,7 @@
             }
 
             console.log("🚀 Iniciando conexión Realtime (Versión Final)...");
+           
 
             unsubscribe = db.collection('expedientes_avaluos')
                 .onSnapshot((snapshot) => {
@@ -367,6 +424,7 @@
 
                         dbExpedientes.push({
                             id: doc.id,
+                            folioOperativo: data.folioOperativo || 'SIN FOLIO', // 🔥 Lo leemos
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
                             telefono: data.telefono || data.celular || '', 
                             tramite: (data.tramite || data.tipoTramite || 'General').toUpperCase(),
@@ -389,6 +447,20 @@
                     dbExpedientes.sort((a, b) => b.timestamp - a.timestamp);
                     console.log(`✅ Cargados ${dbExpedientes.length} expedientes.`);
 
+                    // 🐶 LÓGICA DE JACK EL PESCADOR (Detecta POR ASIGNAR)
+                    const expedientesNuevos = dbExpedientes.filter(e => e.unidad === 'POR ASIGNAR');
+                    const btnJack = document.getElementById('btn-jack-pescador');
+                    const counterJack = document.getElementById('jack-counter');
+                    
+                    if (expedientesNuevos.length > 0) {
+                        btnJack.classList.remove('hidden');
+                        btnJack.classList.add('flex');
+                        counterJack.innerText = expedientesNuevos.length;
+                    } else {
+                        btnJack.classList.add('hidden');
+                        btnJack.classList.remove('flex');
+                    }
+
                     if (typeof filtrarTabla === 'function') {
                         filtrarTabla(true); 
                     }
@@ -403,15 +475,102 @@
                 });
         }
         
+        // 🔒 FUNCION PUENTE PARA EL MODAL DEL PIN
+        function solicitarPinModal() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('modal-pin-seguro');
+                const input = document.getElementById('input-pin-seguro');
+                const btnConfirm = document.getElementById('btn-confirm-pin');
+                const btnCancel = document.getElementById('btn-cancel-pin');
+
+                input.value = '';
+                modal.classList.remove('hidden'); modal.classList.add('flex');
+                setTimeout(() => input.focus(), 100); // Darle auto-enfoque al cuadro de texto
+
+                const cerrarYResolver = (valor) => {
+                    modal.classList.add('hidden'); modal.classList.remove('flex');
+                    btnConfirm.onclick = null; btnCancel.onclick = null; input.onkeydown = null;
+                    resolve(valor);
+                };
+
+                btnConfirm.onclick = () => cerrarYResolver(input.value);
+                btnCancel.onclick = () => cerrarYResolver(null);
+                input.onkeydown = (e) => { if (e.key === 'Enter') cerrarYResolver(input.value); };
+            });
+        }
+
         async function asignar(id, rol, selectElement) {
             const colaborador = selectElement.value;
             const original = selectElement.getAttribute('data-original');
 
-            if(!colaborador || colaborador === 'Sin Asignar') return;
+            // Evaluamos si es una REASIGNACIÓN
+            const isReassignment = (original && original !== 'Sin Asignar' && original !== 'null' && original !== '');
 
-            if(!confirm(`¿Confirmar asignación de ${colaborador} como ${rol}?`)) {
-                selectElement.value = original || "";
-                return;
+            // 🔥 SOLO PEDIMOS PIN Y PERMISOS SI ESTÁN MODIFICANDO A ALGUIEN YA ASIGNADO
+            if (isReassignment) {
+                const userStr = localStorage.getItem('leezar_user_active');
+                const user = userStr ? JSON.parse(userStr) : {};
+                const userRol = (user.rol || '').toUpperCase();
+
+                // 🛡️ ESCUDO 1: Validación de Rol (Si no es Admin, lo rebota sin siquiera pedir PIN)
+                if (!['ADMIN', 'SUPER ADMIN', 'SUPER_ADMIN'].includes(userRol)) {
+                    alert("⛔ Acceso Denegado. Solo los Administradores pueden modificar un equipo ya asignado.");
+                    selectElement.value = original; 
+                    return;
+                }
+
+                // 🌟 LLAMAMOS AL NUEVO MODAL OCULTO DE PIN
+                const pinCode = await solicitarPinModal();
+                
+                // Si el usuario le dio a "Cancelar" en el modal
+                if (pinCode === null) {
+                    selectElement.value = original; 
+                    return; 
+                }
+
+                // 🔐 ESCUDO 2: VALIDACIÓN CONTRA LA BASE DE DATOS (FIREBASE)
+                let pinValido = false;
+                try {
+                    const db = window.db || firebase.firestore();
+                    // Buscamos el documento del usuario usando su correo
+                    let docUsuario = await db.collection('usuarios').doc(user.email).get();
+                    
+                    // Fallback por si el ID de su documento no es su correo
+                    if (!docUsuario.exists) {
+                        const query = await db.collection('usuarios').where('email', '==', user.email).get();
+                        if (!query.empty) docUsuario = query.docs[0];
+                    }
+
+                    if (docUsuario && docUsuario.exists) {
+                        const pinDB = docUsuario.data().pin; // Extraemos su PIN real de la base de datos
+                        // Comparamos convirtiendo ambos a texto por seguridad
+                        if (pinDB && pinDB.toString() === pinCode.toString()) {
+                            pinValido = true;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Error verificando PIN de seguridad:", e);
+                }
+
+                // Si el PIN no coincidió con el de Firebase, bloqueamos la acción
+                if (!pinValido) { 
+                    alert("❌ PIN Incorrecto. Acción bloqueada.");
+                    selectElement.value = original; 
+                    return;
+                }
+            }
+
+            // Confirmación estándar
+            if (!colaborador || colaborador === 'Sin Asignar') {
+                if(!confirm(`¿Estás seguro de REMOVER al ${rol} de este expediente?`)) {
+                    selectElement.value = original || "";
+                    return;
+                }
+            } else {
+                if(!confirm(`¿Confirmar asignación de ${colaborador} como ${rol}?`)) {
+                    selectElement.value = original || "";
+                    return;
+                }
             }
 
             selectElement.disabled = true;
@@ -424,40 +583,94 @@
                 });
 
                 if (!res.ok) {
-                    // Plan B: Guardar directo en Firebase si falla Netlify
                     const db = window.db || firebase.firestore();
                     await db.collection('expedientes_avaluos').doc(id).update({ [rol]: colaborador });
                 }
-
-                // La tabla se refresca sola por el onSnapshot
+                
+                selectElement.setAttribute('data-original', colaborador);
+                filtrarTabla(true);
 
             } catch (error) {
-                alert("Error: " + error.message);
+                console.error("Error de conexión:", error);
+                alert("Error al actualizar. Verifica tu conexión.");
                 selectElement.disabled = false;
                 selectElement.value = original || "";
             } 
         }
 
-        function generarSelector(id, rol, valorActual) {
-            if (valorActual && valorActual !== 'Sin Asignar') {
-                let nombreAmostrar = valorActual;
-                if(valorActual.includes('@')) nombreAmostrar = valorActual.split('@')[0];
-
-                return `<div class="font-bold text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 w-28 mx-auto truncate text-center cursor-not-allowed uppercase" title="${valorActual}">
-                    ${nombreAmostrar}
-                </div>`;
-            }
-
-            let opts = `<option value="">Asignar...</option>`;
+        // 🔥 LÓGICA DEL NUEVO MODAL DE EQUIPO TÉCNICO
+        function abrirModalEquipo(id) {
+            const exp = dbExpedientes.find(e => e.id === id);
+            if (!exp) return;
             
+            document.getElementById('equipo-cliente-nombre').innerText = `Expediente: ${exp.folioOperativo !== 'SIN FOLIO' ? exp.folioOperativo : exp.id.substring(0,8)} - ${exp.cliente}`;
+            
+            const container = document.getElementById('equipo-selectores');
+            container.innerHTML = `
+                <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 p-3 rounded-xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 w-28">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0"><span class="material-symbols-rounded text-sm">computer</span></div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Captura</span>
+                    </div>
+                    ${generarSelector(id, 'capturista', exp.capturista)}
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 p-3 rounded-xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 w-28">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-500 shrink-0"><span class="material-symbols-rounded text-sm">photo_camera</span></div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Visita</span>
+                    </div>
+                    ${generarSelector(id, 'visitador', exp.visitador)}
+                </div>
+                <div class="bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/50 p-3 rounded-xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 w-28">
+                        <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0"><span class="material-symbols-rounded text-sm">architecture</span></div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Dibujo</span>
+                    </div>
+                    ${generarSelector(id, 'dibujante', exp.dibujante)}
+                </div>
+            `;
+            document.getElementById('modal-equipo-tecnico').classList.remove('hidden');
+            document.getElementById('modal-equipo-tecnico').classList.add('flex');
+        }
+
+        function cerrarModalEquipo() {
+            document.getElementById('modal-equipo-tecnico').classList.add('hidden');
+            document.getElementById('modal-equipo-tecnico').classList.remove('flex');
+        }
+
+        function generarSelector(id, rol, valorActual) {
+            // 🔥 Le forzamos el color oscuro a cada opción de la lista
+            let opts = `<option value="" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Sin Asignar...</option>`;
             const listaRol = equipoDinamico[rol] || [];
             
             listaRol.forEach(persona => {
-                opts += `<option value="${persona.email}">${persona.nombre.toUpperCase()}</option>`;
+                const selected = (valorActual === persona.email) ? 'selected' : '';
+                opts += `<option value="${persona.email}" ${selected} class="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold">${persona.nombre.toUpperCase()}</option>`;
             });
             
-            return `<select onchange="asignar('${id}', '${rol}', this)" data-original="" 
-                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-[10px] rounded py-1 px-1 w-28 mx-auto focus:ring-2 focus:ring-teal-500 outline-none font-bold text-slate-500 cursor-pointer hover:border-teal-400 transition-colors uppercase">
+            const isAssigned = (valorActual && valorActual !== 'Sin Asignar');
+            const bgClass = isAssigned ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-teal-400';
+
+            // 🔥 NUEVA LÓGICA: Leer rol del usuario para bloquear visualmente el menú
+            const userStr = localStorage.getItem('leezar_user_active');
+            const user = userStr ? JSON.parse(userStr) : {};
+            const userRol = (user.rol || '').toUpperCase();
+            const isAdmin = ['ADMIN', 'SUPER ADMIN', 'SUPER_ADMIN'].includes(userRol);
+
+            let disabledAttr = "";
+            let titleAttr = "";
+            
+            if (isAssigned) {
+                if (!isAdmin) {
+                    disabledAttr = "disabled";
+                    titleAttr = "title='Solo los administradores pueden modificar una asignación existente.'";
+                } else {
+                    titleAttr = "title='Modificar requiere PIN de seguridad'";
+                }
+            }
+
+            return `<select onchange="asignar('${id}', '${rol}', this)" data-original="${valorActual || ''}" ${disabledAttr} ${titleAttr}
+                class="${bgClass} text-[10px] rounded-lg py-2 px-2 flex-1 focus:ring-2 focus:ring-teal-500 outline-none font-bold cursor-pointer transition-colors uppercase shadow-sm truncate disabled:opacity-70 disabled:cursor-not-allowed">
                 ${opts}
             </select>`;
         }
@@ -470,9 +683,32 @@
 
             datosFiltrados = dbExpedientes.filter(e => {
                 const dataString = `${e.cliente} ${e.id} ${e.capturista || ''} ${e.visitador || ''} ${e.dibujante || ''}`.toUpperCase();
-                
                 const matchTexto = dataString.includes(texto);
-                const matchStatus = statusFilter === "" || e.status === statusFilter;
+                
+                // 🔥 CALCULAMOS EL PORCENTAJE PARA SABER SU ETAPA REAL
+                const items = Object.values(e.checklist || {});
+                const validados = items.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
+                const pctValidados = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
+
+                // 🔥 REGLA DE ORO: Verificamos si las 3 sillas del equipo técnico están ocupadas
+                const equipoCompleto = Boolean(e.capturista && e.visitador && e.dibujante);
+
+                // 🔥 PIPELINE 2026: Filtro Inteligente
+                let matchStatus = true;
+                if (statusFilter !== "") {
+                    const st = (e.status || '').toUpperCase();
+                    const uni = (e.unidad || 'POR ASIGNAR').toUpperCase();
+
+                    if (statusFilter === "NUEVO") matchStatus = uni === 'POR ASIGNAR' || st === 'NUEVO';
+                    // Paso 2: Activo pero sin 100%
+                    else if (statusFilter === "PORTAL-REVISION") matchStatus = st.includes('PORTAL') || st.includes('REVISI') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados < 100);
+                    // Paso 3: 100% pero el equipo NO ESTÁ COMPLETO
+                    else if (statusFilter === "ASIGNACION_TECNICA") matchStatus = st.includes('ASIGNACION') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados === 100 && items.length > 0 && !equipoCompleto);
+                    // Paso 4: 100% y el EQUIPO ESTÁ 100% ASIGNADO
+                    else if (statusFilter === "CAPTURA") matchStatus = st.includes('CAPTURA') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados === 100 && items.length > 0 && equipoCompleto);
+                    else if (statusFilter === "INCIDENCIA") matchStatus = st.includes('INCIDENCIA');
+                    else if (statusFilter === "FINALIZADO") matchStatus = st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA');
+                }
                 
                 // Evaluamos la unidad de valuación
                 const uniStr = (e.unidad || 'POR ASIGNAR').toUpperCase();
@@ -564,29 +800,59 @@
             paginaDatos.forEach(exp => {
                 let badgeClass = '';
                 const st = (exp.status || '').toUpperCase();
-                if(st === 'ACTIVO' || st === 'PENDIENTE') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
-                else if(st.includes('INCIDENCIA')) badgeClass = 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/40 dark:text-red-400 font-black animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'; // 🔴 ESTA ES LA ALERTA ROJA
-                else if(st.includes('REVISI')) badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
-                else if(st.includes('COMPLETADO') || st.includes('VALIDA') || st.includes('FINALIZADO') || st.includes('CAPTURA')) badgeClass = 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300';
-                else badgeClass = 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400';
-
+                
+                // 🔥 MOVIMIENTO MAESTRO: Calculamos el progreso ANTES de pintar el estatus
                 const items = Object.values(exp.checklist || {});
                 const totReq = items.length || 1;
                 const subidos = items.filter(d => ['revision', 'validado'].includes((d.estatus || '').toLowerCase())).length;
                 const validados = items.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
                 
                 const pctSubidos = Math.round((subidos / totReq) * 100);
-                const pctValidados = Math.round((validados / totReq) * 100);
-                
+                const pctValidados = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
                 const yaTerminado = (pctValidados === 100 && items.length > 0) || st.includes('COMPLETADO') || st.includes('FINALIZADO') || st.includes('CAPTURA');
 
+                // 🔥 REGLA DE ORO: Verificamos si tiene asignados a los 3 miembros
+                const equipoCompleto = Boolean(exp.capturista && exp.visitador && exp.dibujante);
+
+                // 🔥 PIPELINE 2026: Renderizado Visual Inteligente
+                if(st === 'NUEVO' || exp.unidad === 'POR ASIGNAR') {
+                    badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 animate-pulse';
+                    exp.status = '1. NUEVO';
+                }
+                else if(st.includes('INCIDENCIA')) {
+                    badgeClass = 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/40 dark:text-red-400 font-black animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]';
+                    exp.status = '5. INCIDENCIA';
+                }
+                else if(st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) {
+                    badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300';
+                    exp.status = '6. FINALIZADO';
+                }
+                // Si ya llegó al 100% y YA TIENE A LOS 3 ASIGNADOS (Paso 4)
+                else if(st.includes('CAPTURA') || (pctValidados === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) {
+                    badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300';
+                    exp.status = '4. EN CAPTURA';
+                }
+                // Si ya llegó al 100% pero FALTA ALGUIEN DEL EQUIPO (Paso 3)
+                else if(st.includes('ASIGNACION') || (pctValidados === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) {
+                    badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
+                    exp.status = '3. ASIGNACIÓN TÉCNICA';
+                }
+                else {
+                    // Por descarte (los creados a mano que aún no están al 100%) van al Portal de Revisión (Paso 2)
+                    badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400';
+                    exp.status = '2. PORTAL - REVISIÓN';
+                }
+
                 const diasAbierto = exp.timestamp ? calcularDiasHabiles(exp.timestamp) : 0;
-                let badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="Días hábiles activo">⏳ ${diasAbierto}d</span>`;
+                let badgeDias = ''; // Inicializamos la variable correctamente
                 
                 if (yaTerminado) {
-                    badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${diasAbierto}d</span>`;
+                    badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total operativo">🏁 ${diasAbierto}d</span>`;
                 } else {
-                    if (diasAbierto >= 3 && diasAbierto <= 5) {
+                    // 🔥 EL SEMÁFORO COMPLETO (Verde, Naranja, Rojo)
+                    if (diasAbierto < 3) {
+                        badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="A tiempo">⏳ ${diasAbierto}d</span>`;
+                    } else if (diasAbierto >= 3 && diasAbierto <= 5) {
                         badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Atención requerida">⏳ ${diasAbierto}d</span>`;
                     } else if (diasAbierto > 5) {
                         badgeDias = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]" title="¡CUELLO DE BOTELLA!">🔥 ${diasAbierto}d</span>`;
@@ -660,15 +926,22 @@
                 }
 
                 // 🔥 RENDERIZADO DE LA FILA
-                const anotacionUI = exp.anotacion ? `<div class="text-[10px] text-slate-400 mt-1 italic leading-tight normal-case">"${exp.anotacion}"</div>` : '';
+                // Agregamos 'whitespace-normal' y 'break-words' para obligar al texto a bajar de renglón
+                const anotacionUI = exp.anotacion ? `<div class="text-[10px] text-slate-400 mt-1.5 italic leading-tight normal-case whitespace-normal break-words">"${exp.anotacion}"</div>` : '';
 
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
-                        <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase truncate max-w-[200px]" title="${exp.cliente}">
-                            <div class="truncate">${exp.cliente}</div>
+                        <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase max-w-[200px]">
+                            
+                            <div class="text-teal-600 dark:text-teal-400 font-black text-sm mb-0.5" title="Folio Operativo">
+                                ${exp.folioOperativo && exp.folioOperativo !== 'SIN FOLIO' ? exp.folioOperativo : `<span class="text-[10px] text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">ID: ${exp.id.substring(0,8)}</span>`}
+                            </div>
+                            
+                            <div class="truncate text-[11px] text-slate-500 dark:text-slate-400 font-bold" title="Cliente: ${exp.cliente}">${exp.cliente}</div>
+                            
                             ${anotacionUI}
                             
-                            <div class="inline-block mt-1 px-1.5 py-0.5 border rounded text-[9px] font-black tracking-widest uppercase ${unidadColorClass}">
+                            <div class="inline-block mt-1.5 px-1.5 py-0.5 border rounded text-[9px] font-black tracking-widest uppercase ${unidadColorClass}">
                                 ${iconoUnidad} ${siglaUnidad}
                             </div>
                             
@@ -688,9 +961,44 @@
                             </div>
                         </td>
                         
-                        <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'capturista', exp.capturista)}</td>
-                        <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'visitador', exp.visitador)}</td>
-                        <td class="px-2 py-3 text-center">${generarSelector(exp.id, 'dibujante', exp.dibujante)}</td>
+                        <td class="px-4 py-3 text-center min-w-[140px]">
+                            ${(() => {
+                                let badgesHtml = '';
+                                
+                                // Función rápida para limpiar el correo y sacar solo el nombre para el tooltip
+                                const getShortName = (email) => email ? email.split('@')[0].toUpperCase() : '';
+
+                                // 🔥 Iconos separados, sin superposición y con animación
+                                if (exp.capturista) badgesHtml += `<div class="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 dark:bg-blue-900/40 dark:border-blue-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-sm hover:scale-110 transition-transform cursor-help" title="Captura: ${getShortName(exp.capturista)}"><span class="material-symbols-rounded text-[16px]">computer</span></div>`;
+                                if (exp.visitador) badgesHtml += `<div class="w-8 h-8 rounded-full bg-emerald-100 border border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shadow-sm hover:scale-110 transition-transform cursor-help" title="Visita: ${getShortName(exp.visitador)}"><span class="material-symbols-rounded text-[16px]">photo_camera</span></div>`;
+                                if (exp.dibujante) badgesHtml += `<div class="w-8 h-8 rounded-full bg-purple-100 border border-purple-200 dark:bg-purple-900/40 dark:border-purple-800 text-purple-700 dark:text-purple-400 flex items-center justify-center shadow-sm hover:scale-110 transition-transform cursor-help" title="Dibujo: ${getShortName(exp.dibujante)}"><span class="material-symbols-rounded text-[16px]">architecture</span></div>`;
+                                
+                                let asignadosUI = badgesHtml ? `<div class="flex items-center justify-center gap-3 mb-2">${badgesHtml}</div>` : '';
+                                
+                                let btnUI = '';
+                                
+                                // 🔥 REGLA DE NEGOCIO: Bloquear botón si no está validado al 100% (A menos que ya tenga equipo asignado, en cuyo caso permitimos "Ver Equipo")
+                                if (pctValidados < 100 && !badgesHtml) {
+                                    btnUI = `
+                                    <button disabled class="bg-slate-50 border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1 text-[9px] font-bold mx-auto w-full max-w-[120px] cursor-not-allowed transition-colors" title="El expediente debe estar 100% validado para asignar un equipo">
+                                        <span class="material-symbols-rounded text-[14px]">lock</span> Bloqueado
+                                    </button>`;
+                                } else {
+                                    let btnTexto = badgesHtml ? 'Ver Equipo' : 'Asignar Equipo';
+                                    let btnClase = badgesHtml ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 dark:border-indigo-800 shadow-sm';
+                                    
+                                    btnUI = `
+                                    <button onclick="abrirModalEquipo('${exp.id}')" class="${btnClase} px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 text-[9px] font-bold mx-auto w-full max-w-[120px]" title="${btnTexto}">
+                                        <span class="material-symbols-rounded text-[14px]">groups</span> ${btnTexto}
+                                    </button>`;
+                                }
+
+                                return `
+                                    ${asignadosUI}
+                                    ${btnUI}
+                                `;
+                            })()}
+                        </td>
                         
                         <td class="px-4 py-3 text-center min-w-[120px]">
                             <div class="flex flex-col items-center justify-center gap-1.5">
@@ -705,9 +1013,9 @@
                             </div>
                         </td>
                         
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex justify-end gap-1 items-center">
-                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}', '${exp.anotacion || ''}')" 
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-1 items-center w-full">
+                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}', '${exp.anotacion || ''}', '${exp.folioOperativo || ''}')" 
                                     class="text-amber-500 hover:text-amber-600 p-1.5 rounded transition-all hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                                     title="Editar">
                                     <span class="material-symbols-rounded text-lg">edit</span>
@@ -739,7 +1047,7 @@
             });
         }
 
-            function abrirModalEditar(id, nombre, telefono, unidad, anotacion) {
+            function abrirModalEditar(id, nombre, telefono, unidad, anotacion, folio) {
             const userStr = localStorage.getItem('leezar_user_active');
             const user = userStr ? JSON.parse(userStr) : {};
             const rol = (user.rol || '').toUpperCase();
@@ -750,19 +1058,33 @@
             }
 
             document.getElementById('edit-id').value = id;
+            // Inyectamos el Folio
+            document.getElementById('edit-folio').value = (folio && folio !== 'undefined' && folio !== 'null') ? folio : '';
             document.getElementById('edit-nombre').value = nombre;
             document.getElementById('edit-telefono').value = (telefono && telefono !== 'undefined' && telefono !== 'null') ? telefono : '';
             
-            // TRADUCTOR A SIGLAS
             let siglaUnidadModal = 'POR ASIGNAR';
             const uniStrModal = (unidad || '').toUpperCase();
             if (uniStrModal.includes('APN') || uniStrModal.includes('PNA') || uniStrModal.includes('PAMELA')) siglaUnidadModal = 'APN';
             else if (uniStrModal.includes('AVE')) siglaUnidadModal = 'AVE';
             else if (uniStrModal.includes('EME')) siglaUnidadModal = 'EME';
             
-            document.getElementById('edit-unidad').value = siglaUnidadModal;
-            // 🔥 CARGAMOS LA ANOTACIÓN
+            const selectUnidad = document.getElementById('edit-unidad');
+            selectUnidad.value = siglaUnidadModal;
+
+            // 🔒 ESCUDO: Bloquear unidad si ya fue asignada previamente
+            if (siglaUnidadModal !== 'POR ASIGNAR') {
+                selectUnidad.disabled = true;
+                selectUnidad.title = "La unidad ya fue asignada y estructurada en Drive. No se puede modificar.";
+            } else {
+                selectUnidad.disabled = false;
+                selectUnidad.title = "Selecciona la unidad de valuación.";
+            }
+
             document.getElementById('edit-anotacion').value = (anotacion && anotacion !== 'undefined' && anotacion !== 'null') ? anotacion : '';
+
+            // 🌟 NUEVO: Actualizamos el contador al abrir el modal
+            document.getElementById('char-counter').innerText = document.getElementById('edit-anotacion').value.length;
 
             document.getElementById('modal-editar-cliente').classList.remove('hidden');
         }
@@ -771,75 +1093,64 @@
 
         async function guardarCambiosCliente() {
             const id = document.getElementById('edit-id').value;
+            const folio = document.getElementById('edit-folio').value.toUpperCase().trim();
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
             const unidad = document.getElementById('edit-unidad').value;
-            const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase(); // 🔥 ATRAPAMOS ANOTACIÓN
+            const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase();
             const btn = document.getElementById('btn-save-edit');
 
             if (!nombre) { alert("El nombre es obligatorio"); return; }
             if (telefono.length > 0 && telefono.length !== 10) { alert("El teléfono debe tener 10 dígitos exactos."); return; }
 
             btn.disabled = true; 
-            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Procesando en Nube...`;
 
             try {
                 const db = window.db || firebase.firestore();
                 const exp = dbExpedientes.find(e => e.id === id);
                 
-                // Preparamos lo que vamos a guardar en Firebase
                 let updateData = {
+                    folioOperativo: folio,
                     cliente: nombre,
                     telefono: telefono,
                     unidad: unidad,
-                    anotacion: anotacion // 🔥 ESTO FALTABA PARA GUARDAR LA ANOTACIÓN
+                    anotacion: anotacion 
                 };
 
-                // 🏗️ EL ALBAÑIL DE GOOGLE DRIVE (Versión Antibloqueo GET con más carpetas)
-                if (unidad !== 'POR ASIGNAR' && exp && exp.unidad === 'POR ASIGNAR') {
-                    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Creando Carpeta Drive...`;
+                // 🌟 DESPEDIMOS AL ALBAÑIL (Apps Script) Y USAMOS EL INGENIERO (Netlify)
+                try {
+                    const peticionBackend = await fetch('/.netlify/functions/update-client-data', {
+                        method: 'POST',
+                        body: JSON.stringify({ id: id, nombre: nombre, telefono: telefono, folioOperativo: folio, anotacion: anotacion, unidad: unidad })
+                    });
                     
-                    try {
-                        // 🔴 PEGA TU NUEVA LIGA DE GOOGLE AQUÍ:
-                        const scriptUrl = 'https://script.google.com/macros/s/AKfycby6BDx7PwdNv9wIHcdz_YZny-iS6lTulBptum32c0cLdzP0-5HZ7IIWInRMPyXKtntq/exec'; 
-                        
-                        const urlConDatos = `${scriptUrl}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
-                        
-                        const peticionAlbanil = await fetch(urlConDatos);
-                        const respuestaAlbanil = await peticionAlbanil.json();
-                        
-                        if (respuestaAlbanil.exito) {
-                            updateData.carpeta_drive = respuestaAlbanil.url; 
-                            
-                            // 🔥 AQUÍ ATRAPAMOS EL MAPA DEL TESORO (LOS IDs)
-                            if (respuestaAlbanil.main) updateData.driveFolderId = respuestaAlbanil.main;
-                            if (respuestaAlbanil.subfolders) updateData.driveSubfolders = respuestaAlbanil.subfolders;
-                            
-                            console.log("✅ Carpeta creada en Drive:", respuestaAlbanil.url);
-                        } else {
-                            console.error("❌ Error del Albañil:", respuestaAlbanil.error);
-                        }
-                    } catch (errDrive) {
-                        console.error("❌ Falló la conexión con Drive:", errDrive);
-                        alert("Hubo un error de conexión con Drive al crear la carpeta.");
+                    const respuestaBackend = await peticionBackend.json();
+                    
+                    // Si el backend creó la carpeta, atrapamos los enlaces y los unimos
+                    if (respuestaBackend.updateData && respuestaBackend.updateData.carpeta_drive) {
+                        updateData.carpeta_drive = respuestaBackend.updateData.carpeta_drive;
                     }
+                } catch(e) { 
+                    console.warn("Aviso conectando con backend:", e); 
                 }
 
-                // Guardamos todo de un golpe en Firebase
+                // Guardamos todo de un golpe en Firebase localmente por redundancia
                 btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Actualizando base...`;
                 await db.collection('expedientes_avaluos').doc(id).update(updateData);
 
-                // Actualizamos la tabla localmente
+                // Actualizamos la tabla visual localmente
                 if (exp) { 
                     exp.cliente = nombre; 
                     exp.telefono = telefono; 
                     exp.unidad = unidad;
+                    exp.folioOperativo = folio;
                     if (updateData.carpeta_drive) exp.carpeta_drive = updateData.carpeta_drive;
                 }
                 
                 registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Unidad: ${unidad} (ID: ${id})`);
 
-                alert("✅ Datos y carpeta actualizados correctamente");
+                alert("✅ Datos y carpeta de Google Drive configurados correctamente.");
                 cerrarModalEditar();
                 filtrarTabla(true);
 
@@ -849,14 +1160,6 @@
                 btn.disabled = false; 
                 btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Cambios`;
             }
-        }
-
-        function registrarLogEnBitacora(accion, detalle) {
-            let bitacora = JSON.parse(localStorage.getItem('leezar_logs')) || [];
-            const userActive = JSON.parse(localStorage.getItem('leezar_user_active')) || { nombre: 'Desconocido' };
-            bitacora.unshift({ timestamp: Date.now(), fecha: new Date().toLocaleString('es-MX'), usuario: userActive.nombre, accion: accion, detalle: detalle });
-            if (bitacora.length > 200) bitacora.pop(); 
-            localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
         }
 
         // 🔍 FUNCIÓN PUENTE: ENVIAR A MESA DE REVISIÓN
@@ -933,6 +1236,28 @@
             } catch (e) {
                 alert("Error al intentar ocultar: " + e.message);
             }
+        }
+
+        // 🔥 FUNCIÓN RECUPERADA PARA EL LOG DE AUDITORÍA
+        function registrarLogEnBitacora(accion, detalle) {
+            let bitacora = JSON.parse(localStorage.getItem('leezar_logs')) || [];
+            const userActive = JSON.parse(localStorage.getItem('leezar_user_active')) || { nombre: 'Desconocido' };
+            bitacora.unshift({ timestamp: Date.now(), fecha: new Date().toLocaleString('es-MX'), usuario: userActive.nombre, accion: accion, detalle: detalle });
+            if (bitacora.length > 200) bitacora.pop(); 
+            localStorage.setItem('leezar_logs', JSON.stringify(bitacora));
+        }
+
+        // 🎣 FUNCIÓN PARA QUE JACK PESQUE LOS EXPEDIENTES HUÉRFANOS
+        function pescarExpedientes() {
+            const selectUnidad = document.getElementById('filter-unidad');
+            if(selectUnidad) {
+                selectUnidad.value = 'POR ASIGNAR'; // Mueve el filtro
+                filtrarTabla(); // Actualiza la vista
+            }
+            // Pequeña animación visual a la tabla
+            const tbody = document.getElementById('table-body');
+            tbody.classList.add('opacity-50');
+            setTimeout(() => tbody.classList.remove('opacity-50'), 300);
         }
 
     </script>

@@ -42,11 +42,13 @@ function obtenerListaSegura(obj, key) {
 async function crearSubcarpeta(drive, nombre, parentId) {
     const fileMetadata = { 'name': nombre, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parentId] };
     const file = await drive.files.create({ resource: fileMetadata, fields: 'id' });
+    // 🛡️ ESCUDO ANTI-SPAM (Reinyectado para proteger Drive)
+    await new Promise(resolve => setTimeout(resolve, 400));
     return file.data.id;
 }
 
 // NUEVO: Recibe el parentFolderId dinámicamente desde la BD, ya no depende de variables fijas
-async function crearCarpetaDrive(nombreCliente, parentFolderId) {
+async function crearCarpetaDrive(nombreCarpeta, parentFolderId) {
     if (!serviceAccount || !serviceAccount.client_email) return null;
     if (!parentFolderId || parentFolderId.includes('PONER_AQUI')) return null;
 
@@ -60,8 +62,9 @@ async function crearCarpetaDrive(nombreCliente, parentFolderId) {
 
         const drive = google.drive({ version: 'v3', auth });
 
+        // 🔥 FIX: Ahora usamos la variable correcta que armó el folio
         const mainFolder = await drive.files.create({
-            resource: { 'name': nombreCliente, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parentFolderId] },
+            resource: { 'name': nombreCarpeta, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parentFolderId] },
             fields: 'id'
         });
         
@@ -159,6 +162,10 @@ exports.handler = async (event, context) => {
         
         // --- CONFIGURACIÓN DE UNIDAD Y GOOGLE DRIVE 100% DINÁMICO ---
         const nombreClienteFinal = data.nombre || data.cliente || "CLIENTE NUEVO";
+        
+        // 🌟 MAGIA: Recibimos el Folio y armamos la nomenclatura profesional
+        const folioOperativo = data.folioOperativo ? data.folioOperativo.trim().toUpperCase() : "SIN FOLIO";
+        const nombreCarpetaDrive = folioOperativo !== "SIN FOLIO" ? `${folioOperativo} - ${nombreClienteFinal}` : nombreClienteFinal;
         const unidadDestino = data.unidad || 'AVE'; 
 
         let driveFolderId = null;
@@ -175,7 +182,7 @@ exports.handler = async (event, context) => {
 
         // CREAR CARPETAS SI EXISTE EL ID
         if (serviceAccount && parentFolderId) {
-            const driveResult = await crearCarpetaDrive(nombreClienteFinal, parentFolderId);
+            const driveResult = await crearCarpetaDrive(nombreCarpetaDrive, parentFolderId);
             if (driveResult) {
                 driveFolderId = driveResult.main;
                 driveSubfolders = driveResult.subfolders;
@@ -183,6 +190,7 @@ exports.handler = async (event, context) => {
         }
 
         const nuevoExpediente = {
+            folioOperativo: folioOperativo,
             tipoServicio: data.tipoServicio || data.servicio || 'Servicio General',
             cliente: nombreClienteFinal, 
             nombreCliente: nombreClienteFinal,

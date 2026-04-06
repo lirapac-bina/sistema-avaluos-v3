@@ -18,6 +18,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4&callback=inicializarMapa" async defer></script>
+
+    
+
     
     <script>
         tailwind.config = {
@@ -119,25 +124,40 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">upload_file</span> 1. En Llenado de Requisitos</h3>
-                            <span id="count-fase1" class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">0</span>
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">rule</span> 2. Portal - Revisión</h3>
+                            <span id="count-fase1" class="text-xs font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase1" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">rule</span> 2. En Revisión</h3>
-                            <span id="count-fase2" class="text-xs font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">0</span>
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">engineering</span> 3. Asignación Técnica</h3>
+                            <span id="count-fase2" class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase2" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[28rem]">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-emerald-500">engineering</span> 3. En Captura</h3>
-                            <span id="count-fase3" class="text-xs font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">0</span>
+                            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2"><span class="material-symbols-rounded text-purple-500">architecture</span> 4. En Captura</h3>
+                            <span id="count-fase3" class="text-xs font-bold bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="list-fase3" class="flex-1 overflow-y-auto thin-scroll space-y-3 pr-2"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <button onclick="toggleSection('sec-mapa', 'icon-mapa'); setTimeout(() => { if(window.mapaOperativo && window.mapMarkers && window.mapMarkers.length > 0) window.mapaOperativo.fitBounds(window.mapBounds); }, 500);" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-rose-500">map</span> Mapa Operativo
+                    <span id="map-counter-badge" class="ml-2 text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full font-black border border-slate-200 dark:border-slate-600 transition-all opacity-0">0 ubicaciones</span>
+                </h2>
+                <span id="icon-mapa" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-rose-500">expand_more</span>
+            </button>
+            <div id="sec-mapa" class="mt-4 transition-all duration-500 origin-top hidden">
+                <div class="bg-white dark:bg-slate-800 p-2 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 relative z-0">
+                    <div id="map-container" class="w-full h-[450px] rounded-2xl relative z-10"></div>
                 </div>
             </div>
         </div>
@@ -182,29 +202,29 @@
                         <div class="space-y-4">
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-slate-500 font-bold">1. Revisión Documental (Checklist)</span>
-                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-doc-val">0</span>
+                                    <span class="text-slate-500 font-bold">Paso 2. Portal y Revisión Documental</span>
+                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-portal-val">0</span>
                                 </div>
                                 <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div id="bar-doc" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+                                    <div id="bar-portal" class="h-full bg-amber-500 w-0 transition-all duration-1000"></div>
                                 </div>
                             </div>
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-slate-500 font-bold">2. Levantamiento y Dibujo</span>
-                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-visita-dibujo-val">0</span>
+                                    <span class="text-slate-500 font-bold">Paso 3. Asignación Técnica (Visita/Dibujo)</span>
+                                    <span class="text-slate-700 dark:text-white font-bold" id="bar-asignacion-val">0</span>
                                 </div>
                                 <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div id="bar-visita-dibujo" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
+                                    <div id="bar-asignacion" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
                                 </div>
                             </div>
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-slate-500 font-bold">3. Mesa de Captura Final</span>
+                                    <span class="text-slate-500 font-bold">Paso 4. Mesa de Captura Final</span>
                                     <span class="text-slate-700 dark:text-white font-bold" id="bar-captura-val">0</span>
                                 </div>
                                 <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div id="bar-captura" class="h-full bg-leezar-500 w-0 transition-all duration-1000"></div>
+                                    <div id="bar-captura" class="h-full bg-purple-500 w-0 transition-all duration-1000"></div>
                                 </div>
                             </div>
                         </div>
@@ -284,18 +304,23 @@
 
         // 🔥 VARIABLES GLOBALES PARA ORDENAMIENTO EN VIVO 🔥
         let cacheFase1 = [], cacheFase2 = [], cacheFase3 = [];
+        
 
         const renderFase = (arr, elId, colorTheme) => {
             const cont = document.getElementById(elId);
             if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl mx-2">Bandeja Vacía</div>`; return; }
             
-            const colorClasesTexto = colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
-
             cont.innerHTML = arr.map(exp => {
-                const yaTerminado = (exp.pctV === 100 && exp.tot > 0) || elId === 'list-fase3';
+                const yaTerminado = elId === 'list-fase3'; // En Captura es la última activa
+                
+                // 🔥 SI ES INCIDENCIA, SOBREESCRIBIMOS EL TEMA DE COLOR A ROJO
+                const esIncidencia = exp.isIncidencia;
+                const colorClasesTexto = esIncidencia ? 'text-red-600 bg-red-100' : (colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : 'text-purple-600 bg-purple-100');
+                const cardBorderClass = esIncidencia ? 'border-red-400 bg-red-50 dark:bg-red-900/20 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-700 hover:border-indigo-400';
+
                 let badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800" title="${exp.dias} días hábiles activo">⏳ ${exp.dias}d</span>`;
                 
-                if (yaTerminado) {
+                if (yaTerminado && !esIncidencia) {
                     badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" title="Tiempo total hasta captura">🏁 ${exp.dias}d</span>`;
                 } else {
                     if (exp.dias >= 3 && exp.dias <= 5) badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" title="Requiere atención">⏳ ${exp.dias}d</span>`;
@@ -303,27 +328,29 @@
                 }
 
                 return `
-                <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700 relative group cursor-pointer hover:border-indigo-400 transition-colors" onclick="window.location.href='revision.html'">
+                <div class="p-3 rounded-xl border relative group cursor-pointer transition-colors ${cardBorderClass}" onclick="window.location.href='revision.html'">
                     <div class="flex justify-between items-start mb-2">
                         <div class="w-full pr-2">
                             <div class="flex items-center gap-2">
-                                <p class="text-xs font-black text-slate-800 dark:text-white truncate max-w-[130px]" title="${exp.nombre}">${exp.nombre}</p>
+                                <p class="text-xs font-black ${esIncidencia ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-white'} truncate max-w-[130px]" title="${exp.nombre}">
+                                    ${esIncidencia ? '⚠️ ' : ''}${exp.nombre}
+                                </p>
                                 ${badgeDias}
                             </div>
-                            <p class="text-[9px] text-slate-500 uppercase mt-0.5">${exp.tramite}</p>
+                            <p class="text-[9px] ${esIncidencia ? 'text-red-500' : 'text-slate-500'} uppercase mt-0.5 truncate">${exp.tramite}</p>
                         </div>
                         <span class="text-[10px] font-black ${colorClasesTexto} px-1.5 py-0.5 rounded shrink-0">${exp.pctV}%</span>
                     </div>
                     <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-1.5 flex overflow-hidden" title="${exp.pctV}% Validado | ${exp.pctC}% Subido">
-                        <div class="bg-emerald-500 h-full transition-all duration-700 relative" style="width: ${exp.pctV}%">
-                            <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
-                        </div>
+                        <div class="${esIncidencia ? 'bg-red-500' : 'bg-emerald-500'} h-full transition-all duration-700 relative" style="width: ${exp.pctV}%"></div>
                         <div class="bg-amber-400 h-full opacity-60 transition-all duration-700" style="width: ${Math.max(0, exp.pctC - exp.pctV)}%"></div>
                     </div>
-                    <p class="text-[9px] text-slate-400 font-bold text-right">${exp.val} validados de ${exp.tot}</p>
+                    <p class="text-[9px] ${esIncidencia ? 'text-red-500 font-bold' : 'text-slate-400 font-bold'} text-right">${esIncidencia ? 'INCIDENCIA ACTIVA' : `${exp.val} validados de ${exp.tot}`}</p>
                 </div>
             `}).join('');
         };
+
+
 
         // 🧠 APLICADOR DE FILTROS AL VUELO 🧠
         function aplicarFiltroOrden() {
@@ -384,7 +411,7 @@
             const elTotal = document.getElementById('count-total'), elPendientes = document.getElementById('count-pendientes');
             const elProceso = document.getElementById('count-proceso'), elTerminados = document.getElementById('count-terminados');
             const elTimeAvg = document.getElementById('time-avg'), elTimeMin = document.getElementById('time-min'), elTimeMax = document.getElementById('time-max');
-            const barDoc = document.getElementById('bar-doc'), barVisitaDibujo = document.getElementById('bar-visita-dibujo'), barCaptura = document.getElementById('bar-captura');
+
 
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 let total = 0, pendientes = 0, enProcesoTotal = 0, terminados = 0;
@@ -394,6 +421,7 @@
                 
                 // Vaciamos la memoria caché en cada lectura
                 cacheFase1 = []; cacheFase2 = []; cacheFase3 = []; 
+                let marcadoresNuevos = []; // 🔥 Memoria para el mapa
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
@@ -409,7 +437,8 @@
                     }
 
                     total++;
-                    const globalStatus = (data.estatus || 'PENDIENTE').toUpperCase();
+                    const st = (data.estatus || data.status || data.estado || 'PENDIENTE').toUpperCase();
+                    const uni = (data.unidad || 'POR ASIGNAR').toUpperCase();
 
                     const checklist = data.checklist || {};
                     const items = Object.values(checklist).filter(i => i.obligatorio !== false);
@@ -419,13 +448,12 @@
                     const validados = items.filter(i => (i.estatus || '').toLowerCase() === 'validado').length;
                     
                     const pctCliente = Math.round((subidos / tot) * 100);
-                    const pctValidado = Math.round((validados / tot) * 100);
+                    const pctValidado = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
 
-                    const checkCompleto = (validados >= tot && tot > 0); 
                     const tieneVisitador = !!(data.visitador_asignado || data.visitador);
                     const tieneDibujante = !!(data.dibujante_asignado || data.dibujante);
                     const tieneCapturista = !!(data.capturista_asignado || data.capturista);
-                    const tieneCualquierAsignacion = tieneVisitador || tieneDibujante || tieneCapturista;
+                    const equipoCompleto = tieneVisitador && tieneDibujante && tieneCapturista;
 
                     let fechaObj = null;
                     let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
@@ -437,37 +465,102 @@
                     const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
                     const diasActivo = calcularDiasHabiles(timestamp);
 
-                    if (globalStatus.includes('CONCLUIDO') || globalStatus.includes('ENTREGADO') || globalStatus === 'TERMINADO') {
+                    // 🔥 LOGICA DEL PIPELINE 2026 (6 Pasos)
+                    let step = 0;
+                    if (st === 'NUEVO' || uni === 'POR ASIGNAR') step = 1;
+                    else if (st.includes('INCIDENCIA')) step = 5;
+                    else if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) step = 6;
+                    else if (st.includes('CAPTURA') || (pctValidado === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 4;
+                    else if (st.includes('ASIGNACION') || (pctValidado === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 3;
+                    else step = 2; // Portal-Revisión por descarte
+
+                    // Asignación a KPIs Superiores
+                    if (step === 6) {
                         terminados++;
                         let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
                         if (inicio && fin) tiemposRegistrados.push(Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)));
+                    } else if (step === 1) {
+                        pendientes++; // 🐶 Jack el pescador los atiende
                     } else {
-                        if (subidos === 0 && globalStatus === 'PENDIENTE') pendientes++; 
-                        else if (checkCompleto && !tieneCualquierAsignacion) pendientes++; 
-                        else enProcesoTotal++;
+                        enProcesoTotal++; // Pasos 2, 3, 4 y 5
+                    }
 
+                    // Calculamos a qué columna (2, 3, 4) pertenece incluso si es una Incidencia (Paso 5)
+                    let naturalStep = step;
+                    if (step === 5) {
+                        naturalStep = (pctValidado === 100 && items.length > 0 && equipoCompleto) ? 4 : (pctValidado === 100 && items.length > 0) ? 3 : 2;
+                    }
+
+                    // Llenado de Caché para el Monitor en Vivo (Solo los "En Proceso")
+                    if (step >= 2 && step <= 5) {
                         if (tieneVisitador) cargaPersonal.visitadores[data.visitador_asignado || data.visitador] = (cargaPersonal.visitadores[data.visitador_asignado || data.visitador] || 0) + 1;
                         if (tieneDibujante) cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] = (cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] || 0) + 1;
                         if (tieneCapturista) cargaPersonal.capturistas[data.capturista_asignado || data.capturista] = (cargaPersonal.capturistas[data.capturista_asignado || data.capturista] || 0) + 1;
 
-                        if (checkCompleto && tieneCapturista) cCaptura++;
-                        else if (checkCompleto && (tieneVisitador || tieneDibujante)) cVisitaDibujo++;
-                        else cDoc++;
+                        if (naturalStep === 4) cCaptura++;
+                        else if (naturalStep === 3) cVisitaDibujo++; // Asignación Técnica
+                        else cDoc++; // Portal - Revisión
 
                         const expData = {
                             id: doc.id,
                             nombre: data.cliente || data.nombreCliente || 'Cliente',
                             tramite: (data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
                             pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot,
-                            dias: diasActivo
+                            dias: diasActivo,
+                            isIncidencia: step === 5 // 🔥 Bandera roja
                         };
 
-                        if (checkCompleto && tieneVisitador && tieneDibujante && tieneCapturista) {
-                            cacheFase3.push(expData); 
-                        } else if (checkCompleto) {
-                            cacheFase2.push(expData); 
-                        } else if (subidos > 0) {
-                            cacheFase1.push(expData); 
+                        if (naturalStep === 4) cacheFase3.push(expData); 
+                        else if (naturalStep === 3) cacheFase2.push(expData); 
+                        else cacheFase1.push(expData); 
+                    }
+
+                    // 🗺️ SÚPER ESCÁNER DE COORDENADAS (BLINDADO Y A PRUEBA DE FALLOS)
+                    let mapaValidado = false;
+                    const chk = data.checklist || {};
+                    let coordsEncontradas = { lat: null, lng: null };
+                    
+                    // 1. Buscamos agresivamente si el Gestor lo validó en la Mesa de Control
+                    Object.keys(chk).forEach(k => {
+                        const kUpper = String(k).toUpperCase();
+                        if (kUpper.includes('UBICACION') || kUpper.includes('MAPS') || kUpper.includes('COORDENADAS')) {
+                            const estatusItem = String(chk[k].estatus || chk[k].status || chk[k].estado || '').toLowerCase().trim();
+                            if (estatusItem === 'validado') mapaValidado = true;
+                            
+                            // 🔥 EL SECRETO REVELADO: Cortamos el string de Firebase usando la coma
+                            if (typeof chk[k].coordenadas === 'string' && chk[k].coordenadas.includes(',')) {
+                                const p = chk[k].coordenadas.split(',');
+                                coordsEncontradas.lat = p[0]; coordsEncontradas.lng = p[1];
+                            } else if (chk[k].lat && chk[k].lng) { 
+                                coordsEncontradas.lat = chk[k].lat; coordsEncontradas.lng = chk[k].lng; 
+                            }
+                        }
+                    });
+
+                    // 2. Si el Gestor lo validó (y permitimos hasta el Paso 6 Finalizado)
+                    if (step >= 2 && step <= 6 && mapaValidado) {
+                        let lat = coordsEncontradas.lat, lng = coordsEncontradas.lng;
+                        
+                        // Si no estaban en el checklist, buscamos en la raíz por si acaso
+                        if (!lat || !lng) {
+                            if (data.ubicacion && data.ubicacion.latitude) { lat = data.ubicacion.latitude; lng = data.ubicacion.longitude; }
+                            else if (data.coordenadas && data.coordenadas.latitude) { lat = data.coordenadas.latitude; lng = data.coordenadas.longitude; }
+                            else if (typeof data.ubicacion === 'string' && data.ubicacion.includes(',')) { const p = data.ubicacion.split(','); lat = p[0]; lng = p[1]; }
+                            else if (typeof data.coordenadas === 'string' && data.coordenadas.includes(',')) { const p = data.coordenadas.split(','); lat = p[0]; lng = p[1]; }
+                            else if (data.ubicacion && data.ubicacion.lat) { lat = data.ubicacion.lat; lng = data.ubicacion.lng; }
+                            else if (data.coordenadas && data.coordenadas.lat) { lat = data.coordenadas.lat; lng = data.coordenadas.lng; }
+                            else if (data.lat && data.lng) { lat = data.lat; lng = data.lng; }
+                        }
+
+                        if (lat !== null && lng !== null && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+                            marcadoresNuevos.push({
+                                lat: parseFloat(lat), lng: parseFloat(lng),
+                                folio: data.folioOperativo && data.folioOperativo !== 'SIN FOLIO' ? data.folioOperativo : `ID: ${doc.id.substring(0,8)}`,
+                                cliente: data.cliente || data.nombreCliente || 'Sin nombre',
+                                tramite: (data.tipoTramite || data.tramite || 'Avalúo').replace(/_/g, ' '),
+                                step: naturalStep, incidencia: step === 5,
+                                unidad: uni 
+                            });
                         }
                     }
                 });
@@ -481,8 +574,15 @@
                     } else { elTimeMin.innerText = "-"; elTimeMax.innerText = "-"; elTimeAvg.innerText = "-"; }
 
                     const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
-                    document.getElementById('bar-doc-val').innerText = cDoc; document.getElementById('bar-visita-dibujo-val').innerText = cVisitaDibujo; document.getElementById('bar-captura-val').innerText = cCaptura;
-                    setTimeout(() => { barDoc.style.width = `${(cDoc / totalActivos) * 100}%`; barVisitaDibujo.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; barCaptura.style.width = `${(cCaptura / totalActivos) * 100}%`; }, 100);
+                    document.getElementById('bar-portal-val').innerText = cDoc; 
+                    document.getElementById('bar-asignacion-val').innerText = cVisitaDibujo; 
+                    document.getElementById('bar-captura-val').innerText = cCaptura;
+                    
+                    setTimeout(() => { 
+                        document.getElementById('bar-portal').style.width = `${(cDoc / totalActivos) * 100}%`; 
+                        document.getElementById('bar-asignacion').style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; 
+                        document.getElementById('bar-captura').style.width = `${(cCaptura / totalActivos) * 100}%`; 
+                    }, 100);
 
                     const renderListaP = (obj, elementId, colorClass) => {
                         const container = document.getElementById(elementId);
@@ -496,11 +596,107 @@
                 // Invocamos la función mágica que ordena y renderiza
                 aplicarFiltroOrden();
 
+                // 🗺️ GUARDAR EN MEMORIA GLOBAL Y PINTAR EN VIVO
+                window.marcadoresMapeo = marcadoresNuevos;
+                if (typeof window.pintarMapaGoogle === 'function') window.pintarMapaGoogle();
+
             }, (error) => { console.error("Error en Dashboard:", error); });
         }
 
+        // 🔥 GOOGLE MAPS: Inicialización Oficial Independiente
+        window.mapMarkers = [];
+        window.mapaOperativo = null;
+        window.mapBounds = null;
+        window.marcadoresMapeo = []; // Memoria puente para el Realtime
+
+        window.pintarMapaGoogle = function() {
+            if (!window.mapaOperativo) return; // Si Google Maps aún no despierta, esperamos.
+
+            // Borrar pines anteriores
+            if (window.mapMarkers) window.mapMarkers.forEach(m => m.setMap(null));
+            window.mapMarkers = [];
+            window.mapBounds = new google.maps.LatLngBounds();
+
+            // Actualizar Contador Visual
+            const badgeMapa = document.getElementById('map-counter-badge');
+            if (badgeMapa) {
+                badgeMapa.innerText = `${window.marcadoresMapeo.length} ubicaciones`;
+                badgeMapa.classList.remove('opacity-0');
+            }
+
+            // 🔥 UX PREMIUM: Creamos UNA SOLA burbuja global para todo el mapa
+            if (!window.globalInfoWindow) {
+                window.globalInfoWindow = new google.maps.InfoWindow();
+                // Si el usuario toca cualquier parte vacía del mapa, cerramos la burbuja
+                google.maps.event.addListener(window.mapaOperativo, 'click', () => {
+                    window.globalInfoWindow.close();
+                });
+            }
+
+            window.marcadoresMapeo.forEach(m => {
+                let pinColor = "94A3B8"; let sigla = "NUEVO"; let tagBg = "#f1f5f9"; let tagText = "#64748b";
+
+                if (m.unidad.includes('APN') || m.unidad.includes('PNA') || m.unidad.includes('PAMELA')) {
+                    pinColor = "F97316"; sigla = "APN"; tagBg = "#fff7ed"; tagText = "#c2410c";
+                } else if (m.unidad.includes('AVE')) {
+                    pinColor = "10B981"; sigla = "AVE"; tagBg = "#ecfdf5"; tagText = "#047857";
+                } else if (m.unidad.includes('EME')) {
+                    pinColor = "F43F5E"; sigla = "EME"; tagBg = "#fff1f2"; tagText = "#be123c";
+                }
+                if (m.incidencia) { pinColor = "EF4444"; }
+
+                const pinIcon = {
+                    path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+                    fillColor: '#' + pinColor, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2, scale: 1.2, anchor: new google.maps.Point(0, 0)
+                };
+
+                const posicion = { lat: m.lat, lng: m.lng };
+                const marker = new google.maps.Marker({ position: posicion, map: window.mapaOperativo, icon: pinIcon, title: m.cliente });
+
+                const popupHtml = `
+                    <div style="text-align:center; font-family:sans-serif; min-width:140px; padding:4px;">
+                        <div style="display:inline-block; background-color:${tagBg}; color:${tagText}; padding:2px 8px; border-radius:4px; font-size:9px; font-weight:900; letter-spacing:1px; margin-bottom:6px; border:1px solid ${tagText}33;">
+                            ${m.incidencia ? '⚠️ INCIDENCIA ACTIVA' : sigla}
+                        </div>
+                        <div style="font-weight:900; color:#1e293b; font-size:12px; margin-bottom:2px;">${m.folio}</div>
+                        <div style="font-size:11px; color:#475569; font-weight:bold; margin-bottom:2px;">${m.cliente}</div>
+                        <div style="font-size:9px; color:#94a3b8; text-transform:uppercase;">${m.tramite}</div>
+                    </div>`;
+                    
+                // 🔥 UX PREMIUM: Al dar clic, el fantasma adopta el HTML y viaja a este pin
+                marker.addListener("click", () => { 
+                    window.globalInfoWindow.setContent(popupHtml);
+                    window.globalInfoWindow.open(window.mapaOperativo, marker); 
+                });
+
+                window.mapMarkers.push(marker);
+                window.mapBounds.extend(posicion);
+            });
+
+            // Auto-centrar la cámara
+            if (window.mapMarkers.length > 0) {
+                window.mapaOperativo.fitBounds(window.mapBounds);
+                const listener = google.maps.event.addListener(window.mapaOperativo, "idle", function() { 
+                    if (window.mapaOperativo.getZoom() > 15) window.mapaOperativo.setZoom(15); 
+                    google.maps.event.removeListener(listener); 
+                });
+            }
+        };
+
+        window.inicializarMapa = function() {
+            window.mapaOperativo = new google.maps.Map(document.getElementById('map-container'), {
+                center: {lat: 19.4326, lng: -99.1332},
+                zoom: 11, mapTypeControl: false, streetViewControl: true, gestureHandling: 'greedy'
+            });
+            // 🔥 LA MAGIA EN VIVO: Si Firebase cargó antes que Google Maps, lo pintamos al instante.
+            window.pintarMapaGoogle(); 
+        };
+
         // INICIAR AL CARGAR
-        document.addEventListener('DOMContentLoaded', iniciarMonitoreoDashboard);
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMonitoreoDashboard();
+            aplicarPreferenciasAcordeon();
+        });
     </script>
 </body>
 </html>

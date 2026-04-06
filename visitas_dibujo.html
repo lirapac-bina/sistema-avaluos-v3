@@ -192,14 +192,37 @@
         function expVisitador(d, u) { return d.visitador === u.email || d.visitador_asignado === u.email; }
         function expDibujante(d, u) { return d.dibujante === u.email || d.dibujante_asignado === u.email; }
 
+        // 🌟 CALCULAR DÍAS NATURALES DESDE LA ASIGNACIÓN (Lunes a Domingo)
+        function calcularDiasHabilesAsignacion(fechaString) {
+            if (!fechaString) return 0;
+            let inicio = new Date(fechaString);
+            let fin = new Date();
+            inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+            
+            if (inicio >= fin) return 0;
+            
+            // Calculamos la diferencia exacta en milisegundos y la convertimos a días
+            const diferenciaMs = fin.getTime() - inicio.getTime();
+            const diasTotales = Math.round(diferenciaMs / (1000 * 60 * 60 * 24));
+            
+            return diasTotales;
+        }
+
         function renderizarTareas() {
             const container = document.getElementById('contenedor-tareas');
             container.innerHTML = '';
 
-            const expsAMostrar = misExpedientes.filter(exp => {
+            let expsAMostrar = misExpedientes.filter(exp => {
                 if (vistaActual === 'visitas' && exp.esParaVisita) return exp.estadoVisita === filtroEstado;
                 if (vistaActual === 'dibujos' && exp.esParaDibujo) return exp.estadoDibujo === filtroEstado;
                 return false;
+            });
+
+            // 🔥 ORDENAR: Más antiguos primero (Los que llevan más tiempo esperando)
+            expsAMostrar.sort((a, b) => {
+                let dateA = vistaActual === 'visitas' ? (a.fecha_asignacion_visita || a.fechaCreacion || 0) : (a.fecha_asignacion_dibujo || a.fechaCreacion || 0);
+                let dateB = vistaActual === 'visitas' ? (b.fecha_asignacion_visita || b.fechaCreacion || 0) : (b.fecha_asignacion_dibujo || b.fechaCreacion || 0);
+                return new Date(dateA).getTime() - new Date(dateB).getTime();
             });
 
             if(expsAMostrar.length === 0) {
@@ -246,16 +269,31 @@
                     </div>`;
                 }
 
+                // 🔥 CÁLCULO DE DÍAS TRANSCURRIDOS Y COLOR DE ALERTA
+                let fechaReferencia = vistaActual === 'visitas' ? (exp.fecha_asignacion_visita || exp.fechaCreacion) : (exp.fecha_asignacion_dibujo || exp.fechaCreacion);
+                let dias = calcularDiasHabilesAsignacion(fechaReferencia);
+                // Si pasan más de 2 días, se pone rojo parpadeante
+                let colorDias = dias > 2 ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800 animate-pulse' : 'text-slate-500 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700';
+
                 const card = `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 relative flex flex-col h-full">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600">
+                        
+                        <div class="absolute top-4 right-4 ${colorDias} border px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm flex items-center gap-1 z-10" title="Días transcurridos desde asignación">
+                            <span class="material-symbols-rounded text-[12px]">schedule</span> ${dias}d
+                        </div>
+
+                        <div class="flex justify-between items-start mb-4 pr-14">
+                            <div class="flex items-center gap-3 w-full">
+                                <div class="w-10 h-10 rounded-2xl bg-${colorBase}-100 dark:bg-${colorBase}-900/30 flex items-center justify-center text-${colorBase}-600 shrink-0 shadow-inner">
                                     <span class="material-symbols-rounded text-xl">${icon}</span>
                                 </div>
-                                <div>
-                                    <h4 class="text-sm font-black text-slate-800 dark:text-white leading-tight">${exp.clienteNombre || exp.cliente || 'Sin Nombre'}</h4>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${exp.folio || exp.id.substring(0,6)}</p>
+                                <div class="overflow-hidden w-full">
+                                    <h4 class="text-base font-black text-slate-800 dark:text-white leading-tight uppercase tracking-tight truncate" title="Folio Operativo: ${exp.folioOperativo || 'Sin Folio'}">
+                                        ${exp.folioOperativo && exp.folioOperativo !== 'SIN FOLIO' ? exp.folioOperativo : exp.id.substring(0,8)}
+                                    </h4>
+                                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter truncate w-full" title="${exp.clienteNombre || exp.cliente || 'Sin Nombre'}">
+                                        ${exp.clienteNombre || exp.cliente || 'Sin Nombre'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -347,223 +385,6 @@
 
             if(tipo === 'VISITA') document.getElementById('input-visita').click();
             else document.getElementById('input-dibujo').click();
-        }
-
-        // 🔥 MOTOR DE SUBIDA EN COLA PARA GOOGLE DRIVE (CON EXIF, RENDER PDF->JPG E KPIs OCULTOS)
-        async function procesarArchivos(event, tipo) {
-            const files = Array.from(event.target.files);
-            if(files.length === 0) return;
-
-            const modal = document.getElementById('modal-upload');
-            const status = document.getElementById('upload-status');
-            const bar = document.getElementById('upload-progress');
-            
-            // 🔥 TITULO ACTUALIZADO
-            document.getElementById('upload-title').innerText = tipo === 'VISITA' ? '📸 Subiendo a Drive...' : '📐 Procesando Proyectos Arquitectónicos...';
-            document.getElementById('upload-warning').innerText = "Optimizando y subiendo archivos. Por favor espera.";
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-
-            try {
-                // 📍 CAPTURAR GPS EN VIVO (Para validar la presencia del visitador)
-                status.innerText = "Capturando coordenadas GPS de alta precisión...";
-                let ubicacionCapturada = null;
-                try {
-                    ubicacionCapturada = await obtenerUbicacion();
-                } catch (gpsError) {
-                    console.warn("No se pudo obtener GPS en vivo:", gpsError);
-                }
-
-                const docRef = await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).get();
-                const dataDb = docRef.data();
-                
-                let folderIdDestino = null;
-                let folderDocJustId = null; // 📁 Carpeta espejo para JPGs (Solo DIBUJO)
-                
-                if (dataDb.driveSubfolders) {
-                    const llavesFirebase = Object.keys(dataDb.driveSubfolders);
-                    const encontrarCarpeta = (palabrasClave) => {
-                        for (let llave of llavesFirebase) {
-                            let llaveLimpia = llave.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                            for (let palabra of palabrasClave) {
-                                if (llaveLimpia.includes(palabra)) return dataDb.driveSubfolders[llave];
-                            }
-                        }
-                        return null;
-                    };
-
-                    if (tipo === 'VISITA') {
-                        folderIdDestino = encontrarCarpeta(['fotos', 'fotografias']);
-                    } else {
-                        // 🌟 Buscamos PROY ARQ para los originales y DOC JUST para los JPGs
-                        folderIdDestino = encontrarCarpeta(['proy arq', 'proy', 'dibujo']);
-                        folderDocJustId = encontrarCarpeta(['doc just', 'justificacion']);
-                    }
-                }
-
-                // Limpieza de URLs de Drive a solo IDs
-                const cleanFolderId = (folder) => {
-                    if (folder && folder.includes('drive.google.com')) {
-                        const matchId = folder.match(/(?:folders\/|id=)([a-zA-Z0-9_-]{15,})/);
-                        return matchId && matchId[1] ? matchId[1] : folder;
-                    }
-                    return folder;
-                };
-
-                folderIdDestino = cleanFolderId(folderIdDestino);
-                folderDocJustId = cleanFolderId(folderDocJustId);
-
-                if (!folderIdDestino) {
-                    throw new Error(`Falta la carpeta principal para ${tipo} en Drive.`);
-                }
-
-                let archivosSubidosNuevos = [];
-
-                for (let i = 0; i < files.length; i++) {
-                    const f = files[i];
-                    status.innerText = `Optimizando ${i+1} de ${files.length}...\n${f.name}`;
-                    
-                    let cleanBase64;
-                    let mimeParaGoogle = f.type;
-
-                    if (f.type.startsWith('image/')) {
-                        // 🌟 MAGIA EXIF: Compresión inteligente rescatando metadatos
-                        const options = { 
-                            maxSizeMB: 1, 
-                            maxWidthOrHeight: 1600, 
-                            useWebWorker: true,
-                            preserveExif: true, // ¡La llave de oro para mantener el GPS!
-                            onProgress: (p) => { status.innerText = `Optimizando y rescatando GPS (${p}%)...\n${f.name}`; }
-                        };
-                        try {
-                            EXIF.getData(f, function() {
-                                const lat = EXIF.getTag(this, "GPSLatitude");
-                                if(lat) console.log(`[EXIF Rescatado en ${f.name}]: Coordenadas detectadas en foto original.`);
-                            });
-
-                            const compressedFile = await imageCompression(f, options);
-                            const base64Data = await fileToBase64(compressedFile);
-                            cleanBase64 = base64Data.split(',')[1];
-                            mimeParaGoogle = compressedFile.type;
-                        } catch (e) {
-                            console.warn("Fallo la compresión preservando EXIF, subiendo original...", e);
-                            const base64Data = await fileToBase64(f);
-                            cleanBase64 = base64Data.split(',')[1];
-                        }
-                    } else {
-                        // Archivos que no son imágenes (PDFs, DWGs)
-                        const base64Data = await fileToBase64(f);
-                        cleanBase64 = base64Data.split(',')[1];
-                    }
-
-                    status.innerText = `Guardando archivos en Drive ${i+1} de ${files.length}...`;
-
-                    // 1. SUBIMOS EL ORIGINAL (A FOTOS o a PROY ARQ)
-                    const response = await fetch(SCRIPT_SUBIDA_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ filename: f.name, mimeType: mimeParaGoogle, base64: cleanBase64, folderId: folderIdDestino })
-                    });
-                    
-                    const responseText = await response.text();
-                    const result = JSON.parse(responseText);
-                    
-                    // 🔥 SEGURO CONTRA ERRORES: Si Apps Script falla, lanzamos error y detenemos
-                    if (!result.exito) {
-                        throw new Error(`Google Drive rechazó el archivo. ${result.error || 'Timeout de servidor'}`);
-                    }
-                    
-                    archivosSubidosNuevos.push({ nombre: f.name, url: result.url });
-
-                    // 🌟 2. SI ES PDF Y ES DE DIBUJO: CREAMOS EL CLON JPG EN "DOC JUST"
-                    if (tipo === 'DIBUJO' && f.type === 'application/pdf' && folderDocJustId) {
-                        status.innerText = `Renderizando PDF a imágenes JPG para DOC JUST...\nEspere un momento.`;
-                        try {
-                            const imagenesJpg = await convertirPdfAJpgs(f);
-                            
-                            for (let j = 0; j < imagenesJpg.length; j++) {
-                                status.innerText = `Subiendo Render ${j+1} de ${imagenesJpg.length} a DOC JUST...`;
-                                let cleanJpgBase64 = imagenesJpg[j].split(',')[1];
-                                let nombreJpg = f.name.replace('.pdf', `_pag_${j+1}.jpg`);
-                                
-                                await fetch(SCRIPT_SUBIDA_URL, {
-                                    method: 'POST',
-                                    body: JSON.stringify({ filename: nombreJpg, mimeType: 'image/jpeg', base64: cleanJpgBase64, folderId: folderDocJustId })
-                                });
-                            }
-                        } catch (errPdf) {
-                            console.error("Error al convertir PDF a JPG:", errPdf);
-                        }
-                    }
-
-                    bar.style.width = `${((i+1)/files.length)*100}%`;
-                }
-
-                // 💾 GUARDAR EN FIREBASE
-                status.innerText = `Guardando en Base de Datos...`;
-                
-                let entregables = expActivoParaSubida.entregables || {};
-                let archivosAnteriores = [];
-                
-                if (tipo === 'VISITA' && entregables.visita && entregables.visita.archivos) archivosAnteriores = entregables.visita.archivos;
-                if (tipo === 'DIBUJO' && entregables.dibujo && entregables.dibujo.archivos) archivosAnteriores = entregables.dibujo.archivos;
-
-                const archivosFinales = [...archivosAnteriores, ...archivosSubidosNuevos];
-
-                const datosUpdate = {
-                    entregables: entregables,
-                    estatus: 'EN REVISIÓN'
-                };
-
-                if (ubicacionCapturada) {
-                    datosUpdate.coordenadas_visita_en_vivo = ubicacionCapturada;
-                    datosUpdate.fecha_coordenadas_visita = new Date().toISOString();
-                }
-
-                // 🔥 KPI: CÁLCULO DE TIEMPO DE RESPUESTA PARA EL DASHBOARD
-                const fechaEntregaISO = new Date().toISOString();
-                let tiempoResolucionHrs = null;
-
-                let fechaAsignacion = null;
-                if(tipo === 'VISITA' && dataDb.fecha_asignacion_visita) fechaAsignacion = new Date(dataDb.fecha_asignacion_visita);
-                if(tipo === 'DIBUJO' && dataDb.fecha_asignacion_dibujo) fechaAsignacion = new Date(dataDb.fecha_asignacion_dibujo);
-
-                if(fechaAsignacion) {
-                    const diffMs = new Date() - fechaAsignacion;
-                    tiempoResolucionHrs = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2)); // Horas decimales
-                }
-
-                if (tipo === 'VISITA') {
-                    entregables.visita = { 
-                        estatus: 'completado', 
-                        fecha: fechaEntregaISO, 
-                        archivos: archivosFinales, 
-                        gps_entrega: ubicacionCapturada,
-                        kpi_horas_resolucion: tiempoResolucionHrs // 📊 Esto alimenta tu Dashboard de forma secreta
-                    };
-                } else {
-                    entregables.dibujo = { 
-                        estatus: 'completado', 
-                        fecha: fechaEntregaISO, 
-                        archivos: archivosFinales, 
-                        gps_entrega: ubicacionCapturada,
-                        kpi_horas_resolucion: tiempoResolucionHrs 
-                    };
-                }
-
-                await db.collection('expedientes_avaluos').doc(expActivoParaSubida.id).update(datosUpdate);
-
-                await registrarLog(`ENTREGABLE DE ${tipo}`, `Subida de ${archivosSubidosNuevos.length} archivos. Check-in GPS: ${ubicacionCapturada || 'No disponible'}`, expActivoParaSubida.id);
-
-                modal.classList.add('hidden'); modal.classList.remove('flex');
-                
-                // 🔥 ALERTA SECRETA: El usuario no sabe que medimos el KPI
-                alert(`✅ ¡Éxito! Archivos guardados correctamente.`);
-                event.target.value = '';
-
-            } catch (error) {
-                console.error(error);
-                alert("❌ Error: " + error.message);
-                modal.classList.add('hidden'); modal.classList.remove('flex');
-            }
         }
 
         // 🔥 NUEVO: SISTEMA DE AUDITORÍA PARA VISITADORES
@@ -708,7 +529,7 @@
             return `${n}.jpg`; // Si no cumplió reglas, deja el original en mayúsculas
         }
 
-        // 🔥 MOTOR DE SUBIDA EN COLA (FUSIÓN + RENOMBRADO INTELIGENTE A JPG)
+        // 🔥 MOTOR DE SUBIDA EN COLA (FUSIÓN + RENOMBRADO INTELIGENTE A JPG + ESCUDO ANTI-SPAM)
         async function procesarArchivos(event, tipo) {
             const rawFiles = Array.from(event.target.files);
             if(rawFiles.length === 0) return;
@@ -718,7 +539,8 @@
             const bar = document.getElementById('upload-progress');
             
             document.getElementById('upload-title').innerText = tipo === 'VISITA' ? '📸 Subiendo a Drive...' : '📐 Procesando Proyectos Arquitectónicos...';
-            document.getElementById('upload-warning').innerText = "Optimizando y subiendo archivos. Por favor espera.";
+            // 🌟 MAGIA UX: Le avisamos al visitador por qué tarda un poco más
+            document.getElementById('upload-warning').innerText = "Subiendo archivos de forma segura. Por favor espera.";
             modal.classList.remove('hidden'); modal.classList.add('flex');
 
             try {
@@ -755,7 +577,6 @@
                         folderIdDestino = encontrarCarpeta(['fotos', 'fotografias']);
                     } else {
                         folderIdDestino = encontrarCarpeta(['proy arq', 'proy', 'dibujo']);
-                        // 🔥 FIX: La llave en firebase se guarda como docJust (sin espacio)
                         folderDocJustId = encontrarCarpeta(['docjust', 'doc just', 'just']); 
                     }
                 }
@@ -773,10 +594,10 @@
 
                 if (!folderIdDestino) throw new Error(`Falta la carpeta principal para ${tipo} en Drive.`);
 
-                // Quitamos la engrapadora: los archivos se procesan exactamente como los subieron
                 const files = rawFiles;
                 let archivosSubidosNuevos = [];
 
+                // 🇨🇭 INICIA MODO RELOJ SUIZO: Bucle Secuencial Blindado
                 for (let i = 0; i < files.length; i++) {
                     const f = files[i];
                     status.innerText = `Optimizando ${i+1} de ${files.length}...\n${f.name}`;
@@ -805,7 +626,7 @@
 
                     status.innerText = `Guardando en Drive ${i+1} de ${files.length}...`;
 
-                    // 1. SUBIMOS EL ARCHIVO ORIGINAL A PROY ARQ
+                    // 1. SUBIMOS EL ARCHIVO ORIGINAL A PROY ARQ O FOTOS
                     const response = await fetch(SCRIPT_SUBIDA_URL, {
                         method: 'POST',
                         body: JSON.stringify({ filename: f.name, mimeType: mimeParaGoogle, base64: cleanBase64, folderId: folderIdDestino })
@@ -819,30 +640,37 @@
 
                     // 🌟 2. SI ES PDF Y ES DE DIBUJO: CREAMOS EL CLON JPG EN DOC JUST CON NOMBRE TRADUCIDO
                     if (tipo === 'DIBUJO' && (f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) && folderDocJustId) {
-                        status.innerText = `Renderizando ${f.name} a imágenes JPG para DOC JUST...\nEspere un momento.`;
+                        status.innerText = `Renderizando ${f.name} a JPG para DOC JUST...\nEspere un momento.`;
                         try {
                             const imagenesJpg = await convertirPdfAJpgs(f);
-                            let nombreBase = formatearNombrePlano(f.name); // Traduce "ARQ PB.pdf" a "PROYECTO ARQUITECTÓNICO PLANTA BAJA.jpg"
+                            let nombreBase = formatearNombrePlano(f.name); 
                             
                             for (let j = 0; j < imagenesJpg.length; j++) {
                                 status.innerText = `Subiendo Render ${j+1} de ${imagenesJpg.length} a DOC JUST...`;
                                 let cleanJpgBase64 = imagenesJpg[j].split(',')[1];
                                 
-                                // Si tiene varias páginas, le agregamos el número, si es una sola página, dejamos el nombre limpio
                                 let nombreJpg = imagenesJpg.length > 1 ? nombreBase.replace('.jpg', ` Pag_${j+1}.jpg`) : nombreBase;
                                 
                                 await fetch(SCRIPT_SUBIDA_URL, {
                                     method: 'POST',
                                     body: JSON.stringify({ filename: nombreJpg, mimeType: 'image/jpeg', base64: cleanJpgBase64, folderId: folderDocJustId })
                                 });
+
+                                // 🛡️ ESCUDO 1: Pausa entre renders de múltiples páginas
+                                await new Promise(resolve => setTimeout(resolve, 400));
                             }
                         } catch (errPdf) {
                             console.error("Error al convertir PDF a JPG:", errPdf);
                         }
                     }
 
+                    // 🛡️ ESCUDO 2 (EL PRINCIPAL): Pausa de enfriamiento de 500ms antes de la siguiente foto de la lista
+                    status.innerText = `Enfriando conexión... (${i+1}/${files.length})`;
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
                     bar.style.width = `${((i+1)/files.length)*100}%`;
                 }
+                // 🇨🇭 FIN DEL BUCLE SUIZO
 
                 status.innerText = `Guardando en Base de Datos...`;
                 
@@ -883,7 +711,7 @@
                 await registrarLog(`ENTREGABLE DE ${tipo}`, `Subida de ${archivosSubidosNuevos.length} archivos consolidados.`, expActivoParaSubida.id);
 
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                alert(`✅ ¡Éxito! Archivos guardados correctamente.`);
+                alert(`✅ ¡Éxito! Archivos guardados en Drive de forma segura.`);
                 event.target.value = '';
 
             } catch (error) {
