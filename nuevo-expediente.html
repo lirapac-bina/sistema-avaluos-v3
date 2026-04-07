@@ -342,10 +342,11 @@
                     linkDrive.classList.remove('hidden');
                     linkDrive.classList.add('inline-flex');
                 } else {
-                    alert("⚠️ El expediente se guardó en la base de datos, pero los escudos de Google Drive bloquearon la creación de la carpeta. Deberás crearla manualmente.");
+                    const msjError = json.errorDrive ? `\n\nMotivo de Google: ${json.errorDrive}` : '';
+                    alert("⚠️ El expediente se guardó en la base de datos, pero Drive bloqueó la creación de la carpeta." + msjError);
                 }
                 
-                const mensaje = `Hola *${nombreInput}*, hemos generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
+                const mensaje = `Hola *${nombreInput}*, se ha generado tu expediente digital. Por favor sube tus documentos aquí: ${cleanUrl}`;
                 document.getElementById('btn-whatsapp').href = `https://api.whatsapp.com/send?phone=52${telefonoInput}&text=${encodeURIComponent(mensaje)}`;
 
             } catch (error) {

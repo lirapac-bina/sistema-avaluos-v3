@@ -88,7 +88,7 @@ async function crearCarpetaDrive(nombreCarpeta, parentFolderId) {
 
     } catch (error) { 
         console.error("Error al crear carpeta en Google Drive:", error);
-        return null; 
+        return { errorGrave: error.message }; // <-- Atrapamos el grito de Google
     }
 }
 
@@ -172,7 +172,7 @@ exports.handler = async (event, context) => {
         let driveSubfolders = {}; 
         let parentFolderId = null;
 
-        // CONSULTAR EL ID EN FIREBASE BASADO EN LA UNIDAD SELECCIONADA EN EL FRONTEND
+        let errorDeGoogle = null;
         try {
             const unidadDoc = await db.collection('unidades_valuacion').doc(unidadDestino).get();
             if (unidadDoc.exists) {
@@ -180,12 +180,14 @@ exports.handler = async (event, context) => {
             }
         } catch (e) { console.error("Error al buscar unidad en DB:", e); }
 
-        // CREAR CARPETAS SI EXISTE EL ID
         if (serviceAccount && parentFolderId) {
+            parentFolderId = parentFolderId.trim(); // <-- Escudo contra espacios basura invisibles
             const driveResult = await crearCarpetaDrive(nombreCarpetaDrive, parentFolderId);
-            if (driveResult) {
+            if (driveResult && driveResult.main) {
                 driveFolderId = driveResult.main;
                 driveSubfolders = driveResult.subfolders;
+            } else if (driveResult && driveResult.errorGrave) {
+                errorDeGoogle = driveResult.errorGrave; // <-- Guardamos el error
             }
         }
 
@@ -218,7 +220,8 @@ exports.handler = async (event, context) => {
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({ 
                 id: ref.id, message: "Expediente Creado",
-                url: `/portal.html?id=${ref.id}`, driveFolderId: driveFolderId
+                url: `/portal.html?id=${ref.id}`, driveFolderId: driveFolderId,
+                errorDrive: errorDeGoogle // <-- Lo enviamos al frontend
             }) 
         };
 
