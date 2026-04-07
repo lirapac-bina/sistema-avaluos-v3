@@ -11,11 +11,12 @@ exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
     try {
-        // 🔥 AQUÍ ESTÁ LA MAGIA: Ya recibimos la imagenBase64
         const { mensaje, seccionContexto, imagenBase64 } = JSON.parse(event.body);
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); 
-        const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+        
+        // Usamos la configuración por defecto sin forzar la versión para evitar conflictos
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const systemPrompt = `
             Eres Jack, el asistente experto en valuación inmobiliaria de la empresa Leezar.
@@ -29,10 +30,8 @@ exports.handler = async (event, context) => {
             3. Usa formato Markdown si necesitas listar puntos.
         `;
 
-        // Armamos el paquete para Gemini
         let promptContent = [systemPrompt, mensaje];
 
-        // Si el usuario subió una foto, se la pegamos al paquete
         if (imagenBase64) {
             const imageParts = {
                 inlineData: {
