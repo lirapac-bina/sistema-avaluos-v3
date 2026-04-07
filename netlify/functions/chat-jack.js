@@ -16,7 +16,11 @@ exports.handler = async (event, context) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); 
         
         // Usamos la configuración por defecto sin forzar la versión para evitar conflictos
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        // FORZAMOS LA VERSIÓN V1 Y EL MODELO PRO ORIGINAL (El más estable a nivel global)
+        const model = genAI.getGenerativeModel(
+            { model: "gemini-pro" }, 
+            { apiVersion: 'v1' }
+        );
 
         const systemPrompt = `
             Eres Jack, el asistente experto en valuación inmobiliaria de la empresa Leezar.
