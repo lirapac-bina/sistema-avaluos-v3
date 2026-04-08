@@ -772,7 +772,11 @@
         async function saveCatalogo() {
             try {
                 await db.collection('configuracion').doc('plantilla_maestra').set(catalogoData);
-                await registrarLog('CATÁLOGO', `Actualización de Matriz/Diccionario`);
+                
+                // 🌟 LOG DETALLADO: Pone el contexto de la Entidad y Trámite
+                const contexto = (currentEntidad && currentServicio) ? ` en ${currentEntidad} -> ${currentServicio}` : '';
+                await registrarLog('CATÁLOGO', `Guardado general de cambios en Matriz/Diccionario${contexto}`);
+                
                 return true;
             } catch (e) { 
                 console.error(e);
@@ -974,6 +978,9 @@
             };
             if (plantilla) catalogoData.diccionario[id].plantilla = plantilla; 
 
+            // 🌟 LOG DETALLADO: Identifica si fue creación o edición
+            await registrarLog('DICCIONARIO', `${editMode ? 'EDICIÓN' : 'CREACIÓN'}: Se actualizó el documento [${id}] - ${nombre}`);
+
             await saveCatalogo();
             cerrarModalEditor();
             renderDiccionario();
@@ -1033,8 +1040,9 @@
                                 ${servicios.length === 0 ? '<option value="">(Vacío)</option>' : ''}
                                 ${servicios.map(s => `<option value="${s}" ${s === currentServicio ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
                             </select>
-                            <button onclick="nuevoServicioMatriz()" class="bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">add</span></button>
-                            <button onclick="eliminarServicioMatriz()" class="bg-red-50 hover:bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 rounded-lg transition shadow-sm"><span class="material-symbols-rounded">delete</span></button>
+                            <button onclick="nuevoServicioMatriz()" class="bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 px-3 rounded-lg transition shadow-sm" title="Crear Nuevo"><span class="material-symbols-rounded">add</span></button>
+                            <button onclick="clonarServicioMatriz()" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 rounded-lg transition shadow-sm" title="Clonar Trámite Actual"><span class="material-symbols-rounded">content_copy</span></button>
+                            <button onclick="eliminarServicioMatriz()" class="bg-red-50 hover:bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 rounded-lg transition shadow-sm" title="Eliminar"><span class="material-symbols-rounded">delete</span></button>
                         </div>
                     </div>
                 </div>
@@ -1117,11 +1125,17 @@
 
                 if (docsList.length === 0) listHtml = `<p class="text-center text-xs text-slate-400 mt-10">No hay documentos para esta categoría.</p>`;
 
+                // 🔥 CONTADOR DINÁMICO: Calculamos cuántos elementos están seleccionados
+                const numSeleccionados = arrActual.length;
+
                 html += `
                 <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col h-full overflow-hidden shadow-sm">
-                    <div class="p-3 bg-${col.color}-50 dark:bg-${col.color}-900/20 border-b border-${col.color}-100 dark:border-${col.color}-900/50 flex items-center gap-2 shrink-0">
-                        <span class="material-symbols-rounded text-${col.color}-600 dark:text-${col.color}-400 text-lg">${col.icon}</span>
-                        <h3 class="font-extrabold text-${col.color}-700 dark:text-${col.color}-400 text-xs uppercase tracking-wide">${col.titulo}</h3>
+                    <div class="p-3 bg-${col.color}-50 dark:bg-${col.color}-900/20 border-b border-${col.color}-100 dark:border-${col.color}-900/50 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-rounded text-${col.color}-600 dark:text-${col.color}-400 text-lg">${col.icon}</span>
+                            <h3 class="font-extrabold text-${col.color}-700 dark:text-${col.color}-400 text-xs uppercase tracking-wide">${col.titulo}</h3>
+                        </div>
+                        <span class="bg-${col.color}-200 dark:bg-${col.color}-800/60 text-${col.color}-800 dark:text-${col.color}-300 px-2 py-0.5 rounded text-[10px] font-black shadow-sm" title="${numSeleccionados} requisitos seleccionados">${numSeleccionados}</span>
                     </div>
                     <div id="sort-matriz-${col.id}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll min-h-0 pb-10">
                         ${listHtml}
@@ -1222,6 +1236,47 @@
             catalogoData.matriz[currentEntidad][key] = { solicitante: [], propietario: [], inmueble: [] };
             currentServicio = key;
             await saveCatalogo(); renderMatriz();
+        }
+
+        // 🚀 FUNCIÓN MAESTRA: CLONAR RECETA DE TRÁMITE (INTER-ESTATAL ⚡)
+        async function clonarServicioMatriz() {
+            if(!currentEntidad || !currentServicio) return alert("Selecciona un trámite en el Paso 2 para clonarlo.");
+            
+            // 1. Pedir el nombre del nuevo trámite
+            const nombre = prompt(`Vas a clonar el ADN de: [${currentServicio.replace(/_/g, ' ')}].\n\nEscribe el nombre del NUEVO trámite:`, currentServicio);
+            if(!nombre) return;
+            const key = nombre.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            
+            // 2. ⚡ LA MAGIA: Preguntar a qué Entidad/Estado se va a mandar
+            const entidadesExistentes = Object.keys(catalogoData.matriz).join(", ");
+            let destino = prompt(`¿A qué ENTIDAD FEDERATIVA deseas mandar este clon?\n\nOpciones actuales: ${entidadesExistentes}\n\n(Puedes escribir una entidad nueva o dejar la actual):`, currentEntidad);
+            if(!destino) return;
+            
+            const entidadKey = destino.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, '_');
+            
+            // 3. Crear la entidad de destino si es que el usuario escribió una nueva (Ej: YUCATAN)
+            if(!catalogoData.matriz[entidadKey]) catalogoData.matriz[entidadKey] = {};
+            
+            // 4. Verificar que no exista ya para no chocar
+            if(catalogoData.matriz[entidadKey][key]) return alert(`Error: El trámite ${key} ya existe en la entidad ${entidadKey}.`);
+            
+            // 5. 🧬 Clonación Profunda del ADN
+            const recetaOriginal = catalogoData.matriz[currentEntidad][currentServicio];
+            catalogoData.matriz[entidadKey][key] = JSON.parse(JSON.stringify(recetaOriginal));
+            
+            // 6. Mover la vista automáticamente al nuevo clon para que sigas trabajando
+            currentEntidad = entidadKey; 
+            currentServicio = key;
+            
+            // 🌟 LOG DETALLADO: Rastreo de la clonación
+            await registrarLog('MATRIZ', `CLONACIÓN: Se creó [${key}] en [${entidadKey}] basado en [${currentServicio}]`);
+
+            await saveCatalogo(); 
+            renderMatriz();
+            
+            // Lanzamos confeti porque esto es magia pura
+            if (typeof confetti !== 'undefined') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            alert(`¡Clonación Exitosa! ⚡\n\nEl trámite se guardó en: ${entidadKey} -> ${key}`);
         }
 
         async function eliminarServicioMatriz() {

@@ -150,7 +150,7 @@
                             <div class="h-10 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase" id="preview-type">Vista Previa</span>
                                 <button id="btn-historial-doc" onclick="abrirHistorialDoc()" class="hidden items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-1 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-800 active:scale-95">
-                                    <span class="material-symbols-rounded text-[14px]">history</span> Historial de Vida
+                                    <span class="material-symbols-rounded text-[14px]">history</span> Historial de Actividades
                                 </button>
                             </div>
 
@@ -303,7 +303,7 @@
             <div class="flex justify-between items-center mb-4 shrink-0 border-b border-slate-100 dark:border-slate-700 pb-3">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <span class="material-symbols-rounded text-indigo-500">manage_search</span>
-                    Auditoría del Documento
+                    Historial de Revisiones
                 </h3>
                 <button onclick="cerrarHistorialDoc()" class="text-slate-400 hover:text-red-500 transition-colors"><span class="material-symbols-rounded">close</span></button>
             </div>
@@ -559,9 +559,12 @@
                 id: id,
                 cliente: data.nombreCliente,
                 telefono: data.telefono,
-                // 🔥 Inyectamos la URL de Drive para el botón
                 carpeta_drive: data.carpeta_drive || (data.driveFolderId ? `https://drive.google.com/drive/folders/${data.driveFolderId}` : null),
-                grupos: { solicitante: [], propietario: [], inmueble: [] }
+                grupos: { solicitante: [], propietario: [], inmueble: [] },
+                visitaAgendada: data.visitaAgendada, 
+                fechasPropuestas: data.fechasPropuestas,
+                estatus: data.estatus, // 🌟 FIX: Leemos el estatus general
+                equipo: data.equipo // 🌟 FIX: Leemos si ya hay técnicos
             };
 
             const checklist = data.checklist || {};
@@ -612,7 +615,8 @@
                         coordenadas: item.coordenadas,
                         direccion: item.direccion,
                         textoPreview: item.textoPreview,
-                        fotos: key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null
+                        fotos: key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null,
+                        obligatorio: item.obligatorio !== false
                     });
                 }
             });
@@ -636,9 +640,10 @@
             const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
             document.getElementById('carousel-title').innerText = titles[currentKey];
 
-            let valid = items.filter(i => i.status === 'valid' || i.estatus === 'validado').length;
-            let total = items.length;
-            let percent = total > 0 ? (valid / total) * 100 : 0;
+            let itemsObligatorios = items.filter(i => i.obligatorio);
+            let valid = itemsObligatorios.filter(i => i.status === 'valid' || i.estatus === 'validado').length;
+            let total = itemsObligatorios.length;
+            let percent = total > 0 ? (valid / total) * 100 : (items.length > 0 ? 100 : 0);
             
             const progressBar = document.getElementById('group-progress-bar');
             progressBar.style.width = `${percent}%`;
@@ -692,7 +697,9 @@
                     itemDiv.classList.add('cursor-not-allowed'); itemDiv.title = "Aún no suben este archivo";
                 }
 
-                itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px]">${req.nombre}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
+                let badgeOpcional = req.obligatorio ? '' : '<span class="ml-2 text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold uppercase">Opcional</span>';
+
+                itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px] flex items-center">${req.nombre} ${badgeOpcional}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
                 container.appendChild(itemDiv);
             });
         }
@@ -775,9 +782,9 @@
                 if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
                     pdfUrl = pdfUrl.replace('/view', '/preview');
                 } else if (pdfUrl.includes('firebasestorage')) {
-                    // 🌟 FIX: Obligamos al navegador a usar el visor interno para los enlaces nativos de Firebase
-                    if(!pdfUrl.includes('#toolbar=0')) {
-                        pdfUrl = pdfUrl + (pdfUrl.includes('?') ? '&' : '?') + '#toolbar=0&navpanes=0';
+                    // 🌟 FIX: Permitimos la barra de herramientas (Zoom) y ajustamos el PDF al ancho
+                    if(!pdfUrl.includes('#view=')) {
+                        pdfUrl = pdfUrl + (pdfUrl.includes('?') ? '&' : '?') + '#view=FitH';
                     }
                 }
                 
@@ -914,9 +921,11 @@
 
             Object.values(expediente.grupos).forEach(grupo => {
                 grupo.forEach(doc => {
-                    totalGlobal++;
-                    if (doc.status === 'valid' || doc.estatus === 'validado') {
-                        validGlobal++;
+                    if (doc.obligatorio) {
+                        totalGlobal++;
+                        if (doc.status === 'valid' || doc.estatus === 'validado') {
+                            validGlobal++;
+                        }
                     }
                 });
             });
@@ -927,14 +936,19 @@
                     btnContainer.classList.remove('hidden');
                     
                     const btn = btnContainer.querySelector('button');
-                    const datosLocal = JSON.parse(localStorage.getItem('expediente_activo')) || {};
                     
-                    if (datosLocal.visitaAgendada && datosLocal.visitaAgendada.estatus === 'SOLICITADA') {
-                        // El cliente ya eligió -> Liberar botón para asignar
-                        btn.innerHTML = `<span class="material-symbols-rounded">assignment_ind</span> ASIGNAR A CAPTURA`;
-                        btn.onclick = abrirModalAsignacion;
-                        btn.className = "bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center gap-2 animate-bounce";
-                    } else if (datosLocal.fechasPropuestas && datosLocal.fechasPropuestas.length > 0) {
+                    // 🌟 FIX: Si ya está en Captura (Ya le asignaron equipo en Gestión)
+                    if (expediente.estatus === 'CAPTURA') {
+                        btn.innerHTML = `<span class="material-symbols-rounded">event</span> CITA Y EQUIPO CONFIRMADOS`;
+                        btn.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                        btn.className = "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm";
+                    } 
+                    // 🌟 FIX: Si el cliente ya agendó, pero Gestión aún no asigna el equipo (SOLO LECTURA)
+                    else if (expediente.visitaAgendada && expediente.visitaAgendada.estatus === 'SOLICITADA') {
+                        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO ASIGNACIÓN EN GESTIÓN`;
+                        btn.onclick = null;
+                        btn.className = "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 px-5 py-2 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 cursor-default";
+                    } else if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
                         // Ya le mandaste opciones, esperando que él elija en su portal
                         btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO AL CLIENTE`;
                         btn.onclick = null;
@@ -954,7 +968,7 @@
             }
         }
 
-        // 🔥 NUEVA FUNCIÓN: Guarda las fechas en Firebase
+        // 🔥 FUNCIÓN 1: GUARDAR FECHAS (La que manda el calendario al cliente)
         async function guardarFechasPropuestas() {
             const propuestas = [];
             for(let i=1; i<=3; i++) {
@@ -970,8 +984,11 @@
             btn.disabled = true;
 
             try {
+                // 🌟 FIX APLICADO: Enviamos la variable correcta "propuestas"
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
-                    fechasPropuestas: propuestas
+                    fechasPropuestas: propuestas, 
+                    estatus: 'ESPERANDO AL CLIENTE',
+                    actualizado: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Actualizar la memoria local para que la vista cambie de inmediato
@@ -1055,6 +1072,7 @@
             }
         }
 
+        // 🔥 FUNCIÓN 2: ASIGNAR CAPTURISTA (La que habías sobreescrito por accidente)
         async function confirmarAsignacion() {
             if (!capturistaSeleccionado) {
                 alert("Selecciona un capturista primero.");
@@ -1066,14 +1084,15 @@
             btn.disabled = true;
 
             try {
+                // Restauramos la lógica original de asignación de equipo
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
-                    estatus: 'EN CAPTURA',
-                    capturista_asignado: capturistaSeleccionado,
-                    fecha_asignacion: firebase.firestore.FieldValue.serverTimestamp()
+                    capturista: capturistaSeleccionado,
+                    estatus: 'CAPTURA', 
+                    actualizado: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 alert("Expediente asignado correctamente.");
-                window.location.href = 'dashboard.html';
+                window.location.href = 'gestion.html'; // Regresamos a la tabla de gestión
 
             } catch (e) {
                 console.error(e);
@@ -1250,14 +1269,17 @@
             <div class="space-y-3 mb-6">
                 <div class="flex gap-2">
                     <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <select id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                        <option value="">Horario...</option>
-                        <option value="09:00 - 11:00">09:00 - 11:00</option>
-                        <option value="11:00 - 13:00">11:00 - 13:00</option>
-                        <option value="13:00 - 15:00">13:00 - 15:00</option>
-                        <option value="15:00 - 18:00">15:00 - 18:00</option>
-                    </select>
+                    <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
                 </div>
+                <div class="flex gap-2">
+                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                    <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
+                </div>
+                <div class="flex gap-2">
+                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
+                    <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
+                </div>
+            </div>
                 <div class="flex gap-2">
                     <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
                     <select id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">

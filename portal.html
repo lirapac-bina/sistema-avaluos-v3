@@ -131,21 +131,21 @@
 
     <div id="successModal" class="fixed inset-0 bg-slate-900/80 z-[8000] hidden flex justify-center items-center p-4 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md p-8 rounded-3xl text-center shadow-2xl animate-[popIn_0.5s_ease-out] relative border border-slate-200 dark:border-slate-700">
-            <div class="flex justify-center -mt-20 mb-4">
-                <div class="w-32 h-32 rounded-full bg-indigo-50 flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 overflow-hidden relative">
-                    <img src="./jack.jpg" alt="Jack" class="w-full h-full object-cover p-2 animate-[bounce-slow_3s_infinite]" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3024/3024505.png';">
+            <div class="flex justify-center -mt-16 mb-5">
+                <div class="w-24 h-24 rounded-full bg-emerald-50 flex items-center justify-center shadow-lg border-4 border-white dark:border-slate-800 relative">
+                    <span class="material-symbols-rounded text-6xl text-emerald-500">task_alt</span>
                 </div>
             </div>
-            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-3" id="jack-titulo">¡Expediente Recibido!</h3>
+            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-3" id="jack-titulo">Expediente Recibido</h3>
             
-            <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 mb-6 border border-indigo-100 dark:border-indigo-800 text-left">
+            <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-5 mb-6 border border-slate-100 dark:border-slate-700 text-left">
                 <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed" id="jack-frase">
-                    ¡Excelente trabajo! Has subido todos tus documentos.<br><br>
-                    <b>Por favor ten paciencia</b>, nuestro equipo ya está trabajando en la revisión. A través de <b>esta misma liga</b> te habilitaremos el calendario para agendar el día de tu visita muy pronto.
+                    Su documentación ha sido cargada exitosamente.<br><br>
+                    Nuestro equipo técnico ha comenzado la revisión normativa. A través de <b>este mismo portal</b> le habilitaremos el calendario para que pueda seleccionar el día y hora de su visita de inspección.
                 </p>
             </div>
 
-            <button onclick="cerrarModalJack()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-indigo-500/30 active:scale-95 transition-all">¡Entendido, esperaré! 👍</button>
+            <button onclick="cerrarModalJack()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-base shadow-md active:scale-95 transition-all">Entendido</button>
         </div>
     </div>
 
@@ -481,9 +481,10 @@
             }
         });
 
-        // 🔥 FIX: Ahora enviamos el PIN en cada recarga
+        // 🔥 FIX MAESTRO: Tiempo Real Activado
         async function cargarDatosEnSesion(pinSecreto) {
             try {
+                // 1. Verificamos el PIN con Netlify por seguridad
                 const response = await fetch('/.netlify/functions/get-expediente-details', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -492,13 +493,17 @@
 
                 if (!response.ok) throw new Error("Acceso denegado o sesión expirada");
                 
-                const data = await response.json();
-                expedienteGlobal = data;
+                // 🌟 Encendemos el "Tiempo Real" de Firebase
+                db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        expedienteGlobal = doc.data();
+                        document.getElementById('mainContent').classList.remove('hidden');
+                        document.getElementById('loading-card').classList.add('hidden');
+                        renderizarExpediente(expedienteGlobal); 
+                        verificarEstadoLegal();
+                    }
+                });
                 
-                document.getElementById('mainContent').classList.remove('hidden');
-                document.getElementById('loading-card').classList.add('hidden');
-                renderizarExpediente(data); 
-                verificarEstadoLegal();
             } catch (e) {
                 console.error(e);
                 localStorage.removeItem('auth_pin_' + expedienteId);
@@ -523,6 +528,7 @@
             errorMsg.classList.add('hidden');
 
             try {
+                // 1. Verificamos el PIN ingresado a mano
                 const response = await fetch('/.netlify/functions/get-expediente-details', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -532,17 +538,20 @@
                 if (response.status === 403) throw new Error("El código o la llave maestra no coinciden.");
                 if (!response.ok) throw new Error("Expediente no encontrado.");
 
-                const data = await response.json();
-                expedienteGlobal = data;
-
-                // 🔥 FIX: Guardamos el PIN en la bóveda local, no un simple 'true'
+                // Guardamos la sesión y ocultamos el candado
                 localStorage.setItem('auth_pin_' + expedienteId, code);
-
                 document.getElementById('securityLock').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
                 
-                renderizarExpediente(data); 
-                verificarEstadoLegal();
+                // 🌟 Encendemos el Tiempo Real para que el portal sea "En Vivo"
+                db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        expedienteGlobal = doc.data();
+                        document.getElementById('mainContent').classList.remove('hidden');
+                        document.getElementById('loading-card').classList.add('hidden');
+                        renderizarExpediente(expedienteGlobal); 
+                        verificarEstadoLegal();
+                    }
+                });
                 
             } catch (error) {
                 console.error(error);
@@ -1139,52 +1148,121 @@ let downloadLink = '';
             
             if (validacionCompleta && !data.visitaAgendada) {
                 document.getElementById('persistent-review-banner')?.classList.add('hidden');
-                // Si la Mesa de Control ya propuso fechas
+                
+                // 🌟 CABLE MAESTRO: Si la Mesa de Control ya propuso fechas
                 if (data.fechasPropuestas && data.fechasPropuestas.length > 0) {
+                    // Apagamos los avisos de espera
                     document.getElementById('persistent-waiting-dates-banner')?.classList.add('hidden');
-                    let opcionesHtml = '<label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Opciones Disponibles:</label>';
+                    const successModal = document.getElementById('successModal');
+                    if (successModal) successModal.classList.add('hidden');
                     
-                    data.fechasPropuestas.forEach((prop, index) => {
-                        opcionesHtml += `
-                        <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group">
-                            <input type="radio" name="fecha_seleccionada" value="${prop.fecha}|${prop.hora}" class="w-5 h-5 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600">
-                            <div>
-                                <p class="font-bold text-slate-800 dark:text-white text-sm">${prop.fecha}</p>
-                                <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">Horario: ${prop.hora}</p>
-                            </div>
-                        </label>`;
-                    });
-                    
-                    document.getElementById('lista-fechas-propuestas').innerHTML = opcionesHtml;
-                    document.getElementById('agendaModal').classList.remove('hidden');
-                    document.getElementById('agendaModal').classList.add('flex');
+                    const contenedorFechas = document.getElementById('lista-fechas-propuestas');
+                    if (contenedorFechas) {
+                        contenedorFechas.innerHTML = ''; 
+                        data.fechasPropuestas.forEach((prop, index) => {
+                            const fechaObj = new Date(prop.fecha + 'T00:00:00');
+                            const rawFecha = fechaObj.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-                    // Confeti de agenda
-                    if (!sessionStorage.getItem('agenda_confetti_' + expedienteId)) {
-                        if (typeof confetti !== 'undefined') confetti({ particleCount: 300, spread: 100, origin: { y: 0.5 } });
-                        sessionStorage.setItem('agenda_confetti_' + expedienteId, 'true');
+                            // 🌟 FIX: Solo la primera letra en mayúscula, lo demás en bajas
+                            const fechaTexto = rawFecha.charAt(0).toUpperCase() + rawFecha.slice(1);
+                            
+                            contenedorFechas.innerHTML += `
+                            <label class="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group shadow-sm">
+                                <input type="radio" name="fecha_seleccionada" value="${prop.fecha}|${prop.hora}" class="w-5 h-5 text-indigo-600 accent-indigo-600">
+                                <div>
+                                    <p class="font-black text-slate-800 dark:text-white text-sm mb-1">${fechaTexto}</p>
+                                    <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">schedule</span> A las: ${prop.hora} hrs</p>
+                                </div>
+                            </label>`;
+                        });
+                        
+                        // Mostramos tu modal de agenda original
+                        const modalAgenda = document.getElementById('agendaModal');
+                        if (modalAgenda) {
+                            modalAgenda.classList.remove('hidden');
+                            modalAgenda.classList.add('flex');
+                        }
+
+                        if (!sessionStorage.getItem('agenda_confetti_' + expedienteId)) {
+                            if (typeof confetti !== 'undefined') confetti({ particleCount: 300, spread: 100, origin: { y: 0.5 } });
+                            sessionStorage.setItem('agenda_confetti_' + expedienteId, 'true');
+                        }
                     }
                 } else {
-                    // 🔥 MODO ESPERANDO FECHAS (El Mensaje Elegante y el Modal de Jack)
-                    
-                    // 1. Mostramos el banner hermoso y ocultamos la línea pequeña
-                    document.getElementById('persistent-waiting-dates-banner').classList.remove('hidden');
+                    // 🛑 MODO ESPERANDO FECHAS (Aún no hay propuestas de Mesa de Control)
+                    document.getElementById('persistent-waiting-dates-banner')?.classList.remove('hidden');
                     document.getElementById('estado-badge').innerHTML = ''; 
                     
-                    // 2. Le disparamos el Modal de Jack modificado para que se entere de las buenas noticias
                     if (!sessionStorage.getItem('modal_espera_fechas_' + expedienteId)) {
-                        document.getElementById('jack-titulo').innerText = "¡Aprobación Exitosa! 🎉";
-                        document.getElementById('jack-frase').innerHTML = "Tu expediente superó la revisión.<br><br><b>Estamos generando las opciones de fecha y horario</b> para tu visita. Guarda esta liga y vuelve a entrar pronto para elegir tu cita en el calendario.";
+                        document.getElementById('jack-titulo').innerText = "Aprobación Exitosa";
+                        document.getElementById('jack-frase').innerHTML = "Su expediente ha superado la revisión técnica.<br><br><b>Estamos generando las opciones de fecha y horario</b> para su visita de inspección. Por favor, conserve este enlace y vuelva a ingresar en breve para confirmar su cita en el calendario.";
                         document.getElementById('successModal').classList.remove('hidden');
                         if (typeof confetti !== 'undefined') confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
                         sessionStorage.setItem('modal_espera_fechas_' + expedienteId, 'true');
                     }
                 }
             } else if (validacionCompleta && data.visitaAgendada) {
-                document.getElementById('estado-badge').innerHTML = `
-                <div class="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold mt-2 shadow-sm">
-                    <span class="material-symbols-rounded text-sm">event</span> Visita Confirmada: ${data.visitaAgendada.fecha} (${data.visitaAgendada.hora.split(' ')[0]})
-                </div>`;
+                const fechaObjConf = new Date(data.visitaAgendada.fecha + 'T00:00:00');
+                const rawConf = fechaObjConf.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const fechaTextoConf = rawConf.charAt(0).toUpperCase() + rawConf.slice(1);
+                
+                // 🛑 1. MAGIA UX: Ocultamos todos los documentos y pestañas
+                document.getElementById('main-container').classList.add('hidden');
+                document.getElementById('estado-badge').innerHTML = ''; 
+                
+                // 🌟 2. Creamos nuestro lienzo para el Modal Evolutivo
+                let pantallaFinal = document.getElementById('pantalla-final');
+                if (!pantallaFinal) {
+                    pantallaFinal = document.createElement('div');
+                    pantallaFinal.id = 'pantalla-final';
+                    document.getElementById('main-container').parentNode.insertBefore(pantallaFinal, document.getElementById('main-container'));
+                }
+                
+                // 🕒 3. La Máquina del Tiempo: Comparamos HOY vs DÍA DE CITA
+                const hoy = new Date();
+                hoy.setHours(0,0,0,0);
+                
+                if (hoy <= fechaObjConf) {
+                    // 🚀 ETAPA A: LA CITA AÚN NO PASA (Muestra la fecha)
+                    pantallaFinal.innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 sm:p-12 text-center shadow-xl border border-indigo-100 dark:border-indigo-900/50 relative overflow-hidden animate-[popIn_0.5s_ease-out] mt-4">
+                        <div class="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                        <div class="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border-4 border-indigo-100 dark:border-indigo-800/50">
+                            <span class="material-symbols-rounded text-5xl">event_available</span>
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-4 tracking-tight">Visita Confirmada</h2>
+                        <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm max-w-sm mx-auto leading-relaxed">
+                            Nuestro equipo técnico acudirá al domicilio registrado para realizar el levantamiento físico.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 inline-block text-left border border-slate-200 dark:border-slate-700 shadow-sm min-w-[250px]">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fecha programada</p>
+                            <p class="text-lg font-black text-indigo-700 dark:text-indigo-400 mb-5">${fechaTextoConf}</p>
+                            
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Horario estimado de llegada</p>
+                            <p class="text-lg font-black text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                                <span class="material-symbols-rounded text-xl">schedule</span> A las ${data.visitaAgendada.hora.split(' ')[0]} hrs
+                            </p>
+                        </div>
+                    </div>`;
+                } else {
+                    // 🚀 ETAPA B: LA CITA YA PASÓ (Avalúo en Proceso)
+                    pantallaFinal.innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 sm:p-12 text-center shadow-xl border border-teal-100 dark:border-teal-900/50 relative overflow-hidden animate-[popIn_0.5s_ease-out] mt-4">
+                        <div class="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
+                        <div class="w-24 h-24 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border-4 border-teal-100 dark:border-teal-800/50">
+                            <span class="material-symbols-rounded text-5xl animate-pulse">engineering</span>
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-4 tracking-tight">Avalúo en Proceso</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mx-auto leading-relaxed">
+                            La visita de inspección ha concluido. En este momento, nuestro equipo de especialistas está en el proceso de la elaboración de su avalúo.
+                        </p>
+                        <div class="mt-6 inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 px-5 py-2.5 rounded-full text-xs font-bold border border-teal-200 dark:border-teal-800">
+                            <span class="material-symbols-rounded text-sm animate-spin">sync</span> Elaborando avalúo...
+                        </div>
+                    </div>`;
+                }
+                
+                pantallaFinal.classList.remove('hidden');
             }
             
             // 3. MAGIA UX: Leer la memoria y abrir la pestaña en la que se quedó el cliente
@@ -1239,8 +1317,8 @@ let downloadLink = '';
                     const modalJack = document.getElementById('successModal');
                     if (modalJack) {
                         // Aseguramos que el contenido sea el correcto para esta etapa
-                        document.getElementById('jack-titulo').innerText = "¡Expediente Recibido! 🐶";
-                        document.getElementById('jack-frase').innerHTML = "Has subido todos tus documentos.<br><br><b>Por favor ten paciencia</b>, nuestro equipo ya está trabajando en la revisión. A través de <b>esta misma liga</b> te habilitaremos el calendario para agendar el día de tu visita muy pronto.";
+                        document.getElementById('jack-titulo').innerText = "Expediente Recibido";
+                        document.getElementById('jack-frase').innerHTML = "Su documentación ha sido cargada exitosamente.<br><br>Nuestro equipo técnico ha comenzado la revisión normativa. A través de <b>este mismo portal</b> le habilitaremos el calendario para que pueda seleccionar el día y hora de su visita de inspección.";
                         
                         // Mostramos el modal
                         modalJack.classList.remove('hidden');
@@ -1632,9 +1710,9 @@ let downloadLink = '';
                         fecha: fecha,
                         hora: hora,
                         estatus: 'SOLICITADA'
-                    }
+                    },
+                    estatus: 'CITA AGENDADA' // 🔥 ESTA ES LA LLAVE QUE ABRE GESTIÓN
                 });
-                // ... Todo el resto del código (Google Calendar, etc) se queda exactamente igual.;
                 
                 await registrarLog('VISITA SOLICITADA', `El cliente agendó inspección para el ${fecha} en horario de ${hora}.`, 'UBICACION_MAPS');
                 
@@ -1659,7 +1737,7 @@ let downloadLink = '';
                 document.getElementById('agendaModal').classList.remove('flex');
                 
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-                alert("¡Tu solicitud ha sido enviada exitosamente y la cita ha sido apartada! Nos pondremos en contacto contigo si hay algún detalle con el horario.");
+                alert("¡Excelente! Su cita ha sido confirmada en nuestra agenda oficial. Nuestro equipo técnico se presentará en el domicilio en la fecha y ventana de horario seleccionadas.");
                 location.reload();
             } catch (e) {
                 console.error(e);
@@ -1730,6 +1808,7 @@ let downloadLink = '';
             });
         }
 
+    
     </script>
 
     <div id="agendaModal" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md justify-center items-center p-4">

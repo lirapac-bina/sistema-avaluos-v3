@@ -440,7 +440,9 @@
                             unidad: data.unidad || 'POR ASIGNAR',
                             checklist: data.checklist || {},
                             visitaAgendada: data.visitaAgendada || null,
-                            anotacion: data.anotacion || '' // 🔥 NUEVA VARIABLE
+                            
+                            fechasPropuestas: data.fechasPropuestas || null, // 🌟 EL ESLABÓN PERDIDO
+                            anotacion: data.anotacion || ''
                         });
                     });
 
@@ -685,8 +687,9 @@
                 const dataString = `${e.cliente} ${e.id} ${e.capturista || ''} ${e.visitador || ''} ${e.dibujante || ''}`.toUpperCase();
                 const matchTexto = dataString.includes(texto);
                 
-                // 🔥 CALCULAMOS EL PORCENTAJE PARA SABER SU ETAPA REAL
-                const items = Object.values(e.checklist || {});
+                // 🔥 CALCULAMOS EL PORCENTAJE PARA SABER SU ETAPA REAL (IGNORANDO OPCIONALES)
+                const itemsAll = Object.values(e.checklist || {});
+                const items = itemsAll.filter(i => i.obligatorio !== false); // Solo obligatorios
                 const validados = items.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
                 const pctValidados = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
 
@@ -801,8 +804,9 @@
                 let badgeClass = '';
                 const st = (exp.status || '').toUpperCase();
                 
-                // 🔥 MOVIMIENTO MAESTRO: Calculamos el progreso ANTES de pintar el estatus
-                const items = Object.values(exp.checklist || {});
+                // 🔥 MOVIMIENTO MAESTRO: Calculamos el progreso ANTES de pintar el estatus (IGNORANDO OPCIONALES)
+                const itemsAll = Object.values(exp.checklist || {});
+                const items = itemsAll.filter(i => i.obligatorio !== false); // Solo obligatorios
                 const totReq = items.length || 1;
                 const subidos = items.filter(d => ['revision', 'validado'].includes((d.estatus || '').toLowerCase())).length;
                 const validados = items.filter(d => (d.estatus || '').toLowerCase() === 'validado').length;
@@ -815,6 +819,7 @@
                 const equipoCompleto = Boolean(exp.capturista && exp.visitador && exp.dibujante);
 
                 // 🔥 PIPELINE 2026: Renderizado Visual Inteligente
+                // 1. NUEVO: Por asignar unidad
                 if(st === 'NUEVO' || exp.unidad === 'POR ASIGNAR') {
                     badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 animate-pulse';
                     exp.status = '1. NUEVO';
@@ -827,18 +832,18 @@
                     badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300';
                     exp.status = '6. FINALIZADO';
                 }
-                // Si ya llegó al 100% y YA TIENE A LOS 3 ASIGNADOS (Paso 4)
-                else if(st.includes('CAPTURA') || (pctValidados === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) {
+                // 4. EN CAPTURA: Si ya llegó al 100% y YA TIENE A LOS 3 ASIGNADOS
+                else if(st.includes('CAPTURA') || (pctValidados === 100 && items.length > 0 && equipoCompleto)) {
                     badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300';
                     exp.status = '4. EN CAPTURA';
                 }
-                // Si ya llegó al 100% pero FALTA ALGUIEN DEL EQUIPO (Paso 3)
-                else if(st.includes('ASIGNACION') || (pctValidados === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) {
+                // 🌟 3. ASIGNACIÓN TÉCNICA: Si el cliente YA AGENDÓ la cita (pero falta equipo) o si ya lo movimos manualmente
+                else if(st.includes('ASIGNACION') || st.includes('CITA AGENDADA') || (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA')) {
                     badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
                     exp.status = '3. ASIGNACIÓN TÉCNICA';
                 }
+                // 2. PORTAL - REVISIÓN: Por descarte (subiendo documentos, esperando cliente, etc.)
                 else {
-                    // Por descarte (los creados a mano que aún no están al 100%) van al Portal de Revisión (Paso 2)
                     badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400';
                     exp.status = '2. PORTAL - REVISIÓN';
                 }
@@ -859,14 +864,6 @@
                     }
                 }
 
-                // 🔴 ALERTAS
-                let alertaCita = '';
-                if (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA') {
-                    alertaCita = `
-                    <div class="mt-1.5 inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm border border-indigo-200 dark:border-indigo-700 animate-pulse">
-                        <span class="material-symbols-rounded text-[11px]">event_available</span> CITA: ${exp.visitaAgendada.fecha} (${exp.visitaAgendada.hora.split(' ')[0]})
-                    </div>`;
-                }
 
                 // 🔥 LÓGICA INTELIGENTE DEL BOTÓN DE AGENDA
                 let botonAgendar = '';
@@ -945,7 +942,6 @@
                                 ${iconoUnidad} ${siglaUnidad}
                             </div>
                             
-                            ${alertaCita} 
                         </td>
                         
                         <td class="px-4 py-3 text-center">
@@ -977,10 +973,13 @@
                                 
                                 let btnUI = '';
                                 
-                                // 🔥 REGLA DE NEGOCIO: Bloquear botón si no está validado al 100% (A menos que ya tenga equipo asignado, en cuyo caso permitimos "Ver Equipo")
-                                if (pctValidados < 100 && !badgesHtml) {
+                                // 🔥 REGLA DE NEGOCIO: Desbloquear el botón si ya tiene cita agendada, si llegó al 100%, o si ya tiene equipo
+                                const tieneCita = exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA';
+                                const listoParaAsignar = (pctValidados === 100 || tieneCita || st.includes('CITA AGENDADA'));
+
+                                if (!listoParaAsignar && !badgesHtml) {
                                     btnUI = `
-                                    <button disabled class="bg-slate-50 border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1 text-[9px] font-bold mx-auto w-full max-w-[120px] cursor-not-allowed transition-colors" title="El expediente debe estar 100% validado para asignar un equipo">
+                                    <button disabled class="bg-slate-50 border border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1 text-[9px] font-bold mx-auto w-full max-w-[120px] cursor-not-allowed transition-colors" title="Esperando confirmación de cita del cliente">
                                         <span class="material-symbols-rounded text-[14px]">lock</span> Bloqueado
                                     </button>`;
                                 } else {
