@@ -148,15 +148,39 @@
         </div>
 
         <div class="mb-6">
-            <button onclick="toggleSection('sec-mapa', 'icon-mapa'); setTimeout(() => { if(window.mapaOperativo && window.mapMarkers && window.mapMarkers.length > 0) window.mapaOperativo.fitBounds(window.mapBounds); }, 500);" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
+            <button onclick="toggleSection('sec-mapa', 'icon-mapa')" class="w-full flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <span class="material-symbols-rounded text-rose-500">map</span> Mapa Operativo
                     <span id="map-counter-badge" class="ml-2 text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full font-black border border-slate-200 dark:border-slate-600 transition-all opacity-0">0 ubicaciones</span>
                 </h2>
                 <span id="icon-mapa" class="material-symbols-rounded text-slate-400 transform rotate-180 transition-transform duration-300 group-hover:text-rose-500">expand_more</span>
             </button>
+            
             <div id="sec-mapa" class="mt-4 transition-all duration-500 origin-top hidden">
-                <div class="bg-white dark:bg-slate-800 p-2 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 relative z-0">
+                <div id="map-placeholder" class="bg-slate-50 dark:bg-slate-800/50 p-10 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 relative z-0 flex flex-col items-center justify-center text-center overflow-hidden h-[450px]">
+                    
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 dark:opacity-10">
+                        <div class="w-72 h-72 border-2 border-rose-500 rounded-full animate-[ping_3s_linear_infinite]"></div>
+                        <div class="absolute w-52 h-52 border-2 border-rose-400 rounded-full animate-[ping_2.5s_linear_infinite]"></div>
+                        <div class="absolute w-32 h-32 border-2 border-rose-300 rounded-full animate-[ping_2s_linear_infinite]"></div>
+                    </div>
+
+                    <div class="relative z-10 w-24 h-24 bg-white dark:bg-slate-800 text-rose-500 rounded-full flex items-center justify-center mb-6 shadow-2xl ring-8 ring-rose-50 dark:ring-rose-900/20">
+                        <span class="material-symbols-rounded text-5xl animate-pulse">radar</span>
+                    </div>
+
+                    <h3 class="relative z-10 text-2xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">Radar Satelital en Standby</h3>
+                    <p class="relative z-10 text-sm text-slate-500 dark:text-slate-400 mb-8 max-w-md leading-relaxed">
+                        Las coordenadas de <strong id="ph-count-ubicaciones" class="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-md font-extrabold shadow-sm">escaneando...</strong> están listas para despliegue. Active el motor cartográfico para visualizar la distribución operativa.
+                    </p>
+
+                    <button onclick="activarMapaManual()" class="relative z-10 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold py-3.5 px-8 rounded-2xl transition-all duration-300 flex items-center gap-3 shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:-translate-y-1 active:translate-y-0 group">
+                        <span class="material-symbols-rounded text-xl group-hover:rotate-12 transition-transform">explore</span> 
+                        Desplegar Mapa Operativo
+                    </button>
+                </div>
+                
+                <div id="map-wrapper" class="bg-white dark:bg-slate-800 p-2 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 relative z-0 hidden">
                     <div id="map-container" class="w-full h-[450px] rounded-2xl relative z-10"></div>
                 </div>
             </div>
@@ -273,13 +297,18 @@
         }
 
         function aplicarPreferenciasAcordeon() {
-            ['sec-kpis', 'sec-monitor', 'sec-flujo', 'sec-equipo'].forEach(id => {
-                if (localStorage.getItem('dash_pref_' + id) === 'true') {
-                    const elem = document.getElementById(id);
-                    const icon = document.getElementById('icon-' + id.split('-')[1]);
-                    if (elem && icon) {
+            ['sec-kpis', 'sec-monitor', 'sec-flujo', 'sec-equipo', 'sec-mapa'].forEach(id => {
+                const isHidden = localStorage.getItem('dash_pref_' + id);
+                const elem = document.getElementById(id);
+                const icon = document.getElementById('icon-' + id.split('-')[1]);
+                
+                if (elem && icon) {
+                    if (isHidden === 'true') {
                         elem.classList.add('hidden');
                         icon.classList.remove('rotate-180');
+                    } else if (isHidden === 'false') {
+                        elem.classList.remove('hidden');
+                        icon.classList.add('rotate-180');
                     }
                 }
             });
@@ -395,9 +424,12 @@
             const esOperativo = ['CAPTURISTA', 'TECNICO', 'VISITADOR', 'DIBUJANTE'].includes(activeUser.rol);
 
             if (esOperativo) {
-                document.getElementById('icon-kpis').closest('.mb-6').style.display = 'none';
-                document.getElementById('icon-flujo').closest('.mb-6').style.display = 'none';
-                document.getElementById('icon-equipo').closest('.mb-6').style.display = 'none';
+                const iconKpis = document.getElementById('icon-kpis');
+                if (iconKpis) iconKpis.closest('.mb-6').style.display = 'none';
+                const iconFlujo = document.getElementById('icon-flujo');
+                if (iconFlujo) iconFlujo.closest('.mb-6').style.display = 'none';
+                const iconEquipo = document.getElementById('icon-equipo');
+                if (iconEquipo) iconEquipo.closest('.mb-6').style.display = 'none';
                 
                 const dashTitle = document.getElementById('dash-title');
                 if(dashTitle) dashTitle.innerText = "Mi Tablero de Trabajo";
@@ -412,192 +444,220 @@
             const elProceso = document.getElementById('count-proceso'), elTerminados = document.getElementById('count-terminados');
             const elTimeAvg = document.getElementById('time-avg'), elTimeMin = document.getElementById('time-min'), elTimeMax = document.getElementById('time-max');
 
-
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 let total = 0, pendientes = 0, enProcesoTotal = 0, terminados = 0;
                 let cDoc = 0, cVisitaDibujo = 0, cCaptura = 0;
                 let tiemposRegistrados = [];
                 let cargaPersonal = { visitadores: {}, dibujantes: {}, capturistas: {} };
                 
-                // Vaciamos la memoria caché en cada lectura
                 cacheFase1 = []; cacheFase2 = []; cacheFase3 = []; 
-                let marcadoresNuevos = []; // 🔥 Memoria para el mapa
+                let marcadoresNuevos = []; 
 
                 snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    
-                    if (esOperativo) {
-                        const emailUsr = activeUser.email.toLowerCase();
-                        const esMio = (
-                            (data.capturista_asignado || '').toLowerCase() === emailUsr || 
-                            (data.visitador_asignado || '').toLowerCase() === emailUsr || 
-                            (data.dibujante_asignado || '').toLowerCase() === emailUsr
-                        );
-                        if (!esMio) return; 
-                    }
+                    // 🔥 ESCUDO ANTI-CRASH: Si un expediente tiene datos corruptos, lo omite sin romper el dashboard
+                    try {
+                        const data = doc.data();
+                        
+                        if (esOperativo) {
+                            const emailUsr = activeUser.email.toLowerCase();
+                            const esMio = (
+                                String(data.capturista_asignado || '').toLowerCase() === emailUsr || 
+                                String(data.visitador_asignado || '').toLowerCase() === emailUsr || 
+                                String(data.dibujante_asignado || '').toLowerCase() === emailUsr
+                            );
+                            if (!esMio) return; 
+                        }
 
-                    total++;
-                    const st = (data.estatus || data.status || data.estado || 'PENDIENTE').toUpperCase();
-                    const uni = (data.unidad || 'POR ASIGNAR').toUpperCase();
+                        total++;
+                        // 🛡️ Forzamos a String para evitar que toUpperCase() explote si alguien guarda un número o booleano
+                        const st = String(data.estatus || data.status || data.estado || 'PENDIENTE').toUpperCase();
+                        const uni = String(data.unidad || 'POR ASIGNAR').toUpperCase();
 
-                    const checklist = data.checklist || {};
-                    const items = Object.values(checklist).filter(i => i.obligatorio !== false);
-                    const tot = items.length || 1;
-                    
-                    const subidos = items.filter(i => ['revision', 'validado'].includes((i.estatus || '').toLowerCase())).length;
-                    const validados = items.filter(i => (i.estatus || '').toLowerCase() === 'validado').length;
-                    
-                    const pctCliente = Math.round((subidos / tot) * 100);
-                    const pctValidado = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
+                        const checklist = data.checklist || {};
+                        const items = Object.values(checklist).filter(i => i.obligatorio !== false);
+                        const tot = items.length || 1;
+                        
+                        const subidos = items.filter(i => ['revision', 'validado'].includes(String(i.estatus || '').toLowerCase())).length;
+                        const validados = items.filter(i => String(i.estatus || '').toLowerCase() === 'validado').length;
+                        
+                        const pctCliente = Math.round((subidos / tot) * 100);
+                        const pctValidado = items.length > 0 ? Math.round((validados / items.length) * 100) : 0;
 
-                    const tieneVisitador = !!(data.visitador_asignado || data.visitador);
-                    const tieneDibujante = !!(data.dibujante_asignado || data.dibujante);
-                    const tieneCapturista = !!(data.capturista_asignado || data.capturista);
-                    const equipoCompleto = tieneVisitador && tieneDibujante && tieneCapturista;
+                        const tieneVisitador = !!(data.visitador_asignado || data.visitador);
+                        const tieneDibujante = !!(data.dibujante_asignado || data.dibujante);
+                        const tieneCapturista = !!(data.capturista_asignado || data.capturista);
+                        const equipoCompleto = tieneVisitador && tieneDibujante && tieneCapturista;
 
-                    let fechaObj = null;
-                    let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
-                    if (rawDate) {
-                        if (rawDate.toDate) fechaObj = rawDate.toDate(); 
-                        else if (rawDate._seconds) fechaObj = new Date(rawDate._seconds * 1000);
-                        else fechaObj = new Date(rawDate); 
-                    }
-                    const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
-                    const diasActivo = calcularDiasHabiles(timestamp);
+                        let fechaObj = null;
+                        let rawDate = data.fechaCreacion || data.fecha_creacion || data.fecha || data.date;
+                        if (rawDate) {
+                            if (typeof rawDate.toDate === 'function') fechaObj = rawDate.toDate(); 
+                            else if (rawDate._seconds) fechaObj = new Date(rawDate._seconds * 1000);
+                            else fechaObj = new Date(rawDate); 
+                        }
+                        const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
+                        const diasActivo = calcularDiasHabiles(timestamp);
 
-                    // 🔥 LOGICA DEL PIPELINE 2026 (6 Pasos)
-                    let step = 0;
-                    if (st === 'NUEVO' || uni === 'POR ASIGNAR') step = 1;
-                    else if (st.includes('INCIDENCIA')) step = 5;
-                    else if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) step = 6;
-                    else if (st.includes('CAPTURA') || (pctValidado === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 4;
-                    else if (st.includes('ASIGNACION') || (pctValidado === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 3;
-                    else step = 2; // Portal-Revisión por descarte
+                        let step = 0;
+                        if (st === 'NUEVO' || uni === 'POR ASIGNAR') step = 1;
+                        else if (st.includes('INCIDENCIA')) step = 5;
+                        else if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) step = 6;
+                        else if (st.includes('CAPTURA') || (pctValidado === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 4;
+                        else if (st.includes('ASIGNACION') || (pctValidado === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 3;
+                        else step = 2; 
 
-                    // Asignación a KPIs Superiores
-                    if (step === 6) {
-                        terminados++;
-                        let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
-                        if (inicio && fin) tiemposRegistrados.push(Math.ceil(Math.abs(new Date(fin) - new Date(inicio)) / (1000 * 60 * 60 * 24)));
-                    } else if (step === 1) {
-                        pendientes++; // 🐶 Jack el pescador los atiende
-                    } else {
-                        enProcesoTotal++; // Pasos 2, 3, 4 y 5
-                    }
+                        if (step === 6) {
+                            terminados++;
+                            let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
+                            if (inicio && fin) {
+                                // 🛡️ Validación de fechas para evitar NaN en las estadísticas
+                                let dInicio = typeof inicio.toDate === 'function' ? inicio.toDate() : new Date(inicio);
+                                let dFin = typeof fin.toDate === 'function' ? fin.toDate() : new Date(fin);
+                                if (!isNaN(dInicio) && !isNaN(dFin)) {
+                                    tiemposRegistrados.push(Math.ceil(Math.abs(dFin - dInicio) / (1000 * 60 * 60 * 24)));
+                                }
+                            }
+                        } else if (step === 1) {
+                            pendientes++; 
+                        } else {
+                            enProcesoTotal++; 
+                        }
 
-                    // Calculamos a qué columna (2, 3, 4) pertenece incluso si es una Incidencia (Paso 5)
-                    let naturalStep = step;
-                    if (step === 5) {
-                        naturalStep = (pctValidado === 100 && items.length > 0 && equipoCompleto) ? 4 : (pctValidado === 100 && items.length > 0) ? 3 : 2;
-                    }
+                        let naturalStep = step;
+                        if (step === 5) {
+                            naturalStep = (pctValidado === 100 && items.length > 0 && equipoCompleto) ? 4 : (pctValidado === 100 && items.length > 0) ? 3 : 2;
+                        }
 
-                    // Llenado de Caché para el Monitor en Vivo (Solo los "En Proceso")
-                    if (step >= 2 && step <= 5) {
-                        if (tieneVisitador) cargaPersonal.visitadores[data.visitador_asignado || data.visitador] = (cargaPersonal.visitadores[data.visitador_asignado || data.visitador] || 0) + 1;
-                        if (tieneDibujante) cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] = (cargaPersonal.dibujantes[data.dibujante_asignado || data.dibujante] || 0) + 1;
-                        if (tieneCapturista) cargaPersonal.capturistas[data.capturista_asignado || data.capturista] = (cargaPersonal.capturistas[data.capturista_asignado || data.capturista] || 0) + 1;
+                        if (step >= 2 && step <= 5) {
+                            if (tieneVisitador) cargaPersonal.visitadores[String(data.visitador_asignado || data.visitador)] = (cargaPersonal.visitadores[String(data.visitador_asignado || data.visitador)] || 0) + 1;
+                            if (tieneDibujante) cargaPersonal.dibujantes[String(data.dibujante_asignado || data.dibujante)] = (cargaPersonal.dibujantes[String(data.dibujante_asignado || data.dibujante)] || 0) + 1;
+                            if (tieneCapturista) cargaPersonal.capturistas[String(data.capturista_asignado || data.capturista)] = (cargaPersonal.capturistas[String(data.capturista_asignado || data.capturista)] || 0) + 1;
 
-                        if (naturalStep === 4) cCaptura++;
-                        else if (naturalStep === 3) cVisitaDibujo++; // Asignación Técnica
-                        else cDoc++; // Portal - Revisión
+                            if (naturalStep === 4) cCaptura++;
+                            else if (naturalStep === 3) cVisitaDibujo++; 
+                            else cDoc++; 
 
-                        const expData = {
-                            id: doc.id,
-                            nombre: data.cliente || data.nombreCliente || 'Cliente',
-                            tramite: (data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
-                            pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot,
-                            dias: diasActivo,
-                            isIncidencia: step === 5 // 🔥 Bandera roja
-                        };
+                            const expData = {
+                                id: doc.id,
+                                nombre: String(data.cliente || data.nombreCliente || 'Cliente'),
+                                tramite: String(data.tipoTramite || data.tramite || 'Trámite').replace(/_/g, ' '),
+                                pctC: pctCliente, pctV: pctValidado, sub: subidos, val: validados, tot: tot,
+                                dias: diasActivo,
+                                isIncidencia: step === 5
+                            };
 
-                        if (naturalStep === 4) cacheFase3.push(expData); 
-                        else if (naturalStep === 3) cacheFase2.push(expData); 
-                        else cacheFase1.push(expData); 
-                    }
+                            if (naturalStep === 4) cacheFase3.push(expData); 
+                            else if (naturalStep === 3) cacheFase2.push(expData); 
+                            else cacheFase1.push(expData); 
+                        }
 
-                    // 🗺️ SÚPER ESCÁNER DE COORDENADAS (BLINDADO Y A PRUEBA DE FALLOS)
-                    let mapaValidado = false;
-                    const chk = data.checklist || {};
-                    let coordsEncontradas = { lat: null, lng: null };
-                    
-                    // 1. Buscamos agresivamente si el Gestor lo validó en la Mesa de Control
-                    Object.keys(chk).forEach(k => {
-                        const kUpper = String(k).toUpperCase();
-                        if (kUpper.includes('UBICACION') || kUpper.includes('MAPS') || kUpper.includes('COORDENADAS')) {
-                            const estatusItem = String(chk[k].estatus || chk[k].status || chk[k].estado || '').toLowerCase().trim();
-                            if (estatusItem === 'validado') mapaValidado = true;
+                        let mapaValidado = false;
+                        const chk = data.checklist || {};
+                        let coordsEncontradas = { lat: null, lng: null };
+                        
+                        Object.keys(chk).forEach(k => {
+                            const kUpper = String(k).toUpperCase();
+                            if (kUpper.includes('UBICACION') || kUpper.includes('MAPS') || kUpper.includes('COORDENADAS')) {
+                                const estatusItem = String(chk[k].estatus || chk[k].status || chk[k].estado || '').toLowerCase().trim();
+                                if (estatusItem === 'validado') mapaValidado = true;
+                                
+                                if (typeof chk[k].coordenadas === 'string' && chk[k].coordenadas.includes(',')) {
+                                    const p = chk[k].coordenadas.split(',');
+                                    coordsEncontradas.lat = p[0]; coordsEncontradas.lng = p[1];
+                                } else if (chk[k].lat && chk[k].lng) { 
+                                    coordsEncontradas.lat = chk[k].lat; coordsEncontradas.lng = chk[k].lng; 
+                                }
+                            }
+                        });
+
+                        if (step >= 2 && step <= 6 && mapaValidado) {
+                            let lat = coordsEncontradas.lat, lng = coordsEncontradas.lng;
                             
-                            // 🔥 EL SECRETO REVELADO: Cortamos el string de Firebase usando la coma
-                            if (typeof chk[k].coordenadas === 'string' && chk[k].coordenadas.includes(',')) {
-                                const p = chk[k].coordenadas.split(',');
-                                coordsEncontradas.lat = p[0]; coordsEncontradas.lng = p[1];
-                            } else if (chk[k].lat && chk[k].lng) { 
-                                coordsEncontradas.lat = chk[k].lat; coordsEncontradas.lng = chk[k].lng; 
+                            if (!lat || !lng) {
+                                if (data.ubicacion && data.ubicacion.latitude) { lat = data.ubicacion.latitude; lng = data.ubicacion.longitude; }
+                                else if (data.coordenadas && data.coordenadas.latitude) { lat = data.coordenadas.latitude; lng = data.coordenadas.longitude; }
+                                else if (typeof data.ubicacion === 'string' && data.ubicacion.includes(',')) { const p = data.ubicacion.split(','); lat = p[0]; lng = p[1]; }
+                                else if (typeof data.coordenadas === 'string' && data.coordenadas.includes(',')) { const p = data.coordenadas.split(','); lat = p[0]; lng = p[1]; }
+                                else if (data.ubicacion && data.ubicacion.lat) { lat = data.ubicacion.lat; lng = data.ubicacion.lng; }
+                                else if (data.coordenadas && data.coordenadas.lat) { lat = data.coordenadas.lat; lng = data.coordenadas.lng; }
+                                else if (data.lat && data.lng) { lat = data.lat; lng = data.lng; }
+                            }
+
+                            if (lat !== null && lng !== null && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+                                marcadoresNuevos.push({
+                                    lat: parseFloat(lat), lng: parseFloat(lng),
+                                    folio: String(data.folioOperativo && data.folioOperativo !== 'SIN FOLIO' ? data.folioOperativo : `ID: ${doc.id.substring(0,8)}`),
+                                    cliente: String(data.cliente || data.nombreCliente || 'Sin nombre'),
+                                    tramite: String(data.tipoTramite || data.tramite || 'Avalúo').replace(/_/g, ' '),
+                                    step: naturalStep, incidencia: step === 5,
+                                    unidad: uni 
+                                });
                             }
                         }
-                    });
-
-                    // 2. Si el Gestor lo validó (y permitimos hasta el Paso 6 Finalizado)
-                    if (step >= 2 && step <= 6 && mapaValidado) {
-                        let lat = coordsEncontradas.lat, lng = coordsEncontradas.lng;
-                        
-                        // Si no estaban en el checklist, buscamos en la raíz por si acaso
-                        if (!lat || !lng) {
-                            if (data.ubicacion && data.ubicacion.latitude) { lat = data.ubicacion.latitude; lng = data.ubicacion.longitude; }
-                            else if (data.coordenadas && data.coordenadas.latitude) { lat = data.coordenadas.latitude; lng = data.coordenadas.longitude; }
-                            else if (typeof data.ubicacion === 'string' && data.ubicacion.includes(',')) { const p = data.ubicacion.split(','); lat = p[0]; lng = p[1]; }
-                            else if (typeof data.coordenadas === 'string' && data.coordenadas.includes(',')) { const p = data.coordenadas.split(','); lat = p[0]; lng = p[1]; }
-                            else if (data.ubicacion && data.ubicacion.lat) { lat = data.ubicacion.lat; lng = data.ubicacion.lng; }
-                            else if (data.coordenadas && data.coordenadas.lat) { lat = data.coordenadas.lat; lng = data.coordenadas.lng; }
-                            else if (data.lat && data.lng) { lat = data.lat; lng = data.lng; }
-                        }
-
-                        if (lat !== null && lng !== null && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
-                            marcadoresNuevos.push({
-                                lat: parseFloat(lat), lng: parseFloat(lng),
-                                folio: data.folioOperativo && data.folioOperativo !== 'SIN FOLIO' ? data.folioOperativo : `ID: ${doc.id.substring(0,8)}`,
-                                cliente: data.cliente || data.nombreCliente || 'Sin nombre',
-                                tramite: (data.tipoTramite || data.tramite || 'Avalúo').replace(/_/g, ' '),
-                                step: naturalStep, incidencia: step === 5,
-                                unidad: uni 
-                            });
-                        }
+                    } catch (errorDocumento) {
+                        // Si un documento está corrupto, lo ignoramos y seguimos pintando el resto
+                        console.warn(`Error procesando expediente ${doc.id}, se omitió para no romper el dashboard:`, errorDocumento);
                     }
-                });
+                }); // Fin del forEach
 
                 if(!esOperativo) {
-                    elTotal.innerText = total; elPendientes.innerText = pendientes; elProceso.innerText = enProcesoTotal; elTerminados.innerText = terminados;
+                    if (elTotal) elTotal.innerText = total; 
+                    if (elPendientes) elPendientes.innerText = pendientes; 
+                    if (elProceso) elProceso.innerText = enProcesoTotal; 
+                    if (elTerminados) elTerminados.innerText = terminados;
                     
                     if (tiemposRegistrados.length > 0) {
-                        elTimeMin.innerText = Math.min(...tiemposRegistrados); elTimeMax.innerText = Math.max(...tiemposRegistrados);
-                        elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
-                    } else { elTimeMin.innerText = "-"; elTimeMax.innerText = "-"; elTimeAvg.innerText = "-"; }
+                        if (elTimeMin) elTimeMin.innerText = Math.min(...tiemposRegistrados); 
+                        if (elTimeMax) elTimeMax.innerText = Math.max(...tiemposRegistrados);
+                        if (elTimeAvg) elTimeAvg.innerText = (tiemposRegistrados.reduce((a, b) => a + b, 0) / tiemposRegistrados.length).toFixed(1);
+                    } else { 
+                        if (elTimeMin) elTimeMin.innerText = "-"; 
+                        if (elTimeMax) elTimeMax.innerText = "-"; 
+                        if (elTimeAvg) elTimeAvg.innerText = "-"; 
+                    }
 
                     const totalActivos = cDoc + cVisitaDibujo + cCaptura || 1; 
-                    document.getElementById('bar-portal-val').innerText = cDoc; 
-                    document.getElementById('bar-asignacion-val').innerText = cVisitaDibujo; 
-                    document.getElementById('bar-captura-val').innerText = cCaptura;
+                    const barPortalVal = document.getElementById('bar-portal-val');
+                    const barAsignacionVal = document.getElementById('bar-asignacion-val');
+                    const barCapturaVal = document.getElementById('bar-captura-val');
+                    
+                    if (barPortalVal) barPortalVal.innerText = cDoc; 
+                    if (barAsignacionVal) barAsignacionVal.innerText = cVisitaDibujo; 
+                    if (barCapturaVal) barCapturaVal.innerText = cCaptura;
                     
                     setTimeout(() => { 
-                        document.getElementById('bar-portal').style.width = `${(cDoc / totalActivos) * 100}%`; 
-                        document.getElementById('bar-asignacion').style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; 
-                        document.getElementById('bar-captura').style.width = `${(cCaptura / totalActivos) * 100}%`; 
+                        const barPortal = document.getElementById('bar-portal');
+                        const barAsig = document.getElementById('bar-asignacion');
+                        const barCap = document.getElementById('bar-captura');
+                        if (barPortal) barPortal.style.width = `${(cDoc / totalActivos) * 100}%`; 
+                        if (barAsig) barAsig.style.width = `${(cVisitaDibujo / totalActivos) * 100}%`; 
+                        if (barCap) barCap.style.width = `${(cCaptura / totalActivos) * 100}%`; 
                     }, 100);
 
                     const renderListaP = (obj, elementId, colorClass) => {
                         const container = document.getElementById(elementId);
+                        if (!container) return;
                         const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
                         if (keys.length === 0) return container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
                         container.innerHTML = keys.map(k => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${k.split('@')[0].toUpperCase()}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`).join('');
                     };
-                    renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
+                    renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); 
+                    renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); 
+                    renderListaP(cargaPersonal.capturistas, 'list-capturistas', 'text-teal-600 dark:text-teal-400');
                 }
 
-                // Invocamos la función mágica que ordena y renderiza
                 aplicarFiltroOrden();
 
-                // 🗺️ GUARDAR EN MEMORIA GLOBAL Y PINTAR EN VIVO
+                // 📡 ALIMENTACIÓN DEL RADAR (CÓDIGO NUEVO)
                 window.marcadoresMapeo = marcadoresNuevos;
+                
+                // 🌟 MAGIA UX: Inyectamos el número de ubicaciones en el texto del radar
+                const phCount = document.getElementById('ph-count-ubicaciones');
+                if (phCount) {
+                    const num = marcadoresNuevos.length;
+                    phCount.innerText = num === 1 ? '1 ubicación activa' : `${num} ubicaciones activas`;
+                }
+
                 if (typeof window.pintarMapaGoogle === 'function') window.pintarMapaGoogle();
 
             }, (error) => { console.error("Error en Dashboard:", error); });
@@ -684,12 +744,30 @@
         };
 
         window.inicializarMapa = function() {
-            window.mapaOperativo = new google.maps.Map(document.getElementById('map-container'), {
-                center: {lat: 19.4326, lng: -99.1332},
-                zoom: 11, mapTypeControl: false, streetViewControl: true, gestureHandling: 'greedy'
-            });
-            // 🔥 LA MAGIA EN VIVO: Si Firebase cargó antes que Google Maps, lo pintamos al instante.
-            window.pintarMapaGoogle(); 
+            // Ya no creamos el mapa de inmediato. Solo dejamos registro de que la API de Google descargó con éxito.
+            window.googleMapsApiListo = true; 
+        };
+
+        // 🌟 NUEVA FUNCIÓN: Se activa SOLO cuando el directivo da clic en el botón "Cargar Mapa Ahora"
+        window.activarMapaManual = function() {
+            // 1. Ocultar el diseño de invitación y mostrar la caja real del mapa
+            document.getElementById('map-placeholder').classList.add('hidden');
+            document.getElementById('map-wrapper').classList.remove('hidden');
+
+            // 2. Instanciar Google Maps (Ahora sí, con la caja visible y a su tamaño real)
+            if (!window.mapaOperativo) {
+                window.mapaOperativo = new google.maps.Map(document.getElementById('map-container'), {
+                    center: {lat: 19.4326, lng: -99.1332},
+                    zoom: 11, mapTypeControl: false, streetViewControl: true, gestureHandling: 'greedy'
+                });
+            } else {
+                google.maps.event.trigger(window.mapaOperativo, 'resize');
+            }
+
+            // 3. Pintar los pines y centrar la cámara
+            if (typeof window.pintarMapaGoogle === 'function') {
+                window.pintarMapaGoogle();
+            }
         };
 
         // INICIAR AL CARGAR

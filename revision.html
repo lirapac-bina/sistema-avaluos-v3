@@ -1257,56 +1257,39 @@
 </div>
 
 <div id="modal-proponer-fechas" class="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out]">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                    <span class="material-symbols-rounded text-teal-500">calendar_month</span> Proponer Fechas
-                </h3>
-                <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500"><span class="material-symbols-rounded">close</span></button>
-            </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Propón hasta 3 opciones de fecha y horario para que el cliente elija.</p>
-            
-            <div class="space-y-3 mb-6">
-                <div class="flex gap-2">
-                    <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
-                </div>
-                <div class="flex gap-2">
-                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
-                </div>
-                <div class="flex gap-2">
-                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold" title="Hora exacta de la visita">
-                </div>
-            </div>
-                <div class="flex gap-2">
-                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <select id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                        <option value="">Horario...</option>
-                        <option value="09:00 - 11:00">09:00 - 11:00</option>
-                        <option value="11:00 - 13:00">11:00 - 13:00</option>
-                        <option value="13:00 - 15:00">13:00 - 15:00</option>
-                        <option value="15:00 - 18:00">15:00 - 18:00</option>
-                    </select>
-                </div>
-                <div class="flex gap-2">
-                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                    <select id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs outline-none dark:text-white font-bold">
-                        <option value="">Horario...</option>
-                        <option value="09:00 - 11:00">09:00 - 11:00</option>
-                        <option value="11:00 - 13:00">11:00 - 13:00</option>
-                        <option value="13:00 - 15:00">13:00 - 15:00</option>
-                        <option value="15:00 - 18:00">15:00 - 18:00</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
-                <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
+        
+        <div class="flex justify-between items-center mb-4 mt-2">
+            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-rounded text-teal-500 text-2xl">edit_calendar</span> Proponer Fechas
+            </h3>
+            <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                <span class="material-symbols-rounded text-sm">close</span>
             </button>
         </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Propón hasta 3 opciones de fecha y hora exacta. El cliente recibirá una alerta en su portal para confirmar la cita.</p>
+        
+        <div class="space-y-4 mb-8">
+            <div class="flex gap-3">
+                <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+            </div>
+            <div class="flex gap-3">
+                <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+            </div>
+            <div class="flex gap-3">
+                <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+            </div>
+        </div>
+        
+        <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-4 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+            <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
+        </button>
     </div>
+</div>
 
 </body>
 </html>

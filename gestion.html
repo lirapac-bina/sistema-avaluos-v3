@@ -702,11 +702,14 @@
                     const st = (e.status || '').toUpperCase();
                     const uni = (e.unidad || 'POR ASIGNAR').toUpperCase();
 
+                    // 🌟 FIX: Detectar si realmente está esperando al cliente (basado en datos, no solo en texto)
+                    const esperandoCliente = st.includes('ESPERANDO') || (e.fechasPropuestas && e.fechasPropuestas.length > 0 && (!e.visitaAgendada || e.visitaAgendada.estatus !== 'SOLICITADA'));
+
                     if (statusFilter === "NUEVO") matchStatus = uni === 'POR ASIGNAR' || st === 'NUEVO';
-                    // Paso 2: Activo pero sin 100%
-                    else if (statusFilter === "PORTAL-REVISION") matchStatus = st.includes('PORTAL') || st.includes('REVISI') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados < 100);
-                    // Paso 3: 100% pero el equipo NO ESTÁ COMPLETO
-                    else if (statusFilter === "ASIGNACION_TECNICA") matchStatus = st.includes('ASIGNACION') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados === 100 && items.length > 0 && !equipoCompleto);
+                    // Paso 2: Activo pero sin 100% Y que no esté esperando al cliente
+                    else if (statusFilter === "PORTAL-REVISION") matchStatus = (st.includes('PORTAL') || st.includes('REVISI') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados < 100)) && !esperandoCliente;
+                    // Paso 3: 100% pero el equipo NO ESTÁ COMPLETO, O si el estatus dice "ESPERANDO AL CLIENTE"
+                    else if (statusFilter === "ASIGNACION_TECNICA") matchStatus = st.includes('ASIGNACION') || esperandoCliente || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados === 100 && items.length > 0 && !equipoCompleto) || (e.visitaAgendada && e.visitaAgendada.estatus === 'SOLICITADA');
                     // Paso 4: 100% y el EQUIPO ESTÁ 100% ASIGNADO
                     else if (statusFilter === "CAPTURA") matchStatus = st.includes('CAPTURA') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidados === 100 && items.length > 0 && equipoCompleto);
                     else if (statusFilter === "INCIDENCIA") matchStatus = st.includes('INCIDENCIA');
@@ -837,8 +840,8 @@
                     badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300';
                     exp.status = '4. EN CAPTURA';
                 }
-                // 🌟 3. ASIGNACIÓN TÉCNICA: Si el cliente YA AGENDÓ la cita (pero falta equipo) o si ya lo movimos manualmente
-                else if(st.includes('ASIGNACION') || st.includes('CITA AGENDADA') || (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA')) {
+                // 🌟 3. ASIGNACIÓN TÉCNICA: Si el cliente YA AGENDÓ, si YA LE MANDASTE OPCIONES, o si falta equipo
+                else if(st.includes('ASIGNACION') || st.includes('ESPERANDO') || st.includes('CITA AGENDADA') || (exp.visitaAgendada && exp.visitaAgendada.estatus === 'SOLICITADA') || (exp.fechasPropuestas && exp.fechasPropuestas.length > 0)) {
                     badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
                     exp.status = '3. ASIGNACIÓN TÉCNICA';
                 }

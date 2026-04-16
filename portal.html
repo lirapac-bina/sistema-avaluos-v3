@@ -1166,12 +1166,18 @@ let downloadLink = '';
                             // 🌟 FIX: Solo la primera letra en mayúscula, lo demás en bajas
                             const fechaTexto = rawFecha.charAt(0).toUpperCase() + rawFecha.slice(1);
                             
+                            // Convertir hora (ej. 14:30) a formato 12h (02:30 PM)
+                            const [hora24, min] = prop.hora.split(':');
+                            const ampm = hora24 >= 12 ? 'PM' : 'AM';
+                            const hora12 = (hora24 % 12) || 12;
+                            const horaFormateada = `${hora12}:${min} ${ampm}`;
+
                             contenedorFechas.innerHTML += `
                             <label class="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group shadow-sm">
                                 <input type="radio" name="fecha_seleccionada" value="${prop.fecha}|${prop.hora}" class="w-5 h-5 text-indigo-600 accent-indigo-600">
                                 <div>
                                     <p class="font-black text-slate-800 dark:text-white text-sm mb-1">${fechaTexto}</p>
-                                    <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">schedule</span> A las: ${prop.hora} hrs</p>
+                                    <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">schedule</span> A las: ${horaFormateada}</p>
                                 </div>
                             </label>`;
                         });
@@ -1238,9 +1244,12 @@ let downloadLink = '';
                             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fecha programada</p>
                             <p class="text-lg font-black text-indigo-700 dark:text-indigo-400 mb-5">${fechaTextoConf}</p>
                             
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Horario estimado de llegada</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Horario de llegada</p>
                             <p class="text-lg font-black text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
-                                <span class="material-symbols-rounded text-xl">schedule</span> A las ${data.visitaAgendada.hora.split(' ')[0]} hrs
+                                <span class="material-symbols-rounded text-xl">schedule</span> A las ${(() => {
+                                    const [h, m] = data.visitaAgendada.hora.split(':');
+                                    return `${(h % 12) || 12}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
+                                })()}
                             </p>
                         </div>
                     </div>`;
@@ -1686,7 +1695,7 @@ let downloadLink = '';
             }
         }
 
-        // Nueva función de citas (CONECTADA AL CALENDARIO CONTROLADO)
+        // Nueva función de citas (CONECTADA AL CALENDARIO CONTROLADO Y DINÁMICO)
         async function guardarCita() {
             // Buscamos cuál opción eligió el cliente
             const seleccion = document.querySelector('input[name="fecha_seleccionada"]:checked');
@@ -1704,7 +1713,14 @@ let downloadLink = '';
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando y Agendando...';
             
             try {
-                // 1. Guardar en Base de Datos
+                // 🌟 1. MAGIA DINÁMICA: Obtenemos la unidad y su correo
+                const uniSiglas = (expedienteGlobal && expedienteGlobal.unidad) ? expedienteGlobal.unidad : 'AVE'; // Fallback
+                
+                // Buscamos el correo de esa unidad en la base de datos
+                const uniDoc = await db.collection('unidades_valuacion').doc(uniSiglas).get();
+                const correoCalendarioUnidad = uniDoc.exists ? uniDoc.data().correo_calendario : 'lirapac@gmail.com'; 
+
+                // 2. Guardar en Base de Datos
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
                     visitaAgendada: {
                         fecha: fecha,
@@ -1716,10 +1732,9 @@ let downloadLink = '';
                 
                 await registrarLog('VISITA SOLICITADA', `El cliente agendó inspección para el ${fecha} en horario de ${hora}.`, 'UBICACION_MAPS');
                 
-                // 🌟 2. MAGIA DE GOOGLE CALENDAR
-                // Extraemos la hora de inicio del bloque (ej. "09:00 - 11:00" -> "09:00")
+                // 3. PREPARAMOS LOS DATOS PARA GOOGLE CALENDAR
                 const horaInicio = hora.split(' ')[0]; 
-                const fechaISO = `${fecha}T${horaInicio}:00`; // Formato: YYYY-MM-DDTHH:MM:00
+                const fechaISO = `${fecha}T${horaInicio}:00`; 
                 
                 const nombreCliente = (typeof expedienteGlobal !== 'undefined' && expedienteGlobal && expedienteGlobal.cliente) ? expedienteGlobal.cliente : 'Cliente';
                 
@@ -1729,35 +1744,36 @@ let downloadLink = '';
                     direccion = expedienteGlobal.checklist['UBICACION_MAPS'].direccion || expedienteGlobal.checklist['UBICACION_MAPS'].ubicacion || "Ubicación en GPS";
                 }
 
-                // 🚀 Disparamos el robot de Google
-                await agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion);
+                // 🚀 Disparamos el robot de Google Y LE PASAMOS EL CORREO DE LA UNIDAD
+                await agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion, correoCalendarioUnidad);
 
-                // 3. Finalizar Interfaz
+                // 4. Finalizar Interfaz
                 document.getElementById('agendaModal').classList.add('hidden');
                 document.getElementById('agendaModal').classList.remove('flex');
                 
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-                alert("¡Excelente! Su cita ha sido confirmada en nuestra agenda oficial. Nuestro equipo técnico se presentará en el domicilio en la fecha y ventana de horario seleccionadas.");
+                if (typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                alert("¡Excelente! Su cita ha sido confirmada en nuestra agenda oficial. Nuestro equipo técnico se presentará en el domicilio en la fecha y horario seleccionado.");
                 location.reload();
             } catch (e) {
                 console.error(e);
                 alert("Hubo un error al agendar la visita: " + e.message);
                 btn.disabled = false;
-                btn.innerHTML = 'Solicitar Visita <span class="material-symbols-rounded text-lg">arrow_forward</span>';
+                btn.innerHTML = 'Confirmar Cita <span class="material-symbols-rounded text-lg">check_circle</span>';
             }
         }
 
         // 🔥 CONECTOR OFICIAL CON GOOGLE CALENDAR
         const SCRIPT_CALENDARIO_URL = 'https://script.google.com/macros/s/AKfycbwa0RH7xJbOq5NgVBq1YOCbEjWa3PuNbYaIzeTkUodd0nABseJeN9BxzKexLW6IuSclWA/exec';
 
-        async function agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion) {
+        async function agendarEnGoogleCalendar(fechaISO, nombreCliente, direccion, correoUnidad) {
             try {
                 const payload = {
                     accion: 'AGENDAR_CITA',
                     titulo: `📐 Levantamiento: ${nombreCliente}`,
                     fechaISO: fechaISO, 
                     ubicacion: direccion || "Dirección pendiente de confirmar",
-                    descripcion: "Cita agendada automáticamente desde el Portal del Cliente Leezar."
+                    descripcion: "Cita agendada automáticamente desde el Portal del Cliente Leezar.",
+                    correo_calendario: correoUnidad // 🔥 AQUÍ MANDAMOS EL CORREO ESPECÍFICO DE LA UNIDAD
                 };
 
                 // Enviamos la orden al robot de Google
