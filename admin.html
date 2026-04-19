@@ -160,12 +160,26 @@
                     Configurar <span class="material-symbols-rounded text-sm">arrow_forward</span>
                 </span>
             </div>
+
+            <div onclick="abrirVista('plantillas')" class="bg-white dark:bg-leezar-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg hover:border-fuchsia-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-fuchsia-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-110"></div>
+                <div class="w-12 h-12 rounded-xl bg-fuchsia-50 dark:bg-fuchsia-900/30 flex items-center justify-center mb-4 text-fuchsia-600 dark:text-fuchsia-400 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-rounded text-3xl">description</span>
+                </div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg mb-2">Catálogo de Notas</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Textos automáticos para Hoja de Trabajo.</p>
+                <span class="text-xs font-bold text-fuchsia-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Configurar <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </span>
+            </div>
+
+
         </div>
 
         <div id="dynamic-view" class="hidden flex-1 flex flex-col min-h-0 mt-6"></div>
 
         <div id="modal-editor" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
-            <div class="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative overflow-hidden fade-in">
+            <div class="bg-white dark:bg-[#1e293b] w-full max-w-md max-h-[90vh] overflow-y-auto custom-scroll rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative fade-in">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6" id="modal-title">Documento del Diccionario</h3>
                 <div class="space-y-4">
                     <div>
@@ -187,12 +201,11 @@
                         </div>
 
                         <div class="mt-4">
-                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Enlace de Descarga (Plantilla PDF - Opcional)</label>
-                        <input type="url" id="input-plantilla" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-slate-300" placeholder="https://ejemplo.com/formato.pdf">
-                        <p class="text-[9px] text-amber-500 font-bold mt-1">Si pones un enlace, el cliente verá un aviso amarillo para descargar y firmar.</p>
-                    </div>
+                            <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Enlace de Descarga (Opcional)</label>
+                            <input type="url" id="input-plantilla" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-slate-300" placeholder="https://ejemplo.com/formato.pdf">
+                        </div>
 
-                        <div>
+                        <div class="col-span-2">
                             <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase">Tipo de Archivo</label>
                             <select id="input-tipo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white outline-none cursor-pointer">
                                 <option value="MIXTO">Archivo (PDF o Foto)</option>
@@ -209,11 +222,40 @@
                         <input type="checkbox" id="input-convertir" class="mt-0.5 w-5 h-5 text-indigo-600 rounded-lg cursor-pointer focus:ring-indigo-500 bg-white border-indigo-300">
                         <div>
                             <label for="input-convertir" class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest cursor-pointer block">Guardar copia JPG en DOC JUST</label>
-                            <p class="text-[9px] text-indigo-500/80 dark:text-indigo-300/80 leading-tight mt-1">Si es PDF se renderiza a JPG. Si es foto se copia directo. Se guardará automáticamente en DOC JUST con el nombre de este requisito.</p>
+                            <p class="text-[9px] text-indigo-500/80 dark:text-indigo-300/80 leading-tight mt-1">Si es PDF se renderiza a JPG. Si es foto se copia directo.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-4 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl border border-fuchsia-200 dark:border-fuchsia-800/50 flex flex-col gap-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" id="input-usa-ia" onchange="document.getElementById('caja-prompt-ia').classList.toggle('hidden', !this.checked)" class="mt-0.5 w-5 h-5 text-fuchsia-600 rounded-lg cursor-pointer focus:ring-fuchsia-500 bg-white border-fuchsia-300">
+                            <div>
+                                <span class="text-xs font-black text-fuchsia-700 dark:text-fuchsia-400 uppercase tracking-widest block">🤖 Extraer datos con Inteligencia Artificial</span>
+                                <p class="text-[10px] text-fuchsia-500 dark:text-fuchsia-300 leading-tight mt-1">Si se activa, el robot leerá el archivo automáticamente.</p>
+                            </div>
+                        </label>
+                        
+                        <div id="caja-prompt-ia" class="hidden flex flex-col gap-2 border-t border-fuchsia-200/50 pt-3 mt-1">
+                            <label class="text-[10px] font-extrabold text-slate-500 uppercase">Instrucciones Universales para la IA (Prompt)</label>
+                            <textarea id="input-prompt-ia" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-600 dark:text-slate-300 outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 h-40 custom-scroll" placeholder="Ejemplo para Copiar y Pegar:
+
+Analiza este documento y extrae exactamente estos datos en formato JSON estricto:
+- 'cuenta' : (El número de contrato o NIS)
+- 'folio' : (El número de recibo o factura)
+- 'fecha' : (La fecha límite en formato DD/MM/AAAA)"></textarea>
+                            
+                            <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-1">
+                                <p class="text-[10px] font-black text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">lightbulb</span> Reglas de Oro para hablar con la IA:</p>
+                                <ul class="text-[9.5px] text-blue-600 dark:text-blue-300 leading-relaxed font-medium list-disc pl-4">
+                                    <li><b>No seas literal:</b> En México los nombres cambian (CMAS, CAEV, JAPAY). Pídele que busque "la dependencia de agua" o "el identificador".</li>
+                                    <li><b>El formato es Ley:</b> SIEMPRE termina tu instrucción con la frase: <i>"Devuelve la respuesta en formato JSON estricto."</i></li>
+                                    <li><b>Usa comillas simples:</b> Para los nombres de los datos que quieres, usa comillas simples (Ej: 'cuenta', 'fecha_pago').</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="flex justify-end gap-3 mt-8">
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
                     <button onclick="cerrarModalEditor()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
                     <button onclick="confirmarGuardadoDiccionario()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg">Guardar al Diccionario</button>
                 </div>
@@ -817,6 +859,9 @@
                 renderBitacora(container);
             } else if (vista === 'unidades') {
                 renderUnidades(container);
+            } else if (vista === 'plantillas') {
+                await fetchCatalogo(); // 🌟 MAGIA: Descargamos la matriz (Fuente de Verdad)
+                renderPlantillas(container);
             }
         }
 
@@ -905,9 +950,10 @@
                         <div class="pr-12 pointer-events-none">
                             <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">${doc.nombre}</p>
                             <p class="text-[9px] font-mono text-slate-400 mt-1">${doc.id}</p>
-                            <div class="flex items-center gap-1 mt-1.5">
+                            <div class="flex items-center gap-1 mt-1.5 flex-wrap">
                                 <p class="text-[9px] font-bold text-${col.color}-600 dark:text-${col.color}-400 bg-${col.color}-50 dark:bg-${col.color}-900/20 inline-block px-1.5 py-0.5 rounded border border-${col.color}-100 dark:border-${col.color}-800">Tipo: ${doc.tipo}</p>
                                 ${doc.autoConvertJpg ? '<span class="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-800" title="Renderizará JPG automático">📸 AUTO-JPG</span>' : ''}
+                                ${doc.usaIA ? '<span class="text-[9px] font-black text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-900/30 px-1.5 py-0.5 rounded border border-fuchsia-200 dark:border-fuchsia-800 shadow-sm" title="Extraerá datos con Inteligencia Artificial">🤖 IA-ACTIVA</span>' : ''}
                             </div>
                         </div>
                     </div>`;
@@ -930,7 +976,9 @@
             const iCat = document.getElementById('input-categoria');
             const iTip = document.getElementById('input-tipo');
             const iPlan = document.getElementById('input-plantilla');
-            const iConv = document.getElementById('input-convertir'); // 🔥 NUEVO
+            const iConv = document.getElementById('input-convertir');
+            const iUsaIa = document.getElementById('input-usa-ia'); // 🔥 NUEVO IA
+            const iPrompt = document.getElementById('input-prompt-ia'); // 🔥 NUEVO IA
 
             if (idToEdit) {
                 editMode = true;
@@ -938,13 +986,23 @@
                 iNom.value = doc.nombre; iId.value = idToEdit; iId.disabled = true;
                 iCat.value = doc.categoria || 'solicitante'; iTip.value = doc.tipo || 'IMG';
                 iPlan.value = doc.plantilla || ''; 
-                iConv.checked = doc.autoConvertJpg === true; // 🔥 CARGA VALOR
+                iConv.checked = doc.autoConvertJpg === true;
+                
+                // 🔥 CARGA VALORES IA
+                iUsaIa.checked = doc.usaIA === true;
+                iPrompt.value = doc.promptIA || '';
+                document.getElementById('caja-prompt-ia').classList.toggle('hidden', !iUsaIa.checked);
             } else {
                 editMode = false;
                 iNom.value = ''; iId.value = ''; iId.disabled = false;
                 iCat.value = 'solicitante'; iTip.value = 'IMG';
                 iPlan.value = ''; 
-                iConv.checked = false; // 🔥 RESET
+                iConv.checked = false;
+                
+                // 🔥 RESET IA
+                iUsaIa.checked = false;
+                iPrompt.value = '';
+                document.getElementById('caja-prompt-ia').classList.add('hidden');
             }
             iNom.focus();
         }
@@ -964,21 +1022,25 @@
             const cat = document.getElementById('input-categoria').value;
             const tipo = document.getElementById('input-tipo').value;
             const plantilla = document.getElementById('input-plantilla').value.trim();
-            const convertir = document.getElementById('input-convertir').checked; // 🔥 ATRAPAMOS VALOR
+            const convertir = document.getElementById('input-convertir').checked;
+            const usaIa = document.getElementById('input-usa-ia').checked; // 🔥 ATRAPAMOS IA
+            const promptIa = document.getElementById('input-prompt-ia').value.trim(); // 🔥 ATRAPAMOS IA
 
             if (!nombre || !id) return alert("Nombre e ID son obligatorios.");
             if (!catalogoData.diccionario) catalogoData.diccionario = {};
             
-            // 💾 GUARDAMOS CON EL NUEVO ATRIBUTO
+            // 💾 GUARDAMOS CON LOS NUEVOS ATRIBUTOS DE IA
             catalogoData.diccionario[id] = { 
                 nombre: nombre, 
                 categoria: cat, 
                 tipo: tipo,
-                autoConvertJpg: convertir 
+                autoConvertJpg: convertir,
+                usaIA: usaIa,
+                promptIA: promptIa
             };
             if (plantilla) catalogoData.diccionario[id].plantilla = plantilla; 
 
-            // 🌟 LOG DETALLADO: Identifica si fue creación o edición
+            // 🌟 LOG DETALLADO
             await registrarLog('DICCIONARIO', `${editMode ? 'EDICIÓN' : 'CREACIÓN'}: Se actualizó el documento [${id}] - ${nombre}`);
 
             await saveCatalogo();
@@ -1599,6 +1661,174 @@
                 await db.collection('unidades_valuacion').doc(id).delete();
                 cargarListaUnidades();
             }
+        }
+
+        // ==========================================
+        // 🧩 MÓDULO: PLANTILLAS DE NOTAS (HOJA DE TRABAJO)
+        // ==========================================
+        let currentPlantillaId = null;
+
+        function renderPlantillas(container) {
+            container.innerHTML = `
+                <div class="flex flex-col h-full animate-[fadeIn_0.3s]">
+                    <div class="flex items-center gap-4 mb-6">
+                        <button onclick="cerrarVista()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition"><span class="material-symbols-rounded text-2xl">arrow_back</span></button>
+                        <div><h2 class="text-xl font-bold text-slate-800 dark:text-white">Catálogo de Notas</h2><p class="text-xs text-slate-400">Diseña las plantillas maestras para la Hoja de Trabajo.</p></div>
+                    </div>
+                    
+                    <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+                        <div class="w-full lg:w-1/3 bg-white dark:bg-leezar-card p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col h-[calc(100vh-180px)]">
+                            <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+                                <h3 class="font-extrabold text-slate-700 dark:text-white uppercase text-xs tracking-widest">Trámites</h3>
+                            </div>
+                            <div id="lista-plantillas" class="flex-1 overflow-y-auto custom-scroll space-y-2 pb-10">
+                                <div class="text-center py-4 text-slate-400"><span class="material-symbols-rounded animate-spin">sync</span></div>
+                            </div>
+                        </div>
+
+                        <div class="w-full lg:w-2/3 flex flex-col gap-4 h-[calc(100vh-180px)]">
+                            <div class="bg-white dark:bg-leezar-card p-5 rounded-2xl border border-slate-200 dark:border-slate-700 flex-1 flex flex-col min-h-0">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 id="titulo-plantilla-activa" class="font-extrabold text-fuchsia-600 dark:text-fuchsia-400 uppercase text-sm tracking-widest">Selecciona un trámite...</h3>
+                                    <button onclick="guardarPlantilla()" id="btn-save-plantilla" class="bg-fuchsia-600 hover:bg-fuchsia-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-fuchsia-500/30 flex items-center gap-2 hidden active:scale-95">
+                                        <span class="material-symbols-rounded text-sm">save</span> Guardar Plantilla
+                                    </button>
+                                </div>
+                                <textarea id="editor-plantilla" disabled class="flex-1 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm font-mono text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-fuchsia-500 resize-none custom-scroll leading-relaxed" placeholder="Escribe el texto aquí... usa las etiquetas de abajo para la información dinámica."></textarea>
+                            </div>
+
+                            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                                <h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">auto_awesome</span> Etiquetas Mágicas (Clic para insertar):</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <span onclick="insertarVariable('{{FECHA_VISITA}}')" title="Inserta la fecha exacta en que se realizó la visita" class="cursor-pointer bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-[10px] font-mono px-2 py-1 rounded shadow-sm hover:border-fuchsia-500 hover:text-fuchsia-600 transition">{{FECHA_VISITA}}</span>
+                                    <span onclick="insertarVariable('{{LISTA_DOCUMENTOS}}')" title="Redacta la lista de documentos validados automáticamente" class="cursor-pointer bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-[10px] font-mono px-2 py-1 rounded shadow-sm hover:border-fuchsia-500 hover:text-fuchsia-600 transition">{{LISTA_DOCUMENTOS}}</span>
+                                    <span onclick="insertarVariable('{{AGUA_CUENTA}}')" title="Se extraerá del Recibo de Agua (Vía Gemini)" class="cursor-pointer bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[10px] font-mono px-2 py-1 rounded shadow-sm hover:border-blue-500 transition">{{AGUA_CUENTA}}</span>
+                                    <span onclick="insertarVariable('{{AGUA_FOLIO}}')" title="Se extraerá del Recibo de Agua (Vía Gemini)" class="cursor-pointer bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[10px] font-mono px-2 py-1 rounded shadow-sm hover:border-blue-500 transition">{{AGUA_FOLIO}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            cargarListaPlantillas();
+        }
+
+        async function cargarListaPlantillas() {
+            const lista = document.getElementById('lista-plantillas');
+            try {
+                // 1. Ir directamente a Firebase por la Matriz (Fuente de Verdad) 
+                // Esto la hace 100% independiente y a prueba de fallos de memoria.
+                const docSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
+                let matrizLocal = {};
+                if (docSnap.exists) {
+                    matrizLocal = docSnap.data().matriz || {};
+                }
+
+                // 2. Extraer los trámites únicos
+                const serviciosUnicos = new Set();
+                Object.values(matrizLocal).forEach(entidad => {
+                    if (entidad && typeof entidad === 'object') {
+                        Object.keys(entidad).forEach(servicio => serviciosUnicos.add(servicio));
+                    }
+                });
+
+                // 3. Traer las plantillas que ya tienen texto guardado
+                const snap = await db.collection('plantillas_notas').get();
+                const plantillasGuardadas = {};
+                snap.forEach(doc => plantillasGuardadas[doc.id] = true);
+
+                lista.innerHTML = '';
+                
+                // Si la matriz está vacía
+                if (serviciosUnicos.size === 0) {
+                    lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Aún no hay trámites. Ve a la tarjeta "Catálogo de Requisitos" y crea al menos uno primero.</p>';
+                    return;
+                }
+
+                // 4. Pintar la lista cruzada
+                serviciosUnicos.forEach(servicio => {
+                    const tienePlantilla = plantillasGuardadas[servicio];
+                    const icono = tienePlantilla ? 'edit_document' : 'add_circle';
+                    const colorIcono = tienePlantilla ? 'text-fuchsia-500' : 'text-slate-300';
+                    const bg = tienePlantilla ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 opacity-70 hover:opacity-100';
+
+                    lista.innerHTML += `
+                        <div onclick="cargarPlantillaEditor('${servicio}')" class="p-3 ${bg} hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/20 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer transition flex justify-between items-center group shadow-sm">
+                            <span class="font-bold text-slate-700 dark:text-slate-200 text-xs truncate mr-2">${servicio.replace(/_/g, ' ')}</span>
+                            <span class="material-symbols-rounded ${colorIcono} text-sm transition-colors" title="${tienePlantilla ? 'Editar plantilla' : 'Plantilla vacía (Clic para crear)'}">${icono}</span>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error cazado:", e);
+                lista.innerHTML = `<p class="text-xs text-red-500 text-center py-4 font-bold">Error técnico: ${e.message}</p>`;
+            }
+        }
+
+        async function cargarPlantillaEditor(id) {
+            currentPlantillaId = id;
+            document.getElementById('titulo-plantilla-activa').innerText = id.replace(/_/g, ' ');
+            const editor = document.getElementById('editor-plantilla');
+            const btn = document.getElementById('btn-save-plantilla');
+            
+            editor.disabled = true;
+            editor.value = 'Cargando plantilla...';
+            btn.classList.add('hidden');
+
+            try {
+                const doc = await db.collection('plantillas_notas').doc(id).get();
+                if (doc.exists) {
+                    editor.value = doc.data().contenido;
+                } else {
+                    // Si no existe, lanzamos el texto base listo para editarse
+                    editor.value = "DECLARACIONES Y ADVERTENCIAS:\n\n-LA VISITA SE REALIZÓ EL DÍA {{FECHA_VISITA}}.\n-EL CLIENTE PROPORCIONÓ COPIAS SIMPLES DE {{LISTA_DOCUMENTOS}}.";
+                }
+                editor.disabled = false;
+                btn.classList.remove('hidden');
+            } catch (e) {
+                console.error(e);
+                editor.value = 'Error al conectar con la base de datos.';
+            }
+        }
+
+        async function guardarPlantilla() {
+            if (!currentPlantillaId) return;
+            const btn = document.getElementById('btn-save-plantilla');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-sm">sync</span>';
+            btn.disabled = true;
+
+            const contenido = document.getElementById('editor-plantilla').value;
+
+            try {
+                await db.collection('plantillas_notas').doc(currentPlantillaId).set({
+                    contenido: contenido,
+                    actualizado: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await registrarLog('PLANTILLAS', `Se creó/editó la plantilla maestra de notas: ${currentPlantillaId}`);
+                cargarListaPlantillas();
+                
+                if (typeof confetti !== 'undefined') confetti({ particleCount: 100, spread: 60, origin: { y: 0.7 } });
+                
+            } catch (e) {
+                console.error(e);
+                alert("Error al guardar la plantilla.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function insertarVariable(variable) {
+            const textarea = document.getElementById('editor-plantilla');
+            if (textarea.disabled) return alert("Selecciona o crea una plantilla en la lista izquierda primero.");
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + variable + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+            textarea.focus();
         }
 
     </script>

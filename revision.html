@@ -842,9 +842,8 @@
                     btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span> Descartando...'; 
                     btnConfirm.disabled = true; 
                 } else { 
-                    // 🌟 MAGIA UX: Le avisamos al analista que estamos trabajando en Drive
                     btnValid.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span> Guardando en Drive...'; 
-                    btnValid.classList.add('bg-teal-800', 'scale-95'); // Efecto visual de "trabajando"
+                    btnValid.classList.add('bg-teal-800', 'scale-95'); 
                     btnValid.disabled = true; 
                 }
                 
@@ -855,6 +854,10 @@
                 });
                 
                 if(!res.ok) throw new Error("Error en servidor");
+
+                // 🔍 Imprimimos la respuesta para auditar qué nos manda Netlify
+                const respuestaServidor = await res.json();
+                console.log("📦 RESPUESTA DE NETLIFY:", respuestaServidor);
                 
                 const currentKey = groupKeys[activeGroupIndex];
                 const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
@@ -865,6 +868,15 @@
                     nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO',
                     motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios y fue respaldado en Drive.'
                 );
+                
+                // 🌟 EL GATILLO DE LA IA (CON PAUSA ESTRATÉGICA)
+                if (nuevoEstado.toLowerCase().includes('valid')) {
+                    console.log("🎯 Gatillo IA detectado. Dando 2 segundos a Firebase para asimilar el enlace de Drive...");
+                    // Esperamos 2 segundos y lanzamos la IA
+                    setTimeout(() => {
+                        extraerDatosConIA(selectedReqKey, expediente.id);
+                    }, 2000);
+                }
                 
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
@@ -879,6 +891,88 @@
                 btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; 
                 btnValid.classList.remove('bg-teal-800', 'scale-95');
                 btnValid.disabled = false; 
+            }
+        }
+
+        // ==========================================
+        // 🤖 CEREBRO IA: EXTRACCIÓN DE DATOS EN SEGUNDO PLANO
+        // ==========================================
+        async function extraerDatosConIA(reqKey, expId) {
+            console.log(`🟣 Verificando si ${reqKey} requiere IA...`);
+
+            try {
+                const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
+                if (!docConfig.exists) { console.error("⚠️ IA: No se encontró plantilla."); return; }
+                
+                const configRequisito = docConfig.data().diccionario[reqKey];
+                
+                if (!configRequisito || configRequisito.usaIA !== true || !configRequisito.promptIA) {
+                    console.warn(`⚠️ IA Cancelada: Falta configuración en el Admin para ${reqKey}.`);
+                    return;
+                }
+
+                console.log(`🚀 IA: ¡Configuración validada!`);
+                const promptUniversal = configRequisito.promptIA;
+
+                // 🔥 FORZAMOS LECTURA FRESCA DESDE FIREBASE DESPUÉS DE LA PAUSA
+                const docFresco = await db.collection('expedientes_avaluos').doc(expId).get({ source: 'server' });
+                const docActualizado = docFresco.data().checklist[reqKey];
+
+                // Log seguro: Solo confirmamos que existe, ocultando URLs y tokens
+                console.log(`🔍 IA DEBUG - Documento localizado en Firebase para [${reqKey}].`);
+
+                // 🕵️ Buscamos la llave EXACTA que descubriste en Firebase: driveUrl
+                const posiblesUrls = [docActualizado.driveUrl, docActualizado.driveLink, docActualizado.url, docActualizado.archivoUrl];
+                const fileUrl = posiblesUrls.find(u => u && u.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/));
+
+                if (!fileUrl) {
+                    console.error("⚠️ IA Abortada: No se encontró enlace de Google Drive en Firebase.", posiblesUrls);
+                    return;
+                }
+
+                // Extraemos el ID final de Drive
+                const match = fileUrl.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                const fileId = match ? match[1] : null;
+
+                console.log(`🚀 IA: Mandando petición a Netlify con ID de Drive: ${fileId}`);
+
+                // 4. MANDAMOS AL CLON A TRABAJAR AL SÓTANO (-background)
+                const res = await fetch('/.netlify/functions/extraer-datos-ia-background', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileId: fileId,
+                        promptPersonalizado: promptUniversal,
+                        expId: expId,       // NUEVO: Le decimos qué expediente es
+                        reqKey: reqKey      // NUEVO: Le decimos qué documento es
+                    })
+                });
+
+                // Netlify Background responde inmediatamente con 202 (Accepted)
+                // En local con netlify dev puede devolver 200, así que aceptamos ambos
+                if (res.status === 202 || res.status === 200) {
+                    console.log(`🚀 El clon de IA ya está trabajando en 2do plano para ${reqKey}`);
+                    await registrarLog("LECTURA IA INICIADA", `Gemini está analizando ${reqKey} en segundo plano. Tardará unos minutos.`);
+                    if (typeof showToast !== 'undefined') showToast(`🤖 Gemini está leyendo: ${configRequisito.nombre}. Te avisaré cuando termine...`, "info");
+                    
+                    // 🌟 MAGIA UX: Ponemos un "Espía" en Firebase para saber en qué segundo exacto termina
+                    const unsubscribe = db.collection('expedientes_avaluos').doc(expId).onSnapshot((doc) => {
+                        const data = doc.data();
+                        
+                        // Si el "clon" ya guardó los datos en Firebase...
+                        if (data.datos_extraidos && data.datos_extraidos[reqKey]) {
+                            // Log seguro: Solo decimos que terminó y cuántos datos extrajo
+                            const numDatos = Object.keys(data.datos_extraidos[reqKey]).length;
+                            console.log(`✅ ¡El Clon terminó la lectura de ${reqKey}! Se extrajeron ${numDatos} campos de forma segura.`);
+                            if (typeof showToast !== 'undefined') showToast(`🤖 ¡Gemini finalizó y guardó los datos de: ${configRequisito.nombre}!`, "success");
+                            unsubscribe(); // Apagamos el espía para no gastar recursos
+                        }
+                    });
+                } else {
+                    console.error("❌ No se pudo iniciar el trabajo en segundo plano.");
+                }
+            } catch (error) {
+                console.error("Error en el lanzador de IA:", error);
             }
         }
         
@@ -1002,12 +1096,64 @@
                 document.getElementById('modal-proponer-fechas').classList.remove('flex');
                 verificarProgresoGlobal(); // Refrescar botón de la cabecera
                 
+                // 🔥 MAGIA: Despertamos el modal de notificación
+                abrirModalNotificar();
+                
             } catch (e) {
                 console.error(e);
                 alert("Error al guardar: " + e.message);
                 btn.innerHTML = '<span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente';
                 btn.disabled = false;
             }
+        }
+
+        // ==========================================
+        // 📱 SISTEMA DE NOTIFICACIONES (WHATSAPP / CORREO)
+        // ==========================================
+        function abrirModalNotificar() {
+            document.getElementById('notif-nombre-cliente').innerText = expediente.cliente || 'el cliente';
+            document.getElementById('modal-notificar').classList.remove('hidden');
+            document.getElementById('modal-notificar').classList.add('flex');
+        }
+
+        function cerrarModalNotificar() {
+            document.getElementById('modal-notificar').classList.add('hidden');
+            document.getElementById('modal-notificar').classList.remove('flex');
+        }
+
+        function generarMensajeNotificacion() {
+            // Obtenemos la URL base (ej. https://tudominio.com) y le sumamos la ruta del portal
+            const urlBase = window.location.origin;
+            const urlPortal = `${urlBase}/portal.html?id=${expedienteId}`;
+            
+            return `¡Hola ${expediente.cliente}! 👋\n\nTenemos excelentes noticias: Tu expediente ha sido validado exitosamente. ✅\n\nPor favor ingresa a tu portal seguro para elegir el día y horario de tu visita de inspección:\n📍 ${urlPortal}\n\nQuedamos a tus órdenes.`;
+        }
+
+        function notificarWhatsApp() {
+            let telefono = expediente.telefono;
+            if (!telefono || telefono.length < 10) {
+                alert("⚠️ El cliente no tiene un teléfono válido registrado (10 dígitos). Edítalo en Gestión de Expedientes.");
+                return;
+            }
+
+            // Limpiamos el teléfono (solo números) y aseguramos la lada de México (+52)
+            telefono = telefono.replace(/\D/g, '');
+            if (telefono.length === 10) telefono = '52' + telefono;
+
+            const mensaje = encodeURIComponent(generarMensajeNotificacion());
+            const linkWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
+            
+            window.open(linkWhatsapp, '_blank');
+            cerrarModalNotificar();
+        }
+
+        function notificarCorreo() {
+            // Como no es obligatorio tener correo registrado, lanzamos un mailto genérico que abrirá Outlook/Gmail
+            const asunto = encodeURIComponent("Elige la fecha para tu Avalúo 📅");
+            const mensaje = encodeURIComponent(generarMensajeNotificacion());
+            
+            window.location.href = `mailto:?subject=${asunto}&body=${mensaje}`;
+            cerrarModalNotificar();
         }
 
         let capturistaSeleccionado = null;
@@ -1288,6 +1434,28 @@
         <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-4 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
             <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
         </button>
+    </div>
+</div>
+
+<div id="modal-notificar" class="fixed inset-0 z-[95] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden text-center">
+        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-700 shadow-lg">
+            <span class="material-symbols-rounded text-4xl">check_circle</span>
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">¡Fechas Guardadas!</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Elige el método para avisarle a <b id="notif-nombre-cliente" class="text-slate-700 dark:text-slate-200 uppercase"></b> que ya puede elegir su fecha.</p>
+        
+        <div class="space-y-3">
+            <button onclick="notificarWhatsApp()" class="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <span class="material-symbols-rounded">chat</span> Notificar por WhatsApp
+            </button>
+            <button onclick="notificarCorreo()" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-95 flex justify-center items-center gap-2">
+                <span class="material-symbols-rounded">mail</span> Enviar por Correo
+            </button>
+            <button onclick="cerrarModalNotificar()" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                Cerrar sin notificar
+            </button>
+        </div>
     </div>
 </div>
 
