@@ -6,8 +6,8 @@ const path = require('path');
 // --- 1. INICIALIZACIÓN (Mantenemos tu lógica blindada) ---
 let serviceAccount = null;
 if (admin.apps.length === 0) {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
     if (!serviceAccount) {

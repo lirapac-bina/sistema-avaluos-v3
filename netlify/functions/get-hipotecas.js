@@ -10,8 +10,8 @@ if (!admin.apps.length || !admin.apps.find(app => app.name === 'hipotecasApp')) 
     let serviceAccount;
     
     // 1. Variable de Entorno (Nube) para producción
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_HIPOTECA) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_HIPOTECA); } 
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_HIPOTECA) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_HIPOTECA); } 
         catch (e) { console.error("Error ENV Hipoteca:", e); }
     }
     

@@ -8,9 +8,9 @@ if (admin.apps.length === 0) {
     let serviceAccount;
 
     // A. Intentamos cargar desde Variable de Entorno (Producción en Netlify)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
         try {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
         } catch (e) {
             console.error("Error leyendo variable de entorno:", e);
         }

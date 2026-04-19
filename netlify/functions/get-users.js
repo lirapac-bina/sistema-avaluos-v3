@@ -6,8 +6,8 @@ const path = require('path');
 if (admin.apps.length === 0) {
     let serviceAccount;
     // 1. Intento Nube (Variable de entorno)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
     // 2. Intento Local (Archivo físico)

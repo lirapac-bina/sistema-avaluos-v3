@@ -5,8 +5,8 @@ const path = require('path');
 // --- INICIALIZACIÓN BLINDADA ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { }
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } catch (e) { }
     }
     if (!serviceAccount) {
         try {

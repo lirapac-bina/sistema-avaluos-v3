@@ -4,8 +4,8 @@ const path = require('path');
 
 if (admin.apps.length === 0) {
     let serviceAccount;
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch(e){}
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } catch(e){}
     }
     if (!serviceAccount) {
         try { serviceAccount = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'serviceaccountkey.json'), 'utf8')); } catch(e){}

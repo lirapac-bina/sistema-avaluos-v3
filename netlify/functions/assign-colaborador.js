@@ -6,8 +6,8 @@ const path = require('path');
 if (admin.apps.length === 0) {
     let serviceAccount;
     // 1. Variable de Entorno (Nube)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try { serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } 
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
     // 2. Archivo Local (PC) - Usando 'fs' para engañar a Netlify

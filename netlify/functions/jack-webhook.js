@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 
 // 1. CONEXIÓN A FIREBASE (Versión Dieta AWS)
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });

@@ -6,9 +6,9 @@ const path = require('path');
 // 1. Inicialización Segura Firebase
 let serviceAccount = null;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT && process.env.FIREBASE_SERVICE_ACCOUNT !== "undefined") {
+if (process.env.GOOGLE_SERVICE_ACCOUNT && process.env.GOOGLE_SERVICE_ACCOUNT !== "undefined") {
     try { 
-        let parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        let parsed = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
         if (typeof parsed === 'string') parsed = JSON.parse(parsed);
         serviceAccount = parsed;
     } catch (e) { console.error("Error ENV:", e); }

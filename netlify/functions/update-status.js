@@ -6,9 +6,9 @@ const crypto = require('crypto');
 // --- INICIALIZACIÓN BLINDADA ---
 let serviceAccount = null;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+if (process.env.GOOGLE_SERVICE_ACCOUNT) {
     try { 
-        let parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        let parsed = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
         if (typeof parsed === 'string') parsed = JSON.parse(parsed);
         serviceAccount = parsed;
     } 
