@@ -103,6 +103,13 @@
                 <h1 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
                     <span class="material-symbols-rounded text-leezar-500">assignment</span> Hoja de Trabajo (Captura)
                 </h1>
+                
+                <div id="header-tags-container" class="mt-2 flex flex-wrap items-center gap-2 hidden">
+                    <span id="tag-folio" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2 py-1 rounded text-[10px] font-black tracking-widest shadow-sm"></span>
+                    <span id="tag-cliente" class="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[10px] font-bold uppercase shadow-sm"></span>
+                    <span id="tag-anotacion" class="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 hidden shadow-sm"><span class="material-symbols-rounded text-[12px]">edit_note</span> <span id="tag-anotacion-text"></span></span>
+                </div>
+
                 <p id="active-expediente-label" class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">NINGÚN EXPEDIENTE SELECCIONADO</p>
             </div>
             
@@ -130,11 +137,22 @@
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 mb-6">
                         <h3 class="text-xs font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-4">Información del Expediente</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div><label class="leezar-label">Folio GYS</label><input type="text" id="folio-gys" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
+                            <div><label class="leezar-label">Folio Operativo</label><input type="text" id="folio-gys" class="leezar-input !text-left bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 font-black text-indigo-700 dark:text-indigo-400" readonly></div>
                             <div><label class="leezar-label">Nombre del Solicitante</label><input type="text" id="info-cliente" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
                             <div><label class="leezar-label">Entidad Federativa</label><input type="text" id="info-entidad" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
                             <div><label class="leezar-label">Tipo Trámite</label><input type="text" id="info-tramite" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold text-indigo-600 dark:text-indigo-400" readonly></div>
+                            <div class="col-span-full mt-2"><label class="leezar-label text-amber-600 dark:text-amber-500 flex items-center gap-1"><span class="material-symbols-rounded text-sm">edit_note</span> Anotaciones de Mesa de Control</label><textarea id="info-anotaciones" class="leezar-input !text-left bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold resize-none" rows="2" readonly></textarea></div>
                         </div>
+                        
+                        <div class="mt-6 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                            <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-1"><span class="material-symbols-rounded text-sm">gavel</span> Datos Legales (Extraídos de Escritura)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label class="leezar-label">Superficie Terreno</label><input type="text" id="esc-sup-terreno" class="leezar-input !text-left font-bold text-indigo-700" placeholder="Esperando a la IA..."></div>
+                                <div><label class="leezar-label">Superficie Construcción</label><input type="text" id="esc-sup-const" class="leezar-input !text-left font-bold text-indigo-700" placeholder="Esperando a la IA..."></div>
+                                <div class="col-span-full"><label class="leezar-label">Medidas y Colindancias</label><textarea id="esc-medidas" class="leezar-input !text-left resize-y font-mono text-xs" rows="4" placeholder="Esperando lectura de Escritura..."></textarea></div>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
 
@@ -340,18 +358,27 @@
         </div>
 
         <div id="modal-expedientes" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[80vh]" id="modal-content">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
-                    <div>
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white">Bandeja de Asignaciones</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona el expediente en el que vas a trabajar.</p>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]" id="modal-content">
+                
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col gap-4 bg-slate-50 dark:bg-slate-800/50 shrink-0">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 dark:text-white">Bandeja de Asignaciones</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona el expediente a trabajar (Ordenados por más recientes).</p>
+                        </div>
+                        <button id="btn-cerrar-modal" onclick="cerrarModalExpedientes()" class="text-slate-400 hover:text-red-500 transition-colors hidden bg-white dark:bg-slate-700 p-2 rounded-full shadow-sm">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
                     </div>
-                    <button id="btn-cerrar-modal" onclick="cerrarModalExpedientes()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white hidden">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
+                    
+                    <div class="relative w-full">
+                        <span class="material-symbols-rounded absolute left-3 top-3 text-indigo-400">search</span>
+                        <input type="text" id="buscador-modal" placeholder="Buscar por cliente, folio operativo o unidad (Ej. AVE, APN)..." class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-colors shadow-sm font-medium" onkeyup="filtrarBandeja()">
+                    </div>
                 </div>
-                <div class="p-6 overflow-y-auto thin-scroll grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="lista-expedientes-modal">
-                    <div class="text-center py-10 col-span-full"><span class="material-symbols-rounded animate-spin text-slate-300 text-3xl">sync</span></div>
+
+                <div class="p-6 overflow-y-auto thin-scroll grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-100/50 dark:bg-slate-900" id="lista-expedientes-modal">
+                    <div class="text-center py-10 col-span-full"><span class="material-symbols-rounded animate-spin text-indigo-500 text-4xl">sync</span></div>
                 </div>
             </div>
         </div>
@@ -530,64 +557,77 @@
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Redactando...';
             btn.disabled = true;
 
-            const expediente = misExpedientes[currentFolioId];
-            
-            // 1. Identificar el trámite (Debe coincidir con la matriz de Admin)
-            const tramiteId = expediente.tipoTramite ? expediente.tipoTramite.toUpperCase().replace(/\s+/g, '_') : null;
-            
-            if (!tramiteId) {
-                document.getElementById('texto-notas-tramite').value = "⚠️ El expediente no tiene un trámite asignado en GYS.";
-                btn.innerHTML = originalText; btn.disabled = false; return;
-            }
-
             try {
-                // 2. Descargar la plantilla desde Firebase
-                const docPlantilla = await db.collection('plantillas_notas').doc(tramiteId).get();
+                let txt = "NOTAS COMPLEMENTARIAS AL AVALÚO\n\n";
+
+                // 1. FECHA Y UBICACIÓN
+                const fechaVisita = document.getElementById('nota-fecha-visita').value || "[FALTA FECHA DE VISITA]";
+                txt += `El presente avalúo se realizó con base en la visita de inspección efectuada el día ${fechaVisita}.\n\n`;
+
+                // 2. DOCUMENTOS (Solo redacta los que tienen la casilla palomeada)
+                txt += `DOCUMENTACIÓN PROPORCIONADA (COPIAS SIMPLES):\n`;
+                let hayDocs = false;
+
+                if(document.querySelector('input[value="Escritura"]').checked) {
+                    const num = document.getElementById('nota-esc-numero').value || "___";
+                    const vol = document.getElementById('nota-esc-libro').value ? ` libro/volumen ${document.getElementById('nota-esc-libro').value},` : "";
+                    const fecha = document.getElementById('nota-esc-fecha').value || "___";
+                    const notario = document.getElementById('nota-esc-notario').value || "___";
+                    const numNot = document.getElementById('nota-esc-notaria-num').value || "___";
+                    const cdNot = document.getElementById('nota-esc-notaria-ciudad').value || "___";
+                    txt += `- Escritura Pública: Número ${num},${vol} de fecha ${fecha}, pasada ante la fe del ${notario}, titular de la Notaría Pública No. ${numNot} de la ciudad de ${cdNot}.\n`;
+                    hayDocs = true;
+                }
                 
-                if (!docPlantilla.exists) {
-                    document.getElementById('texto-notas-tramite').value = `⚠️ No existe una plantilla en el Administrador para el trámite: ${tramiteId}`;
-                    btn.innerHTML = originalText; btn.disabled = false; return;
+                if(document.querySelector('input[value="Cédula Catastral"]').checked) {
+                    const fecha = document.getElementById('nota-cedula-fecha').value || "___";
+                    const folio = document.getElementById('nota-cedula-folio').value || "___";
+                    txt += `- Cédula Catastral: Expedida con fecha ${fecha}, con número de folio ${folio}.\n`;
+                    hayDocs = true;
                 }
 
-                let textoFinal = docPlantilla.data().contenido;
-
-                // 3. SUSTITUCIÓN: {{FECHA_VISITA}}
-                let textoFecha = "[FALTA AGENDAR VISITA]";
-                if (expediente.visitaAgendada && expediente.visitaAgendada.fecha) {
-                    const [year, month, day] = expediente.visitaAgendada.fecha.split('-');
-                    const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-                    textoFecha = `${day} DE ${meses[parseInt(month) - 1]} DE ${year}`;
+                if(document.querySelector('input[value="Boleta Predial"]').checked) {
+                    const cve = document.getElementById('nota-predial-clave').value || "___";
+                    const fol = document.getElementById('nota-predial-folio').value || "___";
+                    txt += `- Boleta Predial: Clave Catastral ${cve}, con número de folio o recibo ${fol}.\n`;
+                    hayDocs = true;
                 }
-                textoFinal = textoFinal.replace(/\{\{FECHA_VISITA\}\}/g, textoFecha);
 
-                // 4. SUSTITUCIÓN: {{LISTA_DOCUMENTOS}}
-                let textoDocs = "[FALTA VALIDAR DOCUMENTOS]";
-                if (expediente.checklist) {
-                    let docsValidados = [];
-                    for (const key in expediente.checklist) {
-                        const item = expediente.checklist[key];
-                        // Filtramos las fotos de la app, solo queremos documentos del cliente en estatus 'validado'
-                        if (!key.includes('FOTO_EXTRA_') && key !== 'UBICACION_MAPS' && key !== 'FOTOS_INTERIORES_GENERAL' && item.estatus === 'validado') {
-                            docsValidados.push((item.nombre || key).toUpperCase());
-                        }
-                    }
-                    if (docsValidados.length > 0) {
-                        if (docsValidados.length === 1) textoDocs = docsValidados[0];
-                        else {
-                            const ultimoDoc = docsValidados.pop();
-                            textoDocs = docsValidados.join(', ') + ' Y ' + ultimoDoc;
-                        }
-                    }
+                if(document.querySelector('input[value="Recibo de Agua"]').checked) {
+                    const cta = document.getElementById('nota-agua-cuenta').value || "___";
+                    const exp = document.getElementById('nota-agua-expedido').value || "___";
+                    txt += `- Recibo de Agua: Cuenta ${cta}, expedido por ${exp}.\n`;
+                    hayDocs = true;
                 }
-                textoFinal = textoFinal.replace(/\{\{LISTA_DOCUMENTOS\}\}/g, textoDocs);
 
-                // Imprimimos el resultado
-                document.getElementById('texto-notas-tramite').value = textoFinal;
-                showToast("Notas generadas con éxito ✨", "success");
+                if(!hayDocs) txt += `- No se marcaron documentos de justificación.\n`;
+                txt += `\n`;
+
+                // 3. SERVICIOS
+                let servicios = [];
+                document.querySelectorAll('input[name="nota-serv"]:checked').forEach(s => servicios.push(s.value));
+                if(servicios.length > 0) {
+                    txt += `SERVICIOS DEL INMUEBLE:\nEl inmueble cuenta con los siguientes servicios: ${servicios.join(', ')}.\n\n`;
+                }
+
+                // 4. SUPERFICIES
+                const supPriv = document.getElementById('nota-sup-privativa').value;
+                const supAcc = document.getElementById('nota-sup-accesoria').value;
+                const supTot = document.getElementById('nota-sup-total').value;
+                
+                if(supPriv || supTot) {
+                    txt += `SUPERFICIES DE LEVANTAMIENTO FÍSICO:\n`;
+                    if(supPriv) txt += `- Área Privativa Construida: ${supPriv}\n`;
+                    if(supAcc) txt += `- Superficie Accesoria: ${supAcc} (${document.getElementById('nota-sup-accesoria-desc').value || 'N/A'})\n`;
+                    if(supTot) txt += `- Superficie Total de Construcción: ${supTot}\n`;
+                }
+
+                document.getElementById('texto-notas-tramite').value = txt;
+                showToast("Notas auto-redactadas con éxito ✨", "success");
 
             } catch (error) {
-                console.error("Error al generar notas:", error);
-                showToast("Error de conexión", "error");
+                console.error(error);
+                showToast("Error al redactar", "error");
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -668,40 +708,98 @@
 
         function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':'bg-emerald-600'}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
 
-        // MÓDULO DE CARGA FIREBASE
+        // MÓDULO DE CARGA FIREBASE MEJORADO (Orden y Etiquetas)
         async function iniciarHojaTrabajo(activeUser) {
             const db = window.db || firebase.firestore();
             const rolUsuario = (activeUser.rol || '').toUpperCase().trim();
-            const esAdmin = ['SUPER ADMIN', 'ADMIN'].includes(rolUsuario);
+            
+            // 🌟 FIX: Definimos quiénes tienen la "Vista de Rayos X"
+            const puedeVerTodo = ['SUPER ADMIN', 'ADMIN', 'GESTORA'].includes(rolUsuario);
 
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 misExpedientes = {};
-                let htmlModal = '', cont = 0;
+                let arrayExpedientes = [];
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    data.id = doc.id;
                     const est = (data.estatus||'').toUpperCase();
                     if(est.includes('FINALIZADO')||est.includes('ENTREGADO')) return;
                     
-                    if(!esAdmin) {
+                    // 🛡️ FILTRO INTELIGENTE: Si NO eres supervisor, aplica la regla estricta
+                    if (!puedeVerTodo) {
                         const asig = (data.capturista||'').toLowerCase().trim();
+                        // (Aquí podrías agregar lógica para que el visitador o dibujante también vean su parte si se requiere)
                         if(asig !== (activeUser.email||'').toLowerCase() && asig !== (activeUser.nombre||'').toLowerCase()) return;
                     }
+                    
+                    arrayExpedientes.push(data);
+                });
 
-                    cont++; misExpedientes[doc.id] = data;
-                    const fGys = data.folio_gestora || doc.id.substring(0,6).toUpperCase();
+                // ORDENAMIENTO: Los más recientes arriba
+                arrayExpedientes.sort((a, b) => {
+                    let timeA = a.fechaCreacion ? (a.fechaCreacion.seconds || new Date(a.fechaCreacion).getTime() / 1000) : 0;
+                    let timeB = b.fechaCreacion ? (b.fechaCreacion.seconds || new Date(b.fechaCreacion).getTime() / 1000) : 0;
+                    return timeB - timeA; // Descendente
+                });
+
+                let htmlModal = '';
+                arrayExpedientes.forEach(data => {
+                    misExpedientes[data.id] = data;
+                    
+                    // 1. FOLIO OPERATIVO CON PRIORIDAD
+                    const fGys = data.folioOperativo || data.folio_gestora || data.id.substring(0,6).toUpperCase();
                     const label = `GYS ${data.unidad||'AVE'} ${fGys} (${data.entidad||'S/E'})`;
-                    const statusUI = data.notas_captura ? `<span class="bg-emerald-100 text-emerald-700 px-2 rounded text-[10px]">EN PROGRESO</span>` : `<span class="bg-slate-100 px-2 rounded text-[10px]">SIN INICIAR</span>`;
+                    
+                    // 2. ESTADO VISUAL
+                    const statusUI = data.notas_captura ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-emerald-200">EN PROGRESO</span>` : `<span class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-[9px] font-black tracking-widest text-slate-500">SIN INICIAR</span>`;
 
-                    htmlModal += `<div onclick="seleccionarExpediente('${doc.id}', '${label}')" class="p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-teal-500 cursor-pointer bg-white dark:bg-slate-900 shadow-sm">
-                        <div class="flex justify-between items-center mb-2"><h4 class="font-black text-sm dark:text-white">${label}</h4>${statusUI}</div>
-                        <p class="text-xs text-slate-500">${data.cliente||'Sin Cliente'} <br>Resp: ${data.capturista||'N/A'}</p>
+                    // 3. ETIQUETA DE ANOTACIONES INYECTADA
+                    let anotacionHtml = '';
+                    if (data.anotacion && data.anotacion.trim() !== '') {
+                        anotacionHtml = `<div class="mt-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5 flex items-start gap-2 shadow-inner"><span class="material-symbols-rounded text-[16px] text-amber-500 mt-0.5">notification_important</span><div><p class="text-[9px] uppercase font-black text-amber-600 dark:text-amber-400 tracking-wider mb-0.5">Anotación Control</p><p class="text-[11px] text-amber-900 dark:text-amber-200 leading-tight font-medium">${data.anotacion}</p></div></div>`;
+                    }
+
+                    // TÉRMINOS DE BÚSQUEDA (Invisible, usado para el filtro)
+                    const searchTerms = `${label} ${data.cliente||''} ${fGys} ${data.capturista||''}`.toLowerCase();
+
+                    htmlModal += `<div data-search="${searchTerms}" onclick="seleccionarExpediente('${data.id}', '${label}')" class="expediente-card p-5 border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-indigo-500 cursor-pointer bg-white dark:bg-slate-800 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between active:scale-95 group">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-black text-[13px] text-indigo-700 dark:text-indigo-400 group-hover:text-indigo-600 transition-colors leading-tight pr-2">${label}</h4>
+                                ${statusUI}
+                            </div>
+                            <p class="text-sm font-extrabold text-slate-800 dark:text-white mb-1.5 uppercase">${data.cliente||'Sin Cliente'}</p>
+                            <p class="text-[10px] font-bold text-slate-400 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">person</span> Capturista: <span class="text-slate-600 dark:text-slate-300">${data.capturista||'N/A'}</span></p>
+                            ${anotacionHtml}
+                        </div>
                     </div>`;
                 });
 
-                document.getElementById('lista-expedientes-modal').innerHTML = cont>0 ? htmlModal : `<div class="col-span-full text-center py-10">Bandeja Vacía</div>`;
+                document.getElementById('lista-expedientes-modal').innerHTML = arrayExpedientes.length > 0 ? htmlModal : `<div class="col-span-full text-center py-10 text-slate-400 font-bold text-sm">Bandeja Vacía. No hay expedientes asignados.</div>`;
                 if(!currentFolioId) abrirModalExpedientes(true);
             });
+        }
+
+        // MOTOR DEL BUSCADOR EN TIEMPO REAL
+        function filtrarBandeja() {
+            const query = document.getElementById('buscador-modal').value.toLowerCase();
+            const cards = document.querySelectorAll('.expediente-card');
+            let visibles = 0;
+            cards.forEach(card => {
+                if (card.getAttribute('data-search').includes(query)) {
+                    card.style.display = 'flex';
+                    visibles++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Mensaje si no hay resultados
+            const emptyMsg = document.getElementById('msg-empty-search');
+            if (visibles === 0 && cards.length > 0) {
+                if (!emptyMsg) document.getElementById('lista-expedientes-modal').insertAdjacentHTML('beforeend', '<div id="msg-empty-search" class="col-span-full text-center py-10 text-slate-400 font-bold text-sm">No se encontraron expedientes con esa búsqueda.</div>');
+            } else if (emptyMsg) emptyMsg.remove();
         }
 
         function seleccionarExpediente(id, etiqueta) {
@@ -709,60 +807,33 @@
             document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
             cerrarModalExpedientes(); showToast("Expediente Cargado", "success");
 
-            // DATOS GENERALES
-            document.getElementById('active-expediente-label').innerText = etiqueta;
-            document.getElementById('folio-gys').value = d.folio_gestora || id.substring(0,6).toUpperCase();
+            // 1. HEADER DINÁMICO (Las 3 Etiquetas en la Cabecera)
+            document.getElementById('active-expediente-label').classList.add('hidden'); // Ocultamos el texto feo
+            document.getElementById('header-tags-container').classList.remove('hidden');
+            
+            document.getElementById('tag-folio').innerText = etiqueta; 
+            document.getElementById('tag-cliente').innerText = d.cliente || 'Sin Cliente';
+            
+            const tagAnotacion = document.getElementById('tag-anotacion');
+            if (d.anotacion && d.anotacion.trim() !== '') {
+                tagAnotacion.classList.remove('hidden');
+                document.getElementById('tag-anotacion-text').innerText = d.anotacion;
+            } else {
+                tagAnotacion.classList.add('hidden');
+            }
+
+            // 2. DATOS GENERALES DEL FORMULARIO
+            document.getElementById('folio-gys').value = d.folioOperativo || d.folio_gestora || id.substring(0,6).toUpperCase();
             document.getElementById('info-cliente').value = d.cliente || '';
             document.getElementById('info-entidad').value = d.entidad || '';
             document.getElementById('info-tramite').value = d.tipoTramite || 'INFONAVIT';
+            
+            const txtAnotacion = document.getElementById('info-anotaciones');
+            if(txtAnotacion) txtAnotacion.value = d.anotacion || 'Sin anotaciones pendientes.';
 
-            autollenarConIA(d); // 🤖 LA MAGIA OCURRE AQUÍ
-
-            // NOTAS
-            document.getElementById('texto-notas-tramite').value = d.notas_captura || '';
-
-            // MERCADO (Recuperar las 3 tablas si existen)
-            ['terreno', 'mercado', 'rentas'].forEach(type => {
-                const md = d[`mercado_${type}`];
-                if(md) {
-                    window.comps[type].sujetoFields.forEach(f => {
-                        const el = document.getElementById(`${type}-sujeto-${f}`);
-                        if(el) { el.value = md.sujeto[`sujeto-${f}`] || ''; el.blur(); } // dispara el formatInput
-                    });
-                    
-                    if(md.rows) {
-                        for(let i=1; i<=window.comps[type].count; i++) {
-                            const r = md.rows[i-1];
-                            if(r) {
-                                window.comps[type].cols.forEach(col => {
-                                    const el = document.getElementById(`${type}-${col.id}-${i}`);
-                                    if(el) { el.value = r[col.id] || ''; el.blur(); }
-                                });
-                                const elUrl = document.getElementById(`${type}-url-completa-${i}`);
-                                const elLig = document.getElementById(`${type}-liga-acortada-${i}`);
-                                if(elUrl) elUrl.value = r.url || '';
-                                if(elLig) elLig.value = r.liga || '';
-                            }
-                        }
-                    }
-                } else {
-                    // Limpiar si no hay datos en BD
-                    window.comps[type].sujetoFields.forEach(f => document.getElementById(`${type}-sujeto-${f}`).value = '');
-                    for(let i=1; i<=window.comps[type].count; i++) {
-                        window.comps[type].cols.forEach(c => document.getElementById(`${type}-${c.id}-${i}`).value = '');
-                        document.getElementById(`${type}-url-completa-${i}`).value = '';
-                        document.getElementById(`${type}-liga-acortada-${i}`).value = '';
-                    }
-                }
-                handleSujetoChange(type); // Recalcula visuales
-            });
-
-            // CHECKLIST
-            LISTA_DOC_JUST.forEach((_, i) => {
-                const el = document.getElementById(`chk-docjust-${i}`);
-                if(el) el.checked = d.docjust ? (d.docjust[`item_${i}`] || false) : false;
-            });
-        }
+            // 3. 🤖 ¡EL GATILLO DE LA IA! (Vaciado automático de datos)
+            autollenarConIA(d);
+        } // <--- ¡ESTA ES LA LLAVE MÁGICA QUE FALTABA!
 
         // MÓDULO DE GUARDADO
         async function guardarProgreso() {
@@ -823,42 +894,72 @@
         // 🤖 AUTO-RELLENO CON IA (GEMINI)
         // ==========================================
         function autollenarConIA(expediente) {
-            if (!expediente.datos_extraidos) return;
+            console.log("🕵️‍♂️ DIAGNÓSTICO IA - Abriendo expediente:", expediente.cliente);
+            
+            if (!expediente.datos_extraidos) {
+                console.error("❌ LA IA NO GUARDÓ NADA: Firebase no tiene la sección 'datos_extraidos' para este expediente.");
+                if (typeof showToast !== 'undefined') showToast("Firebase no tiene datos de la IA", "error");
+                return;
+            }
 
             const datosIA = expediente.datos_extraidos;
-            console.log("Datos inyectados por IA:", datosIA);
+            console.log("✅ DATOS ENCONTRADOS EN FIREBASE:", datosIA);
 
-            // 📜 INYECTAR DATOS DE LA ESCRITURA
-            const keyEscritura = Object.keys(datosIA).find(k => k.includes('ESCRITURA'));
+            // FUNCIÓN MÁGICA: Palomea la casilla y abre el menú si no estaba abierto
+            const activarCasilla = (valorCasilla, idDiv) => {
+                const chk = document.querySelector(`input[value="${valorCasilla}"]`);
+                if(chk && !chk.checked) {
+                    chk.checked = true;
+                    if(idDiv) toggleConditionalFields(idDiv);
+                }
+            };
+
+            // 📜 INYECTAR DATOS DE LA ESCRITURA Y MEDIDAS (Búsqueda Blindada)
+            const keyEscritura = Object.keys(datosIA).find(k => k.toUpperCase().includes('ESCRITURA'));
             if (keyEscritura) {
+                console.log("📄 Escribiendo datos de Escritura...");
                 const esc = datosIA[keyEscritura];
-                if(esc.num_escritura && document.getElementById('nota-esc-numero')) document.getElementById('nota-esc-numero').value = esc.num_escritura;
-                if(esc.libro && document.getElementById('nota-esc-libro')) document.getElementById('nota-esc-libro').value = esc.libro !== 'S/N' ? esc.libro : '';
-                if(esc.fecha_escritura && document.getElementById('nota-esc-fecha')) document.getElementById('nota-esc-fecha').value = esc.fecha_escritura;
-                if(esc.notario_nombre && document.getElementById('nota-esc-notario')) document.getElementById('nota-esc-notario').value = esc.notario_nombre;
-                if(esc.num_notaria && document.getElementById('nota-esc-notaria-num')) document.getElementById('nota-esc-notaria-num').value = esc.num_notaria;
-                if(esc.ciudad_notaria && document.getElementById('nota-esc-notaria-ciudad')) document.getElementById('nota-esc-notaria-ciudad').value = esc.ciudad_notaria;
+                activarCasilla('Escritura', 'escritura'); 
                 
-                if (typeof showToast !== 'undefined') showToast("✨ Datos extraídos por IA", "success");
+                if(esc.num_escritura) document.getElementById('nota-esc-numero').value = esc.num_escritura;
+                if(esc.libro && esc.libro !== 'S/N') document.getElementById('nota-esc-libro').value = esc.libro;
+                if(esc.fecha_escritura) document.getElementById('nota-esc-fecha').value = esc.fecha_escritura;
+                if(esc.notario_nombre) document.getElementById('nota-esc-notario').value = esc.notario_nombre;
+                if(esc.num_notaria) document.getElementById('nota-esc-notaria-num').value = esc.num_notaria;
+                if(esc.ciudad_notaria) document.getElementById('nota-esc-notaria-ciudad').value = esc.ciudad_notaria;
+                
+                if(esc.superficie_terreno && document.getElementById('esc-sup-terreno')) document.getElementById('esc-sup-terreno').value = esc.superficie_terreno;
+                if(esc.superficie_construccion && document.getElementById('esc-sup-const')) document.getElementById('esc-sup-const').value = esc.superficie_construccion;
+                if(esc.medidas_colindancias && document.getElementById('esc-medidas')) document.getElementById('esc-medidas').value = esc.medidas_colindancias;
+                
+                if (typeof showToast !== 'undefined') showToast("✨ Datos legales extraídos", "success");
+            } else {
+                console.warn("⚠️ No se encontró la llave ESCRITURA en los datos.");
             }
 
             // 💧 INYECTAR DATOS DEL AGUA
-            const keyAgua = Object.keys(datosIA).find(k => k.includes('AGUA'));
+            const keyAgua = Object.keys(datosIA).find(k => k.toUpperCase().includes('AGUA'));
             if (keyAgua) {
+                console.log("💧 Escribiendo datos de Agua...");
                 const agua = datosIA[keyAgua];
-                if(agua.cuenta && document.getElementById('nota-agua-cuenta')) document.getElementById('nota-agua-cuenta').value = agua.cuenta;
-                if(agua.folio && document.getElementById('nota-agua-folio')) document.getElementById('nota-agua-folio').value = agua.folio;
-                if(agua.fecha && document.getElementById('nota-agua-fecha')) document.getElementById('nota-agua-fecha').value = agua.fecha;
-                if(agua.expedido_por && document.getElementById('nota-agua-expedido')) document.getElementById('nota-agua-expedido').value = agua.expedido_por;
+                activarCasilla('Recibo de Agua', 'agua'); 
+
+                if(agua.cuenta) document.getElementById('nota-agua-cuenta').value = agua.cuenta;
+                if(agua.folio) document.getElementById('nota-agua-folio').value = agua.folio;
+                if(agua.fecha) document.getElementById('nota-agua-fecha').value = agua.fecha;
+                if(agua.expedido_por) document.getElementById('nota-agua-expedido').value = agua.expedido_por;
             }
             
             // 🏡 INYECTAR DATOS DEL PREDIAL
-            const keyPredial = Object.keys(datosIA).find(k => k.includes('PREDIAL'));
+            const keyPredial = Object.keys(datosIA).find(k => k.toUpperCase().includes('PREDIAL'));
             if (keyPredial) {
+                console.log("🏡 Escribiendo datos de Predial...");
                 const pred = datosIA[keyPredial];
-                if(pred.clave_catastral && document.getElementById('nota-predial-clave')) document.getElementById('nota-predial-clave').value = pred.clave_catastral;
-                if(pred.folio && document.getElementById('nota-predial-folio')) document.getElementById('nota-predial-folio').value = pred.folio;
-                if(pred.fecha && document.getElementById('nota-predial-fecha')) document.getElementById('nota-predial-fecha').value = pred.fecha;
+                activarCasilla('Boleta Predial', 'predial'); 
+
+                if(pred.clave_catastral) document.getElementById('nota-predial-clave').value = pred.clave_catastral;
+                if(pred.folio) document.getElementById('nota-predial-folio').value = pred.folio;
+                if(pred.fecha) document.getElementById('nota-predial-fecha').value = pred.fecha;
             }
         }
 
