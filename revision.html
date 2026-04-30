@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     
     <script src="js/layout.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -93,6 +94,12 @@
                         <span class="material-symbols-rounded text-xl">refresh</span>
                     </button>
 
+                    <!-- NUEVO BOTÓN: GENERAR PDF -->
+                    <button onclick="generarPDFAnalisis()" id="btn-generar-analisis" class="hidden h-10 flex items-center gap-2 bg-primary hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-blue-900 ml-2">
+                        <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
+                        <span class="hidden md:inline">Análisis Doc.</span>
+                    </button>
+
                     <div id="action-container" class="hidden ml-4">
                     <button onclick="abrirModalAsignacion()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center gap-2 animate-bounce">
                     <span class="material-symbols-rounded">assignment_ind</span>
@@ -135,95 +142,118 @@
                     <div class="text-center py-10"><span class="material-symbols-rounded animate-spin text-slate-400">sync</span></div>
                     </div>
 
-                        <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0">
-                        <button onclick="solicitarDocumentoExtra()" class="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                            <span class="material-symbols-rounded text-base">add_circle</span> Solicitar Documento Extra
-                        </button>
-                    </div>
+                        <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0 flex flex-col gap-2">
+                            <button onclick="solicitarDocumentoExtra()" class="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-rounded text-base">add_circle</span> Solicitar Documento Extra
+                            </button>
+                            
+                            <button id="btn-subir-cedula-gys" onclick="document.getElementById('cedula-gys-upload').click()" class="w-full py-2.5 bg-indigo-600 border border-indigo-700 rounded-xl text-[11px] font-bold text-white hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-rounded text-base">upload_file</span> Subir Cédula GYS (Raíz)
+                            </button>
+
+                            <button onclick="forzarSincronizacionIA(event)" class="w-full py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
+                                <span class="material-symbols-rounded text-base">sync</span> Re-procesar con IA
+                            </button>
+
+                            <input type="file" id="cedula-gys-upload" class="hidden" accept="application/pdf" onchange="subirCedulaGYSDirecto(this)">
+                        </div>
 
                 </div> 
 
                 <div class="flex-1 bg-slate-100 dark:bg-[#0b1121] flex flex-col relative workspace-pattern">
                     <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
                         
-                        <div id="preview-card" class="bg-white dark:bg-slate-800 shadow-2xl rounded-lg w-full max-w-[600px] aspect-[4/5] md:aspect-[3/4] flex flex-col border border-slate-200 dark:border-slate-700 relative overflow-hidden transition-all duration-300 group">
-                            <div class="h-10 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase" id="preview-type">Vista Previa</span>
-                                <button id="btn-historial-doc" onclick="abrirHistorialDoc()" class="hidden items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-1 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-800 active:scale-95">
-                                    <span class="material-symbols-rounded text-[14px]">history</span> Historial de Actividades
-                                </button>
-                            </div>
-
-                            <div class="flex-1 flex items-center justify-center bg-slate-200 dark:bg-slate-900 relative overflow-hidden">
-                                
-                                <div id="preview-placeholder" class="text-center p-6">
-                                    <span class="material-symbols-rounded text-5xl text-slate-300 mb-2">description</span>
-                                    <p class="text-xs text-slate-400">Selecciona un documento</p>
-                                    
-                                    <div id="error-fallback" class="hidden mt-6">
-                                        <p class="text-red-400 text-xs mb-3 font-bold flex items-center justify-center gap-1">
-                                            <span class="material-symbols-rounded text-sm">warning</span> No se pudo cargar el mapa automático
-                                        </p>
-                                        <a id="download-fallback-link" href="#" target="_blank" class="px-4 py-2 bg-slate-700 text-white rounded-lg text-xs hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 border border-slate-600">
-                                            <span class="material-symbols-rounded text-sm">download</span> Descargar Coordenadas (TXT)
-                                        </a>
-                                    </div>
+                        <!-- CONTENEDOR PRINCIPAL VISTA PREVIA Y SPLIT VIEW -->
+                        <div id="preview-card" class="bg-white dark:bg-slate-800 shadow-2xl rounded-lg w-full h-full flex flex-col border border-slate-200 dark:border-slate-700 relative overflow-hidden transition-all duration-300 group">
+                            
+                            <!-- TOOLBAR SUPERIOR -->
+                            <div class="h-12 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50 shrink-0 z-50">
+                                <div class="flex gap-4 h-full">
+                                    <button onclick="switchPreviewTab('doc')" id="tab-doc-view" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 h-full flex items-center">Documento</button>
+                                    <button onclick="switchPreviewTab('split')" id="tab-ia-view" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 h-full flex items-center hidden gap-1 transition-all">
+                                        <span class="material-symbols-rounded text-[14px]">compare</span> Revisar IA
+                                    </button>
                                 </div>
                                 
-                                <img id="real-image" class="hidden w-full h-full object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in" onclick="abrirZoom(null, true)">
-                                <iframe id="real-pdf" class="hidden w-full h-full bg-white"></iframe>
-                                
-                                <textarea id="text-viewer" readonly 
-                                    class="hidden w-full h-full p-8 absolute inset-0 z-30 font-mono text-base leading-relaxed resize-none focus:outline-none" 
-                                    style="background-color: #ffffff !important; color: #000000 !important; border: none !important;"></textarea>
+                                <div class="flex items-center gap-2">
+                                    <button id="btn-historial-doc" onclick="abrirHistorialDoc()" class="hidden items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-1.5 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-800 active:scale-95">
+                                        <span class="material-symbols-rounded text-[14px]">history</span> Historial
+                                    </button>
+                                </div>
+                            </div>
 
-                                <div id="map-container" class="hidden w-full h-full flex flex-col absolute inset-0 bg-white dark:bg-slate-800 z-20">
-                                    <div class="flex-1 bg-slate-100 relative">
-                                        <iframe id="google-map-embed" class="w-full h-full border-0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                                    </div>
-                                    <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
-                                        <div class="flex items-start gap-3">
-                                            <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                <span class="material-symbols-rounded text-2xl">location_on</span>
+                            <!-- ÁREA DE TRABAJO (FLEX ROW PARA DIVIDIR PANTALLA) -->
+                            <div class="flex-1 flex flex-row bg-slate-200 dark:bg-slate-900 relative overflow-hidden w-full">
+                                
+                                <!-- PANEL IZQUIERDO (VISOR DE DOCUMENTO) -->
+                                <div id="doc-viewer-pane" class="w-full h-full relative transition-all duration-300 overflow-hidden flex flex-col shrink-0 bg-slate-300 dark:bg-black">
+                                    
+                                    <!-- WRAPPER PARA ROTACIÓN SIN ROMPER EL LAYOUT -->
+                                    <div id="rotatable-wrapper" class="flex-1 w-full h-full flex items-center justify-center transition-transform duration-300 origin-center relative">
+                                        
+                                        <div id="preview-placeholder" class="text-center p-6 absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-200 dark:bg-slate-900">
+                                            <span class="material-symbols-rounded text-5xl text-slate-300 mb-2">description</span>
+                                            <p class="text-xs text-slate-400">Selecciona un documento</p>
+                                            <div id="error-fallback" class="hidden mt-6">
+                                                <p class="text-red-400 text-xs mb-3 font-bold flex items-center justify-center gap-1">
+                                                    <span class="material-symbols-rounded text-sm">warning</span> No se pudo cargar
+                                                </p>
                                             </div>
-                                            <div class="overflow-hidden w-full">
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dirección Registrada:</p>
-                                                <p id="map-address-text" class="text-sm font-bold text-slate-800 dark:text-white leading-tight mb-2 break-words">...</p>
-                                                
-                                                <div class="flex justify-between items-center mt-2">
-                                                    <div class="flex items-center gap-2" onclick="copiarCoords()" title="Copiar coordenadas">
-                                                        <span class="material-symbols-rounded text-xs text-indigo-500">my_location</span>
-                                                        <p id="map-coords-text" class="text-[10px] font-mono text-indigo-500 dark:text-indigo-400 cursor-pointer hover:underline">...</p>
+                                        </div>
+                                        
+                                        <img id="real-image" class="hidden w-full h-full object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in absolute inset-0 z-20" onclick="abrirZoom(null, true)">
+                                        <iframe id="real-pdf" class="hidden w-full h-full bg-white absolute inset-0 z-20"></iframe>
+                                        <textarea id="text-viewer" readonly class="hidden w-full h-full p-8 absolute inset-0 z-30 font-mono text-base leading-relaxed resize-none focus:outline-none" style="background-color: #ffffff !important; color: #000000 !important; border: none !important;"></textarea>
+
+                                        <div id="map-container" class="hidden w-full h-full flex flex-col absolute inset-0 bg-white dark:bg-slate-800 z-30">
+                                            <div class="flex-1 bg-slate-100 relative">
+                                                <iframe id="google-map-embed" class="w-full h-full border-0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                            </div>
+                                            <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                        <span class="material-symbols-rounded text-2xl">location_on</span>
+                                                    </div>
+                                                    <div class="overflow-hidden w-full">
+                                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dirección Registrada:</p>
+                                                        <p id="map-address-text" class="text-sm font-bold text-slate-800 dark:text-white leading-tight mb-2 break-words">...</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div id="gallery-container" class="hidden w-full h-full absolute inset-0 bg-white dark:bg-slate-900 z-30 overflow-y-auto p-4 custom-scroll">
-                                    <div class="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 py-2 z-10 border-b dark:border-slate-700">
-                                        <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Galería de Imágenes</h3>
-                                        <span id="gallery-count" class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">0 fotos</span>
-                                    </div>
-                                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
+                                        <div id="gallery-container" class="hidden w-full h-full absolute inset-0 bg-white dark:bg-slate-900 z-30 overflow-y-auto p-4 custom-scroll">
+                                            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 py-2 border-b dark:border-slate-700">
+                                                <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Galería de Imágenes</h3>
+                                                <span id="gallery-count" class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">0 fotos</span>
+                                            </div>
+                                            <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4"></div>
                                         </div>
+
+                                    </div>
+                                    
+                                    <div class="p-2 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0 z-40 relative">
+                                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate text-center" id="card-filename">---</p>
+                                    </div>
                                 </div>
 
-                                <div id="zoom-overlay" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px] pointer-events-none hidden">
-                                    <span class="text-white font-bold text-xs flex items-center gap-1">
-                                        <span class="material-symbols-rounded">zoom_in</span> Ampliar
-                                    </span>
+                                <!-- PANEL DERECHO (DATOS IA) -->
+                                <div id="ia-data-container" class="w-0 opacity-0 overflow-hidden bg-slate-50 dark:bg-slate-900 z-40 border-l border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col shrink-0">
+                                    <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll" id="ia-data-content">
+                                        <!-- Inputs IA renderizados por JS -->
+                                    </div>
+                                    <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0 pb-20">
+                                        <button onclick="confirmarDatosIA()" id="btn-confirmar-ia" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                            <span class="material-symbols-rounded">verified</span> Aprobar Datos
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
-                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate text-center" id="card-filename">---</p>
+
                             </div>
                         </div>
                     </div>
 
-                    <div id="decision-bar" class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-transform duration-300 translate-y-full z-20 absolute bottom-0 w-full">
+                    <div id="decision-bar" class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-transform duration-300 translate-y-full z-50 absolute bottom-0 w-full">
                         <div>
                             <p class="text-[10px] font-bold text-slate-400 uppercase">Validando:</p>
                             <p class="font-bold text-slate-800 dark:text-white text-xs truncate w-48" id="selected-doc-name">--</p>
@@ -342,9 +372,11 @@
         </div>
     </div>
 
+    <input type="file" id="admin-file-upload" class="hidden" accept="application/pdf,image/*" onchange="procesarSubidaInterna(this)">
+
     <script>
-        let expediente = { grupos: { solicitante: [], propietario: [], inmueble: [] } };
-        const groupKeys = ['solicitante', 'propietario', 'inmueble'];
+        let expediente = { grupos: { solicitante: [], propietario: [], inmueble: [], interno: [] } };
+        const groupKeys = ['solicitante', 'propietario', 'inmueble', 'interno'];
         let activeGroupIndex = 0;
         let selectedReqKey = null;
         let expedienteId = null;
@@ -409,8 +441,12 @@
 
         // 🔥 FUNCION MEJORADA: Lee los entregables del Visitador y Dibujante
         function renderStaffPanel(data) {
-            const visName = data.visitador ? data.visitador.split('@')[0] : 'SIN ASIGNAR';
-            const dibName = data.dibujante ? data.dibujante.split('@')[0] : 'SIN ASIGNAR';
+            // 🛠️ FIX: Buscamos en la raíz o dentro del objeto 'equipo' que viene de Gestión
+            const visitadorRaw = data.visitador || (data.equipo && data.equipo.visitador);
+            const dibujanteRaw = data.dibujante || (data.equipo && data.equipo.dibujante);
+
+            const visName = visitadorRaw ? visitadorRaw.split('@')[0].toUpperCase() : 'SIN ASIGNAR';
+            const dibName = dibujanteRaw ? dibujanteRaw.split('@')[0].toUpperCase() : 'SIN ASIGNAR';
             
             document.getElementById('staff-visitador-name').innerText = visName;
             document.getElementById('staff-dibujante-name').innerText = dibName;
@@ -445,15 +481,14 @@
             }
         }
 
-        // 🌟 TRUCO MAESTRO DEFINITIVO (URL a Imagen de Alta Calidad)
+        // 🌟 TRUCO MAESTRO DEFINITIVO (URL a Imagen de Calidad Original)
         const transformDriveUrl = (url) => {
             if (!url) return '';
             const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
             if (match && match[1]) {
                 const fileId = match[1];
-                // 🚀 NUEVO: Usamos el servidor de distribución directa de Google (lh3)
-                // Este servidor no bloquea por CORS ni pide Cookies.
-                return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
+                // 🚀 FIX: Cambiamos =w1200 por =s0 para traer la resolución original intacta
+                return `https://lh3.googleusercontent.com/d/${fileId}=s0`;
             }
             return url; 
         };
@@ -560,11 +595,13 @@
                 cliente: data.nombreCliente,
                 telefono: data.telefono,
                 carpeta_drive: data.carpeta_drive || (data.driveFolderId ? `https://drive.google.com/drive/folders/${data.driveFolderId}` : null),
-                grupos: { solicitante: [], propietario: [], inmueble: [] },
+                grupos: { solicitante: [], propietario: [], inmueble: [], interno: [] },
                 visitaAgendada: data.visitaAgendada, 
                 fechasPropuestas: data.fechasPropuestas,
-                estatus: data.estatus, // 🌟 FIX: Leemos el estatus general
-                equipo: data.equipo // 🌟 FIX: Leemos si ya hay técnicos
+                estatus: data.estatus,
+                equipo: data.equipo,
+                visitador: data.visitador, // 🛡️ ESCUDO: Asegura detección de equipo
+                dibujante: data.dibujante
             };
 
             const checklist = data.checklist || {};
@@ -628,6 +665,21 @@
             } else {
                 document.getElementById('header-anotacion-container').classList.add('hidden');
             }
+
+            // 🟢 INDICADOR INTELIGENTE DE CÉDULA GYS
+            const btnCedula = document.getElementById('btn-subir-cedula-gys');
+            if (btnCedula) {
+                const cedulaData = checklist['CEDULA_GYS'];
+                const tieneUrl = cedulaData && (cedulaData.url || cedulaData.driveUrl || cedulaData.driveLink || cedulaData.archivoUrl);
+                
+                if (tieneUrl) {
+                    btnCedula.className = "w-full py-2.5 bg-emerald-600 border border-emerald-700 rounded-xl text-[11px] font-bold text-white hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95";
+                    btnCedula.innerHTML = '<span class="material-symbols-rounded text-base">check_circle</span> Cédula GYS (Lista)';
+                } else {
+                    btnCedula.className = "w-full py-2.5 bg-indigo-600 border border-indigo-700 rounded-xl text-[11px] font-bold text-white hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95";
+                    btnCedula.innerHTML = '<span class="material-symbols-rounded text-base">upload_file</span> Subir Cédula GYS (Raíz)';
+                }
+            }
         }
 
         function renderCurrentGroup() {
@@ -637,7 +689,7 @@
             const currentKey = groupKeys[activeGroupIndex];
             const items = expediente.grupos[currentKey];
             
-            const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE' };
+            const titles = { solicitante: 'DEL SOLICITANTE', propietario: 'DEL PROPIETARIO', inmueble: 'DEL INMUEBLE', interno: 'INTERNO (GYS)' };
             document.getElementById('carousel-title').innerText = titles[currentKey];
 
             let itemsObligatorios = items.filter(i => i.obligatorio);
@@ -691,7 +743,10 @@
                 itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
                 itemDiv.style.animationDelay = `${index * 0.05}s`;
                 
-                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT') { 
+                // 🔓 MODO GESTOR: Permitimos clic si tiene archivos O si es del grupo INTERNO (para poder subir la cédula)
+                const esInterno = currentKey === 'interno';
+                
+                if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT' || esInterno) { 
                     itemDiv.onclick = () => seleccionarRequisito(req);
                 } else {
                     itemDiv.classList.add('cursor-not-allowed'); itemDiv.title = "Aún no suben este archivo";
@@ -736,6 +791,15 @@
         function nextGroup() { activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0; renderCurrentGroup(); }
         function prevGroup() { activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1; renderCurrentGroup(); }
 
+        // Variables para control de Rotación
+        let currentDocRotation = 0;
+
+        window.rotarDocumento = function() {
+            currentDocRotation = (currentDocRotation + 90) % 360;
+            const wrapper = document.getElementById('rotatable-wrapper');
+            if(wrapper) wrapper.style.transform = `rotate(${currentDocRotation}deg)`;
+        };
+
         async function seleccionarRequisito(req) {
             selectedReqKey = req.key;
             renderCurrentGroup();
@@ -743,6 +807,35 @@
             document.getElementById('selected-doc-name').innerText = req.nombre;
             document.getElementById('card-filename').innerText = req.nombre;
             
+            // 1. Resetear rotación en cada documento nuevo
+            currentDocRotation = 0;
+            const wrapper = document.getElementById('rotatable-wrapper');
+            if(wrapper) wrapper.style.transform = `rotate(0deg)`;
+
+            // 2. Evaluamos si el documento seleccionado tiene IA procesada
+            const tabIA = document.getElementById('tab-ia-view');
+            const dataIA = expediente.datos_extraidos ? expediente.datos_extraidos[req.key] : null;
+            const iaAprobada = expediente.checklist && expediente.checklist[req.key] && expediente.checklist[req.key].ia_aprobada === true;
+
+            if (tabIA) {
+                if (dataIA) {
+                    tabIA.classList.remove('hidden');
+                    if (iaAprobada) {
+                        tabIA.innerHTML = '<span class="material-symbols-rounded text-[14px] text-emerald-500">verified</span> IA OK';
+                        tabIA.classList.remove('animate-pulse', 'text-orange-500');
+                    } else {
+                        tabIA.innerHTML = '<span class="material-symbols-rounded text-[14px] text-orange-500">compare</span> Revisar IA';
+                        tabIA.classList.add('animate-pulse', 'text-orange-500');
+                    }
+                } else {
+                    tabIA.classList.add('hidden');
+                }
+            }
+
+            // 3. Forzamos la pestaña "Documento" a pantalla completa por defecto
+            if(typeof switchPreviewTab === 'function') switchPreviewTab('doc');
+
+            // 4. Ocultamos todas las capas del visor
             ['preview-placeholder', 'error-fallback', 'real-image', 'real-pdf', 'map-container', 'text-viewer', 'zoom-overlay', 'gallery-container'].forEach(id => {
                 document.getElementById(id)?.classList.add('hidden');
             });
@@ -782,7 +875,6 @@
                 if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
                     pdfUrl = pdfUrl.replace('/view', '/preview');
                 } else if (pdfUrl.includes('firebasestorage')) {
-                    // 🌟 FIX: Permitimos la barra de herramientas (Zoom) y ajustamos el PDF al ancho
                     if(!pdfUrl.includes('#view=')) {
                         pdfUrl = pdfUrl + (pdfUrl.includes('?') ? '&' : '?') + '#view=FitH';
                     }
@@ -791,7 +883,6 @@
                 pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');
             }
-            // 🔥 NUEVO REPRODUCTOR DE GALERÍA
             else if (req.tipo === 'GALERIA' ) {
                 if (req.fotos && req.fotos.length > 0) {
                     const grid = document.getElementById('gallery-grid');
@@ -826,8 +917,35 @@
             }
             
             const bar = document.getElementById('decision-bar');
-            if (['review', 'rejected'].includes(req.status)) {
+            const btnValidar = document.getElementById('btn-validar');
+            const btnDescartar = document.querySelector('button[onclick="abrirRechazo()"]') || document.querySelector('button[onclick="anularDocumento()"]') || document.querySelector('button[onclick*="admin-file-upload"]');
+            
+            const currentKey = groupKeys[activeGroupIndex];
+            if (['review', 'rejected', 'valid'].includes(req.status) || (req.status === 'pending' && currentKey === 'interno')) {
                 bar.classList.remove('translate-y-full');
+                
+                if (req.status === 'pending' && currentKey === 'interno') {
+                    btnValidar.classList.add('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">upload_file</span> Subir Cédula';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-md active:scale-95 hover:bg-indigo-700 transition-all";
+                        btnDescartar.setAttribute('onclick', "document.getElementById('admin-file-upload').click()");
+                    }
+                } else if (req.status === 'valid') {
+                    btnValidar.classList.add('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">warning</span> Anular y Resetear';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-600 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs transition-all shadow-md active:scale-95";
+                        btnDescartar.setAttribute('onclick', 'anularDocumento()');
+                    }
+                } else {
+                    btnValidar.classList.remove('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">thumb_down</span> Descartar';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs transition-all dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20";
+                        btnDescartar.setAttribute('onclick', 'abrirRechazo()');
+                    }
+                }
             } else {
                 bar.classList.add('translate-y-full');
             }
@@ -862,21 +980,15 @@
                 const currentKey = groupKeys[activeGroupIndex];
                 const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
                 
-                if(item) item.status = nuevoEstado === 'rechazado' ? 'rejected' : 'valid';
+                if(item) item.status = (nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') ? 'rejected' : 'valid';
 
                 await registrarLog(
-                    nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO',
+                    nuevoEstado === 'anulado' ? 'ANULACIÓN NUCLEAR DE DOCUMENTO' : (nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO'),
                     motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios y fue respaldado en Drive.'
                 );
                 
-                // 🌟 EL GATILLO DE LA IA (CON PAUSA ESTRATÉGICA)
-                if (nuevoEstado.toLowerCase().includes('valid')) {
-                    console.log("🎯 Gatillo IA detectado. Dando 2 segundos a Firebase para asimilar el enlace de Drive...");
-                    // Esperamos 2 segundos y lanzamos la IA
-                    setTimeout(() => {
-                        extraerDatosConIA(selectedReqKey, expediente.id);
-                    }, 2000);
-                }
+                // 🌟 EL GATILLO DE LA IA FUE REMOVIDO DE AQUÍ.
+                // Ahora la IA se lanza manualmente desde el panel "Revisar IA".
                 
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
@@ -897,86 +1009,106 @@
         // ==========================================
         // 🤖 CEREBRO IA: EXTRACCIÓN DE DATOS EN SEGUNDO PLANO
         // ==========================================
-        async function extraerDatosConIA(reqKey, expId) {
-            console.log(`🟣 Verificando si ${reqKey} requiere IA...`);
+        window.extraerDatosConIA = async function(reqKey, expId) {
+            console.log(`🟣 Iniciando IA para: ${reqKey}...`);
+            
+            const content = document.getElementById('ia-data-content');
+            if (content) {
+                content.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center p-6 mt-10">
+                        <span class="material-symbols-rounded text-6xl text-indigo-500 animate-spin mb-4">sync</span>
+                        <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-2">Gemini está leyendo...</p>
+                        <p class="text-xs text-slate-400">Analizando documento en segundo plano.</p>
+                    </div>`;
+            }
 
             try {
                 const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
                 if (!docConfig.exists) { console.error("⚠️ IA: No se encontró plantilla."); return; }
                 
-                const configRequisito = docConfig.data().diccionario[reqKey];
+                const dataConf = docConfig.data();
+                // 🔴 FIX: Búsqueda blindada. Buscamos en 'requisitos' o 'diccionario'
+                const configRequisito = (dataConf.requisitos && dataConf.requisitos[reqKey]) || (dataConf.diccionario && dataConf.diccionario[reqKey]) || null;
                 
-                if (!configRequisito || configRequisito.usaIA !== true || !configRequisito.promptIA) {
-                    console.warn(`⚠️ IA Cancelada: Falta configuración en el Admin para ${reqKey}.`);
-                    return;
-                }
+                // Buscamos si la variable se llama 'promptIA' o solo 'prompt'
+                const promptUniversal = (configRequisito && (configRequisito.promptIA || configRequisito.prompt)) 
+                    ? (configRequisito.promptIA || configRequisito.prompt) 
+                    : "Extrae SOLO los datos principales de este documento. Devuelve los nombres de los campos OBLIGATORIAMENTE EN ESPAÑOL. Responde ÚNICAMENTE con un JSON puro.";
 
-                console.log(`🚀 IA: ¡Configuración validada!`);
-                const promptUniversal = configRequisito.promptIA;
+                console.log(`🧠 Prompt que se enviará a Gemini:`, promptUniversal);
 
-                // 🔥 FORZAMOS LECTURA FRESCA DESDE FIREBASE DESPUÉS DE LA PAUSA
                 const docFresco = await db.collection('expedientes_avaluos').doc(expId).get({ source: 'server' });
                 const docActualizado = docFresco.data().checklist[reqKey];
 
-                // Log seguro: Solo confirmamos que existe, ocultando URLs y tokens
-                console.log(`🔍 IA DEBUG - Documento localizado en Firebase para [${reqKey}].`);
-
-                // 🕵️ Buscamos la llave EXACTA que descubriste en Firebase: driveUrl
                 const posiblesUrls = [docActualizado.driveUrl, docActualizado.driveLink, docActualizado.url, docActualizado.archivoUrl];
-                const fileUrl = posiblesUrls.find(u => u && u.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/));
+                
+                // 🔴 FIX: Ya no buscamos solo IDs de Drive, aceptamos cualquier enlace "http" de Firebase
+                const urlReal = posiblesUrls.find(u => u && u.startsWith('http'));
 
-                if (!fileUrl) {
-                    console.error("⚠️ IA Abortada: No se encontró enlace de Google Drive en Firebase.", posiblesUrls);
+                if (!urlReal) {
+                    console.error("⚠️ IA Abortada: No se encontró ningún enlace válido en Firebase.");
+                    if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: El documento no tiene un enlace.</p></div>`;
                     return;
                 }
 
-                // Extraemos el ID final de Drive
-                const match = fileUrl.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                // Extraemos el ID si resulta ser de Drive, si no, se va como null pero mandamos la urlReal
+                const match = urlReal.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
                 const fileId = match ? match[1] : null;
 
-                console.log(`🚀 IA: Mandando petición a Netlify con ID de Drive: ${fileId}`);
+                console.log(`🚀 IA: Mandando petición a Netlify...`);
 
-                // 4. MANDAMOS AL CLON A TRABAJAR AL SÓTANO (-background)
                 const res = await fetch('/.netlify/functions/extraer-datos-ia-background', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         fileId: fileId,
+                        fileUrl: urlReal,   // 🔴 NUEVO: Pasamos la URL completa por si es Firebase Storage
                         promptPersonalizado: promptUniversal,
-                        expId: expId,       // NUEVO: Le decimos qué expediente es
-                        reqKey: reqKey      // NUEVO: Le decimos qué documento es
+                        expId: expId,       
+                        reqKey: reqKey      
                     })
                 });
 
-                // Netlify Background responde inmediatamente con 202 (Accepted)
-                // En local con netlify dev puede devolver 200, así que aceptamos ambos
                 if (res.status === 202 || res.status === 200) {
-                    console.log(`🚀 El clon de IA ya está trabajando en 2do plano para ${reqKey}`);
-                    await registrarLog("LECTURA IA INICIADA", `Gemini está analizando ${reqKey} en segundo plano. Tardará unos minutos.`);
-                    if (typeof showToast !== 'undefined') showToast(`🤖 Gemini está leyendo: ${configRequisito.nombre}. Te avisaré cuando termine...`, "info");
+                    await registrarLog("LECTURA IA INICIADA", `Gemini está analizando ${reqKey} en segundo plano.`);
+                    if (typeof showToast !== 'undefined') showToast(`🤖 Gemini está leyendo... Te avisaré cuando termine.`, "info");
                     
-                    // 🌟 MAGIA UX: Ponemos un "Espía" en Firebase para saber en qué segundo exacto termina
                     const unsubscribe = db.collection('expedientes_avaluos').doc(expId).onSnapshot((doc) => {
                         const data = doc.data();
-                        
-                        // Si el "clon" ya guardó los datos en Firebase...
                         if (data.datos_extraidos && data.datos_extraidos[reqKey]) {
-                            // Log seguro: Solo decimos que terminó y cuántos datos extrajo
-                            const numDatos = Object.keys(data.datos_extraidos[reqKey]).length;
-                            console.log(`✅ ¡El Clon terminó la lectura de ${reqKey}! Se extrajeron ${numDatos} campos de forma segura.`);
-                            if (typeof showToast !== 'undefined') showToast(`🤖 ¡Gemini finalizó y guardó los datos de: ${configRequisito.nombre}!`, "success");
-                            unsubscribe(); // Apagamos el espía para no gastar recursos
+                            if (typeof showToast !== 'undefined') showToast(`🤖 ¡Gemini finalizó y guardó los datos!`, "success");
+                            
+                            // 🔴 EL FIX VITAL: Actualizamos la memoria del navegador con los datos frescos
+                            expediente.datos_extraidos = data.datos_extraidos;
+                            
+                            // 🔄 Refrescar la pantalla para quitar el cargando y mostrar inputs
+                            if(selectedReqKey === reqKey) renderIAPanel(reqKey);
+                            
+                            unsubscribe();
                         }
                     });
                 } else {
-                    console.error("❌ No se pudo iniciar el trabajo en segundo plano.");
+                    if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error de servidor al iniciar IA.</p></div>`;
                 }
             } catch (error) {
                 console.error("Error en el lanzador de IA:", error);
+                if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error de conexión.</p></div>`;
             }
         }
         
         function validarDocumento() { if(selectedReqKey && confirm("¿Aprobar documento?")) actualizarEstadoBackend('validado'); }
+        
+        // ☢️ NUEVA FUNCIÓN: ANULAR Y RESETEAR (MODO DIOS GUI)
+        async function anularDocumento() {
+            if(!selectedReqKey) return;
+            const motivo = prompt("⚠️ ATENCIÓN: Estás anulando un documento validado.\n\nEsto borrará permanentemente los datos extraídos por la IA en la Hoja de Trabajo y regresará el documento a estado de Rechazado para que el cliente lo vuelva a subir.\n\nEscribe el motivo del rechazo:");
+            if(motivo) {
+                if(confirm("¿Estás 100% seguro de aplicar esta limpieza?")) {
+                    await actualizarEstadoBackend('anulado', "NOTA DE REVISIÓN: " + motivo);
+                }
+            }
+        }
+
         function confirmarRechazo() { if(selectedReqKey) { const motivo = document.getElementById('reject-reason').value; if(motivo) actualizarEstadoBackend('rechazado', motivo); else alert("Escribe un motivo"); } }
         function abrirRechazo() { document.getElementById('reject-modal').classList.remove('hidden'); document.getElementById('reject-modal').classList.add('flex'); const container = document.getElementById('lista-errores'); container.innerHTML = ''; const errores = selectedReqKey === 'UBICACION_MAPS' ? [{ t: 'Ubicación Incorrecta', d: 'El pin no coincide con el inmueble.' }] : [{ t: 'Ilegible', d: 'Imagen borrosa.' }, { t: 'Incompleto', d: 'Faltan páginas.' }, { t: 'Vencido', d: 'Documento caducado.' }]; errores.forEach(e => { const btn = document.createElement('button'); btn.className = "text-left text-xs border border-slate-200 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2"; btn.innerHTML = `⚠️ <b>${e.t}:</b> ${e.d}`; btn.onclick = () => usarError(`${e.t}: ${e.d}`); container.appendChild(btn); }); }
         function cerrarRechazo() { document.getElementById('reject-modal').classList.add('hidden'); document.getElementById('reject-modal').classList.remove('flex'); }
@@ -1031,13 +1163,15 @@
                     
                     const btn = btnContainer.querySelector('button');
                     
-                    // 🌟 FIX: Si ya está en Captura (Ya le asignaron equipo en Gestión)
-                    if (expediente.estatus === 'CAPTURA') {
-                        btn.innerHTML = `<span class="material-symbols-rounded">event</span> CITA Y EQUIPO CONFIRMADOS`;
+                    // 🛡️ REGLA DE ORO EVOLUCIONADA: Verificamos estatus y equipo sin errores de formato
+                    const statusGYS = (expediente.estatus || '').toUpperCase().trim();
+                    const tieneEquipo = (expediente.equipo && (expediente.equipo.visitador || expediente.equipo.dibujante)) || expediente.visitador || expediente.dibujante;
+                    
+                    if (statusGYS === 'CAPTURA' || statusGYS === 'VISITA REALIZADA' || statusGYS === 'FINALIZADO' || tieneEquipo) {
+                        btn.innerHTML = `<span class="material-symbols-rounded text-sm">event_available</span> CITA Y EQUIPO CONFIRMADOS`;
                         btn.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
-                        btn.className = "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm";
+                        btn.className = "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all";
                     } 
-                    // 🌟 FIX: Si el cliente ya agendó, pero Gestión aún no asigna el equipo (SOLO LECTURA)
                     else if (expediente.visitaAgendada && expediente.visitaAgendada.estatus === 'SOLICITADA') {
                         btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO ASIGNACIÓN EN GESTIÓN`;
                         btn.onclick = null;
@@ -1372,7 +1506,468 @@
             }
         }
 
+        // ==========================================
+        // ⚡ MODO DIOS: RECHAZO FORZADO (ALT + SHIFT + CLIC DERECHO)
+        // ==========================================
+        window.forzarRechazo = async function(key, nombreDoc) {
+            const motivo = prompt(`⚠️ MODO DIOS ACTIVADO ⚠️\nVas a rechazar: ${nombreDoc} (Que ya estaba validado).\n\nEscribe el motivo del rechazo para que el cliente lo vea:`);
+            
+            if (!motivo) return; // Si le da cancelar o lo deja vacío, abortamos
+
+            if (typeof showLoader !== 'undefined') showLoader('Aplicando rechazo forzado...');
+            
+            try {
+                const res = await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        expedienteId: expedienteId,
+                        itemKey: key,
+                        nuevoEstado: 'rechazado',
+                        retroalimentacion: "RECHAZO DE AUDITORÍA: " + motivo
+                    })
+                });
+                
+                if (!res.ok) throw new Error("Error al forzar el estado en el servidor");
+                
+                // Registramos en la bitácora que un Admin usó el Modo Dios
+                if (typeof registrarLog !== 'undefined') {
+                    await registrarLog('RECHAZO FORZADO (MODO DIOS)', `El administrador forzó el rechazo de ${nombreDoc}. Motivo: ${motivo}`);
+                }
+                
+                if (typeof showToast !== 'undefined') showToast("Rechazo aplicado con éxito", "success");
+                
+                // Recargamos para ver los cambios
+                setTimeout(() => location.reload(), 1500);
+
+            } catch (error) {
+                console.error("Error en Modo Dios:", error);
+                alert("❌ Ocurrió un error al intentar forzar el rechazo.");
+                if (typeof hideLoader !== 'undefined') hideLoader();
+            }
+        };
+
+        // 🚀 FUNCIÓN DIRECTA: SUBIR CÉDULA GYS A LA RAÍZ Y EXTRAER CON IA (SIN USAR ADMIN)
+        async function subirCedulaGYSDirecto(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const btn = document.getElementById('btn-subir-cedula-gys');
+            const originalHtml = btn.innerHTML;
+
+            btn.innerHTML = '<span class="animate-spin material-symbols-rounded text-sm">sync</span> Subiendo y Analizando...';
+            btn.disabled = true;
+
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    
+                    // 1. Enviar a Firebase y Drive (Indicando esRaiz: true)
+                    const res = await fetch('/.netlify/functions/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            expedienteId: expediente.id,
+                            itemKey: 'CEDULA_GYS',
+                            nuevoEstado: 'validado',
+                            archivoBase64: base64,
+                            nombreArchivo: file.name,
+                            mimeType: file.type,
+                            esRaiz: true, // 🚩 ORDEN: GUARDAR EN RAÍZ DE DRIVE
+                            categoriaItem: 'interno' // Oculto del cliente
+                        })
+                    });
+
+                    if (!res.ok) throw new Error("Error al subir archivo");
+                    
+                    if (typeof showToast !== 'undefined') showToast("¡Cédula guardada en raíz! Despertando a Gemini...", "info");
+
+                    // 2. Pausa para dar tiempo a Google Drive de generar el Link
+                    setTimeout(async () => {
+                        try {
+                            const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get({source: 'server'});
+                            const urlDrive = doc.data().checklist['CEDULA_GYS']?.driveUrl || doc.data().checklist['CEDULA_GYS']?.url;
+                            
+                            if (urlDrive) {
+                                const match = urlDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                                const fileId = match ? match[1] : null;
+                                
+                                if (fileId) {
+                                    // 3. Forzar a Gemini con el Prompt Hardcodeado (Adiós Admin)
+                                    const promptFijo = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
+                                    
+                                    fetch('/.netlify/functions/extraer-datos-ia-background', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            fileId: fileId,
+                                            promptPersonalizado: promptFijo,
+                                            expId: expediente.id,
+                                            reqKey: 'CEDULA_GYS'
+                                        })
+                                    });
+                                }
+                            }
+                            alert("¡Cédula GYS subida a la Raíz y enviada a IA con éxito! 🤖");
+                            location.reload();
+                        } catch (err) {
+                            console.error(err);
+                            alert("Se subió el PDF, pero hubo un detalle al iniciar la extracción IA.");
+                            location.reload();
+                        }
+                    }, 2500); // 2.5 segundos de margen
+                };
+            } catch (e) {
+                alert("Error: " + e.message);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // ⚡ FUNCIÓN MÁGICA: ENVIAR TODOS LOS DOCUMENTOS VIEJOS A IA
+        async function forzarSincronizacionIA(event) {
+            if (!confirm("¿Deseas re-procesar todos los documentos con IA? Esto tomará unos segundos.")) return;
+            
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="animate-spin material-symbols-rounded text-sm">sync</span> Sincronizando...';
+            btn.disabled = true;
+
+            try {
+                const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get();
+                const checklist = doc.data().checklist || {};
+                let tareas = [];
+
+                Object.keys(checklist).forEach(key => {
+                    const item = checklist[key];
+                    const ligaDrive = item.driveUrl || item.url;
+                    
+                    if (ligaDrive) {
+                        const match = ligaDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                        const fileId = match ? match[1] : null;
+                        if (fileId) {
+                            // 🛡️ INYECCIÓN DE PROMPT: Si es la Cédula, le pasamos la instrucción exacta para que no se pierda
+                            let promptIA = null;
+                            if (key === 'CEDULA_GYS') {
+                                promptIA = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
+                            }
+                            tareas.push({ fileId, expId: expediente.id, reqKey: key, promptPersonalizado: promptIA });
+                        }
+                    }
+                });
+
+                if (tareas.length === 0) {
+                    alert("No se detectaron archivos en Drive para procesar.");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                for (let i = 0; i < tareas.length; i++) {
+                    btn.innerHTML = `<span class="animate-spin material-symbols-rounded text-sm">sync</span> Procesando ${i + 1} de ${tareas.length}...`;
+                    
+                    await fetch('/.netlify/functions/extraer-datos-ia-background', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(tareas[i])
+                    });
+                    
+                    await new Promise(r => setTimeout(r, 3000));
+                }
+
+                alert(`¡Éxito! Se enviaron ${tareas.length} documentos a Gemini de forma segura. 🛡️\n\nLos datos aparecerán en tu Hoja de Trabajo en breve.`);
+                
+            } catch (e) {
+                alert("Error al sincronizar: " + e.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // 📄 MÓDULO: REVISIÓN IA (SEGUNDA VALIDACIÓN) Y PDF
+        // ==========================================
+
+        
+
+        // Activador del Botón de Generar Análisis PDF
+        const originalTransformarDatos = transformarDatos;
+        transformarDatos = function(id, data) {
+            originalTransformarDatos(id, data);
+            expediente.datos_extraidos = data.datos_extraidos || {};
+            expediente.checklist = data.checklist || {};
+            
+            const btnPDF = document.getElementById('btn-generar-analisis');
+            if (Object.keys(expediente.datos_extraidos).length > 0) {
+                btnPDF.classList.remove('hidden');
+            }
+        };
+
+        window.switchPreviewTab = function(tab) {
+            const btnDoc = document.getElementById('tab-doc-view');
+            const btnIA = document.getElementById('tab-ia-view');
+            const paneDoc = document.getElementById('doc-viewer-pane');
+            const paneIA = document.getElementById('ia-data-container');
+
+            if(tab === 'doc') {
+                // Modo Pantalla Completa
+                btnDoc.className = "text-[10px] font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 h-full flex items-center";
+                btnIA.className = "text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 h-full flex items-center gap-1 transition-all";
+                
+                paneDoc.classList.remove('w-1/2', 'md:w-7/12');
+                paneDoc.classList.add('w-full');
+                
+                paneIA.classList.remove('w-1/2', 'md:w-5/12', 'opacity-100');
+                paneIA.classList.add('w-0', 'opacity-0');
+                
+            } else if (tab === 'split') {
+                // Modo Vista Dividida
+                btnIA.className = "text-[10px] font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 h-full flex items-center gap-1";
+                btnDoc.className = "text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 h-full flex items-center transition-all";
+                
+                paneDoc.classList.remove('w-full');
+                paneDoc.classList.add('w-1/2', 'md:w-7/12'); 
+                
+                paneIA.classList.remove('w-0', 'opacity-0');
+                paneIA.classList.add('w-1/2', 'md:w-5/12', 'opacity-100');
+                
+                renderIAPanel(selectedReqKey);
+            }
+        };
+
+        window.renderIAPanel = function(key) {
+            const content = document.getElementById('ia-data-content');
+            const btnConfirmar = document.getElementById('btn-confirmar-ia');
+            
+            let datosIA = expediente.datos_extraidos ? expediente.datos_extraidos[key] : null;
+            const iaAprobada = expediente.checklist && expediente.checklist[key] ? expediente.checklist[key].ia_aprobada : false;
+
+            // 1. SI NO HAY DATOS -> Mostrar botón para extraer AHORA
+            if (!datosIA) {
+                content.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center p-6 opacity-80 mt-10">
+                        <span class="material-symbols-rounded text-6xl text-slate-300 dark:text-slate-600 mb-4">document_scanner</span>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">Sin lectura de Gemini</p>
+                        <p class="text-xs text-slate-400 mb-6">Inicia la extracción para que la IA escanee este documento.</p>
+                        <button onclick="extraerDatosConIA('${key}', '${expediente.id}')" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-base">auto_awesome</span> Extraer Datos Ahora
+                        </button>
+                    </div>`;
+                btnConfirmar.parentElement.classList.add('hidden'); // Ocultar el botón de aprobar
+                return;
+            }
+
+            // 2. SI HAY DATOS -> Mostrarlos
+            btnConfirmar.parentElement.classList.remove('hidden');
+
+            if (typeof datosIA === 'string') {
+                try { datosIA = JSON.parse(datosIA.replace(/```json/gi, '').replace(/```/g, '').trim()); } 
+                catch (e) { content.innerHTML = `<div class="p-3 bg-red-50 text-red-600 text-xs">${datosIA}</div>`; return; }
+            }
+
+            let html = '<div class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl mb-4"><p class="text-xs text-indigo-800 font-bold"><span class="material-symbols-rounded text-sm align-middle">edit_note</span> Verifica los datos extraídos y edítalos si Gemini se equivocó en algo.</p></div>';
+            
+            const renderInputs = (obj, path = '') => {
+                let nodeHtml = '';
+                for (const [k, v] of Object.entries(obj)) {
+                    const cleanKey = k.replace(/_/g, ' ').toUpperCase();
+                    const currentPath = path ? `${path}.${k}` : k;
+                    
+                    if (typeof v === 'object' && v !== null) {
+                        nodeHtml += `<div class="mt-4 mb-2 border-b border-slate-200 dark:border-slate-700 pb-1"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${cleanKey}</span></div>`;
+                        nodeHtml += `<div class="pl-2 space-y-2">` + renderInputs(v, currentPath) + `</div>`;
+                    } else {
+                        const val = String(v).trim().replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        nodeHtml += `
+                            <div class="flex flex-col mb-2">
+                                <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">${cleanKey}</label>
+                                <input type="text" class="ia-edit-input w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-xs font-mono font-bold text-indigo-800 dark:text-indigo-200 outline-none focus:border-indigo-500 transition-all shadow-inner" data-path="${currentPath}" value="${val.toUpperCase()}">
+                            </div>
+                        `;
+                    }
+                }
+                return nodeHtml;
+            };
+
+            html += renderInputs(datosIA);
+            content.innerHTML = html;
+
+            if(iaAprobada) {
+                btnConfirmar.innerHTML = '<span class="material-symbols-rounded">update</span> Actualizar Datos';
+                btnConfirmar.className = "w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all";
+            } else {
+                btnConfirmar.innerHTML = '<span class="material-symbols-rounded">verified</span> Aprobar Datos Extraídos';
+                btnConfirmar.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all";
+            }
+        };
+
+        window.confirmarDatosIA = async function() {
+            const btn = document.getElementById('btn-confirmar-ia');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
+            btn.disabled = true;
+
+            let nuevoJSON = JSON.parse(JSON.stringify(expediente.datos_extraidos[selectedReqKey]));
+            if (typeof nuevoJSON === 'string') nuevoJSON = JSON.parse(nuevoJSON.replace(/```json/gi, '').replace(/```/g, '').trim());
+
+            document.querySelectorAll('.ia-edit-input').forEach(input => {
+                const path = input.getAttribute('data-path').split('.');
+                let ref = nuevoJSON;
+                for(let i = 0; i < path.length - 1; i++) ref = ref[path[i]];
+                ref[path[path.length - 1]] = input.value;
+            });
+
+            try {
+                await db.collection('expedientes_avaluos').doc(expediente.id).update({
+                    [`datos_extraidos.${selectedReqKey}`]: nuevoJSON,
+                    [`checklist.${selectedReqKey}.ia_aprobada`]: true
+                });
+                
+                expediente.datos_extraidos[selectedReqKey] = nuevoJSON;
+                expediente.checklist[selectedReqKey].ia_aprobada = true;
+
+                if (typeof showToast !== 'undefined') showToast("Datos aprobados y listos para Cédula GYS.", "success");
+                
+                const tabIA = document.getElementById('tab-ia-view');
+                tabIA.innerHTML = '<span class="material-symbols-rounded text-[12px] text-emerald-500">verified</span> IA OK';
+                tabIA.classList.remove('animate-pulse', 'text-orange-500');
+                
+                renderIAPanel(selectedReqKey);
+            } catch(e) {
+                console.error(e);
+                alert("Error al guardar: " + e.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        };
+
+        // 🖨️ NUEVO GENERADOR DE PDF NATIVO (TEXTO 100% REAL Y LIMPIO)
+        window.generarPDFAnalisis = async function() {
+            if(!expediente.datos_extraidos || Object.keys(expediente.datos_extraidos).length === 0) {
+                alert("Aún no hay datos extraídos por IA para este expediente."); return;
+            }
+
+            const btn = document.getElementById('btn-generar-analisis');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Generando...';
+            btn.disabled = true;
+
+            let solHTML = '', propHTML = '', inmHTML = '';
+            let contSol = 1, contPro = 1, contInm = 1;
+
+            Object.entries(expediente.datos_extraidos).forEach(([key, val]) => {
+                let obj = val;
+                if(typeof val === 'string') { try { obj = JSON.parse(val.replace(/```json/gi, '').replace(/```/g, '').trim()); } catch(e){} }
+
+                const docName = expediente.checklist[key]?.nombre || key.replace(/_/g, ' ');
+                const esAprobada = expediente.checklist[key]?.ia_aprobada;
+                const checkStatus = esAprobada ? '' : '<span style="color:#e11d48; font-size:10px;">[PENDIENTE APROBAR IA]</span>';
+
+                // Convierte el JSON a texto corrido (formato limpio y natural separado por comas)
+                const parseProps = (o) => {
+                    let arr = [];
+                    for(let v of Object.values(o)) {
+                        if(typeof v === 'object' && v !== null) {
+                            const sub = parseProps(v);
+                            if(sub) arr.push(sub);
+                        } else if(v && v !== '---' && String(v).toLowerCase() !== 'null' && String(v).toLowerCase() !== 'n/a') {
+                            arr.push(String(v).toUpperCase());
+                        }
+                    }
+                    return arr.join(', '); // Une todo con comas simulando un párrafo natural
+                };
+
+                let contentStr = '';
+                if(typeof obj === 'object') contentStr = parseProps(obj); 
+                else contentStr = String(obj).toUpperCase();
+
+                // 🔴 Si solo dice "OK" (no extrajo datos útiles), lo ignoramos para no ensuciar el PDF
+                if (contentStr === "OK") contentStr = '';
+
+                const htmlItem = `
+                    <div class="doc-item">
+                        <div class="doc-title">\${contSol}. \${docName} \${checkStatus}</div>
+                        <div class="doc-data">\${contentStr}</div>
+                    </div>
+                `;
+
+                const cat = expediente.checklist[key]?.categoria || '';
+                if(cat === 'solicitante') { solHTML += htmlItem.replace('${contSol}', contSol++); } 
+                else if(cat === 'propietario') { propHTML += htmlItem.replace('${contSol}', contPro++); } 
+                else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmHTML += htmlItem.replace('${contSol}', contInm++); }
+            });
+
+            if(expediente.grupos.inmueble) {
+                const mapData = expediente.grupos.inmueble.find(r => r.key === 'UBICACION_MAPS');
+                if(mapData && mapData.coordenadas) {
+                    inmHTML += `
+                        <div class="doc-item">
+                            <div class="doc-title">${contInm}. UBICACIÓN SATELITAL</div>
+                            <div class="doc-data">Coordenadas: ${mapData.coordenadas}, Dirección: ${mapData.direccion || 'N/A'}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            const htmlContent = `
+                <html>
+                <head>
+                    <title>Análisis_${expediente.cliente}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 20px; line-height: 1.4; }
+                        h2 { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 20px; font-size: 14px; }
+                        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                        th { background-color: #0f4c81 !important; color: white !important; border: 1px solid #000; padding: 6px; text-align: left; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        td { border: 1px solid #000; padding: 8px; vertical-align: top; }
+                        .doc-item { margin-bottom: 12px; }
+                        .doc-title { font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
+                        .doc-data { margin-left: 12px; }
+                        @media print { @page { size: landscape; margin: 10mm; } }
+                    </style>
+                </head>
+                <body>
+                    <h2>ANÁLISIS DOCUMENTACIÓN</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>SOLICITANTE</th>
+                                <th>PROPIETARIO</th>
+                                <th>INMUEBLE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="font-weight:bold; margin-bottom:15px; font-size:12px;">${expediente.cliente.toUpperCase()}</div>
+                                    ${solHTML}
+                                </td>
+                                <td>${propHTML}</td>
+                                <td>${inmHTML}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            // Abrimos ventana nativa para impresión (Garantiza texto real y 100% seleccionable)
+            const printWin = window.open('', '_blank');
+            printWin.document.write(htmlContent);
+            printWin.document.close();
+            printWin.focus();
+
+            setTimeout(() => {
+                printWin.print();
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }, 500);
+        };
     </script>
+</body>
+</html>
 
     <div id="modal-asignar" class="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
     <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 transform scale-100 transition-transform">

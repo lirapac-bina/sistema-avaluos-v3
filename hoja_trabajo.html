@@ -104,13 +104,22 @@
                     <span class="material-symbols-rounded text-leezar-500">assignment</span> Hoja de Trabajo (Captura)
                 </h1>
                 
-                <div id="header-tags-container" class="mt-2 flex flex-wrap items-center gap-2 hidden">
-                    <span id="tag-folio" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2 py-1 rounded text-[10px] font-black tracking-widest shadow-sm"></span>
-                    <span id="tag-cliente" class="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[10px] font-bold uppercase shadow-sm"></span>
-                    <span id="tag-anotacion" class="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 hidden shadow-sm"><span class="material-symbols-rounded text-[12px]">edit_note</span> <span id="tag-anotacion-text"></span></span>
+                <div id="header-tags-container" class="mt-2 flex flex-col gap-2 hidden">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="tag-folio" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2 py-1 rounded text-[10px] font-black tracking-widest shadow-sm"></span>
+                        <span id="tag-cliente" class="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[10px] font-bold uppercase shadow-sm"></span>
+                        <span id="tag-tiempo" class="bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 border border-teal-200 dark:border-teal-800 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm"><span class="material-symbols-rounded text-[12px]">hourglass_top</span> <span id="tag-tiempo-text">0d</span></span>
+                    </div>
+                    
+                    <div id="tag-anotacion" class="hidden mt-1 bg-[#2a1f16] border border-amber-900/50 p-2.5 rounded-lg max-w-xl shadow-sm">
+                        <p class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-[14px]">edit_note</span> Anotaciones Internas
+                        </p>
+                        <p id="tag-anotacion-text" class="text-xs font-medium text-amber-200 leading-tight">...</p>
+                    </div>
                 </div>
 
-                <p id="active-expediente-label" class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">NINGÚN EXPEDIENTE SELECCIONADO</p>
+                <p id="active-expediente-label" class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest hidden">NINGÚN EXPEDIENTE SELECCIONADO</p>
             </div>
             
             <div class="flex items-center gap-3">
@@ -134,24 +143,111 @@
 
             <div class="p-6">
                 <div id="tab-datos" class="block fade-in no-print">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 mb-6">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-xl border border-blue-100 dark:border-blue-800 mb-6">
                         <h3 class="text-xs font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-4">Información del Expediente</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div><label class="leezar-label">Folio Operativo</label><input type="text" id="folio-gys" class="leezar-input !text-left bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 font-black text-indigo-700 dark:text-indigo-400" readonly></div>
-                            <div><label class="leezar-label">Nombre del Solicitante</label><input type="text" id="info-cliente" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
-                            <div><label class="leezar-label">Entidad Federativa</label><input type="text" id="info-entidad" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold" readonly></div>
-                            <div><label class="leezar-label">Tipo Trámite</label><input type="text" id="info-tramite" class="leezar-input !text-left bg-gray-100 dark:bg-slate-800 font-bold text-indigo-600 dark:text-indigo-400" readonly></div>
-                            <div class="col-span-full mt-2"><label class="leezar-label text-amber-600 dark:text-amber-500 flex items-center gap-1"><span class="material-symbols-rounded text-sm">edit_note</span> Anotaciones de Mesa de Control</label><textarea id="info-anotaciones" class="leezar-input !text-left bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold resize-none" rows="2" readonly></textarea></div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+                            <div><label class="leezar-label">Folio Operativo</label><input type="text" id="folio-gys" class="leezar-input !text-left bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 font-black text-indigo-700" readonly></div>
+                            <div><label class="leezar-label">Solicitante</label><input type="text" id="info-cliente" class="leezar-input !text-left bg-gray-100 font-bold" readonly></div>
+                            <div><label class="leezar-label">Entidad</label><input type="text" id="info-entidad" class="leezar-input !text-left bg-gray-100 font-bold" readonly></div>
+                            <div><label class="leezar-label">Trámite</label><input type="text" id="info-tramite" class="leezar-input !text-left bg-gray-100 font-bold text-indigo-600" readonly></div>
                         </div>
-                        
-                        <div class="mt-6 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                            <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-1"><span class="material-symbols-rounded text-sm">gavel</span> Datos Legales (Extraídos de Escritura)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="leezar-label">Superficie Terreno</label><input type="text" id="esc-sup-terreno" class="leezar-input !text-left font-bold text-indigo-700" placeholder="Esperando a la IA..."></div>
-                                <div><label class="leezar-label">Superficie Construcción</label><input type="text" id="esc-sup-const" class="leezar-input !text-left font-bold text-indigo-700" placeholder="Esperando a la IA..."></div>
-                                <div class="col-span-full"><label class="leezar-label">Medidas y Colindancias</label><textarea id="esc-medidas" class="leezar-input !text-left resize-y font-mono text-xs" rows="4" placeholder="Esperando lectura de Escritura..."></textarea></div>
+                        <div class="w-full">
+                            <label class="leezar-label text-amber-600 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">edit_note</span> Resumen Ejecutivo de Escritura / Anotaciones Internas
+                            </label>
+                            <textarea id="info-anotaciones" class="leezar-input !text-left bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold resize-none" rows="8" readonly placeholder="Esperando análisis de Gemini..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 mb-6 bg-white dark:bg-slate-800/50 rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30 overflow-hidden shadow-sm">
+                        <div class="bg-indigo-600 p-3 flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                    <span class="material-symbols-rounded text-sm">compare_arrows</span> Comparador GYS
+                                </h3>
+                                <span id="badge-cedula-gys" class="bg-indigo-800/50 text-indigo-200 border border-indigo-500/30 px-2 py-0.5 rounded text-[9px] font-bold flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[12px]">pending</span> Esperando Cédula
+                                </span>
                             </div>
+                            <span class="text-[9px] text-indigo-100 font-bold uppercase">Clic = Copiar MAYÚSCULAS</span>
                         </div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-indigo-50 dark:bg-indigo-900/20 text-[10px] font-bold text-indigo-800 dark:text-indigo-300 uppercase tracking-tighter">
+                                    <th class="p-3 border-b border-indigo-100 dark:border-indigo-900/30">Concepto</th>
+                                    <th class="p-3 border-b border-indigo-100 dark:border-indigo-900/30">Cédula (GYS/Interno)</th>
+                                    <th class="p-3 border-b border-indigo-100 dark:border-indigo-900/30">Documentos (Cliente)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-xs">
+                                <tr class="bg-indigo-100/50 dark:bg-indigo-900/40 border-b border-indigo-200 dark:border-indigo-800">
+                                    <td colspan="3" class="p-2 text-[10px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">1. Solicitante</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">Nombre Completo</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-sol-nombre">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-sol-nombre">---</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">RFC</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-sol-rfc">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-sol-rfc">---</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">NSS</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-sol-nss">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-sol-nss">---</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">C.U.R.P.</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-sol-curp">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-sol-curp">---</td>
+                                </tr>
+
+                                <tr class="bg-indigo-100/50 dark:bg-indigo-900/40 border-b border-indigo-200 dark:border-indigo-800">
+                                    <td colspan="3" class="p-2 text-[10px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">2. Oferente (Propietario)</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">Nombre o Razón Social</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-ofe-nombre">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-ofe-nombre">---</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">RFC</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-ofe-rfc">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-ofe-rfc">---</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">C.U.R.P.</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-ofe-curp">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-ofe-curp">---</td>
+                                </tr>
+
+                                <tr class="bg-indigo-100/50 dark:bg-indigo-900/40 border-b border-indigo-200 dark:border-indigo-800">
+                                    <td colspan="3" class="p-2 text-[10px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">3. Inmueble (Vivienda)</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">Dirección (Calle, Col, Mpio)</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-inm-dir">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-inm-dir">---</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-900/20">Código Postal</td>
+                                    <td class="p-3 font-mono text-indigo-600 dark:text-indigo-400 cursor-copy hover:bg-indigo-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-gys-inm-cp">---</td>
+                                    <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400 cursor-copy hover:bg-emerald-50 transition-colors" onclick="copiarAlPortapapeles(this)" id="comp-doc-inm-cp">---</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                        <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-1"><span class="material-symbols-rounded text-sm">gavel</span> Datos Legales</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="leezar-label">Sup. Terreno</label><input type="text" id="esc-sup-terreno" class="leezar-input !text-left font-bold" readonly></div>
+                            <div><label class="leezar-label">Sup. Const.</label><input type="text" id="esc-sup-const" class="leezar-input !text-left font-bold" readonly></div>
+                            <div class="col-span-full"><label class="leezar-label">Medidas y Colindancias</label><textarea id="esc-medidas" class="leezar-input !text-left text-xs" rows="4" readonly></textarea></div>
+                        </div>
+                    </div>
                         
                     </div>
                 </div>
@@ -225,6 +321,17 @@
                                 </div>
                             </fieldset>
 
+                            <div class="col-span-full mb-6">
+                                <label class="leezar-label !text-indigo-500 flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-sm">air</span> Estado de Ventilación
+                                </label>
+                                <select id="nota-ventilacion" class="leezar-input !text-left font-bold border-indigo-200 bg-indigo-50/30">
+                                    <option value="Natural y/o mecánica" selected>Natural y/o mecánica (Estándar)</option>
+                                    <option value="Natural">Únicamente Natural</option>
+                                    <option value="Mecánica">Únicamente Mecánica</option>
+                                </select>
+                            </div>
+
                             <fieldset class="p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
                                 <legend class="leezar-label px-2">Superficies Levantamiento</legend>
                                 <div class="grid grid-cols-2 gap-4">
@@ -238,7 +345,9 @@
                         </div>
 
                         <div class="text-center mb-6">
-                            <button onclick="generarTextoNotas()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition">Generar y Previsualizar Notas</button>
+                            <button onclick="generarTextoNotas()" class="col-span-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/30 transition-all flex justify-center items-center gap-2 active:scale-95">
+                                <span class="material-symbols-rounded">auto_awesome</span> Generar y Previsualizar Notas
+                            </button>
                         </div>
                         
                         <div>
@@ -600,14 +709,36 @@
                     hayDocs = true;
                 }
 
+                if(document.querySelector('input[value="Constancia de Alineamiento y Número Oficial"]').checked) {
+                    const ofic = document.getElementById('nota-alin-oficio').value || "___";
+                    const fech = document.getElementById('nota-alin-fecha').value || "___";
+                    txt += `- Constancia de Alineamiento y Número Oficial: Con número de oficio ${ofic}, expedida con fecha ${fech}.\n`;
+                    hayDocs = true;
+                }
+
+                if(document.querySelector('input[value="Constancia de Datos Catastrales"]').checked) {
+                    const ofic = document.getElementById('nota-datos-oficio').value || "___";
+                    const fech = document.getElementById('nota-datos-fecha').value || "___";
+                    txt += `- Constancia de Datos Catastrales: Con número de oficio ${ofic}, expedida con fecha ${fech}.\n`;
+                    hayDocs = true;
+                }
+
+                if(document.querySelector('input[value="Recibo de Servicio de Energía Eléctrica"]').checked) {
+                    txt += `- Recibo de Servicio de Energía Eléctrica (CFE).\n`;
+                    hayDocs = true;
+                }
+
                 if(!hayDocs) txt += `- No se marcaron documentos de justificación.\n`;
                 txt += `\n`;
 
-                // 3. SERVICIOS
+                // 3. SERVICIOS Y VENTILACIÓN
+                const ventilacion = document.getElementById('nota-ventilacion').value;
+                txt += `El inmueble cuenta con ventilación ${ventilacion.toLowerCase()} en todos los espacios arquitectónicos, permitiendo la luz y ventilación natural para un buen funcionamiento.\n\n`;
+
                 let servicios = [];
                 document.querySelectorAll('input[name="nota-serv"]:checked').forEach(s => servicios.push(s.value));
                 if(servicios.length > 0) {
-                    txt += `SERVICIOS DEL INMUEBLE:\nEl inmueble cuenta con los siguientes servicios: ${servicios.join(', ')}.\n\n`;
+                    txt += `SERVICIOS DEL INMUEBLE:\nEl inmueble cuenta con los siguientes servicios al momento de la inspección: ${servicios.join(', ')}.\n\n`;
                 }
 
                 // 4. SUPERFICIES
@@ -807,13 +938,26 @@
             document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
             cerrarModalExpedientes(); showToast("Expediente Cargado", "success");
 
-            // 1. HEADER DINÁMICO (Las 3 Etiquetas en la Cabecera)
-            document.getElementById('active-expediente-label').classList.add('hidden'); // Ocultamos el texto feo
+            // 1. HEADER DINÁMICO (Las Etiquetas en la Cabecera)
+            document.getElementById('active-expediente-label').classList.add('hidden');
             document.getElementById('header-tags-container').classList.remove('hidden');
             
             document.getElementById('tag-folio').innerText = etiqueta; 
             document.getElementById('tag-cliente').innerText = d.cliente || 'Sin Cliente';
             
+            // Calculamos los días transcurridos para el Capturista
+            let fechaInicio = d.fecha_actualizacion_captura || d.fecha_asignacion_captura || d.fechaCreacion || d.fecha;
+            let diasAbierto = 0;
+            if (fechaInicio) {
+                let fObj = fechaInicio.toDate ? fechaInicio.toDate() : (fechaInicio._seconds ? new Date(fechaInicio._seconds * 1000) : new Date(fechaInicio));
+                if (!isNaN(fObj)) {
+                    let inicio = new Date(fObj.getTime()); let fin = new Date();
+                    inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+                    while (inicio < fin) { inicio.setDate(inicio.getDate() + 1); if (inicio.getDay() !== 0 && inicio.getDay() !== 6) diasAbierto++; }
+                }
+            }
+            document.getElementById('tag-tiempo-text').innerText = `${diasAbierto}d en captura`;
+
             const tagAnotacion = document.getElementById('tag-anotacion');
             if (d.anotacion && d.anotacion.trim() !== '') {
                 tagAnotacion.classList.remove('hidden');
@@ -896,72 +1040,224 @@
         function autollenarConIA(expediente) {
             console.log("🕵️‍♂️ DIAGNÓSTICO IA - Abriendo expediente:", expediente.cliente);
             
+            // 🎨 FUNCIÓN INTERNA: Evalúa y Colorea Coincidencias en Verde
+            const compararYColorear = () => {
+                const filas = ['sol-nombre', 'sol-rfc', 'sol-nss', 'sol-curp', 'ofe-nombre', 'ofe-rfc', 'ofe-curp', 'inm-dir', 'inm-cp'];
+                filas.forEach(f => {
+                    const gys = document.getElementById(`comp-gys-${f}`);
+                    const doc = document.getElementById(`comp-doc-${f}`);
+                    if(gys && doc && gys.innerText !== '---' && doc.innerText !== '---') {
+                        gys.classList.remove('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
+                        doc.classList.remove('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
+                        
+                        if(gys.innerText.trim() === doc.innerText.trim()) {
+                            gys.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
+                            doc.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
+                        }
+                    }
+                });
+            };
+
             if (!expediente.datos_extraidos) {
-                console.error("❌ LA IA NO GUARDÓ NADA: Firebase no tiene la sección 'datos_extraidos' para este expediente.");
-                if (typeof showToast !== 'undefined') showToast("Firebase no tiene datos de la IA", "error");
+                console.warn("⚠️ No hay datos extraídos por la IA aún.");
                 return;
             }
 
-            const datosIA = expediente.datos_extraidos;
-            console.log("✅ DATOS ENCONTRADOS EN FIREBASE:", datosIA);
+            // 🛡️ PARSEADOR ROBUSTO: Extraemos el JSON puro si Gemini devolvió texto con formato Markdown
+            let datosIA = {};
+            for (const [k, v] of Object.entries(expediente.datos_extraidos)) {
+                if (typeof v === 'string') {
+                    try {
+                        const cleanStr = v.replace(/```json/gi, '').replace(/```/g, '').trim();
+                        datosIA[k] = JSON.parse(cleanStr);
+                    } catch (e) {
+                        console.warn("No se pudo parsear el JSON de " + k);
+                        datosIA[k] = v; // Lo dejamos como texto por si es un resumen simple
+                    }
+                } else {
+                    datosIA[k] = v; // Ya es un objeto válido
+                }
+            }
 
-            // FUNCIÓN MÁGICA: Palomea la casilla y abre el menú si no estaba abierto
+            const formatGYS = (texto) => texto && texto !== "---" ? String(texto).toUpperCase().trim() : "";
+
             const activarCasilla = (valorCasilla, idDiv) => {
                 const chk = document.querySelector(`input[value="${valorCasilla}"]`);
-                if(chk && !chk.checked) {
-                    chk.checked = true;
-                    if(idDiv) toggleConditionalFields(idDiv);
-                }
+                if(chk && !chk.checked) { chk.checked = true; if(idDiv) toggleConditionalFields(idDiv); }
             };
 
-            // 📜 INYECTAR DATOS DE LA ESCRITURA Y MEDIDAS (Búsqueda Blindada)
+            // 📜 ESCRITURA
             const keyEscritura = Object.keys(datosIA).find(k => k.toUpperCase().includes('ESCRITURA'));
             if (keyEscritura) {
-                console.log("📄 Escribiendo datos de Escritura...");
                 const esc = datosIA[keyEscritura];
                 activarCasilla('Escritura', 'escritura'); 
                 
-                if(esc.num_escritura) document.getElementById('nota-esc-numero').value = esc.num_escritura;
-                if(esc.libro && esc.libro !== 'S/N') document.getElementById('nota-esc-libro').value = esc.libro;
-                if(esc.fecha_escritura) document.getElementById('nota-esc-fecha').value = esc.fecha_escritura;
-                if(esc.notario_nombre) document.getElementById('nota-esc-notario').value = esc.notario_nombre;
-                if(esc.num_notaria) document.getElementById('nota-esc-notaria-num').value = esc.num_notaria;
-                if(esc.ciudad_notaria) document.getElementById('nota-esc-notaria-ciudad').value = esc.ciudad_notaria;
-                
-                if(esc.superficie_terreno && document.getElementById('esc-sup-terreno')) document.getElementById('esc-sup-terreno').value = esc.superficie_terreno;
-                if(esc.superficie_construccion && document.getElementById('esc-sup-const')) document.getElementById('esc-sup-const').value = esc.superficie_construccion;
-                if(esc.medidas_colindancias && document.getElementById('esc-medidas')) document.getElementById('esc-medidas').value = esc.medidas_colindancias;
-                
-                if (typeof showToast !== 'undefined') showToast("✨ Datos legales extraídos", "success");
-            } else {
-                console.warn("⚠️ No se encontró la llave ESCRITURA en los datos.");
+                if(esc.num_escritura) document.getElementById('nota-esc-numero').value = formatGYS(esc.num_escritura);
+                if(esc.libro && esc.libro !== 'S/N') document.getElementById('nota-esc-libro').value = formatGYS(esc.libro);
+                if(esc.fecha_escritura) document.getElementById('nota-esc-fecha').value = formatGYS(esc.fecha_escritura);
+                if(esc.notario_nombre) document.getElementById('nota-esc-notario').value = formatGYS(esc.notario_nombre);
+                if(esc.num_notaria) document.getElementById('nota-esc-notaria-num').value = formatGYS(esc.num_notaria);
+                if(esc.ciudad_notaria) document.getElementById('nota-esc-notaria-ciudad').value = formatGYS(esc.ciudad_notaria);
+                if(esc.superficie_terreno) document.getElementById('esc-sup-terreno').value = formatGYS(esc.superficie_terreno);
+                if(esc.superficie_construccion) document.getElementById('esc-sup-const').value = formatGYS(esc.superficie_construccion);
+                if(esc.medidas_colindancias) document.getElementById('esc-medidas').value = formatGYS(esc.medidas_colindancias);
+                if(esc.resumen_ejecutivo) document.getElementById('info-anotaciones').value = formatGYS(esc.resumen_ejecutivo);
             }
 
-            // 💧 INYECTAR DATOS DEL AGUA
+            // 💧 AGUA
             const keyAgua = Object.keys(datosIA).find(k => k.toUpperCase().includes('AGUA'));
             if (keyAgua) {
-                console.log("💧 Escribiendo datos de Agua...");
                 const agua = datosIA[keyAgua];
                 activarCasilla('Recibo de Agua', 'agua'); 
-
-                if(agua.cuenta) document.getElementById('nota-agua-cuenta').value = agua.cuenta;
-                if(agua.folio) document.getElementById('nota-agua-folio').value = agua.folio;
-                if(agua.fecha) document.getElementById('nota-agua-fecha').value = agua.fecha;
-                if(agua.expedido_por) document.getElementById('nota-agua-expedido').value = agua.expedido_por;
+                if(agua.cuenta) document.getElementById('nota-agua-cuenta').value = formatGYS(agua.cuenta);
+                if(agua.folio) document.getElementById('nota-agua-folio').value = formatGYS(agua.folio);
+                if(agua.fecha) document.getElementById('nota-agua-fecha').value = formatGYS(agua.fecha);
+                if(agua.expedido_por) document.getElementById('nota-agua-expedido').value = formatGYS(agua.expedido_por);
             }
             
-            // 🏡 INYECTAR DATOS DEL PREDIAL
+            // 🏡 PREDIAL
             const keyPredial = Object.keys(datosIA).find(k => k.toUpperCase().includes('PREDIAL'));
             if (keyPredial) {
-                console.log("🏡 Escribiendo datos de Predial...");
                 const pred = datosIA[keyPredial];
                 activarCasilla('Boleta Predial', 'predial'); 
-
-                if(pred.clave_catastral) document.getElementById('nota-predial-clave').value = pred.clave_catastral;
-                if(pred.folio) document.getElementById('nota-predial-folio').value = pred.folio;
-                if(pred.fecha) document.getElementById('nota-predial-fecha').value = pred.fecha;
+                if(pred.clave_catastral) document.getElementById('nota-predial-clave').value = formatGYS(pred.clave_catastral);
+                if(pred.folio) document.getElementById('nota-predial-folio').value = formatGYS(pred.folio);
+                if(pred.fecha) document.getElementById('nota-predial-fecha').value = formatGYS(pred.fecha);
             }
+
+            // 🗺️ CÉDULA CATASTRAL
+            const keyCedula = Object.keys(datosIA).find(k => k.toUpperCase().includes('CEDULA') && !k.toUpperCase().includes('GYS') && !k.toUpperCase().includes('MAI'));
+            if (keyCedula) {
+                const ced = datosIA[keyCedula];
+                activarCasilla('Cédula Catastral', 'cedula'); 
+                if(ced.fecha) document.getElementById('nota-cedula-fecha').value = formatGYS(ced.fecha);
+                if(ced.folio) document.getElementById('nota-cedula-folio').value = formatGYS(ced.folio);
+                if(ced.ayuntamiento) document.getElementById('nota-cedula-ayuntamiento').value = formatGYS(ced.ayuntamiento);
+                if(ced.edad) document.getElementById('nota-cedula-edad').value = formatGYS(ced.edad);
+            }
+
+            // 📏 ALINEAMIENTO
+            const keyAlin = Object.keys(datosIA).find(k => k.toUpperCase().includes('ALINEAMIENTO'));
+            if (keyAlin) {
+                const alin = datosIA[keyAlin];
+                activarCasilla('Constancia de Alineamiento y Número Oficial', 'alineamiento'); 
+                if(alin.num_oficio) document.getElementById('nota-alin-oficio').value = formatGYS(alin.num_oficio);
+                if(alin.fecha) document.getElementById('nota-alin-fecha').value = formatGYS(alin.fecha);
+            }
+
+            // 🏢 DATOS CATASTRALES
+            const keyDatosCat = Object.keys(datosIA).find(k => k.toUpperCase().includes('DATOS CATASTRALES') || k.toUpperCase().includes('CONSTANCIA DE DATOS'));
+            if (keyDatosCat) {
+                const dcat = datosIA[keyDatosCat];
+                activarCasilla('Constancia de Datos Catastrales', 'datos'); 
+                if(dcat.num_oficio) document.getElementById('nota-datos-oficio').value = formatGYS(dcat.num_oficio);
+                if(dcat.fecha) document.getElementById('nota-datos-fecha').value = formatGYS(dcat.fecha);
+            }
+
+            // ⚡ LUZ
+            if (Object.keys(datosIA).find(k => k.toUpperCase().includes('LUZ') || k.toUpperCase().includes('CFE') || k.toUpperCase().includes('ENERGIA'))) {
+                activarCasilla('Recibo de Servicio de Energía Eléctrica', null); 
+            }
+
+            // 📝 CÉDULA GYS (Mapeo a la Tabla Izquierda)
+            const keyCedulaUnidad = Object.keys(datosIA).find(k => k.toUpperCase().includes('CEDULA_GYS') || k.toUpperCase().includes('CEDULA 3') || k.toUpperCase().includes('MAI'));
+            if (keyCedulaUnidad) {
+                const cVal = datosIA[keyCedulaUnidad];
+                const badgeGYS = document.getElementById('badge-cedula-gys');
+                if(badgeGYS) {
+                    badgeGYS.className = "bg-emerald-500/20 text-emerald-100 border border-emerald-400/50 px-2 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 shadow-sm";
+                    badgeGYS.innerHTML = '<span class="material-symbols-rounded text-[12px]">check_circle</span> Cédula GYS Detectada';
+                }
+
+                if(cVal.solicitante) {
+                    let c_nom = cVal.solicitante.nombre_completo || cVal.solicitante.nombre;
+                    let c_rfc = cVal.solicitante.rfc;
+                    let c_curp = cVal.solicitante.curp;
+                    let c_nss = cVal.solicitante.nss;
+
+                    // 🛡️ Filtro Inteligente: Si el CURP trae un RFC (13 letras), lo intercambiamos
+                    if (c_curp && String(c_curp).trim().length < 18 && (!c_rfc || c_rfc === '---')) { c_rfc = c_curp; c_curp = '---'; }
+                    if (c_rfc && String(c_rfc).trim().length === 18 && (!c_curp || c_curp === '---')) { c_curp = c_rfc; c_rfc = '---'; }
+
+                    if(c_nom) document.getElementById('comp-gys-sol-nombre').innerText = formatGYS(c_nom);
+                    if(c_rfc) document.getElementById('comp-gys-sol-rfc').innerText = formatGYS(c_rfc);
+                    if(c_nss) document.getElementById('comp-gys-sol-nss').innerText = formatGYS(c_nss);
+                    if(c_curp) document.getElementById('comp-gys-sol-curp').innerText = formatGYS(c_curp);
+                }
+                if(cVal.oferente || cVal.propietario) {
+                    const ofe = cVal.oferente || cVal.propietario;
+                    let o_nom = ofe.nombre_completo || ofe.nombre;
+                    let o_rfc = ofe.rfc;
+                    let o_curp = ofe.curp;
+
+                    // 🛡️ Filtro Inteligente Oferente
+                    if (o_curp && String(o_curp).trim().length < 18 && (!o_rfc || o_rfc === '---')) { o_rfc = o_curp; o_curp = '---'; }
+                    if (o_rfc && String(o_rfc).trim().length === 18 && (!o_curp || o_curp === '---')) { o_curp = o_rfc; o_rfc = '---'; }
+
+                    if(o_nom) document.getElementById('comp-gys-ofe-nombre').innerText = formatGYS(o_nom);
+                    if(o_rfc) document.getElementById('comp-gys-ofe-rfc').innerText = formatGYS(o_rfc);
+                    if(o_curp) document.getElementById('comp-gys-ofe-curp').innerText = formatGYS(o_curp);
+                }
+                if(cVal.inmueble) {
+                    if(cVal.inmueble.direccion_completa || cVal.inmueble.direccion) document.getElementById('comp-gys-inm-dir').innerText = formatGYS(cVal.inmueble.direccion_completa || cVal.inmueble.direccion);
+                    if(cVal.inmueble.cp || cVal.inmueble.codigo_postal) document.getElementById('comp-gys-inm-cp').innerText = formatGYS(cVal.inmueble.cp || cVal.inmueble.codigo_postal);
+                }
+            }
+
+            // ✍️ DOCUMENTOS CLIENTE (Mapeo a la Tabla Derecha)
+            Object.keys(datosIA).forEach(k => {
+                if (k.toUpperCase().includes('CEDULA_GYS') || k.toUpperCase().includes('MAI')) return; 
+                
+                const sVal = datosIA[k];
+                if(sVal.solicitante) {
+                    let s_nom = sVal.solicitante.nombre_completo || sVal.solicitante.nombre;
+                    let s_rfc = sVal.solicitante.rfc;
+                    let s_curp = sVal.solicitante.curp;
+                    let s_nss = sVal.solicitante.nss;
+
+                    // 🛡️ AUTO-CORRECCIÓN: Si el RFC es de 18 caracteres, es una CURP
+                    if (s_rfc && String(s_rfc).length === 18 && (!s_curp || s_curp === '---')) { s_curp = s_rfc; s_rfc = '---'; }
+
+                    if(s_nom && document.getElementById('comp-doc-sol-nombre').innerText === '---') document.getElementById('comp-doc-sol-nombre').innerText = formatGYS(s_nom);
+                    if(s_curp && document.getElementById('comp-doc-sol-curp').innerText === '---') document.getElementById('comp-doc-sol-curp').innerText = formatGYS(s_curp);
+                    if(s_rfc && document.getElementById('comp-doc-sol-rfc').innerText === '---') document.getElementById('comp-doc-sol-rfc').innerText = formatGYS(s_rfc);
+                    if(s_nss && document.getElementById('comp-doc-sol-nss').innerText === '---') document.getElementById('comp-doc-sol-nss').innerText = formatGYS(s_nss);
+                }
+                if(sVal.oferente || sVal.propietario) {
+                    const ofe = sVal.oferente || sVal.propietario;
+                    let o_rfc = ofe.rfc;
+                    let o_curp = ofe.curp;
+                    
+                    if (o_rfc && String(o_rfc).length === 18 && (!o_curp || o_curp === '---')) { o_curp = o_rfc; o_rfc = '---'; }
+
+                    if(ofe.nombre && document.getElementById('comp-doc-ofe-nombre').innerText === '---') document.getElementById('comp-doc-ofe-nombre').innerText = formatGYS(ofe.nombre);
+                    if(o_rfc && document.getElementById('comp-doc-ofe-rfc').innerText === '---') document.getElementById('comp-doc-ofe-rfc').innerText = formatGYS(o_rfc);
+                    if(o_curp && document.getElementById('comp-doc-ofe-curp').innerText === '---') document.getElementById('comp-doc-ofe-curp').innerText = formatGYS(o_curp);
+                }
+                if (sVal.inmueble || sVal.direccion || sVal.cp) {
+                    const dir = sVal.inmueble?.direccion || sVal.direccion;
+                    const cp = sVal.inmueble?.cp || sVal.inmueble?.codigo_postal || sVal.cp;
+                    if(dir && document.getElementById('comp-doc-inm-dir').innerText === '---') document.getElementById('comp-doc-inm-dir').innerText = formatGYS(dir);
+                    if(cp && document.getElementById('comp-doc-inm-cp').innerText === '---') document.getElementById('comp-doc-inm-cp').innerText = formatGYS(cp);
+                }
+            });
+
+            // 🖌️ EJECUTAMOS EL MARCADOR VISUAL
+            compararYColorear();
         }
+
+        // 📋 UTILIDAD: Clic para copiar valor a GYS (Forzando Mayúsculas al portapapeles)
+        window.copiarAlPortapapeles = function(elemento) {
+            const texto = elemento.innerText;
+            if (texto === "---" || texto === "") return;
+            
+            navigator.clipboard.writeText(texto.toUpperCase()).then(() => {
+                const originalBg = elemento.style.backgroundColor;
+                elemento.style.backgroundColor = "#dcfce7"; // Verde éxito
+                if (typeof showToast !== 'undefined') showToast("¡Copiado en MAYÚSCULAS! 🔠", "success");
+                setTimeout(() => { elemento.style.backgroundColor = originalBg; }, 500);
+            });
+        };
 
     </script>
 

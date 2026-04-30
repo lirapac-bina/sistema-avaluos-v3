@@ -344,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             window.location.reload(true);
         }
-        alert("🧹 ¡Caché de scripts limpiuada!");
+        alert("🧹 ¡Caché de scripts limpiada!");
     };
 
     // Toggle para versión Móvil

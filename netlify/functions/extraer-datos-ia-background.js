@@ -2,7 +2,7 @@
 const { google } = require('googleapis'); 
 const admin = require('firebase-admin');
 
-// 🌟 INICIALIZAMOS FIREBASE ADMIN (Patrón Singleton)
+// 🌟 INICIALIZAMOS FIREBASE ADMIN
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT))
@@ -10,36 +10,44 @@ if (!admin.apps.length) {
 }
 
 exports.handler = async (event) => {
-    // ⚠️ Una Background function no usa el "return" clásico hacia el navegador.
-    // Solo hace el trabajo y se apaga en silencio.
-    
     try {
-        // Recibimos los datos (Ahora incluimos expId y reqKey para saber dónde guardar)
-        const { fileId, promptPersonalizado, expId, reqKey } = JSON.parse(event.body);
+        // 🔴 Recibimos fileId (Drive) o fileUrl (Firebase)
+        const { fileId, fileUrl, promptPersonalizado, expId, reqKey } = JSON.parse(event.body);
 
-        if (!fileId || !promptPersonalizado || !expId || !reqKey) {
+        if ((!fileId && !fileUrl) || !promptPersonalizado || !expId || !reqKey) {
             console.error("❌ Background IA: Faltan parámetros.");
             return;
         }
 
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY_LECTOR;
+        if (!GEMINI_API_KEY) console.error("🚨 ALERTA: No se encontró GEMINI_API_KEY_LECTOR");
 
-        // 1. CONEXIÓN A DRIVE
-        const auth = new google.auth.GoogleAuth({
-            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
-        const drive = google.drive({ version: 'v3', auth });
+        let base64Data = "";
+        let mimeType = "application/pdf"; // default
 
-        // 2. DESCARGA DEL DOCUMENTO
-        console.log(`🤖 Descargando documento para ${reqKey}...`);
-        const fileMeta = await drive.files.get({ fileId: fileId, fields: 'mimeType' });
-        const mimeType = fileMeta.data.mimeType;
+        // 1. DESCARGA DEL DOCUMENTO (Inteligente)
+        if (fileId) {
+            console.log(`🤖 Descargando documento de Google Drive...`);
+            const auth = new google.auth.GoogleAuth({
+                credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+                scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+            });
+            const drive = google.drive({ version: 'v3', auth });
+            
+            const fileMeta = await drive.files.get({ fileId: fileId, fields: 'mimeType' });
+            mimeType = fileMeta.data.mimeType;
 
-        const driveRes = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-        const base64Data = Buffer.from(driveRes.data).toString('base64');
+            const driveRes = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+            base64Data = Buffer.from(driveRes.data).toString('base64');
+        } else if (fileUrl) {
+            console.log(`🤖 Descargando documento público (Firebase Storage)...`);
+            const response = await fetch(fileUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            base64Data = Buffer.from(arrayBuffer).toString('base64');
+            mimeType = response.headers.get('content-type') || 'application/pdf';
+        }
 
-        // 3. EJECUCIÓN DIRECTA A GEMINI
+        // 2. EJECUCIÓN DIRECTA A GEMINI
         console.log(`🤖 Analizando con Gemini 2.5 Flash...`);
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const payload = {
@@ -61,7 +69,7 @@ exports.handler = async (event) => {
         rawResponse = rawResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
         const datosExtraidos = JSON.parse(rawResponse);
 
-        // 4. GUARDADO DIRECTO EN FIREBASE
+        // 3. GUARDADO DIRECTO EN FIREBASE
         console.log(`💾 Guardando resultados en la base de datos...`);
         const db = admin.firestore();
         await db.collection('expedientes_avaluos').doc(expId).set({

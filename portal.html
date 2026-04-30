@@ -327,7 +327,7 @@
                     <div>
                         <h3 class="text-lg font-extrabold text-slate-800 dark:text-white mb-2">Estamos revisando tu expediente ⏳</h3>
                         <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Ten paciencia, nuestro equipo está validando tus documentos en este momento. <b>Guarda esta liga</b> y vuelve a entrar más tarde; por aquí te habilitaremos el calendario para elegir el día de tu visita una vez que todo esté aprobado.
+                            Nuestro equipo estará validando tus documentos. <b>Guarda esta liga</b> y vuelve a entrar más tarde; por aquí te habilitaremos el calendario para elegir el día de tu visita una vez que todo esté aprobado.
                         </p>
                     </div>
                 </div>
@@ -439,6 +439,37 @@
         let currentTab = 'solicitante'; 
         let map, geocoder, autocomplete;
         let selectedLocation = null; 
+
+        // 🎨 DICCIONARIO DE ICONOS SVG PREMIUM
+        const ICONOS_REQUISITOS = {
+            "ESCRITURA": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>',
+            "SOLICITUD": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+            "AVE": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+            "INFONAVIT": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+            "NSS": '<rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="14" r="2"></circle><line x1="12" y1="14" x2="18" y2="14"></line>',
+            "SEGURIDAD SOCIAL": '<rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="14" r="2"></circle><line x1="12" y1="14" x2="18" y2="14"></line>',
+            "CURP": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+            "RFC": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>',
+            "INE": '<rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line>',
+            "ACTA": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+            "CFE": '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+            "LUZ": '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+            "AGUA": '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>',
+            "PREDIAL": '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>',
+            "CEDULA": '<polygon points="3 21 5 7 13 3 21 11 17 22"></polygon><line x1="5" y1="7" x2="17" y2="22"></line>',
+            "CATASTRAL": '<polygon points="3 21 5 7 13 3 21 11 17 22"></polygon><line x1="5" y1="7" x2="17" y2="22"></line>',
+            "LICENCIA": '<path d="M15 14l6-6a2 2 0 0 0-3-3l-6 6M14 15l-9 9-3-3 9-9M12 12l2 2"></path>',
+            "CONSTRUCCION": '<path d="M15 14l6-6a2 2 0 0 0-3-3l-6 6M14 15l-9 9-3-3 9-9M12 12l2 2"></path>',
+            "ALINEAMIENTO": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line><line x1="9" y1="11" x2="11" y2="11"></line>',
+            "PLANO": '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>',
+            "CROQUIS": '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>',
+            "DEFAULT": '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'
+        };
+
+        function obtenerIcono(nombre) {
+            const clave = Object.keys(ICONOS_REQUISITOS).find(k => nombre.toUpperCase().includes(k)) || "DEFAULT";
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="drop-shadow-sm">${ICONOS_REQUISITOS[clave]}</svg>`;
+        } 
 
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
@@ -865,24 +896,31 @@
         // ==========================================
         function generarTarjetaItem(key, item, nombre, estatus, categoria) {
             
+            // 🔥 Mapeamos el color de fondo del ícono según el apartado al que pertenece
+            const catThemeBg = {
+                'solicitante': 'bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
+                'propietario': 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+                'inmueble': 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
+            };
+
             // Diccionario de colores forzados para Tailwind
             const ui = {
-                'validado':  { icon: 'check_circle', texto: 'VALIDADO', borderCard: 'border-emerald-200 dark:border-emerald-800', iconColor: 'text-emerald-500', badgeBg: 'bg-emerald-100 dark:bg-emerald-900/30', badgeText: 'text-emerald-700 dark:text-emerald-400', badgeBorder: 'border-emerald-200 dark:border-emerald-800' },
-                'revision':  { icon: 'hourglass_top', texto: 'EN REVISIÓN', borderCard: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-500', badgeBg: 'bg-amber-100 dark:bg-amber-900/30', badgeText: 'text-amber-700 dark:text-amber-400', badgeBorder: 'border-amber-200 dark:border-amber-800' },
-                'rechazado': { icon: 'cancel', texto: 'RECHAZADO', borderCard: 'border-red-400 dark:border-red-600 shadow-md shadow-red-100 dark:shadow-red-900/20', iconColor: 'text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-700 dark:text-red-400', badgeBorder: 'border-red-200 dark:border-red-800' },
-                'pendiente': { icon: 'radio_button_unchecked', texto: 'PENDIENTE', borderCard: 'border-gray-200 dark:border-slate-700', iconColor: 'text-gray-400', badgeBg: 'bg-gray-100 dark:bg-slate-800', badgeText: 'text-gray-600 dark:text-gray-300', badgeBorder: 'border-gray-200 dark:border-slate-600' }
+                'validado':  { icon: 'check_circle', texto: 'VALIDADO', borderCard: 'border-emerald-200 dark:border-emerald-800', iconColor: 'text-emerald-500', badgeBg: 'bg-emerald-100 dark:bg-emerald-900/30', badgeText: 'text-emerald-700 dark:text-emerald-400', badgeBorder: 'border-emerald-200 dark:border-emerald-800', themeBg: 'bg-emerald-500 text-white' },
+                'revision':  { icon: 'hourglass_top', texto: 'EN REVISIÓN', borderCard: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-500', badgeBg: 'bg-amber-100 dark:bg-amber-900/30', badgeText: 'text-amber-700 dark:text-amber-400', badgeBorder: 'border-amber-200 dark:border-amber-800', themeBg: 'bg-amber-500 text-white' },
+                'rechazado': { icon: 'cancel', texto: 'RECHAZADO', borderCard: 'border-red-400 dark:border-red-600 shadow-md shadow-red-100 dark:shadow-red-900/20', iconColor: 'text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-700 dark:text-red-400', badgeBorder: 'border-red-200 dark:border-red-800', themeBg: 'bg-red-500 text-white' },
+                'pendiente': { icon: 'radio_button_unchecked', texto: 'PENDIENTE', borderCard: 'border-gray-200 dark:border-slate-700', iconColor: 'text-gray-400', badgeBg: 'bg-gray-100 dark:bg-slate-800', badgeText: 'text-gray-600 dark:text-gray-300', badgeBorder: 'border-gray-200 dark:border-slate-600', themeBg: catThemeBg[categoria] || catThemeBg['inmueble'] }
             };
             
             const c = ui[estatus] || ui['pendiente'];
             const badge = item.obligatorio === false ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 font-bold">OPCIONAL</span>' : '<span class="text-red-500 ml-1">*</span>';
+            const iconoSVG = obtenerIcono(nombre); // 🌟 NUEVO ICONO PREMIUM
             
-let downloadLink = '';
+            let downloadLink = '';
             let alertMsg = '';
             
             // 🔥 LEEMOS LA PLANTILLA DEL DICCIONARIO
             let urlFinal = item.plantilla || item.urlFormato;
             
-            // Fallback histórico para no romper expedientes viejos
             if (!urlFinal && nombre.toUpperCase().includes('SOLICITUD')) {
                 if (nombre.toUpperCase().includes('AVE')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
                 else if (nombre.toUpperCase().includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
@@ -892,9 +930,9 @@ let downloadLink = '';
                 downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Descargar Plantilla</a>`;
             }
             
-            // 🔥 MAGIA AMARILLA ANIMADA: Si el documento tiene plantilla y está pendiente
+            // 🔥 MAGIA AMARILLA ANIMADA
             if (urlFinal && estatus === 'pendiente') {
-                alertMsg = `<div class="mt-3 w-full bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 shadow-sm animate-[popIn_0.3s_ease-out]">
+                alertMsg = `<div class="mt-4 w-full bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3 shadow-sm animate-[popIn_0.3s_ease-out]">
                     <span class="material-symbols-rounded text-amber-500 text-xl mt-0.5 animate-bounce">notification_important</span>
                     <div>
                         <p class="text-xs text-amber-800 font-extrabold uppercase tracking-wide mb-0.5">Atención Requerida</p>
@@ -903,15 +941,19 @@ let downloadLink = '';
                 </div>`;
             }
             
-            // 🔥 LA ALERTA ROJA INYECTADA PARA RECHAZOS
+            // 🔥 EL BORRADOR DE "AUDITORÍA" PARA EXPEDIENTES VIEJOS
             if (estatus === 'rechazado') {
-                const motivo = item.retroalimentacion || "El documento no cumple con los requisitos. Por favor, súbelo nuevamente corregido.";
+                let motivo = item.retroalimentacion || "El documento no cumple con los requisitos. Por favor, súbelo nuevamente corregido.";
+                
+                // Limpiamos el texto que ya estaba guardado mal en Firebase
+                motivo = motivo.replace(/RECHAZO DE AUDITORÍA:/g, 'NOTA DE REVISIÓN:');
+                
                 alertMsg = `
-                <div class="mt-3 text-xs text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-start gap-2 shadow-inner animate-[popIn_0.3s_ease-out]">
-                    <span class="material-symbols-rounded text-base mt-0.5 text-red-500">warning</span>
+                <div class="mt-4 text-xs text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-start gap-3 shadow-inner animate-[popIn_0.3s_ease-out]">
+                    <span class="material-symbols-rounded text-xl mt-0.5 text-red-500">info</span>
                     <div>
-                        <p class="font-black uppercase mb-0.5 tracking-wide text-red-600 dark:text-red-400">Documento Rechazado</p>
-                        <p>${motivo}</p>
+                        <p class="font-black uppercase mb-1 tracking-wide text-red-600 dark:text-red-400">Nota de Revisión</p>
+                        <p class="leading-relaxed">${motivo}</p>
                     </div>
                 </div>`;
             }
@@ -943,15 +985,20 @@ let downloadLink = '';
             }
 
             return `
-            <div class="bg-white dark:bg-slate-800 border-2 ${c.borderCard} rounded-xl p-5 mb-3 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div class="flex items-start gap-3 flex-1">
-                        <span class="material-symbols-rounded ${c.iconColor} text-2xl mt-0.5">${c.icon}</span>
+            <div class="bg-white dark:bg-slate-800 border-2 ${c.borderCard} rounded-2xl p-6 mb-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center ${c.themeBg} transition-colors shadow-inner">
+                            ${iconoSVG}
+                        </div>
                         <div>
-                            <div class="flex items-center flex-wrap gap-1">
-                                <p class="font-bold text-sm text-slate-800 dark:text-white leading-tight">${nombre}</p>
+                            <div class="flex items-center flex-wrap gap-1 mb-1">
+                                <h4 class="font-black text-base text-slate-800 dark:text-white leading-tight uppercase tracking-tight">${nombre}</h4>
                                 ${badge}
                             </div>
+                            <p class="text-[10px] font-bold ${c.iconColor} uppercase tracking-widest flex items-center gap-1">
+                                <span class="material-symbols-rounded text-[12px]">${c.icon}</span> ${c.texto}
+                            </p>
                         </div>
                     </div>
                     <div class="shrink-0 w-full sm:w-auto flex justify-end">

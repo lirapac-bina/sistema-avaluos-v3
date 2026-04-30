@@ -46,10 +46,20 @@ exports.handler = async (event) => {
     try {
         const body = JSON.parse(event.body);
         
-        // Atrapamos las nuevas variables de los JPGs
-        const { expedienteId, itemKey, nuevoEstado, archivoPath, categoriaItem, motivo, autoConvertJpg, pathsJpg } = body;
+        // Atrapamos las variables (Incluyendo las nuevas de carga interna)
+        let { expedienteId, itemKey, nuevoEstado, archivoPath, categoriaItem, motivo, autoConvertJpg, pathsJpg, archivoBase64, nombreArchivo, mimeType, esRaiz } = body;
 
         console.log(`📡 [STATUS] Petición recibida -> Item: ${itemKey} | Nuevo Estatus: ${nuevoEstado}`);
+
+        // 📁 MODO CARGA INTERNA: Si el Admin nos manda un archivo (Ej. Cédula GYS), lo subimos a Firebase Storage primero
+        if (archivoBase64 && nombreArchivo) {
+            const buffer = Buffer.from(archivoBase64, 'base64');
+            const extension = nombreArchivo.substring(nombreArchivo.lastIndexOf('.')) || '.pdf';
+            archivoPath = `interno/${expedienteId}/${itemKey}_${Date.now()}${extension}`;
+            const file = bucket.file(archivoPath);
+            await file.save(buffer, { metadata: { contentType: mimeType || 'application/pdf' } });
+            console.log(`✅ [FIREBASE] Archivo interno guardado en bucket: ${archivoPath}`);
+        }
 
         if (!expedienteId || !itemKey || !nuevoEstado) {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan datos' }) };
@@ -64,13 +74,23 @@ exports.handler = async (event) => {
         const docData = doc.data();
         const itemAnterior = docData.checklist[itemKey] || {};
 
+        // 🛡️ REGLA DE ORO: Si subimos un archivo base64 (Cédula), forzamos estatus 'validado'
+        let estatusFinal = nuevoEstado === 'anulado' ? 'rechazado' : nuevoEstado;
+        if (archivoBase64) estatusFinal = 'validado'; 
+
         let updateData = {
-            [`checklist.${itemKey}.estatus`]: nuevoEstado,
+            [`checklist.${itemKey}.estatus`]: estatusFinal,
             [`checklist.${itemKey}.fechaActualizacion`]: new Date().toISOString()
         };
 
-        if (nuevoEstado === 'rechazado' && motivo) {
+        if ((nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') && motivo) {
             updateData[`checklist.${itemKey}.retroalimentacion`] = motivo;
+        }
+
+        // ☢️ LIMPIEZA NUCLEAR DE IA (Borra los datos de Firebase para que la Hoja de Trabajo quede limpia)
+        if (nuevoEstado === 'anulado') {
+            updateData[`datos_extraidos.${itemKey}`] = admin.firestore.FieldValue.delete();
+            console.log(`☢️ [STATUS] Anulación Nuclear: Borrando datos_extraidos de ${itemKey}`);
         }
 
         // 🔥 RECUPERAMOS EL MOTOR GENERADOR DE TOKENS 🔥
@@ -174,7 +194,13 @@ exports.handler = async (event) => {
             for (let i = 0; i < archivosAPasar.length; i++) {
                 const archivo = archivosAPasar[i];
                 let catDrive = (archivo.categoria || 'solicitante').toLowerCase();
-                const driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[catDrive] : null;
+                
+                // 🚩 LÓGICA DE RAÍZ: Si es un archivo interno, usamos la carpeta principal; si no, la subcarpeta.
+                let driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[catDrive] : null;
+                if (esRaiz && docData.driveFolderId) {
+                    driveFolderId = docData.driveFolderId;
+                    console.log(`📂 [DRIVE] Orden recibida: Guardando en la RAÍZ del expediente.`);
+                }
 
                 if (archivo.url && driveFolderId && APPS_SCRIPT_WEBHOOK.startsWith("https://script.google.com")) {
                     const extension = archivo.pathEnNube && archivo.pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';

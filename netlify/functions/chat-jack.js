@@ -13,7 +13,8 @@ exports.handler = async (event, context) => {
     try {
         const { mensaje, seccionContexto, imagenBase64 } = JSON.parse(event.body);
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); 
+        if (!process.env.GEMINI_API_KEY_JACK) console.error("🚨 ALERTA: No se encontró GEMINI_API_KEY_JACK");
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_JACK); 
         
         // Usamos la nueva generación habilitada en tu cuenta de facturación
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
