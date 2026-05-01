@@ -372,6 +372,92 @@
         </div>
     </div>
 
+    <!-- MODALES MOVIDOS DENTRO DEL BODY (ANTES ESTABAN AFUERA Y ROMPÍAN LA PÁGINA) -->
+    <div id="modal-asignar" class="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 transform scale-100 transition-transform">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">engineering</span>
+                    Asignar Responsable
+                </h3>
+                <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><span class="material-symbols-rounded">close</span></button>
+            </div>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                Expediente validado al 100%. Selecciona quién realizará el levantamiento.
+            </p>
+
+            <div class="mb-6">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Capturistas Disponibles</label>
+                <div id="lista-capturistas" class="space-y-2 max-h-48 overflow-y-auto custom-scroll border border-slate-100 dark:border-slate-700 rounded-lg p-1">
+                    <p class="text-xs text-slate-400 text-center py-4">Cargando usuarios...</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
+                <button onclick="confirmarAsignacion()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-proponer-fechas" class="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
+            
+            <div class="flex justify-between items-center mb-4 mt-2">
+                <h3 class="text-xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-teal-500 text-2xl">edit_calendar</span> Proponer Fechas
+                </h3>
+                <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-rounded text-sm">close</span>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Propón hasta 3 opciones de fecha y hora exacta. El cliente recibirá una alerta en su portal para confirmar la cita.</p>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
+            </div>
+            
+            <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-4 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-notificar" class="fixed inset-0 z-[95] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden text-center">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-700 shadow-lg">
+                <span class="material-symbols-rounded text-4xl">check_circle</span>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">¡Fechas Guardadas!</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Elige el método para avisarle a <b id="notif-nombre-cliente" class="text-slate-700 dark:text-slate-200 uppercase"></b> que ya puede elegir su fecha.</p>
+            
+            <div class="space-y-3">
+                <button onclick="notificarWhatsApp()" class="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                    <span class="material-symbols-rounded">chat</span> Notificar por WhatsApp
+                </button>
+                <button onclick="notificarCorreo()" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-95 flex justify-center items-center gap-2">
+                    <span class="material-symbols-rounded">mail</span> Enviar por Correo
+                </button>
+                <button onclick="cerrarModalNotificar()" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    Cerrar sin notificar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="admin-file-upload" class="hidden" accept="application/pdf,image/*" onchange="procesarSubidaInterna(this)">
 
     <script>
@@ -398,9 +484,7 @@
             document.getElementById('header-client-name').innerText = infoBasica.cliente || "Sin Nombre";
             document.getElementById('header-client-name').classList.remove('animate-pulse');
             document.getElementById('header-date').innerText = infoBasica.fechaDisplay || "--/--/----";
-            // 🌟 MAGIA: Mostramos el Folio Operativo si existe, sino el ID recortado
             document.getElementById('header-folio').innerText = infoBasica.folioOperativo && infoBasica.folioOperativo !== "SIN FOLIO" ? infoBasica.folioOperativo : infoBasica.id.substring(0, 8);
-            
             document.getElementById('header-tramite').innerText = (infoBasica.tramite || "TRÁMITE").replace(/_/g, ' ');
 
             fetchDetalles(infoBasica.id);
@@ -417,31 +501,22 @@
         
         async function fetchDetalles(id) {
             try {
-                // 🔥 EL FIX FINAL: Leer directamente de Firebase para no perder los Entregables
                 const docRef = await db.collection('expedientes_avaluos').doc(id).get();
-                
-                if (!docRef.exists) {
-                    throw new Error("Expediente no encontrado en la base de datos.");
-                }
+                if (!docRef.exists) throw new Error("Expediente no encontrado en la base de datos.");
 
                 const data = docRef.data();
-                
-                // Fallback de seguridad por si el nombre está guardado en otro campo
                 data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
 
                 transformarDatos(id, data);
                 renderCurrentGroup();
                 renderStaffPanel(data);
-
             } catch (e) {
                 console.error("Error cargando detalles:", e);
                 alert("No se pudieron cargar los datos del expediente. " + e.message);
             }
         }
 
-        // 🔥 FUNCION MEJORADA: Lee los entregables del Visitador y Dibujante
         function renderStaffPanel(data) {
-            // 🛠️ FIX: Buscamos en la raíz o dentro del objeto 'equipo' que viene de Gestión
             const visitadorRaw = data.visitador || (data.equipo && data.equipo.visitador);
             const dibujanteRaw = data.dibujante || (data.equipo && data.equipo.dibujante);
 
@@ -454,7 +529,6 @@
             const visStatus = document.getElementById('staff-visitador-status');
             const dibStatus = document.getElementById('staff-dibujante-status');
 
-            // 🔥 BOTÓN VISITA: Extrae las fotos de "entregables" y activa el botón verde
             if (data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado') {
                 visStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
                 visStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Fotos';
@@ -467,7 +541,6 @@
                 visStatus.innerHTML = '<span class="material-symbols-rounded text-[10px] animate-spin">sync</span> Esperando App';
             }
 
-            // 🔥 BOTÓN DIBUJO: Extrae los planos y activa el botón verde
             if (data.entregables && data.entregables.dibujo && data.entregables.dibujo.estatus === 'completado') {
                 dibStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
                 dibStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Planos';
@@ -481,19 +554,16 @@
             }
         }
 
-        // 🌟 TRUCO MAESTRO DEFINITIVO (URL a Imagen de Calidad Original)
         const transformDriveUrl = (url) => {
             if (!url) return '';
             const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
             if (match && match[1]) {
                 const fileId = match[1];
-                // 🚀 FIX: Cambiamos =w1200 por =s0 para traer la resolución original intacta
                 return `https://lh3.googleusercontent.com/d/${fileId}=s0`;
             }
             return url; 
         };
 
-        // 🔥 FUNCIÓN MEJORADA Y LIMPIA: Muestra la Galería y los Planos del equipo
         function verEntregablesStaff(archivos, tipo) {
             if (!archivos || archivos.length === 0) return alert("No hay archivos subidos.");
             
@@ -509,7 +579,6 @@
                 const grid = document.getElementById('gallery-grid');
                 document.getElementById('gallery-count').innerText = `${archivos.length} fotos`;
                 
-                // Aplicamos el transformador a todas las fotos
                 galleryImages = archivos.map(foto => ({ url: transformDriveUrl(foto.url), nombre: foto.nombre })); 
                 grid.innerHTML = '';
                 
@@ -522,7 +591,6 @@
                 });
                 document.getElementById('gallery-container').classList.remove('hidden');
             } else if (tipo === 'PDF') {
-                // 🔥 NUEVA LÓGICA: Lista inteligente de archivos (PDFs y DWGs)
                 const grid = document.getElementById('gallery-grid');
                 document.getElementById('gallery-count').innerText = `${archivos.length} archivos`;
                 grid.innerHTML = '';
@@ -534,12 +602,10 @@
                     const bgColor = isPdf ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20';
 
                     let fileUrl = file.url;
-                    // Si es PDF y viene de Drive, lo forzamos a que abra la vista previa nativa de Google
                     if (isPdf && fileUrl.includes('drive.google.com') && fileUrl.includes('/view')) {
                         fileUrl = fileUrl.replace('/view', '/preview');
                     }
 
-                    // Creamos una "Tarjeta" de archivo
                     grid.innerHTML += `
                         <a href="${fileUrl}" target="_blank" class="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-all gap-3 text-center group shadow-sm">
                             <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center ${iconColor} group-hover:scale-110 transition-transform shadow-inner">
@@ -551,7 +617,6 @@
                             </span>
                         </a>`;
                 });
-
                 document.getElementById('gallery-container').classList.remove('hidden');
             }
         }
@@ -600,14 +665,13 @@
                 fechasPropuestas: data.fechasPropuestas,
                 estatus: data.estatus,
                 equipo: data.equipo,
-                visitador: data.visitador, // 🛡️ ESCUDO: Asegura detección de equipo
+                visitador: data.visitador, 
                 dibujante: data.dibujante
             };
 
             const checklist = data.checklist || {};
-            
-            // 🔥 RECOLECTOR DE LA GALERÍA DEL CLIENTE
             const fotosGaleria = [];
+            
             Object.keys(checklist).forEach(key => {
                 if (key.includes('FOTO_EXTRA_')) {
                     const url = checklist[key].archivoUrl || checklist[key].driveLink || checklist[key].url;
@@ -619,7 +683,6 @@
                 if(key.includes('FOTO_EXTRA_')) return; 
 
                 const item = checklist[key];
-                
                 let cat = item.categoria || 'solicitante';
                 if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
                 if (key === 'FOTOS_INTERIORES_GENERAL') { cat = 'inmueble'; item.nombre = 'Fotos Interiores y Entorno'; }
@@ -631,7 +694,6 @@
                 if(item.estatus === 'revision' || item.estatus === 'en_revision') uiStatus = 'review';
 
                 let tipoArchivo = '---';
-
                 if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
                 else if(key === 'FOTOS_INTERIORES_GENERAL') tipoArchivo = 'GALERIA';
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
@@ -641,7 +703,6 @@
                     else tipoArchivo = 'IMG';
                 }
 
-                // 🔥 YA NO OCULTAMOS LA GALERÍA, LA INYECTAMOS EN PANTALLA
                 if(expediente.grupos[cat]) {
                     expediente.grupos[cat].push({
                         key: key,
@@ -658,7 +719,6 @@
                 }
             });
 
-            // 🔥 ENCENDIDO DE ANOTACIONES EN MESA DE CONTROL
             if (data.anotacion && data.anotacion.trim() !== '') {
                 document.getElementById('header-anotacion-container').classList.remove('hidden');
                 document.getElementById('header-anotacion-text').innerText = data.anotacion;
@@ -666,7 +726,6 @@
                 document.getElementById('header-anotacion-container').classList.add('hidden');
             }
 
-            // 🟢 INDICADOR INTELIGENTE DE CÉDULA GYS
             const btnCedula = document.getElementById('btn-subir-cedula-gys');
             if (btnCedula) {
                 const cedulaData = checklist['CEDULA_GYS'];
@@ -743,7 +802,6 @@
                 itemDiv.className = `p-4 cursor-pointer transition-all fade-in-slide ${statusClass}`;
                 itemDiv.style.animationDelay = `${index * 0.05}s`;
                 
-                // 🔓 MODO GESTOR: Permitimos clic si tiene archivos O si es del grupo INTERNO (para poder subir la cédula)
                 const esInterno = currentKey === 'interno';
                 
                 if(req.url || req.coordenadas || req.textoPreview || (req.tipo === 'GALERIA' && req.fotos && req.fotos.length > 0) || req.status !== 'pending' || req.tipo === 'TXT' || esInterno) { 
@@ -791,7 +849,6 @@
         function nextGroup() { activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0; renderCurrentGroup(); }
         function prevGroup() { activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1; renderCurrentGroup(); }
 
-        // Variables para control de Rotación
         let currentDocRotation = 0;
 
         window.rotarDocumento = function() {
@@ -807,12 +864,10 @@
             document.getElementById('selected-doc-name').innerText = req.nombre;
             document.getElementById('card-filename').innerText = req.nombre;
             
-            // 1. Resetear rotación en cada documento nuevo
             currentDocRotation = 0;
             const wrapper = document.getElementById('rotatable-wrapper');
             if(wrapper) wrapper.style.transform = `rotate(0deg)`;
 
-            // 2. Evaluamos si el documento seleccionado tiene IA procesada
             const tabIA = document.getElementById('tab-ia-view');
             const dataIA = expediente.datos_extraidos ? expediente.datos_extraidos[req.key] : null;
             const iaAprobada = expediente.checklist && expediente.checklist[req.key] && expediente.checklist[req.key].ia_aprobada === true;
@@ -832,10 +887,8 @@
                 }
             }
 
-            // 3. Forzamos la pestaña "Documento" a pantalla completa por defecto
             if(typeof switchPreviewTab === 'function') switchPreviewTab('doc');
 
-            // 4. Ocultamos todas las capas del visor
             ['preview-placeholder', 'error-fallback', 'real-image', 'real-pdf', 'map-container', 'text-viewer', 'zoom-overlay', 'gallery-container'].forEach(id => {
                 document.getElementById(id)?.classList.add('hidden');
             });
@@ -871,7 +924,6 @@
             else if (req.tipo === 'PDF' && req.url) {
                 const pdf = document.getElementById('real-pdf');
                 let pdfUrl = req.url;
-                
                 if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) {
                     pdfUrl = pdfUrl.replace('/view', '/preview');
                 } else if (pdfUrl.includes('firebasestorage')) {
@@ -879,7 +931,6 @@
                         pdfUrl = pdfUrl + (pdfUrl.includes('?') ? '&' : '?') + '#view=FitH';
                     }
                 }
-                
                 pdf.src = pdfUrl;
                 pdf.classList.remove('hidden');
             }
@@ -887,10 +938,8 @@
                 if (req.fotos && req.fotos.length > 0) {
                     const grid = document.getElementById('gallery-grid');
                     document.getElementById('gallery-count').innerText = `${req.fotos.length} fotos`;
-                    
                     galleryImages = req.fotos; 
                     grid.innerHTML = '';
-                    
                     galleryImages.forEach((foto, index) => {
                         grid.innerHTML += `
                             <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
@@ -906,7 +955,6 @@
             else if (req.url) {
                 const img = document.getElementById('real-image');
                 const urlTransformada = transformDriveUrl(req.url);
-                
                 img.src = urlTransformada;
                 img.classList.remove('hidden');
                 document.getElementById('zoom-overlay').classList.remove('hidden');
@@ -973,7 +1021,6 @@
                 
                 if(!res.ok) throw new Error("Error en servidor");
 
-                // 🔍 Imprimimos la respuesta para auditar qué nos manda Netlify
                 const respuestaServidor = await res.json();
                 console.log("📦 RESPUESTA DE NETLIFY:", respuestaServidor);
                 
@@ -986,9 +1033,6 @@
                     nuevoEstado === 'anulado' ? 'ANULACIÓN NUCLEAR DE DOCUMENTO' : (nuevoEstado === 'rechazado' ? 'RECHAZO DE DOCUMENTO' : 'VALIDACIÓN DE DOCUMENTO'),
                     motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios y fue respaldado en Drive.'
                 );
-                
-                // 🌟 EL GATILLO DE LA IA FUE REMOVIDO DE AQUÍ.
-                // Ahora la IA se lanza manualmente desde el panel "Revisar IA".
                 
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
@@ -1024,16 +1068,30 @@
 
             try {
                 const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
-                if (!docConfig.exists) { console.error("⚠️ IA: No se encontró plantilla."); return; }
+                if (!docConfig.exists) { 
+                    content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: No se encontró el diccionario.</p></div>`;
+                    return; 
+                }
                 
                 const dataConf = docConfig.data();
-                // 🔴 FIX: Búsqueda blindada. Buscamos en 'requisitos' o 'diccionario'
                 const configRequisito = (dataConf.requisitos && dataConf.requisitos[reqKey]) || (dataConf.diccionario && dataConf.diccionario[reqKey]) || null;
                 
-                // Buscamos si la variable se llama 'promptIA' o solo 'prompt'
-                const promptUniversal = (configRequisito && (configRequisito.promptIA || configRequisito.prompt)) 
-                    ? (configRequisito.promptIA || configRequisito.prompt) 
-                    : "Extrae SOLO los datos principales de este documento. Devuelve los nombres de los campos OBLIGATORIAMENTE EN ESPAÑOL. Responde ÚNICAMENTE con un JSON puro.";
+                // 🛡️ ESCUDO ANTI-GASTOS: Solo extraemos si hay un prompt explícito y el switch está prendido
+                const promptUniversal = configRequisito ? (configRequisito.promptIA || configRequisito.prompt || configRequisito.instrucciones) : null;
+                const iaActivada = configRequisito ? configRequisito.usaIA : false;
+
+                if (!promptUniversal || !iaActivada) {
+                    content.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-center p-6 opacity-90 mt-10 animate-[popIn_0.3s_ease-out]">
+                            <span class="material-symbols-rounded text-6xl text-amber-500 mb-3">money_off</span>
+                            <p class="text-sm font-black text-amber-700 dark:text-amber-400 mb-1 uppercase tracking-wide">Extracción Bloqueada</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">Para proteger tu saldo de API, no se extraen datos al azar.</p>
+                            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-lg text-left shadow-inner">
+                                <p class="text-[10px] text-amber-800 dark:text-amber-300 font-medium">Ve a <b>Admin > Catálogo de Requisitos</b>, busca este documento, activa la opción <span class="font-bold">"🤖 Extraer datos con Inteligencia Artificial"</span> y escribe exactamente qué datos necesitas obtener.</p>
+                            </div>
+                        </div>`;
+                    return; // Abortamos la ejecución y NO llamamos al backend
+                }
 
                 console.log(`🧠 Prompt que se enviará a Gemini:`, promptUniversal);
 
@@ -1041,8 +1099,6 @@
                 const docActualizado = docFresco.data().checklist[reqKey];
 
                 const posiblesUrls = [docActualizado.driveUrl, docActualizado.driveLink, docActualizado.url, docActualizado.archivoUrl];
-                
-                // 🔴 FIX: Ya no buscamos solo IDs de Drive, aceptamos cualquier enlace "http" de Firebase
                 const urlReal = posiblesUrls.find(u => u && u.startsWith('http'));
 
                 if (!urlReal) {
@@ -1051,7 +1107,6 @@
                     return;
                 }
 
-                // Extraemos el ID si resulta ser de Drive, si no, se va como null pero mandamos la urlReal
                 const match = urlReal.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
                 const fileId = match ? match[1] : null;
 
@@ -1062,7 +1117,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         fileId: fileId,
-                        fileUrl: urlReal,   // 🔴 NUEVO: Pasamos la URL completa por si es Firebase Storage
+                        fileUrl: urlReal,   
                         promptPersonalizado: promptUniversal,
                         expId: expId,       
                         reqKey: reqKey      
@@ -1078,12 +1133,10 @@
                         if (data.datos_extraidos && data.datos_extraidos[reqKey]) {
                             if (typeof showToast !== 'undefined') showToast(`🤖 ¡Gemini finalizó y guardó los datos!`, "success");
                             
-                            // 🔴 EL FIX VITAL: Actualizamos la memoria del navegador con los datos frescos
                             expediente.datos_extraidos = data.datos_extraidos;
-                            
-                            // 🔄 Refrescar la pantalla para quitar el cargando y mostrar inputs
                             if(selectedReqKey === reqKey) renderIAPanel(reqKey);
                             
+                            evaluarBotonPDF(); // 🔥 Actualizamos el botón en tiempo real
                             unsubscribe();
                         }
                     });
@@ -1098,7 +1151,6 @@
         
         function validarDocumento() { if(selectedReqKey && confirm("¿Aprobar documento?")) actualizarEstadoBackend('validado'); }
         
-        // ☢️ NUEVA FUNCIÓN: ANULAR Y RESETEAR (MODO DIOS GUI)
         async function anularDocumento() {
             if(!selectedReqKey) return;
             const motivo = prompt("⚠️ ATENCIÓN: Estás anulando un documento validado.\n\nEsto borrará permanentemente los datos extraídos por la IA en la Hoja de Trabajo y regresará el documento a estado de Rechazado para que el cliente lo vuelva a subir.\n\nEscribe el motivo del rechazo:");
@@ -1114,7 +1166,6 @@
         function cerrarRechazo() { document.getElementById('reject-modal').classList.add('hidden'); document.getElementById('reject-modal').classList.remove('flex'); }
         function usarError(texto) { document.getElementById('reject-reason').value = texto; }
         function agregarError() { const nuevo = prompt("Escribe el nuevo motivo:"); if(nuevo) { usarError(nuevo); } }
-        // 🔥 NUEVA FUNCIÓN: Abre la carpeta de Drive
         function abrirCarpetaDrive() {
             if (expediente && expediente.carpeta_drive) {
                 window.open(expediente.carpeta_drive, '_blank');
@@ -1162,8 +1213,6 @@
                     btnContainer.classList.remove('hidden');
                     
                     const btn = btnContainer.querySelector('button');
-                    
-                    // 🛡️ REGLA DE ORO EVOLUCIONADA: Verificamos estatus y equipo sin errores de formato
                     const statusGYS = (expediente.estatus || '').toUpperCase().trim();
                     const tieneEquipo = (expediente.equipo && (expediente.equipo.visitador || expediente.equipo.dibujante)) || expediente.visitador || expediente.dibujante;
                     
@@ -1177,12 +1226,10 @@
                         btn.onclick = null;
                         btn.className = "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 px-5 py-2 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 cursor-default";
                     } else if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
-                        // Ya le mandaste opciones, esperando que él elija en su portal
                         btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO AL CLIENTE`;
                         btn.onclick = null;
                         btn.className = "bg-amber-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center gap-2 cursor-not-allowed opacity-90";
                     } else {
-                        // 100% validado -> Te toca proponer fechas
                         btn.innerHTML = `<span class="material-symbols-rounded">calendar_month</span> PROPONER FECHAS`;
                         btn.onclick = () => {
                             document.getElementById('modal-proponer-fechas').classList.remove('hidden');
@@ -1212,14 +1259,12 @@
             btn.disabled = true;
 
             try {
-                // 🌟 FIX APLICADO: Enviamos la variable correcta "propuestas"
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
                     fechasPropuestas: propuestas, 
                     estatus: 'ESPERANDO AL CLIENTE',
                     actualizado: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Actualizar la memoria local para que la vista cambie de inmediato
                 const datosLocal = JSON.parse(localStorage.getItem('expediente_activo')) || {};
                 datosLocal.fechasPropuestas = propuestas;
                 localStorage.setItem('expediente_activo', JSON.stringify(datosLocal));
@@ -1228,9 +1273,8 @@
                 
                 document.getElementById('modal-proponer-fechas').classList.add('hidden');
                 document.getElementById('modal-proponer-fechas').classList.remove('flex');
-                verificarProgresoGlobal(); // Refrescar botón de la cabecera
+                verificarProgresoGlobal(); 
                 
-                // 🔥 MAGIA: Despertamos el modal de notificación
                 abrirModalNotificar();
                 
             } catch (e) {
@@ -1256,10 +1300,8 @@
         }
 
         function generarMensajeNotificacion() {
-            // Obtenemos la URL base (ej. https://tudominio.com) y le sumamos la ruta del portal
             const urlBase = window.location.origin;
             const urlPortal = `${urlBase}/portal.html?id=${expedienteId}`;
-            
             return `¡Hola ${expediente.cliente}! 👋\n\nTenemos excelentes noticias: Tu expediente ha sido validado exitosamente. ✅\n\nPor favor ingresa a tu portal seguro para elegir el día y horario de tu visita de inspección:\n📍 ${urlPortal}\n\nQuedamos a tus órdenes.`;
         }
 
@@ -1269,23 +1311,18 @@
                 alert("⚠️ El cliente no tiene un teléfono válido registrado (10 dígitos). Edítalo en Gestión de Expedientes.");
                 return;
             }
-
-            // Limpiamos el teléfono (solo números) y aseguramos la lada de México (+52)
             telefono = telefono.replace(/\D/g, '');
             if (telefono.length === 10) telefono = '52' + telefono;
 
             const mensaje = encodeURIComponent(generarMensajeNotificacion());
             const linkWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-            
             window.open(linkWhatsapp, '_blank');
             cerrarModalNotificar();
         }
 
         function notificarCorreo() {
-            // Como no es obligatorio tener correo registrado, lanzamos un mailto genérico que abrirá Outlook/Gmail
             const asunto = encodeURIComponent("Elige la fecha para tu Avalúo 📅");
             const mensaje = encodeURIComponent(generarMensajeNotificacion());
-            
             window.location.href = `mailto:?subject=${asunto}&body=${mensaje}`;
             cerrarModalNotificar();
         }
@@ -1303,7 +1340,6 @@
 
             try {
                 const snapshot = await db.collection('usuarios').get();
-                
                 lista.innerHTML = '';
                 let encontrados = 0;
 
@@ -1314,7 +1350,6 @@
                     if (rol === 'CAPTURISTA') {
                         encontrados++;
                         const inicial = (u.nombre || 'U').charAt(0).toUpperCase();
-                        
                         const div = document.createElement('div');
                         div.className = 'flex items-center gap-3 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg cursor-pointer transition-colors border border-transparent';
                         
@@ -1338,12 +1373,7 @@
                 });
 
                 if (encontrados === 0) {
-                    lista.innerHTML = `
-                        <div class="text-center py-4">
-                            <p class="text-xs text-red-400 font-bold">No se encontraron Capturistas.</p>
-                            <p class="text-[9px] text-slate-400 mt-1">Revisa que el rol en Admin sea exactamente "CAPTURISTA".</p>
-                        </div>
-                    `;
+                    lista.innerHTML = `<div class="text-center py-4"><p class="text-xs text-red-400 font-bold">No se encontraron Capturistas.</p></div>`;
                 }
 
             } catch (e) {
@@ -1352,28 +1382,23 @@
             }
         }
 
-        // 🔥 FUNCIÓN 2: ASIGNAR CAPTURISTA (La que habías sobreescrito por accidente)
         async function confirmarAsignacion() {
             if (!capturistaSeleccionado) {
                 alert("Selecciona un capturista primero.");
                 return;
             }
-
             const btn = document.querySelector('#modal-asignar button:last-child');
             btn.innerText = "Asignando...";
             btn.disabled = true;
 
             try {
-                // Restauramos la lógica original de asignación de equipo
                 await db.collection('expedientes_avaluos').doc(expedienteId).update({
                     capturista: capturistaSeleccionado,
                     estatus: 'CAPTURA', 
                     actualizado: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
                 alert("Expediente asignado correctamente.");
-                window.location.href = 'gestion.html'; // Regresamos a la tabla de gestión
-
+                window.location.href = 'gestion.html'; 
             } catch (e) {
                 console.error(e);
                 alert("Error al asignar.");
@@ -1414,18 +1439,14 @@
                         <div class="flex flex-col items-center justify-center p-8 opacity-60 mt-10">
                             <span class="material-symbols-rounded text-5xl mb-3 text-slate-300">history_toggle_off</span>
                             <p class="text-sm font-bold text-slate-500 text-center mb-1">Sin historial reciente</p>
-                            <p class="text-[10px] text-slate-400 text-center">(Los registros a partir de hoy aparecerán aquí).</p>
                         </div>`;
                     return;
                 }
 
                 let html = '<div class="relative border-l-2 border-indigo-100 dark:border-indigo-900/50 ml-3 mt-4 space-y-6 pb-4">';
-                
                 logs.forEach(log => {
                     let fechaStr = "Hace un momento";
-                    if (log._ts > 0) {
-                        fechaStr = new Date(log._ts * 1000).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
-                    }
+                    if (log._ts > 0) fechaStr = new Date(log._ts * 1000).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
                     
                     let iconObj = { icon: 'info', color: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400' };
                     if(log.accion.includes('RECHAZO')) iconObj = { icon: 'cancel', color: 'bg-red-500', text: 'text-red-600 dark:text-red-400' };
@@ -1436,27 +1457,24 @@
                     html += `
                         <div class="relative pl-6 animate-[fadeIn_0.3s_ease-out]">
                             <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full ${iconObj.color} border-2 border-white dark:border-slate-800 shadow-sm"></div>
-                            
                             <div class="flex flex-col sm:flex-row sm:items-center gap-1 mb-1.5">
                                 ${badgeAccion}
                                 <span class="text-[10px] text-slate-400 font-mono ml-auto">${fechaStr}</span>
                             </div>
-                            
                             <div class="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">${log.detalle}</p>
                                 <p class="text-[9px] text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
                                     <span class="material-symbols-rounded text-[11px]">person</span> ${log.usuario}
                                 </p>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 html += '</div>';
                 timeline.innerHTML = html;
 
             } catch(e) {
                 console.error(e);
-                timeline.innerHTML = '<p class="text-xs font-bold text-red-500 text-center mt-10">Error de seguridad al cargar historial.</p>';
+                timeline.innerHTML = '<p class="text-xs font-bold text-red-500 text-center mt-10">Error al cargar historial.</p>';
             }
         }
 
@@ -1485,34 +1503,27 @@
         // 🔴 FUNCIÓN PARA DECLARAR INCIDENCIA Y REGRESAR A GESTIÓN
         async function declararIncidencia() {
             const motivo = prompt("⚠️ DECLARAR INCIDENCIA\nEl trámite se detendrá. Por favor, describe detalladamente el problema con este expediente:");
-            
-            // Si le da a cancelar o no escribe nada, abortamos
             if (!motivo) return;
 
             try {
-                // Actualizamos Firebase
                 await db.collection('expedientes_avaluos').doc(expediente.id).update({
-                    status: 'INCIDENCIA', // Lo ponemos en estado de emergencia
-                    anotacion: `INCIDENCIA: ${motivo}` // Guardamos el motivo como anotación para que se vea rápido en gestión
+                    status: 'INCIDENCIA', 
+                    anotacion: `INCIDENCIA: ${motivo}` 
                 });
-                
-                // Lo guardamos en la auditoría
                 await registrarLog("INCIDENCIA DECLARADA", `El revisor detuvo el proceso. Motivo: ${motivo}`);
-                
-                alert("Expediente marcado con INCIDENCIA correctamente. Regresando a la tabla principal...");
-                window.location.href = 'gestion.html'; // Lo sacamos de la mesa y lo mandamos a ver su alerta roja
+                alert("Expediente marcado con INCIDENCIA correctamente.");
+                window.location.href = 'gestion.html'; 
             } catch (e) {
                 alert("Error al declarar incidencia: " + e.message);
             }
         }
 
         // ==========================================
-        // ⚡ MODO DIOS: RECHAZO FORZADO (ALT + SHIFT + CLIC DERECHO)
+        // ⚡ MODO DIOS: RECHAZO FORZADO
         // ==========================================
         window.forzarRechazo = async function(key, nombreDoc) {
             const motivo = prompt(`⚠️ MODO DIOS ACTIVADO ⚠️\nVas a rechazar: ${nombreDoc} (Que ya estaba validado).\n\nEscribe el motivo del rechazo para que el cliente lo vea:`);
-            
-            if (!motivo) return; // Si le da cancelar o lo deja vacío, abortamos
+            if (!motivo) return; 
 
             if (typeof showLoader !== 'undefined') showLoader('Aplicando rechazo forzado...');
             
@@ -1530,14 +1541,11 @@
                 
                 if (!res.ok) throw new Error("Error al forzar el estado en el servidor");
                 
-                // Registramos en la bitácora que un Admin usó el Modo Dios
                 if (typeof registrarLog !== 'undefined') {
                     await registrarLog('RECHAZO FORZADO (MODO DIOS)', `El administrador forzó el rechazo de ${nombreDoc}. Motivo: ${motivo}`);
                 }
                 
                 if (typeof showToast !== 'undefined') showToast("Rechazo aplicado con éxito", "success");
-                
-                // Recargamos para ver los cambios
                 setTimeout(() => location.reload(), 1500);
 
             } catch (error) {
@@ -1547,7 +1555,7 @@
             }
         };
 
-        // 🚀 FUNCIÓN DIRECTA: SUBIR CÉDULA GYS A LA RAÍZ Y EXTRAER CON IA (SIN USAR ADMIN)
+        // 🚀 SUBIR CÉDULA GYS A LA RAÍZ Y EXTRAER CON IA
         async function subirCedulaGYSDirecto(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
@@ -1563,7 +1571,6 @@
                 reader.onload = async () => {
                     const base64 = reader.result.split(',')[1];
                     
-                    // 1. Enviar a Firebase y Drive (Indicando esRaiz: true)
                     const res = await fetch('/.netlify/functions/update-status', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1574,16 +1581,14 @@
                             archivoBase64: base64,
                             nombreArchivo: file.name,
                             mimeType: file.type,
-                            esRaiz: true, // 🚩 ORDEN: GUARDAR EN RAÍZ DE DRIVE
-                            categoriaItem: 'interno' // Oculto del cliente
+                            esRaiz: true, 
+                            categoriaItem: 'interno'
                         })
                     });
 
                     if (!res.ok) throw new Error("Error al subir archivo");
-                    
                     if (typeof showToast !== 'undefined') showToast("¡Cédula guardada en raíz! Despertando a Gemini...", "info");
 
-                    // 2. Pausa para dar tiempo a Google Drive de generar el Link
                     setTimeout(async () => {
                         try {
                             const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get({source: 'server'});
@@ -1594,7 +1599,6 @@
                                 const fileId = match ? match[1] : null;
                                 
                                 if (fileId) {
-                                    // 3. Forzar a Gemini con el Prompt Hardcodeado (Adiós Admin)
                                     const promptFijo = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
                                     
                                     fetch('/.netlify/functions/extraer-datos-ia-background', {
@@ -1616,7 +1620,7 @@
                             alert("Se subió el PDF, pero hubo un detalle al iniciar la extracción IA.");
                             location.reload();
                         }
-                    }, 2500); // 2.5 segundos de margen
+                    }, 2500); 
                 };
             } catch (e) {
                 alert("Error: " + e.message);
@@ -1647,7 +1651,6 @@
                         const match = ligaDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
                         const fileId = match ? match[1] : null;
                         if (fileId) {
-                            // 🛡️ INYECCIÓN DE PROMPT: Si es la Cédula, le pasamos la instrucción exacta para que no se pierda
                             let promptIA = null;
                             if (key === 'CEDULA_GYS') {
                                 promptIA = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
@@ -1686,11 +1689,20 @@
             }
         }
 
-        // ==========================================
-        // 📄 MÓDULO: REVISIÓN IA (SEGUNDA VALIDACIÓN) Y PDF
-        // ==========================================
-
-        
+        // 🔥 MÁQUINA DE ESTADO PARA EL BOTÓN PDF
+        window.evaluarBotonPDF = function() {
+            const btnPDF = document.getElementById('btn-generar-analisis');
+            if (!btnPDF) return;
+            
+            // Verificamos que realmente exista información extraída
+            if (expediente.datos_extraidos && Object.keys(expediente.datos_extraidos).length > 0) {
+                btnPDF.classList.remove('hidden');
+                btnPDF.style.display = 'flex'; // Forzamos para evitar bloqueos de CSS heredados
+            } else {
+                btnPDF.classList.add('hidden');
+                btnPDF.style.display = '';
+            }
+        };
 
         // Activador del Botón de Generar Análisis PDF
         const originalTransformarDatos = transformarDatos;
@@ -1699,10 +1711,7 @@
             expediente.datos_extraidos = data.datos_extraidos || {};
             expediente.checklist = data.checklist || {};
             
-            const btnPDF = document.getElementById('btn-generar-analisis');
-            if (Object.keys(expediente.datos_extraidos).length > 0) {
-                btnPDF.classList.remove('hidden');
-            }
+            evaluarBotonPDF(); // Evaluamos al cargar la página
         };
 
         window.switchPreviewTab = function(tab) {
@@ -1712,7 +1721,6 @@
             const paneIA = document.getElementById('ia-data-container');
 
             if(tab === 'doc') {
-                // Modo Pantalla Completa
                 btnDoc.className = "text-[10px] font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 h-full flex items-center";
                 btnIA.className = "text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 h-full flex items-center gap-1 transition-all";
                 
@@ -1723,7 +1731,6 @@
                 paneIA.classList.add('w-0', 'opacity-0');
                 
             } else if (tab === 'split') {
-                // Modo Vista Dividida
                 btnIA.className = "text-[10px] font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 h-full flex items-center gap-1";
                 btnDoc.className = "text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 h-full flex items-center transition-all";
                 
@@ -1744,7 +1751,6 @@
             let datosIA = expediente.datos_extraidos ? expediente.datos_extraidos[key] : null;
             const iaAprobada = expediente.checklist && expediente.checklist[key] ? expediente.checklist[key].ia_aprobada : false;
 
-            // 1. SI NO HAY DATOS -> Mostrar botón para extraer AHORA
             if (!datosIA) {
                 content.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-center p-6 opacity-80 mt-10">
@@ -1755,20 +1761,26 @@
                             <span class="material-symbols-rounded text-base">auto_awesome</span> Extraer Datos Ahora
                         </button>
                     </div>`;
-                btnConfirmar.parentElement.classList.add('hidden'); // Ocultar el botón de aprobar
+                btnConfirmar.parentElement.classList.add('hidden');
                 return;
             }
 
-            // 2. SI HAY DATOS -> Mostrarlos
             btnConfirmar.parentElement.classList.remove('hidden');
 
             if (typeof datosIA === 'string') {
-                try { datosIA = JSON.parse(datosIA.replace(/```json/gi, '').replace(/```/g, '').trim()); } 
-                catch (e) { content.innerHTML = `<div class="p-3 bg-red-50 text-red-600 text-xs">${datosIA}</div>`; return; }
+                try { 
+                    datosIA = JSON.parse(datosIA.replace(/```json/gi, '').replace(/```/g, '').trim()); 
+                } catch (e) { 
+                    content.innerHTML = `<div class="p-3 bg-red-50 text-red-600 text-xs">${datosIA}</div>`; 
+                    return; 
+                }
             }
 
             let html = '<div class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl mb-4"><p class="text-xs text-indigo-800 font-bold"><span class="material-symbols-rounded text-sm align-middle">edit_note</span> Verifica los datos extraídos y edítalos si Gemini se equivocó en algo.</p></div>';
             
+            const camposSeleccionados = expediente.checklist[key]?.campos_pdf || [];
+            const isFirstTime = !expediente.checklist[key]?.ia_aprobada;
+
             const renderInputs = (obj, path = '') => {
                 let nodeHtml = '';
                 for (const [k, v] of Object.entries(obj)) {
@@ -1780,10 +1792,15 @@
                         nodeHtml += `<div class="pl-2 space-y-2">` + renderInputs(v, currentPath) + `</div>`;
                     } else {
                         const val = String(v).trim().replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        const isChecked = isFirstTime ? true : camposSeleccionados.includes(currentPath);
+                        
                         nodeHtml += `
-                            <div class="flex flex-col mb-2">
-                                <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">${cleanKey}</label>
-                                <input type="text" class="ia-edit-input w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-xs font-mono font-bold text-indigo-800 dark:text-indigo-200 outline-none focus:border-indigo-500 transition-all shadow-inner" data-path="${currentPath}" value="${val.toUpperCase()}">
+                            <div class="flex items-center gap-3 mb-2 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <input type="checkbox" class="ia-pdf-include w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded cursor-pointer shrink-0" data-path="${currentPath}" ${isChecked ? 'checked' : ''} title="Selecciona para incluir este dato en el PDF de Análisis">
+                                <div class="flex flex-col flex-1 overflow-hidden">
+                                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">${cleanKey}</label>
+                                    <input type="text" class="ia-edit-input w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-md p-2 text-xs font-mono font-bold text-indigo-800 dark:text-indigo-200 outline-none focus:border-indigo-500 transition-all shadow-inner" data-path="${currentPath}" value="${val.toUpperCase()}">
+                                </div>
                             </div>
                         `;
                     }
@@ -1819,14 +1836,23 @@
                 ref[path[path.length - 1]] = input.value;
             });
 
+            const camposPdf = [];
+            document.querySelectorAll('.ia-pdf-include:checked').forEach(chk => {
+                camposPdf.push(chk.getAttribute('data-path'));
+            });
+
             try {
                 await db.collection('expedientes_avaluos').doc(expediente.id).update({
                     [`datos_extraidos.${selectedReqKey}`]: nuevoJSON,
-                    [`checklist.${selectedReqKey}.ia_aprobada`]: true
+                    [`checklist.${selectedReqKey}.ia_aprobada`]: true,
+                    [`checklist.${selectedReqKey}.campos_pdf`]: camposPdf
                 });
                 
                 expediente.datos_extraidos[selectedReqKey] = nuevoJSON;
                 expediente.checklist[selectedReqKey].ia_aprobada = true;
+                expediente.checklist[selectedReqKey].campos_pdf = camposPdf;
+
+                evaluarBotonPDF(); // 🔥 Aseguramos que el botón despierte tras aprobar cambios
 
                 if (typeof showToast !== 'undefined') showToast("Datos aprobados y listos para Cédula GYS.", "success");
                 
@@ -1844,7 +1870,7 @@
             }
         };
 
-        // 🖨️ NUEVO GENERADOR DE PDF NATIVO (TEXTO 100% REAL Y LIMPIO)
+        // 🖨️ NUEVO GENERADOR DE PDF NATIVO CON FORMATO EXACTO "CYNTHIA"
         window.generarPDFAnalisis = async function() {
             if(!expediente.datos_extraidos || Object.keys(expediente.datos_extraidos).length === 0) {
                 alert("Aún no hay datos extraídos por IA para este expediente."); return;
@@ -1855,204 +1881,239 @@
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Generando...';
             btn.disabled = true;
 
-            let solHTML = '', propHTML = '', inmHTML = '';
+            let solRows = '', propRows = '', inmRows = '';
             let contSol = 1, contPro = 1, contInm = 1;
+
+            const tramiteHtml = document.getElementById('header-tramite') ? document.getElementById('header-tramite').innerText : '';
 
             Object.entries(expediente.datos_extraidos).forEach(([key, val]) => {
                 let obj = val;
-                if(typeof val === 'string') { try { obj = JSON.parse(val.replace(/```json/gi, '').replace(/```/g, '').trim()); } catch(e){} }
+                if(typeof val === 'string') { 
+                    try { 
+                        const cleanVal = val.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                        obj = JSON.parse(cleanVal); 
+                    } catch(e){} 
+                }
 
-                const docName = expediente.checklist[key]?.nombre || key.replace(/_/g, ' ');
+                let docName = expediente.checklist[key]?.nombre || key.replace(/_/g, ' ');
+                docName = docName.charAt(0).toUpperCase() + docName.slice(1).toLowerCase();
+
                 const esAprobada = expediente.checklist[key]?.ia_aprobada;
-                const checkStatus = esAprobada ? '' : '<span style="color:#e11d48; font-size:10px;">[PENDIENTE APROBAR IA]</span>';
+                const checkStatus = esAprobada ? '' : '<br><span style="color:#e11d48; font-size:9px;">[PENDIENTE APROBAR IA]</span>';
 
-                // Convierte el JSON a texto corrido (formato limpio y natural separado por comas)
-                const parseProps = (o) => {
+                const camposPermitidos = expediente.checklist[key]?.campos_pdf;
+
+                const parseProps = (o, currentPath = '') => {
                     let arr = [];
-                    for(let v of Object.values(o)) {
+                    for(let [k, v] of Object.entries(o)) {
+                        const path = currentPath ? `${currentPath}.${k}` : k;
                         if(typeof v === 'object' && v !== null) {
-                            const sub = parseProps(v);
+                            const sub = parseProps(v, path);
                             if(sub) arr.push(sub);
-                        } else if(v && v !== '---' && String(v).toLowerCase() !== 'null' && String(v).toLowerCase() !== 'n/a') {
-                            arr.push(String(v).toUpperCase());
+                        } else if(v && v !== '---' && String(v).toLowerCase() !== 'null' && String(v).toLowerCase() !== 'n/a' && String(v).trim() !== '') {
+                            // Filtro de Seguridad: Solo inyectar lo seleccionado por el revisor
+                            if (camposPermitidos && !camposPermitidos.includes(path)) continue;
+
+                            let cleanKey = k.replace(/_/g, ' ');
+                            cleanKey = cleanKey.charAt(0).toUpperCase() + cleanKey.slice(1).toLowerCase();
+                            arr.push('<span style="color:#0f4c81;">• <b>' + cleanKey + ':</b></span> ' + String(v).toUpperCase());
                         }
                     }
-                    return arr.join(', '); // Une todo con comas simulando un párrafo natural
+                    return arr.join('<br>');
                 };
 
                 let contentStr = '';
-                if(typeof obj === 'object') contentStr = parseProps(obj); 
-                else contentStr = String(obj).toUpperCase();
+                if(typeof obj === 'object') {
+                    contentStr = parseProps(obj); 
+                } else {
+                    if (camposPermitidos && camposPermitidos.length === 0) contentStr = '';
+                    else contentStr = String(obj);
+                }
 
-                // 🔴 Si solo dice "OK" (no extrajo datos útiles), lo ignoramos para no ensuciar el PDF
-                if (contentStr === "OK") contentStr = '';
-
-                const htmlItem = `
-                    <div class="doc-item">
-                        <div class="doc-title">\${contSol}. \${docName} \${checkStatus}</div>
-                        <div class="doc-data">\${contentStr}</div>
-                    </div>
-                `;
+                // Mantener formato limpio (idéntico al documento origen, sin "Ok")
+                if (contentStr === "") {
+                    contentStr = '<span style="color:#94a3b8; font-style:italic;">(Sin datos a inyectar)</span>';
+                }
 
                 const cat = expediente.checklist[key]?.categoria || '';
-                if(cat === 'solicitante') { solHTML += htmlItem.replace('${contSol}', contSol++); } 
-                else if(cat === 'propietario') { propHTML += htmlItem.replace('${contSol}', contPro++); } 
-                else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmHTML += htmlItem.replace('${contSol}', contInm++); }
+                
+                const rowHtml = '<tr>' +
+                    '<td class="col-num">' + '{NUM}.</td>' +
+                    '<td class="col-doc">' + docName + ':' + checkStatus + '</td>' +
+                    '<td class="col-data">' + contentStr + '</td>' +
+                '</tr>';
+
+                if(cat === 'solicitante') { solRows += rowHtml.replace('{NUM}', contSol++); } 
+                else if(cat === 'propietario') { propRows += rowHtml.replace('{NUM}', contPro++); } 
+                else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmRows += rowHtml.replace('{NUM}', contInm++); }
             });
 
             if(expediente.grupos.inmueble) {
                 const mapData = expediente.grupos.inmueble.find(r => r.key === 'UBICACION_MAPS');
                 if(mapData && mapData.coordenadas) {
-                    inmHTML += `
-                        <div class="doc-item">
-                            <div class="doc-title">${contInm}. UBICACIÓN SATELITAL</div>
-                            <div class="doc-data">Coordenadas: ${mapData.coordenadas}, Dirección: ${mapData.direccion || 'N/A'}</div>
-                        </div>
-                    `;
+                    const embedUrl = `https://maps.google.com/maps?q=${mapData.coordenadas}&t=k&z=19&output=embed`;
+                    inmRows += '<tr>' +
+                        '<td class="col-num">' + (contInm++) + '.</td>' +
+                        '<td class="col-doc">Coordenadas y ubicación satelital:</td>' +
+                        '<td class="col-data">' + 
+                            '<b>' + mapData.coordenadas + '</b><br><br>' + 
+                            '<iframe width="100%" height="250" frameborder="0" style="border:1px solid #cbd5e1; border-radius: 8px;" src="' + embedUrl + '"></iframe>' +
+                        '</td>' +
+                    '</tr>';
                 }
             }
 
-            const htmlContent = `
-                <html>
-                <head>
-                    <title>Análisis_${expediente.cliente}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 20px; line-height: 1.4; }
-                        h2 { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 20px; font-size: 14px; }
-                        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-                        th { background-color: #0f4c81 !important; color: white !important; border: 1px solid #000; padding: 6px; text-align: left; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        td { border: 1px solid #000; padding: 8px; vertical-align: top; }
-                        .doc-item { margin-bottom: 12px; }
-                        .doc-title { font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
-                        .doc-data { margin-left: 12px; }
-                        @media print { @page { size: landscape; margin: 10mm; } }
-                    </style>
-                </head>
-                <body>
-                    <h2>ANÁLISIS DOCUMENTACIÓN</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>SOLICITANTE</th>
-                                <th>PROPIETARIO</th>
-                                <th>INMUEBLE</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div style="font-weight:bold; margin-bottom:15px; font-size:12px;">${expediente.cliente.toUpperCase()}</div>
-                                    ${solHTML}
-                                </td>
-                                <td>${propHTML}</td>
-                                <td>${inmHTML}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </body>
-                </html>
-            `;
+            const htmlContent = '<!DOCTYPE html>' +
+                '<html>' +
+                '<head>' +
+                    '<meta charset="UTF-8">' +
+                    '<title>Análisis_' + expediente.cliente + '</title>' +
+                    '<style>' +
+                        'body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 20px; line-height: 1.4; max-width: 800px; margin: auto; }' +
+                        '.header-title { text-align: center; font-size: 13px; font-weight: normal; margin-bottom: 20px; }' +
+                        'table { width: 100%; border-collapse: collapse; table-layout: fixed; }' +
+                        'td { padding: 8px 10px; vertical-align: top; font-size: 11px; border-bottom: 1px solid #f9fafb; }' +
+                        '.section-header td { font-weight: bold; font-size: 11px; border-bottom: 1px solid #000; padding-top: 25px; padding-bottom: 6px; text-transform: uppercase; border-top: none; }' +
+                        '.tramite-text { font-size: 10px; font-weight: normal; font-style: italic; display: block; margin-top: 2px; text-transform: uppercase; }' +
+                        '@media print { ' +
+                            '@page { size: letter portrait; margin: 15mm; } ' +
+                            'body { padding: 0; max-width: 100%; } ' +
+                            'td { page-break-inside: avoid; } ' +
+                            '.section-header { page-break-after: avoid; } ' +
+                        '}' +
+                    '</style>' +
+                '</head>' +
+                '<body>' +
+                    '<div class="header-title">Análisis documentación</div>' +
+                    '<table>' +
+                        '<colgroup>' +
+                            '<col style="width: 5%;">' +
+                            '<col style="width: 35%;">' +
+                            '<col style="width: 60%;">' +
+                        '</colgroup>' +
+                        '<tbody>' +
+                            '<!-- SECCIÓN SOLICITANTE -->' +
+                            '<tr class="section-header">' +
+                                '<td colspan="2">SOLICITANTE<br><span style="font-size:9px; font-weight:normal; text-transform: lowercase;">(comprador)</span></td>' +
+                                '<td>' + expediente.cliente + '<br><span class="tramite-text">*' + tramiteHtml + '*</span></td>' +
+                            '</tr>' +
+                            solRows +
+                            
+                            '<!-- SECCIÓN PROPIETARIO -->' +
+                            '<tr class="section-header">' +
+                                '<td colspan="2">PROPIETARIO</td>' +
+                                '<td></td>' +
+                            '</tr>' +
+                            propRows +
+                            
+                            '<!-- SECCIÓN INMUEBLE -->' +
+                            '<tr class="section-header">' +
+                                '<td colspan="2">INMUEBLE</td>' +
+                                '<td></td>' +
+                            '</tr>' +
+                            inmRows +
+                        '</tbody>' +
+                    '</table>' +
+                '</body>' +
+                '</html>';
 
-            // Abrimos ventana nativa para impresión (Garantiza texto real y 100% seleccionable)
             const printWin = window.open('', '_blank');
             printWin.document.write(htmlContent);
             printWin.document.close();
-            printWin.focus();
-
+            
             setTimeout(() => {
+                printWin.focus();
                 printWin.print();
                 btn.innerHTML = orig;
                 btn.disabled = false;
             }, 500);
         };
     </script>
-</body>
-</html>
 
     <div id="modal-asignar" class="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 transform scale-100 transition-transform">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <span class="material-symbols-rounded text-indigo-500">engineering</span>
-                Asignar Responsable
-            </h3>
-            <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><span class="material-symbols-rounded">close</span></button>
-        </div>
-
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
-            Expediente validado al 100%. Selecciona quién realizará el levantamiento.
-        </p>
-
-        <div class="mb-6">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Capturistas Disponibles</label>
-            <div id="lista-capturistas" class="space-y-2 max-h-48 overflow-y-auto custom-scroll border border-slate-100 dark:border-slate-700 rounded-lg p-1">
-                <p class="text-xs text-slate-400 text-center py-4">Cargando usuarios...</p>
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 transform scale-100 transition-transform">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">engineering</span>
+                    Asignar Responsable
+                </h3>
+                <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><span class="material-symbols-rounded">close</span></button>
             </div>
-        </div>
 
-        <div class="flex gap-3">
-            <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
-            <button onclick="confirmarAsignacion()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirmar</button>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                Expediente validado al 100%. Selecciona quién realizará el levantamiento.
+            </p>
+
+            <div class="mb-6">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Capturistas Disponibles</label>
+                <div id="lista-capturistas" class="space-y-2 max-h-48 overflow-y-auto custom-scroll border border-slate-100 dark:border-slate-700 rounded-lg p-1">
+                    <p class="text-xs text-slate-400 text-center py-4">Cargando usuarios...</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('modal-asignar').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
+                <button onclick="confirmarAsignacion()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirmar</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="modal-proponer-fechas" class="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
-        
-        <div class="flex justify-between items-center mb-4 mt-2">
-            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                <span class="material-symbols-rounded text-teal-500 text-2xl">edit_calendar</span> Proponer Fechas
-            </h3>
-            <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
-                <span class="material-symbols-rounded text-sm">close</span>
-            </button>
-        </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Propón hasta 3 opciones de fecha y hora exacta. El cliente recibirá una alerta en su portal para confirmar la cita.</p>
-        
-        <div class="space-y-4 mb-8">
-            <div class="flex gap-3">
-                <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
-                <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+    <div id="modal-proponer-fechas" class="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
+            
+            <div class="flex justify-between items-center mb-4 mt-2">
+                <h3 class="text-xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-teal-500 text-2xl">edit_calendar</span> Proponer Fechas
+                </h3>
+                <button onclick="document.getElementById('modal-proponer-fechas').classList.add('hidden'); document.getElementById('modal-proponer-fechas').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-rounded text-sm">close</span>
+                </button>
             </div>
-            <div class="flex gap-3">
-                <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
-                <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Propón hasta 3 opciones de fecha y hora exacta. El cliente recibirá una alerta en su portal para confirmar la cita.</p>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-1" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-2" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
+                <div class="flex gap-3">
+                    <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
+                    <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
+                </div>
             </div>
-            <div class="flex gap-3">
-                <input type="date" id="prop-fecha-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700">
-                <input type="time" id="prop-hora-3" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-xs outline-none dark:text-white font-bold cursor-pointer focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-slate-700" title="Hora de inicio de la visita">
-            </div>
-        </div>
-        
-        <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-4 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
-            <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
-        </button>
-    </div>
-</div>
-
-<div id="modal-notificar" class="fixed inset-0 z-[95] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden text-center">
-        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-700 shadow-lg">
-            <span class="material-symbols-rounded text-4xl">check_circle</span>
-        </div>
-        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">¡Fechas Guardadas!</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Elige el método para avisarle a <b id="notif-nombre-cliente" class="text-slate-700 dark:text-slate-200 uppercase"></b> que ya puede elegir su fecha.</p>
-        
-        <div class="space-y-3">
-            <button onclick="notificarWhatsApp()" class="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
-                <span class="material-symbols-rounded">chat</span> Notificar por WhatsApp
-            </button>
-            <button onclick="notificarCorreo()" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-95 flex justify-center items-center gap-2">
-                <span class="material-symbols-rounded">mail</span> Enviar por Correo
-            </button>
-            <button onclick="cerrarModalNotificar()" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                Cerrar sin notificar
+            
+            <button onclick="guardarFechasPropuestas()" id="btn-enviar-fechas" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-4 rounded-xl text-sm shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <span class="material-symbols-rounded">send</span> Enviar Opciones al Cliente
             </button>
         </div>
     </div>
-</div>
+
+    <div id="modal-notificar" class="fixed inset-0 z-[95] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out] relative overflow-hidden text-center">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-700 shadow-lg">
+                <span class="material-symbols-rounded text-4xl">check_circle</span>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">¡Fechas Guardadas!</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Elige el método para avisarle a <b id="notif-nombre-cliente" class="text-slate-700 dark:text-slate-200 uppercase"></b> que ya puede elegir su fecha.</p>
+            
+            <div class="space-y-3">
+                <button onclick="notificarWhatsApp()" class="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-500/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+                    <span class="material-symbols-rounded">chat</span> Notificar por WhatsApp
+                </button>
+                <button onclick="notificarCorreo()" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-95 flex justify-center items-center gap-2">
+                    <span class="material-symbols-rounded">mail</span> Enviar por Correo
+                </button>
+                <button onclick="cerrarModalNotificar()" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    Cerrar sin notificar
+                </button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

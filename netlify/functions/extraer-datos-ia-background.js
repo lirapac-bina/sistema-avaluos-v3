@@ -19,8 +19,9 @@ exports.handler = async (event) => {
             return;
         }
 
+        // 🔴 FIX: Forzamos el uso de la llave correcta (LECTOR)
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY_LECTOR;
-        if (!GEMINI_API_KEY) console.error("🚨 ALERTA: No se encontró GEMINI_API_KEY_LECTOR");
+        if (!GEMINI_API_KEY) console.error("🚨 ALERTA: No se encontró GEMINI_API_KEY_LECTOR en el entorno.");
 
         let base64Data = "";
         let mimeType = "application/pdf"; // default

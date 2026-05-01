@@ -480,9 +480,17 @@
                         </button>
                     </div>
                     
-                    <div class="relative w-full">
-                        <span class="material-symbols-rounded absolute left-3 top-3 text-indigo-400">search</span>
-                        <input type="text" id="buscador-modal" placeholder="Buscar por cliente, folio operativo o unidad (Ej. AVE, APN)..." class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-colors shadow-sm font-medium" onkeyup="filtrarBandeja()">
+                    <div class="flex flex-col sm:flex-row gap-3 w-full">
+                        <div class="relative w-full">
+                            <span class="material-symbols-rounded absolute left-3 top-3 text-indigo-400">search</span>
+                            <input type="text" id="buscador-modal" placeholder="Buscar por cliente, folio operativo o anotación..." class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-colors shadow-sm font-medium" onkeyup="filtrarBandeja()">
+                        </div>
+                        <select id="filtro-unidad-modal" onchange="filtrarBandeja()" class="w-full sm:w-48 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-xl px-4 py-3 outline-none focus:border-indigo-500 font-bold cursor-pointer shadow-sm">
+                            <option value="">Todas las Unidades</option>
+                            <option value="APN">APN (Pamela)</option>
+                            <option value="EME">EME Leezar</option>
+                            <option value="AVE">AVE</option>
+                        </select>
                     </div>
                 </div>
 
@@ -860,7 +868,6 @@
                     // 🛡️ FILTRO INTELIGENTE: Si NO eres supervisor, aplica la regla estricta
                     if (!puedeVerTodo) {
                         const asig = (data.capturista||'').toLowerCase().trim();
-                        // (Aquí podrías agregar lógica para que el visitador o dibujante también vean su parte si se requiere)
                         if(asig !== (activeUser.email||'').toLowerCase() && asig !== (activeUser.nombre||'').toLowerCase()) return;
                     }
                     
@@ -878,58 +885,125 @@
                 arrayExpedientes.forEach(data => {
                     misExpedientes[data.id] = data;
                     
-                    // 1. FOLIO OPERATIVO CON PRIORIDAD
+                    // 1. FOLIO Y UNIDAD
                     const fGys = data.folioOperativo || data.folio_gestora || data.id.substring(0,6).toUpperCase();
-                    const label = `GYS ${data.unidad||'AVE'} ${fGys} (${data.entidad||'S/E'})`;
+                    const siglaUnidad = (data.unidad || 'AVE').toUpperCase();
                     
-                    // 2. ESTADO VISUAL
-                    const statusUI = data.notas_captura ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-emerald-200">EN PROGRESO</span>` : `<span class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-[9px] font-black tracking-widest text-slate-500">SIN INICIAR</span>`;
-
-                    // 3. ETIQUETA DE ANOTACIONES INYECTADA
-                    let anotacionHtml = '';
-                    if (data.anotacion && data.anotacion.trim() !== '') {
-                        anotacionHtml = `<div class="mt-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5 flex items-start gap-2 shadow-inner"><span class="material-symbols-rounded text-[16px] text-amber-500 mt-0.5">notification_important</span><div><p class="text-[9px] uppercase font-black text-amber-600 dark:text-amber-400 tracking-wider mb-0.5">Anotación Control</p><p class="text-[11px] text-amber-900 dark:text-amber-200 leading-tight font-medium">${data.anotacion}</p></div></div>`;
+                    // 🎨 Identidad de Color por Unidad
+                    let colorUnidad = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400'; 
+                    let iconUnidad = 'home_work';
+                    if (siglaUnidad.includes('APN') || siglaUnidad.includes('PNA')) { 
+                        colorUnidad = 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:border-orange-800 dark:text-orange-400'; 
+                        iconUnidad = 'domain'; 
+                    } else if (siglaUnidad.includes('EME')) { 
+                        colorUnidad = 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400'; 
+                        iconUnidad = 'location_city'; 
                     }
 
-                    // TÉRMINOS DE BÚSQUEDA (Invisible, usado para el filtro)
-                    const searchTerms = `${label} ${data.cliente||''} ${fGys} ${data.capturista||''}`.toLowerCase();
+                    // 2. CÁLCULO DE DÍAS EN CAPTURA (SLA)
+                    let fechaInicio = data.fecha_actualizacion_captura || data.fecha_asignacion_captura || data.fechaCreacion || data.fecha;
+                    let diasAbierto = 0;
+                    if (fechaInicio) {
+                        let fObj = fechaInicio.toDate ? fechaInicio.toDate() : (fechaInicio._seconds ? new Date(fechaInicio._seconds * 1000) : new Date(fechaInicio));
+                        if (!isNaN(fObj)) {
+                            let inicio = new Date(fObj.getTime()); let fin = new Date();
+                            inicio.setHours(0,0,0,0); fin.setHours(0,0,0,0);
+                            while (inicio < fin) { inicio.setDate(inicio.getDate() + 1); if (inicio.getDay() !== 0 && inicio.getDay() !== 6) diasAbierto++; }
+                        }
+                    }
+                    
+                    // Alerta si lleva más de 2 días atorado
+                    let colorDias = diasAbierto > 2 ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 animate-pulse' : 'text-slate-500 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
 
-                    htmlModal += `<div data-search="${searchTerms}" onclick="seleccionarExpediente('${data.id}', '${label}')" class="expediente-card p-5 border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-indigo-500 cursor-pointer bg-white dark:bg-slate-800 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between active:scale-95 group">
-                        <div>
-                            <div class="flex justify-between items-start mb-3">
-                                <h4 class="font-black text-[13px] text-indigo-700 dark:text-indigo-400 group-hover:text-indigo-600 transition-colors leading-tight pr-2">${label}</h4>
-                                ${statusUI}
+                    // 3. ESTADO VISUAL
+                    const statusUI = data.notas_captura 
+                        ? `<span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-indigo-200 dark:border-indigo-800 flex items-center shadow-sm shrink-0">EN PROGRESO</span>` 
+                        : ``; 
+
+                    // 4. ETIQUETA DE ANOTACIONES INYECTADA
+                    let anotacionHtml = '';
+                    if (data.anotacion && data.anotacion.trim() !== '') {
+                        anotacionHtml = `<div class="mt-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5 flex items-start gap-2 shadow-inner"><span class="material-symbols-rounded text-[16px] text-amber-500 mt-0.5">notification_important</span><div><p class="text-[9px] uppercase font-black text-amber-600 dark:text-amber-400 tracking-wider mb-0.5">Nota de Control</p><p class="text-[10px] text-amber-900 dark:text-amber-200 leading-tight font-medium line-clamp-2" title="${data.anotacion}">${data.anotacion}</p></div></div>`;
+                    }
+
+                    // 5. LÓGICA DEL CAPTURISTA
+                    const nombreUsuarioActual = (activeUser.email || '').split('@')[0].toUpperCase();
+                    let capturistaUI = '';
+                    if (data.capturista) {
+                        const capNombre = data.capturista.split('@')[0].toUpperCase();
+                        if (capNombre !== nombreUsuarioActual) {
+                            capturistaUI = `<p class="text-[9px] font-bold text-slate-400 flex items-center gap-1 truncate w-1/2 justify-end" title="Asignado a: ${capNombre}"><span class="material-symbols-rounded text-[14px]">person</span> <span class="truncate">${capNombre}</span></p>`;
+                        }
+                    }
+
+                    // TÉRMINOS DE BÚSQUEDA
+                    const searchTerms = `${fGys} ${siglaUnidad} ${data.cliente||''} ${data.capturista||''} ${data.anotacion||''}`.toLowerCase().replace(/"/g, '');
+
+                    // 🔥 TARJETA BLINDADA
+                    htmlModal += `<div data-search="${searchTerms}" data-unidad="${siglaUnidad}" onclick="seleccionarExpediente('${data.id}', 'GYS ${siglaUnidad} ${fGys}')" class="expediente-card min-h-[140px] w-full flex flex-col border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-indigo-500 cursor-pointer bg-white dark:bg-slate-800 shadow-sm hover:shadow-lg transition-all active:scale-95 group overflow-hidden">
+                        
+                        <div class="flex justify-between items-center px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 shrink-0">
+                            <span class="${colorUnidad} border px-2 py-0.5 rounded text-[10px] font-black tracking-widest flex items-center gap-1 shadow-sm"><span class="material-symbols-rounded text-[14px]">${iconUnidad}</span> ${siglaUnidad}</span>
+                            <div class="${colorDias} border px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm" title="Días en bandeja">
+                                <span class="material-symbols-rounded text-[14px]">schedule</span> ${diasAbierto}d
                             </div>
-                            <p class="text-sm font-extrabold text-slate-800 dark:text-white mb-1.5 uppercase">${data.cliente||'Sin Cliente'}</p>
-                            <p class="text-[10px] font-bold text-slate-400 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">person</span> Capturista: <span class="text-slate-600 dark:text-slate-300">${data.capturista||'N/A'}</span></p>
-                            ${anotacionHtml}
+                        </div>
+
+                        <div class="p-4 flex flex-col flex-1">
+                            <div class="flex-1 mb-4 overflow-hidden">
+                                <h4 class="font-black text-sm text-indigo-700 dark:text-indigo-400 group-hover:text-indigo-600 transition-colors leading-snug mb-1.5 line-clamp-2" title="${fGys}">${fGys}</h4>
+                                <p class="text-[11px] font-extrabold text-slate-800 dark:text-white uppercase leading-tight line-clamp-2" title="${data.cliente||'Sin Cliente'}">${data.cliente||'Sin Cliente'}</p>
+                            </div>
+                            
+                            <div class="mt-auto border-t border-slate-100 dark:border-slate-700 pt-3 flex flex-col gap-2">
+                                <div class="flex justify-between items-center w-full min-h-[24px]">
+                                    ${statusUI}
+                                    ${capturistaUI}
+                                </div>
+                                ${anotacionHtml}
+                            </div>
                         </div>
                     </div>`;
                 });
 
                 document.getElementById('lista-expedientes-modal').innerHTML = arrayExpedientes.length > 0 ? htmlModal : `<div class="col-span-full text-center py-10 text-slate-400 font-bold text-sm">Bandeja Vacía. No hay expedientes asignados.</div>`;
-                if(!currentFolioId) abrirModalExpedientes(true);
+                
+                if(!currentFolioId) {
+                    abrirModalExpedientes(true);
+                }
+                
+                setTimeout(() => {
+                    filtrarBandeja();
+                }, 100);
             });
         }
 
-        // MOTOR DEL BUSCADOR EN TIEMPO REAL
+        // MOTOR DEL BUSCADOR EN TIEMPO REAL ACTUALIZADO
         function filtrarBandeja() {
             const query = document.getElementById('buscador-modal').value.toLowerCase();
+            const filterUnidad = document.getElementById('filtro-unidad-modal').value.toUpperCase();
+            
             const cards = document.querySelectorAll('.expediente-card');
             let visibles = 0;
+            
             cards.forEach(card => {
-                if (card.getAttribute('data-search').includes(query)) {
-                    card.style.display = 'flex';
+                const searchMatch = card.getAttribute('data-search').includes(query);
+                const unidadCard = card.getAttribute('data-unidad') ? card.getAttribute('data-unidad').toUpperCase() : '';
+                
+                let unidadMatch = filterUnidad === "" || unidadCard === filterUnidad;
+                if (filterUnidad === 'APN' && (unidadCard === 'APN' || unidadCard === 'PNA')) unidadMatch = true;
+
+                if (searchMatch && unidadMatch) {
+                    card.style.display = 'flex'; // 🔥 Forzamos flex
                     visibles++;
                 } else {
                     card.style.display = 'none';
                 }
             });
             
-            // Mensaje si no hay resultados
             const emptyMsg = document.getElementById('msg-empty-search');
             if (visibles === 0 && cards.length > 0) {
-                if (!emptyMsg) document.getElementById('lista-expedientes-modal').insertAdjacentHTML('beforeend', '<div id="msg-empty-search" class="col-span-full text-center py-10 text-slate-400 font-bold text-sm">No se encontraron expedientes con esa búsqueda.</div>');
+                if (!emptyMsg) document.getElementById('lista-expedientes-modal').insertAdjacentHTML('beforeend', '<div id="msg-empty-search" class="col-span-full text-center py-10 text-slate-400 font-bold text-sm">No se encontraron expedientes con esos filtros.</div>');
             } else if (emptyMsg) emptyMsg.remove();
         }
 

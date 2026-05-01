@@ -151,7 +151,7 @@
 
     <div id="dynamicPrivacyModal" class="fixed inset-0 z-[9000] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-[popIn_0.3s_ease-out] flex flex-col max-h-[90vh]">
-            <div class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-leezar-600">
+            <div id="modal-legal-header" class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-leezar-600 transition-colors duration-500">
                 <span class="material-symbols-rounded text-white text-3xl mb-2">verified_user</span>
                 <h2 class="text-2xl font-bold text-white">Aviso de Privacidad</h2>
             </div>
@@ -426,7 +426,7 @@
             <button onclick="mostrarModalLegal(true)" class="text-xs text-gray-400 hover:text-leezar-500 transition-colors flex items-center justify-center gap-1 mx-auto font-bold mb-2">
                 <span class="material-symbols-rounded text-sm">policy</span> Consulta aviso de privacidad
             </button>
-            <p class="text-[10px] text-gray-300 dark:text-gray-600">© 2026 Ingeniería Leezar • Sistema Seguro V2.6</p>
+            <p id="footer-legal-text" class="text-[10px] text-gray-300 dark:text-gray-600">© 2026 Ingeniería Leezar • Sistema Seguro V2.6</p>
         </div>
     </div>
     
@@ -1042,12 +1042,12 @@
             
             const unidad = data.unidad || 'AVE';
             
-            // 🔥 DICCIONARIO DE IDENTIDADES CORREGIDO (Nombres y Colores)
+            // 🔥 DICCIONARIO DE IDENTIDADES CORREGIDO (Nombres, Colores y Entidad Legal)
             const brands = {
-                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-rose-700', name: 'EME LEEZAR' },
-                'APN': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA' },
-                'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA' }, // Soporte para expedientes viejos
-                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-emerald-700', name: 'GYS AVE EME' }
+                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-rose-700', name: 'EME LEEZAR', legal: 'EME Leezar S.A. de C.V.' },
+                'APN': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA', legal: 'Avalúos Pamela Nogueira' },
+                'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA', legal: 'Avalúos Pamela Nogueira' },
+                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-emerald-700', name: 'GYS AVE EME', legal: 'Asesoría Valuación y Estudios (AVE)' }
             };
             
             const config = brands[unidad] || brands['AVE'];
@@ -1058,6 +1058,10 @@
             
             document.getElementById('main-header').className = `fixed top-0 left-0 w-full text-white shadow-lg z-40 h-24 flex items-center transition-colors duration-500 ${config.color}`;
             document.getElementById('brand-subtitle').textContent = config.name;
+
+            // 🛡️ Actualizamos el pie de página con la entidad correspondiente
+            const footerText = document.getElementById('footer-legal-text');
+            if(footerText) footerText.innerText = `© ${new Date().getFullYear()} ${config.legal} • Sistema Seguro V2.6`;
 
             document.getElementById('cliente-nombre').textContent = data.nombreCliente || "Cliente";
             const fecha = data.fechaCreacion ? new Date(data.fechaCreacion).toLocaleDateString('es-MX') : 'Hoy';
@@ -1404,12 +1408,29 @@
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 document.getElementById('legal-dynamic-content').innerHTML = "Cargando aviso de privacidad...";
+                
+                // 🛡️ Identidad Gráfica y Legal en Modal
+                const unidad = (typeof expedienteGlobal !== 'undefined' && expedienteGlobal && expedienteGlobal.unidad) ? expedienteGlobal.unidad : 'AVE';
+                const brands = {
+                    'EME': { color: 'bg-rose-700', legal: 'EME Leezar S.A. de C.V.' },
+                    'APN': { color: 'bg-orange-600', legal: 'Avalúos Pamela Nogueira' },
+                    'PNA': { color: 'bg-orange-600', legal: 'Avalúos Pamela Nogueira' },
+                    'AVE': { color: 'bg-emerald-700', legal: 'Asesoría Valuación y Estudios (AVE)' }
+                };
+                const config = brands[unidad] || brands['AVE'];
+                
+                const headerModal = document.getElementById('modal-legal-header');
+                if(headerModal) headerModal.className = `pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 transition-colors duration-500 ${config.color}`;
+
                 fetch('/.netlify/functions/get-legal')
                     .then(r => r.json())
                     .then(d => {
-                        document.getElementById('legal-dynamic-content').innerHTML = d.htmlContent || d.texto || "<p>Aviso de privacidad no disponible.</p>"; 
+                        let contenido = d.htmlContent || d.texto || "<p>Aviso de privacidad no disponible.</p>"; 
+                        // 🔥 REEMPLAZO DINÁMICO: Cambiamos cualquier mención de "Ingeniería Leezar" por la razón social de la unidad
+                        contenido = contenido.replace(/Ingeniería Leezar/gi, `<b>${config.legal}</b>`);
+                        document.getElementById('legal-dynamic-content').innerHTML = contenido; 
                     })
-                    .catch(e => document.getElementById('legal-dynamic-content').innerHTML = "Error al cargar el aviso.");
+                    .catch(e => document.getElementById('legal-dynamic-content').innerHTML = "Error al cargar el aviso de privacidad.");
             } else {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
