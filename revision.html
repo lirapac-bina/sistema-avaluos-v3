@@ -95,9 +95,15 @@
                     </button>
 
                     <!-- NUEVO BOTÓN: GENERAR PDF -->
-                    <button onclick="generarPDFAnalisis()" id="btn-generar-analisis" class="hidden h-10 flex items-center gap-2 bg-primary hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-blue-900 ml-2">
-                        <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
-                        <span class="hidden md:inline">Análisis Doc.</span>
+                    <!-- BOTÓN MODO COMPARADOR -->
+                    <button onclick="toggleComparador()" id="btn-comparador" class="h-10 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-indigo-800 ml-2">
+                        <span class="material-symbols-rounded text-lg">splitscreen</span>
+                        <span class="hidden md:inline">Comparar Docs</span>
+                    </button>
+
+                    <!-- BOTÓN PANTALLA COMPLETA -->
+                    <button onclick="toggleFullscreen()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 ml-2" title="Pantalla Completa">
+                        <span class="material-symbols-rounded text-xl">fullscreen</span>
                     </button>
 
                     <div id="action-container" class="hidden ml-4">
@@ -114,7 +120,7 @@
             
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
                 
-                <div class="w-full md:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shrink-0 shadow-lg">
+                <div id="sidebar-container" class="w-full md:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shrink-0 shadow-lg transition-all duration-300">
                     
                     <div class="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center select-none">
                         <button onclick="prevGroup()" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
@@ -242,12 +248,16 @@
                                     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll" id="ia-data-content">
                                         <!-- Inputs IA renderizados por JS -->
                                     </div>
-                                    <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0 pb-20">
+                                    <!-- NUEVO PANEL MODO COMPARADOR (Oculto por defecto) -->
+                                <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0 pb-20">
                                         <button onclick="confirmarDatosIA()" id="btn-confirmar-ia" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
                                             <span class="material-symbols-rounded">verified</span> Aprobar Datos
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
 
                             </div>
                         </div>
@@ -454,6 +464,86 @@
                 <button onclick="cerrarModalNotificar()" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                     Cerrar sin notificar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 NUEVO MODAL COMPARADOR DE DOCUMENTOS Y REVISIÓN IA -->
+    <div id="modal-comparador" class="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm hidden flex-col items-center justify-center p-2 md:p-6 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full h-full max-w-7xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[popIn_0.3s_ease-out]">
+            
+            <!-- Cabecera del Modal -->
+            <div class="flex justify-between items-center px-6 py-4 shrink-0 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <div class="flex items-center gap-4">
+                    <h3 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                        <span class="material-symbols-rounded text-indigo-500">splitscreen</span> Comparador IA
+                    </h3>
+                    <button onclick="compararConIA()" id="btn-comparar-ia-modal" class="ml-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-base">auto_awesome</span> Ejecutar Comparación con Gemini
+                    </button>
+                </div>
+                <button onclick="cerrarComparador()" class="text-slate-400 hover:text-red-500 transition-colors bg-white dark:bg-slate-700 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600 active:scale-95"><span class="material-symbols-rounded text-xl">close</span></button>
+            </div>
+
+            <!-- Cuerpo Dividido -->
+            <div class="flex-1 flex flex-col md:flex-row relative overflow-hidden bg-slate-200 dark:bg-black">
+                
+                <!-- DOC 1 (IZQUIERDA - SELECCIÓN MÚLTIPLE) -->
+                <div class="w-full md:w-1/2 h-full flex flex-col border-b md:border-b-0 md:border-r border-slate-300 dark:border-slate-700 relative">
+                    <div class="p-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md shrink-0 z-20 absolute top-0 w-full shadow-sm border-b border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                        <!-- INSTRUCCIÓN ANIMADA IZQUIERDA -->
+                        <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 animate-pulse">
+                            <span class="material-symbols-rounded text-lg">touch_app</span>
+                            <span class="text-[11px] font-black uppercase tracking-widest">1. Marca los Requisitos a revisar</span>
+                        </div>
+                        <div class="relative w-full">
+                            <button onclick="document.getElementById('comp-menu-1').classList.toggle('hidden')" class="w-full text-sm p-2.5 rounded-lg border-2 border-indigo-400 font-bold bg-slate-50 dark:bg-slate-900 dark:text-white outline-none cursor-pointer shadow-inner focus:border-indigo-600 transition-colors flex justify-between items-center">
+                                <span id="comp-btn-text-1">-- Elige Requisitos a Cruzar (0) --</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </button>
+                            <div id="comp-menu-1" class="hidden absolute top-full mt-1 left-0 w-full max-h-64 overflow-y-auto custom-scroll bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-lg z-50 p-2 flex flex-col gap-1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 relative pt-24 overflow-hidden bg-slate-300 dark:bg-slate-950" id="comp-view-1">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50">
+                            <span class="material-symbols-rounded text-6xl mb-2">checklist</span>
+                            <span class="text-xs font-bold uppercase tracking-widest">Requisitos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DOC 2 (DERECHA) -->
+                <div class="w-full md:w-1/2 h-full flex flex-col relative">
+                    <div class="p-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md shrink-0 z-10 absolute top-0 w-full shadow-sm border-b border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                        <!-- INSTRUCCIÓN ANIMADA DERECHA -->
+                        <div class="flex items-center gap-2 text-teal-600 dark:text-teal-400 animate-pulse">
+                            <span class="material-symbols-rounded text-lg">find_in_page</span>
+                            <span class="text-[11px] font-black uppercase tracking-widest">2. Elige el Formato Base (Solicitud)</span>
+                        </div>
+                        <select id="comp-sel-2" onchange="loadCompDoc(2)" class="w-full text-sm p-2.5 rounded-lg border-2 border-teal-400 font-bold bg-slate-50 dark:bg-slate-900 dark:text-white outline-none cursor-pointer shadow-inner focus:border-teal-600 transition-colors">
+                            <option value="">-- Selecciona el Documento B --</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 relative pt-24 overflow-hidden bg-slate-300 dark:bg-slate-950" id="comp-view-2">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50">
+                            <span class="material-symbols-rounded text-6xl mb-2">description</span>
+                            <span class="text-xs font-bold uppercase tracking-widest">Documento Base</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🧠 RESULTADO DE IA (CAJÓN DESLIZABLE DESDE ABAJO) -->
+                <div id="ia-comparacion-resultado" class="absolute bottom-0 w-full bg-white dark:bg-slate-800 border-t-4 border-indigo-500 shadow-[0_-15px_30px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-500 z-50 flex flex-col max-h-[50%] rounded-t-2xl">
+                    <div class="flex justify-between items-center px-6 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shrink-0 rounded-t-2xl">
+                        <h4 class="text-sm font-black text-indigo-700 dark:text-indigo-400 flex items-center gap-2"><span class="material-symbols-rounded text-lg">fact_check</span> Veredicto de Inteligencia Artificial</h4>
+                        <button onclick="document.getElementById('ia-comparacion-resultado').classList.add('translate-y-full')" class="text-slate-400 hover:text-red-500 bg-slate-200 dark:bg-slate-700 rounded-full p-1 transition-colors"><span class="material-symbols-rounded">expand_more</span></button>
+                    </div>
+                    <div class="p-6 overflow-y-auto custom-scroll text-sm text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-800 flex-1" id="ia-comparacion-texto">
+                        <!-- Aquí va la inyección de IA -->
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -694,7 +784,23 @@
                 if(item.estatus === 'revision' || item.estatus === 'en_revision') uiStatus = 'review';
 
                 let tipoArchivo = '---';
-                if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
+                let multiplesArchivos = []; 
+
+                // 1. Detección SUPER-ROBUSTA de múltiples archivos (Escrituras u otros)
+                // Checa si existe un array 'archivos' con al menos 1 elemento (incluso si es 1, si viene en array, lo tratamos como galería para evitar errores de renderizado)
+                if (item.archivos && Array.isArray(item.archivos) && item.archivos.length > 0) {
+                    tipoArchivo = 'GALERIA_DOCS'; 
+                    multiplesArchivos = item.archivos.map((a, i) => {
+                        const esPdf = (a.nombre || '').toLowerCase().endsWith('.pdf') || (a.mimeType && a.mimeType.includes('pdf')) || (a.url || '').toLowerCase().includes('.pdf');
+                        return {
+                            url: transformDriveUrl(a.url || a.archivoUrl),
+                            nombre: a.nombre || `Documento ${i+1}`,
+                            esPdf: esPdf
+                        };
+                    });
+                } 
+                // 2. Detección normal
+                else if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
                 else if(key === 'FOTOS_INTERIORES_GENERAL') tipoArchivo = 'GALERIA';
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (urlReal) {
@@ -713,7 +819,8 @@
                         coordenadas: item.coordenadas,
                         direccion: item.direccion,
                         textoPreview: item.textoPreview,
-                        fotos: key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null,
+                        // Si es GALERIA normal usa fotosGaleria, si es GALERIA_DOCS usa multiplesArchivos
+                        fotos: tipoArchivo === 'GALERIA_DOCS' ? multiplesArchivos : (key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null),
                         obligatorio: item.obligatorio !== false
                     });
                 }
@@ -952,6 +1059,40 @@
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
             }
+            // 👇 AQUI EMPIEZA LO NUEVO PARA ESCRITURAS MÚLTIPLES (GALERIA_DOCS) 👇
+            else if (req.tipo === 'GALERIA_DOCS') {
+                if (req.fotos && req.fotos.length > 0) {
+                    const grid = document.getElementById('gallery-grid');
+                    document.getElementById('gallery-count').innerText = `${req.fotos.length} documentos`;
+                    grid.innerHTML = '';
+                    
+                    req.fotos.forEach((doc, index) => {
+                        const icon = doc.esPdf ? 'picture_as_pdf' : 'image';
+                        const iconColor = doc.esPdf ? 'text-red-500' : 'text-blue-500';
+                        const bgColor = doc.esPdf ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20';
+                        
+                        let fileUrl = doc.url;
+                        if (doc.esPdf && fileUrl.includes('drive.google.com') && fileUrl.includes('/view')) {
+                            fileUrl = fileUrl.replace('/view', '/preview');
+                        }
+
+                        grid.innerHTML += `
+                            <a href="${fileUrl}" target="_blank" class="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-all gap-3 text-center group shadow-sm">
+                                <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center ${iconColor} group-hover:scale-110 transition-transform shadow-inner">
+                                    <span class="material-symbols-rounded text-2xl">${icon}</span>
+                                </div>
+                                <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${doc.nombre}">${doc.nombre}</p>
+                                <span class="text-[9px] text-slate-400 uppercase font-black bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 flex items-center gap-1 group-hover:text-indigo-500 group-hover:border-indigo-200 transition-colors shadow-sm">
+                                    <span class="material-symbols-rounded text-[10px]">open_in_new</span> Abrir Doc
+                                </span>
+                            </a>`;
+                    });
+                    document.getElementById('gallery-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('preview-placeholder').classList.remove('hidden');
+                }
+            }
+            // 👆 AQUI TERMINA LO NUEVO 👆
             else if (req.url) {
                 const img = document.getElementById('real-image');
                 const urlTransformada = transformDriveUrl(req.url);
@@ -2028,6 +2169,278 @@
                 btn.disabled = false;
             }, 500);
         };
+
+        // ==========================================
+        // 🖥️ MODO COMPARADOR Y PANTALLA COMPLETA
+        // ==========================================
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error intentando entrar a pantalla completa: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function toggleComparador() {
+            const modalComp = document.getElementById('modal-comparador');
+            modalComp.classList.remove('hidden');
+            modalComp.classList.add('flex');
+            llenarSelectoresComparador();
+        }
+
+        function cerrarComparador() {
+            const modalComp = document.getElementById('modal-comparador');
+            modalComp.classList.add('hidden');
+            modalComp.classList.remove('flex');
+            document.getElementById('ia-comparacion-resultado').classList.add('translate-y-full');
+            document.getElementById('comp-menu-1').classList.add('hidden'); // Ocultar menú si quedó abierto
+            
+            document.getElementById('comp-view-1').innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50"><span class="material-symbols-rounded text-6xl mb-2">plagiarism</span><span class="text-xs font-bold uppercase tracking-widest">Panel Izquierdo</span></div>';
+            document.getElementById('comp-view-2').innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50"><span class="material-symbols-rounded text-6xl mb-2">plagiarism</span><span class="text-xs font-bold uppercase tracking-widest">Panel Derecho</span></div>';
+        }
+
+        function renderizarVista(paneNum, url, tipo) {
+            const view = document.getElementById(`comp-view-${paneNum}`);
+            view.innerHTML = '<div class="flex items-center justify-center h-full"><span class="material-symbols-rounded animate-spin text-indigo-500 text-5xl">sync</span></div>'; 
+            
+            if (!url) {
+                view.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50"><span class="material-symbols-rounded text-6xl mb-2">${paneNum === 1 ? 'checklist' : 'description'}</span><span class="text-xs font-bold uppercase tracking-widest">${paneNum === 1 ? 'Panel Izquierdo' : 'Documento Base'}</span></div>`;
+                return;
+            }
+
+            if (tipo === 'PDF' || url.toLowerCase().includes('.pdf')) {
+                let pdfUrl = url;
+                if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/view')) pdfUrl = pdfUrl.replace('/view', '/preview');
+                view.innerHTML = `<iframe src="${pdfUrl}#view=FitH" class="w-full h-full border-0 bg-white shadow-inner"></iframe>`;
+            } else {
+                const urlTrans = transformDriveUrl(url);
+                view.innerHTML = `<div class="w-full h-full p-4 overflow-auto custom-scroll flex items-center justify-center"><img src="${urlTrans}" class="max-w-full max-h-full object-contain shadow-md rounded border border-slate-300 dark:border-slate-700"></div>`;
+            }
+        }
+
+        function loadCompDoc(paneNum) {
+            const sel = document.getElementById(`comp-sel-${paneNum}`);
+            if(sel.selectedIndex <= 0) {
+                 renderizarVista(paneNum, null, null);
+                 return;
+            }
+            const option = sel.options[sel.selectedIndex];
+            renderizarVista(paneNum, sel.value, option.getAttribute('data-tipo'));
+
+            // 🚀 BLOQUEO ANTI-DUPLICADOS (Si eligen documento derecho, se bloquea en el izquierdo)
+            if (paneNum === 2) {
+                const selectedKey = option.getAttribute('data-key');
+                const checkboxes = document.querySelectorAll('.chk-multi-izq');
+                
+                checkboxes.forEach(chk => {
+                    const wrapper = chk.closest('.chk-wrapper');
+                    if (chk.getAttribute('data-key') === selectedKey) {
+                        chk.checked = false; // Desmarcar
+                        chk.disabled = true; // Bloquear
+                        wrapper.classList.add('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+                        wrapper.classList.remove('hover:bg-indigo-50', 'cursor-pointer');
+                    } else {
+                        chk.disabled = false; // Liberar
+                        wrapper.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+                        wrapper.classList.add('hover:bg-indigo-50', 'cursor-pointer');
+                    }
+                });
+                manejarSeleccionMultiple(); // Actualizar contador
+            }
+        }
+
+        function llenarSelectoresComparador() {
+            const menu1 = document.getElementById('comp-menu-1');
+            const sel2 = document.getElementById('comp-sel-2');
+            
+            let htmlCheckboxes = '';
+            let optionsSelect = '<option value="">-- Elige un Documento Base --</option>';
+            
+            const docsDisponibles = [];
+            groupKeys.forEach(k => {
+                if(expediente.grupos[k]) {
+                    expediente.grupos[k].forEach(req => {
+                        // 🚀 FILTRO INTELIGENTE: Ignoramos fotos, mapas y galerías visuales
+                        const esVisual = req.tipo === 'IMG' || req.tipo === 'GALERIA' || req.tipo === 'MAPA' || req.key.toUpperCase().includes('FOTO');
+                        
+                        if ((req.url || (req.fotos && req.fotos.length > 0)) && !esVisual) { 
+                            docsDisponibles.push(req);
+                        }
+                    });
+                }
+            });
+
+            docsDisponibles.forEach(d => {
+                const valUrl = d.url ? d.url : (d.fotos && d.fotos[0] ? d.fotos[0].url : '');
+                
+                // NOTA: Agregamos la clase 'chk-wrapper' para poder bloquearlo visualmente
+                htmlCheckboxes += `
+                    <label class="flex items-center gap-3 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-700 chk-wrapper">
+                        <input type="checkbox" class="chk-multi-izq w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" value="${valUrl}" data-tipo="${d.tipo}" data-key="${d.key}" onchange="manejarSeleccionMultiple(this)">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${d.nombre}</span>
+                    </label>
+                `;
+                
+                optionsSelect += `<option value="${valUrl}" data-tipo="${d.tipo}" data-key="${d.key}">${d.nombre}</option>`;
+            });
+
+            menu1.innerHTML = htmlCheckboxes;
+            sel2.innerHTML = optionsSelect;
+            document.getElementById('comp-btn-text-1').innerText = '-- Elige Requisitos a Cruzar (0) --';
+        }
+
+        function manejarSeleccionMultiple(checkbox = null) {
+            const seleccionados = document.querySelectorAll('.chk-multi-izq:checked');
+            const btnText = document.getElementById('comp-btn-text-1');
+
+            if (seleccionados.length === 0) {
+                btnText.innerText = '-- Elige Requisitos a Cruzar (0) --';
+                renderizarVista(1, null, null);
+            } else {
+                btnText.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400">✔️ ${seleccionados.length} Seleccionado(s)</span>`;
+                if (checkbox && checkbox.checked) {
+                    renderizarVista(1, checkbox.value, checkbox.getAttribute('data-tipo'));
+                }
+            }
+        }
+
+        // 🚀 NUEVA FUNCIÓN AÑADIDA: Para manejar el bloqueo anti-duplicados cuando eligen la base
+        function loadCompDoc(paneNum) {
+            const sel = document.getElementById(`comp-sel-${paneNum}`);
+            if(sel.selectedIndex <= 0) {
+                 document.getElementById(`comp-view-${paneNum}`).innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50"><span class="material-symbols-rounded text-6xl mb-2">description</span><span class="text-xs font-bold uppercase tracking-widest">Documento Base</span></div>`;
+                 return;
+            }
+            const option = sel.options[sel.selectedIndex];
+            
+            // Llamamos a renderizarVista que ya existe más abajo en tu código
+            if (typeof renderizarVista === 'function') {
+                renderizarVista(paneNum, sel.value, option.getAttribute('data-tipo'));
+            }
+
+            // 🚀 BLOQUEO ANTI-DUPLICADOS
+            if (paneNum === 2) {
+                const selectedKey = option.getAttribute('data-key');
+                const checkboxes = document.querySelectorAll('.chk-multi-izq');
+                
+                checkboxes.forEach(chk => {
+                    const wrapper = chk.closest('.chk-wrapper');
+                    if (chk.getAttribute('data-key') === selectedKey) {
+                        chk.checked = false; // Desmarcar si estaba marcado
+                        chk.disabled = true; // Bloquear casilla
+                        wrapper.classList.add('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+                        wrapper.classList.remove('hover:bg-indigo-50', 'cursor-pointer');
+                    } else {
+                        chk.disabled = false; // Liberar los demás
+                        wrapper.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+                        wrapper.classList.add('hover:bg-indigo-50', 'cursor-pointer');
+                    }
+                });
+                manejarSeleccionMultiple(); // Actualizar el contador de marcados
+            }
+        }
+
+        // 🤖 LA MAGIA: COMPARACIÓN MATRICIAL 1 a 1 EN BUCLE (LOOP)
+        async function compararConIA() {
+            document.getElementById('comp-menu-1').classList.add('hidden'); // Ocultar el menú
+
+            const checkboxes = document.querySelectorAll('.chk-multi-izq:checked');
+            
+            const sel2 = document.getElementById('comp-sel-2');
+            const reqKeyRight = sel2.options[sel2.selectedIndex]?.getAttribute('data-key');
+            const nombreDerecho = sel2.options[sel2.selectedIndex]?.text;
+            
+            if (checkboxes.length === 0 || !reqKeyRight) {
+                alert("Debes marcar al menos un requisito en la izquierda y elegir un documento base a la derecha.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-comparar-ia-modal');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+
+            const resDiv = document.getElementById('ia-comparacion-resultado');
+            const resText = document.getElementById('ia-comparacion-texto');
+            
+            resDiv.classList.remove('translate-y-full');
+            
+            // Cabecera del reporte
+            let htmlAcumulado = `<h3 class="text-lg font-black text-indigo-800 dark:text-indigo-300 mb-4 border-b-2 border-indigo-200 dark:border-indigo-800 pb-2">Reporte de Auditoría Múltiple vs ${nombreDerecho}</h3>`;
+            
+            // Pantalla de carga inicial
+            resText.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-8">
+                    <span class="material-symbols-rounded animate-spin text-indigo-500 text-5xl mb-4">sync</span>
+                    <span class="font-black text-indigo-800 dark:text-indigo-400 text-lg uppercase tracking-widest" id="ia-progress-text">Iniciando auditoría...</span>
+                    <span class="text-xs text-slate-500 font-medium mt-1">Analizando uno por uno para garantizar máxima precisión sin saturar la red.</span>
+                </div>`;
+
+            try {
+                // EL BUCLE: Procesando documento por documento
+                for (let i = 0; i < checkboxes.length; i++) {
+                    const chk = checkboxes[i];
+                    const reqLeft = chk.getAttribute('data-key');
+                    const nombreIzquierdo = chk.nextElementSibling.innerText;
+                    
+                    if (reqLeft === reqKeyRight) continue; // Evitar que se compare consigo mismo
+                    
+                    // Actualizar el texto de carga en vivo
+                    const progressText = document.getElementById('ia-progress-text');
+                    if(progressText) progressText.innerText = `Analizando ${i + 1} de ${checkboxes.length}: ${nombreIzquierdo}...`;
+                    btn.innerHTML = `<span class="material-symbols-rounded animate-spin text-base">sync</span> Procesando ${i + 1}/${checkboxes.length}...`;
+
+                    // Petición de 1 vs 1 al backend
+                    const res = await fetch('/.netlify/functions/comparar-ia', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            expId: expedienteId,
+                            reqKeyLeft: reqLeft, 
+                            reqKeyRight: reqKeyRight,
+                            nombreIzquierdo: nombreIzquierdo,
+                            nombreDerecho: nombreDerecho
+                        })
+                    });
+
+                    if (!res.ok) {
+                        htmlAcumulado += `<div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800 mb-4"><p class="font-bold text-red-600 dark:text-red-400 flex items-center gap-1"><span class="material-symbols-rounded text-sm">error</span> Error al analizar: ${nombreIzquierdo}</p></div>`;
+                        continue;
+                    }
+
+                    const data = await res.json();
+                    
+                    // Agregar el resultado de esta comparación al historial
+                    if(data.resultado) {
+                        htmlAcumulado += `
+                        <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-xl border border-indigo-200 dark:border-indigo-800/50 mb-4 shadow-sm fade-in">
+                            <h4 class="font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-widest mb-3 text-[11px] flex items-center gap-1 bg-white dark:bg-slate-800 p-2 rounded shadow-sm border border-slate-100 dark:border-slate-700 inline-flex"><span class="material-symbols-rounded text-sm">plagiarism</span> REQUISITO: ${nombreIzquierdo}</h4>
+                            <div class="whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-300 pl-2 border-l-2 border-indigo-300 dark:border-indigo-600">${data.resultado}</div>
+                        </div>`;
+                    } else {
+                        htmlAcumulado += `<div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800 mb-4"><p class="font-bold text-red-600 dark:text-red-400">⚠️ IA falló al analizar: ${nombreIzquierdo}</p></div>`;
+                    }
+                    
+                    // Mostramos lo que va procesando en vivo
+                    resText.innerHTML = htmlAcumulado + `
+                    <div class="flex items-center justify-center p-4">
+                        <span class="material-symbols-rounded animate-spin text-indigo-400 text-3xl">sync</span>
+                    </div>`;
+                }
+
+                // Cuando termina el bucle, renderizamos el resultado final limpio
+                resText.innerHTML = htmlAcumulado + `<div class="text-center mt-6 mb-2"><span class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-black text-xs border border-emerald-200">✅ AUDITORÍA COMPLETADA</span></div>`;
+
+            } catch (e) {
+                resText.innerHTML = `<div class="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-200 dark:border-red-800"><p class="text-red-600 dark:text-red-400 font-bold mb-2">Conexión Fallida</p><p class="text-xs text-slate-600 dark:text-slate-300 font-mono">${e.message}</p></div>`;
+            } finally {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                document.getElementById('comp-btn-text-1').innerText = '-- Elige Requisitos a Cruzar (0) --';
+                checkboxes.forEach(c => c.checked = false); // Limpiamos la selección
+            }
+        }
     </script>
 
     <div id="modal-asignar" class="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
