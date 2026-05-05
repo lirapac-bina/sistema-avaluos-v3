@@ -136,6 +136,7 @@
                 <button onclick="switchTab('notas')" id="btn-notas" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">edit_note</span> 2. Generador de Notas</button>
                 <button onclick="switchTab('mercado')" id="btn-mercado" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">real_estate_agent</span> 3. Estudio Mercado</button>
                 <button onclick="switchTab('docjust')" id="btn-docjust" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">checklist</span> 4. Checklist Doc</button>
+                <button onclick="switchTab('extraccion')" id="btn-extraccion" class="tab-btn whitespace-nowrap"><span class="material-symbols-rounded text-sm align-middle mr-1">document_scanner</span> 5. Extracción NH</button>
             </div>
 
             <div class="p-6">
@@ -529,6 +530,29 @@
                     </div>
                     <div id="contenedor-excel-docs" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                 </div>
+
+                <!-- NUEVA PESTAÑA: EXTRACCIÓN NH (Drawer) -->
+                <div id="tab-extraccion" class="hidden fade-in no-print">
+                    <div class="border border-slate-700 rounded-xl bg-[#131314] shadow-2xl flex flex-col h-[600px] overflow-hidden">
+                        <div class="flex items-center justify-between p-5 border-b border-slate-700/50 shrink-0">
+                            <div class="flex items-center gap-2 text-white">
+                                <span class="material-symbols-rounded text-indigo-400">format_list_bulleted</span>
+                                <h2 class="font-bold text-sm tracking-wide">Resumen NH Inteligente</h2>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto p-5 thin-scroll flex flex-col gap-4">
+                            <div class="flex justify-between items-center mb-2 shrink-0">
+                                <span class="text-xs font-bold text-indigo-400 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">auto_awesome</span> Texto Extraído</span>
+                                <button onclick="copiarExtraccionNH()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[10px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                                    <span class="material-symbols-rounded text-[14px]">content_copy</span> COPIAR MAYÚSCULAS
+                                </button>
+                            </div>
+                            <textarea id="nh-extraccion-output" class="w-full flex-1 bg-transparent text-slate-200 font-mono text-xs leading-relaxed resize-none focus:outline-none placeholder-slate-600" placeholder="Esperando datos del expediente..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1006,13 +1030,92 @@
         });
 
         function switchTab(tabId) {
-            ['datos', 'notas', 'mercado', 'docjust'].forEach(id => {
-                document.getElementById('tab-' + id).classList.add('hidden');
-                document.getElementById('btn-' + id).classList.remove('active');
+            ['datos', 'notas', 'mercado', 'docjust', 'extraccion'].forEach(id => {
+                const tabEl = document.getElementById('tab-' + id);
+                const btnEl = document.getElementById('btn-' + id);
+                if (tabEl) tabEl.classList.add('hidden');
+                if (btnEl) btnEl.classList.remove('active');
             });
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            document.getElementById('btn-' + tabId).classList.add('active');
+            
+            const selectedTab = document.getElementById('tab-' + tabId);
+            const selectedBtn = document.getElementById('btn-' + tabId);
+            if (selectedTab) selectedTab.classList.remove('hidden');
+            if (selectedBtn) selectedBtn.classList.add('active');
+
+            if (tabId === 'extraccion') {
+                const txtArea = document.getElementById('nh-extraccion-output');
+                if (!txtArea) return;
+
+                if (!currentFolioId || !misExpedientes[currentFolioId]) {
+                    txtArea.value = "Por favor selecciona un expediente primero.";
+                    return;
+                }
+
+                const d = misExpedientes[currentFolioId];
+                let datosIA = null;
+
+                if (d.datos_extraidos) {
+                    const llaveReq = Object.keys(d.datos_extraidos).find(k => 
+                        k.toUpperCase().includes('AVALUO') || 
+                        k.toUpperCase().includes('ANTECEDENTE') || 
+                        k.toUpperCase().includes('TICKET')
+                    );
+                    if (llaveReq) datosIA = d.datos_extraidos[llaveReq];
+                }
+
+                if (!datosIA) {
+                    txtArea.value = "⚠️ Gemini aún no ha extraído los datos para este expediente.\n\nRegresa a la Mesa de Control (Revisión) y asegúrate de que el documento haya sido procesado por la IA.";
+                    return;
+                }
+
+                let objParseado = datosIA;
+                if (typeof datosIA === 'string') {
+                    try {
+                        let cleanStr = datosIA;
+                        const tick = String.fromCharCode(96);
+                        const blockStart = tick + tick + tick + "json";
+                        const blockEnd = tick + tick + tick;
+                        
+                        if (cleanStr.indexOf(blockStart) !== -1) {
+                            cleanStr = cleanStr.split(blockStart)[1];
+                        }
+                        if (cleanStr.indexOf(blockEnd) !== -1) {
+                            cleanStr = cleanStr.split(blockEnd)[0];
+                        }
+                        objParseado = JSON.parse(cleanStr.trim());
+                    } catch (e) {
+                        console.error("Error de parseo JSON:", e);
+                    }
+                }
+
+                if (typeof objParseado === 'object' && objParseado !== null) {
+                    let textoPlano = "";
+                    const recorrerObjeto = (obj, prefijo = '') => {
+                        for (const [clave, valor] of Object.entries(obj)) {
+                            const claveLimpia = clave.replace(/_/g, ' ').toUpperCase();
+                            if (typeof valor === 'object' && valor !== null) {
+                                textoPlano += `\n--- ${claveLimpia} ---\n`;
+                                recorrerObjeto(valor, prefijo + '  ');
+                            } else {
+                                // Mostramos todo, incluso si viene vacío desde Gemini
+                                const valStr = (valor === null || valor === undefined) ? "" : String(valor).toUpperCase();
+                                textoPlano += `${prefijo}${claveLimpia}:\n${valStr}\n\n`;
+                            }
+                        }
+                    };
+                    recorrerObjeto(objParseado);
+                    txtArea.value = textoPlano.trim();
+                } else {
+                    txtArea.value = "Datos extraídos:\n\n" + datosIA;
+                }
+            }
         }
+
+        window.copiarExtraccionNH = function() {
+            const txtArea = document.getElementById('nh-extraccion-output');
+            if (!txtArea || !txtArea.value.trim() || txtArea.value.includes("⚠️")) return showToast("No hay datos válidos para copiar", "error");
+            navigator.clipboard.writeText(txtArea.value.toUpperCase()).then(() => showToast("¡Copiado en MAYÚSCULAS! 🔠", "success"));
+        };
 
         function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':'bg-emerald-600'}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
 
