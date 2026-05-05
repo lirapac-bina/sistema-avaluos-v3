@@ -97,8 +97,8 @@
 </head>
 <body class="transition-colors duration-300 min-h-screen">
     
-    <main class="p-6 max-w-7xl mx-auto relative">
-        <header class="bg-white border-b border-gray-200 py-4 flex items-center justify-between px-8 shadow-sm rounded-t-xl mb-6 dark:bg-[#1e293b] dark:border-slate-700 no-print">
+    <main class="p-6 max-w-7xl mx-auto relative pb-24">
+        <header class="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-700 py-4 flex items-center justify-between px-6 shadow-sm rounded-2xl mb-6 no-print">
             <div>
                 <h1 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
                     <span class="material-symbols-rounded text-leezar-500">assignment</span> Hoja de Trabajo (Captura)
@@ -125,9 +125,6 @@
             <div class="flex items-center gap-3">
                 <button onclick="abrirModalExpedientes()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 text-xs px-4 py-2 rounded-md font-bold flex items-center gap-2 transition border border-slate-200 dark:border-slate-600">
                     <span class="material-symbols-rounded text-sm">swap_horiz</span> Cambiar Expediente
-                </button>
-                <button onclick="guardarProgreso()" class="bg-leezar-600 hover:bg-leezar-500 text-white text-xs px-4 py-2 rounded-md font-bold flex items-center gap-2 shadow-md transition">
-                    <span class="material-symbols-rounded text-sm">cloud_upload</span> Guardar Avance
                 </button>
             </div>
         </header>
@@ -366,91 +363,160 @@
                     </div>
 
                     <div id="pdf-content" class="bg-white dark:bg-slate-900 p-2 md:p-6 rounded-xl border border-gray-200 dark:border-slate-700">
-                        <section id="section-terreno" class="mb-10">
-                            <h2 class="section-header">⛰️ HOMOLOGACIÓN TERRENO</h2>
-                            <div class="sujeto-box">
-                                <div><label class="leezar-label">Sup. Sujeto (m²)</label><input type="text" id="terreno-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('terreno')" onblur="this.value = formatInput(this.value, false)"></div>
-                                <div class="sujeto-rango"><span class="leezar-label !mb-0 text-blue-800 dark:text-blue-300">Rango (±30%):</span><span id="terreno-sujeto-rango" class="font-bold text-lg">N/A</span></div>
+                        <!-- SECCIÓN TERRENO -->
+                        <section id="section-terreno" class="mb-10 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-sm">
+                            <div class="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-rounded text-leezar-500">landscape</span>
+                                    <h2 class="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mr-2">Homologación Terreno</h2>
+                                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                        <button onclick="ajustarFilas('terreno', '-')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Quitar Fila"><span class="material-symbols-rounded text-[16px]">remove</span></button>
+                                        <span class="text-[9px] font-black text-slate-400 px-2 uppercase tracking-widest">Filas</span>
+                                        <button onclick="ajustarFilas('terreno', '+')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-leezar-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Agregar Fila"><span class="material-symbols-rounded text-[16px]">add</span></button>
+                                    </div>
+                                </div>
+                                <div class="bg-leezar-500/10 dark:bg-leezar-500/20 border border-leezar-500/30 px-5 py-2 rounded-2xl flex items-center gap-4 shadow-inner">
+                                    <span class="text-[10px] font-black text-leezar-600 dark:text-leezar-400 uppercase tracking-widest">Promedio Mercado:</span>
+                                    <span id="terreno-promedio-unitario" class="font-black text-lg text-leezar-600 dark:text-leezar-400">$ 0.00</span>
+                                </div>
                             </div>
-                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
-                                <table class="w-full text-xs">
-                                    <thead><tr>
-                                        <th class="w-8">#</th><th class="w-24">Precio ($)</th><th class="w-20">Sup (m²)</th><th class="w-16">Rango</th>
-                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('terreno', 4)">$/m² Orig.</th>
-                                        <th>URL</th><th>Acortada</th>
-                                    </tr></thead>
-                                    <tbody id="terreno-rows"></tbody>
-                                    <tfoot><tr>
-                                        <td colspan="4" class="text-right font-bold py-2">Promedio:</td>
-                                        <td id="terreno-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
-                                        <td colspan="2"></td>
-                                    </tr></tfoot>
-                                </table>
-                            </div>
-                            <div class="dispersion-box text-xs">
-                                <div><span class="leezar-label">Disp. Permitida</span><span id="terreno-dispersion-permitida" class="font-black text-base">1.30</span></div>
-                                <div><span class="leezar-label">Disp. Calculada</span><span id="terreno-dispersion-value" class="font-black text-base">N/A</span></div>
-                                <div><span class="leezar-label">Estado</span><span id="terreno-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
-                            </div>
-                        </section>
-
-                        <section id="section-mercado" class="mb-10">
-                            <h2 class="section-header">🏠 COMPARABLES MERCADO</h2>
-                            <div class="sujeto-box">
-                                <div><label class="leezar-label">Sup. Const Sujeto</label><input type="text" id="mercado-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, false)"></div>
-                                <div><label class="leezar-label">Edad Sujeto</label><input type="text" id="mercado-sujeto-edad" class="leezar-input" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, true)"></div>
-                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Sup:</span><span id="mercado-sujeto-rango-sup" class="font-bold">N/A</span></div>
-                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Edad:</span><span id="mercado-sujeto-rango-edad" class="font-bold">N/A</span></div>
-                            </div>
-                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
-                                <table class="w-full text-xs">
-                                    <thead><tr>
-                                        <th class="w-8">#</th><th class="w-24">Precio ($)</th><th class="w-16">Terr.</th><th class="w-16">Const.</th><th class="w-12">Edad</th><th class="w-16">Rango</th>
-                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('mercado', 6)">$/m²C</th>
-                                        <th>URL</th><th>Acortada</th>
-                                    </tr></thead>
-                                    <tbody id="mercado-rows"></tbody>
-                                    <tfoot><tr>
-                                        <td colspan="6" class="text-right font-bold py-2">Promedio:</td>
-                                        <td id="mercado-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
-                                        <td colspan="2"></td>
-                                    </tr></tfoot>
-                                </table>
-                            </div>
-                            <div class="dispersion-box text-xs">
-                                <div><span class="leezar-label">Disp. Permitida</span><span id="mercado-dispersion-permitida" class="font-black text-base">1.30</span></div>
-                                <div><span class="leezar-label">Disp. Calculada</span><span id="mercado-dispersion-value" class="font-black text-base">N/A</span></div>
-                                <div><span class="leezar-label">Estado</span><span id="mercado-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
+                            <div class="p-6">
+                                <div class="flex flex-wrap gap-4 items-end mb-6 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <div class="flex-1 min-w-[150px]"><label class="leezar-label !text-leezar-600 dark:!text-leezar-400">Sup. Sujeto (m²)</label><input type="text" id="terreno-sujeto-sup" class="leezar-input border-slate-300 dark:border-slate-600 shadow-inner" oninput="handleSujetoChange('terreno')" onblur="this.value = formatInput(this.value, false)"></div>
+                                    <div class="flex-1 min-w-[150px]">
+                                        <label class="leezar-label text-leezar-600 dark:text-leezar-400">Raíz F. Sup</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="terreno-sujeto-param-fsup" class="leezar-input !text-center font-black text-leezar-700 dark:text-leezar-300 bg-leezar-50 dark:bg-leezar-900/30 border-leezar-200 dark:border-leezar-800 w-20 shadow-inner" value="6" oninput="handleSujetoChange('terreno')" onblur="this.value = formatInput(this.value, true)" title="Raíz para la fórmula">
+                                            <button onclick="document.getElementById('terreno-sujeto-param-fsup').value='6'; handleSujetoChange('terreno'); guardarProgreso();" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm active:scale-95 text-xs font-bold" title="Restablecer valor por defecto"><span class="material-symbols-rounded text-[14px]">restart_alt</span></button>
+                                        </div>
+                                    </div>
+                                    <div class="ml-auto bg-leezar-50 dark:bg-leezar-900/40 border border-leezar-200 dark:border-leezar-800 p-3 rounded-lg flex flex-col items-center justify-center min-w-[160px]">
+                                        <span class="text-[9px] font-bold text-leezar-600 dark:text-leezar-400 uppercase tracking-widest mb-0.5">Rango (±30%)</span>
+                                        <span id="terreno-sujeto-rango" class="font-black text-sm text-leezar-800 dark:text-leezar-300">N/A</span>
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg thin-scroll">
+                                    <table class="w-full text-xs min-w-[1000px]">
+                                        <thead><tr class="bg-slate-100 dark:bg-slate-800">
+                                            <th class="w-8 !text-slate-600 dark:!text-slate-300 border-r border-slate-200 dark:border-slate-700">#</th><th class="w-32 !text-slate-600 dark:!text-slate-300">Precio ($)</th><th class="w-20 !text-slate-600 dark:!text-slate-300">Sup (m²)</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Rango</th>
+                                            <th class="w-16 !text-leezar-600 dark:!text-leezar-400 bg-leezar-50/50 dark:bg-leezar-900/10 border-r border-slate-200 dark:border-slate-700">F. Sup</th>
+                                            <th class="w-24 sortable-header !text-leezar-700 dark:!text-leezar-300 font-black border-r border-slate-200 dark:border-slate-700" onclick="sortTable('terreno', 5)">$/m² Hom.</th>
+                                            <th class="!text-slate-600 dark:!text-slate-300">URL / Acortada</th>
+                                        </tr></thead>
+                                        <tbody id="terreno-rows"></tbody>
+                                    </table>
+                                </div>
+                                <div class="grid grid-cols-3 gap-3 mt-4">
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Permitida</span><span id="terreno-dispersion-permitida" class="font-black text-sm text-slate-700 dark:text-slate-300">1.30</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Calculada</span><span id="terreno-dispersion-value" class="font-black text-sm text-slate-700 dark:text-slate-300">N/A</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Estado</span><span id="terreno-dispersion-status" class="font-black text-sm text-gray-500">N/A</span></div>
+                                </div>
                             </div>
                         </section>
 
-                        <section id="section-rentas">
-                            <h2 class="section-header">💰 COMPARABLES RENTAS</h2>
-                            <div class="sujeto-box">
-                                <div><label class="leezar-label">Sup. Const Sujeto</label><input type="text" id="rentas-sujeto-sup" class="leezar-input" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, false)"></div>
-                                <div><label class="leezar-label">Edad Sujeto</label><input type="text" id="rentas-sujeto-edad" class="leezar-input" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, true)"></div>
-                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Sup:</span><span id="rentas-sujeto-rango-sup" class="font-bold">N/A</span></div>
-                                <div class="sujeto-rango"><span class="leezar-label !mb-0">Rango Edad:</span><span id="rentas-sujeto-rango-edad" class="font-bold">N/A</span></div>
+                        <!-- SECCIÓN MERCADO -->
+                        <section id="section-mercado" class="mb-10 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-sm">
+                            <div class="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-rounded text-indigo-500">home</span>
+                                    <h2 class="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mr-2">Comparables Mercado</h2>
+                                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                        <button onclick="ajustarFilas('mercado', '-')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Quitar Fila"><span class="material-symbols-rounded text-[16px]">remove</span></button>
+                                        <span class="text-[9px] font-black text-slate-400 px-2 uppercase tracking-widest">Filas</span>
+                                        <button onclick="ajustarFilas('mercado', '+')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Agregar Fila"><span class="material-symbols-rounded text-[16px]">add</span></button>
+                                    </div>
+                                </div>
+                                <div class="bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 px-5 py-2 rounded-2xl flex items-center gap-4 shadow-inner">
+                                    <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Promedio Mercado:</span>
+                                    <span id="mercado-promedio-unitario" class="font-black text-lg text-indigo-600 dark:text-indigo-400">$ 0.00</span>
+                                </div>
                             </div>
-                            <div class="overflow-x-auto shadow-sm rounded-t-lg border border-gray-200 dark:border-slate-700">
-                                <table class="w-full text-xs">
-                                    <thead><tr>
-                                        <th class="w-8">#</th><th class="w-24">Renta ($)</th><th class="w-16">Terr.</th><th class="w-16">Const.</th><th class="w-12">Edad</th><th class="w-16">Rango</th>
-                                        <th class="w-24 sortable-header text-indigo-600 dark:text-indigo-400" onclick="sortTable('rentas', 6)">$/m²C/Mes</th>
-                                        <th>URL</th><th>Acortada</th>
-                                    </tr></thead>
-                                    <tbody id="rentas-rows"></tbody>
-                                    <tfoot><tr>
-                                        <td colspan="6" class="text-right font-bold py-2">Promedio:</td>
-                                        <td id="rentas-promedio-unitario" class="text-right font-black text-leezar-600 dark:text-leezar-400 text-sm">0.00</td>
-                                        <td colspan="2"></td>
-                                    </tr></tfoot>
-                                </table>
+                            <div class="p-6">
+                                <div class="flex flex-wrap gap-4 items-end mb-6 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <div class="flex-1 min-w-[120px]"><label class="leezar-label !text-indigo-600 dark:!text-indigo-400">Sup. Const Suj</label><input type="text" id="mercado-sujeto-sup" class="leezar-input border-slate-300 dark:border-slate-600 shadow-inner" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, false)"></div>
+                                    <div class="flex-1 min-w-[120px]"><label class="leezar-label !text-indigo-600 dark:!text-indigo-400">Edad Sujeto</label><input type="text" id="mercado-sujeto-edad" class="leezar-input border-slate-300 dark:border-slate-600 shadow-inner" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, true)"></div>
+                                    
+                                    <div class="flex-1 min-w-[120px]">
+                                        <label class="leezar-label !text-indigo-600 dark:!text-indigo-400">F. Edad (%)</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="mercado-sujeto-param-fedad" class="leezar-input !text-center font-black text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 w-20 shadow-inner" value="0.50" oninput="handleSujetoChange('mercado')" onblur="this.value = formatInput(this.value, false)" title="Porcentaje de depreciación por año">
+                                            <button onclick="document.getElementById('mercado-sujeto-param-fedad').value='0.50'; handleSujetoChange('mercado'); guardarProgreso();" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg transition-colors flex items-center shadow-sm active:scale-95 text-xs font-bold" title="Restablecer a 0.50%"><span class="material-symbols-rounded text-[14px]">restart_alt</span></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-auto flex gap-2">
+                                        <div class="bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 p-2.5 rounded-lg flex flex-col items-center justify-center min-w-[100px]"><span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-0.5">Rango Sup</span><span id="mercado-sujeto-rango-sup" class="font-black text-sm text-indigo-800 dark:text-indigo-300">N/A</span></div>
+                                        <div class="bg-purple-50 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-800 p-2.5 rounded-lg flex flex-col items-center justify-center min-w-[100px]"><span class="text-[9px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-0.5">Rango Edad</span><span id="mercado-sujeto-rango-edad" class="font-black text-sm text-purple-800 dark:text-purple-300">N/A</span></div>
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg thin-scroll">
+                                    <table class="w-full text-xs min-w-[1100px]">
+                                        <thead><tr class="bg-slate-100 dark:bg-slate-800">
+                                            <th class="w-8 !text-slate-600 dark:!text-slate-300 border-r border-slate-200 dark:border-slate-700">#</th><th class="w-32 !text-slate-600 dark:!text-slate-300">Precio ($)</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Terr.</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Const.</th><th class="w-12 !text-slate-600 dark:!text-slate-300">Edad</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Rango</th>
+                                            <th class="w-20 !text-indigo-600 dark:!text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 border-r border-slate-200 dark:border-slate-700">F. EDAD</th>
+                                            <th class="!text-slate-600 dark:!text-slate-300">URL / ACORTADA</th>
+                                        </tr></thead>
+                                        <tbody id="mercado-rows"></tbody>
+                                    </table>
+                                </div>
+                                <div class="grid grid-cols-3 gap-3 mt-4">
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Permitida</span><span id="mercado-dispersion-permitida" class="font-black text-sm text-slate-700 dark:text-slate-300">1.30</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Calculada</span><span id="mercado-dispersion-value" class="font-black text-sm text-slate-700 dark:text-slate-300">N/A</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Estado</span><span id="mercado-dispersion-status" class="font-black text-sm text-gray-500">N/A</span></div>
+                                </div>
                             </div>
-                            <div class="dispersion-box text-xs">
-                                <div><span class="leezar-label">Disp. Permitida</span><span id="rentas-dispersion-permitida" class="font-black text-base">1.30</span></div>
-                                <div><span class="leezar-label">Disp. Calculada</span><span id="rentas-dispersion-value" class="font-black text-base">N/A</span></div>
-                                <div><span class="leezar-label">Estado</span><span id="rentas-dispersion-status" class="font-black text-base text-gray-500">N/A</span></div>
+                        </section>
+
+                        <!-- SECCIÓN RENTAS -->
+                        <section id="section-rentas" class="mb-10 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-sm">
+                            <div class="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-rounded text-amber-500">payments</span>
+                                    <h2 class="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mr-2">Comparables Rentas</h2>
+                                    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                        <button onclick="ajustarFilas('rentas', '-')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Quitar Fila"><span class="material-symbols-rounded text-[16px]">remove</span></button>
+                                        <span class="text-[9px] font-black text-slate-400 px-2 uppercase tracking-widest">Filas</span>
+                                        <button onclick="ajustarFilas('rentas', '+')" class="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" title="Agregar Fila"><span class="material-symbols-rounded text-[16px]">add</span></button>
+                                    </div>
+                                </div>
+                                <div class="bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 px-5 py-2 rounded-2xl flex items-center gap-4 shadow-inner">
+                                    <span class="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">Promedio Rentas:</span>
+                                    <span id="rentas-promedio-unitario" class="font-black text-lg text-amber-600 dark:text-amber-400">$ 0.00</span>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex flex-wrap gap-4 items-end mb-6 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <div class="flex-1 min-w-[120px]"><label class="leezar-label !text-amber-600 dark:!text-amber-400">Sup. Const Suj</label><input type="text" id="rentas-sujeto-sup" class="leezar-input border-slate-300 dark:border-slate-600 shadow-inner" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, false)"></div>
+                                    <div class="flex-1 min-w-[120px]"><label class="leezar-label !text-amber-600 dark:!text-amber-400">Edad Sujeto</label><input type="text" id="rentas-sujeto-edad" class="leezar-input border-slate-300 dark:border-slate-600 shadow-inner" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, true)"></div>
+                                    
+                                    <div class="flex-1 min-w-[120px]">
+                                        <label class="leezar-label !text-amber-600 dark:!text-amber-400">F. Edad (%)</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="rentas-sujeto-param-fedad" class="leezar-input !text-center font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 w-20 shadow-inner" value="0.50" oninput="handleSujetoChange('rentas')" onblur="this.value = formatInput(this.value, false)" title="Porcentaje de depreciación por año">
+                                            <button onclick="document.getElementById('rentas-sujeto-param-fedad').value='0.50'; handleSujetoChange('rentas'); guardarProgreso();" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg transition-colors flex items-center shadow-sm active:scale-95 text-xs font-bold" title="Restablecer a 0.50%"><span class="material-symbols-rounded text-[14px]">restart_alt</span></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-auto flex gap-2">
+                                        <div class="bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 p-2.5 rounded-lg flex flex-col items-center justify-center min-w-[100px]"><span class="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-0.5">Rango Sup</span><span id="rentas-sujeto-rango-sup" class="font-black text-sm text-amber-800 dark:text-amber-300">N/A</span></div>
+                                        <div class="bg-orange-50 dark:bg-orange-900/40 border border-orange-200 dark:border-orange-800 p-2.5 rounded-lg flex flex-col items-center justify-center min-w-[100px]"><span class="text-[9px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-0.5">Rango Edad</span><span id="rentas-sujeto-rango-edad" class="font-black text-sm text-orange-800 dark:text-orange-300">N/A</span></div>
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg thin-scroll">
+                                    <table class="w-full text-xs min-w-[1100px]">
+                                        <thead><tr class="bg-slate-100 dark:bg-slate-800">
+                                            <th class="w-8 !text-slate-600 dark:!text-slate-300 border-r border-slate-200 dark:border-slate-700">#</th><th class="w-32 !text-slate-600 dark:!text-slate-300">Renta ($)</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Terr.</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Const.</th><th class="w-12 !text-slate-600 dark:!text-slate-300">Edad</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Rango</th>
+                                            <th class="w-20 !text-amber-600 dark:!text-amber-400 bg-amber-50/50 dark:bg-amber-900/10 border-r border-slate-200 dark:border-slate-700">F. EDAD</th>
+                                            <th class="!text-slate-600 dark:!text-slate-300">URL / ACORTADA</th>
+                                        </tr></thead>
+                                        <tbody id="rentas-rows"></tbody>
+                                    </table>
+                                </div>
+                                <div class="grid grid-cols-3 gap-3 mt-4">
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Permitida</span><span id="rentas-dispersion-permitida" class="font-black text-sm text-slate-700 dark:text-slate-300">1.30</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Disp. Calculada</span><span id="rentas-dispersion-value" class="font-black text-sm text-slate-700 dark:text-slate-300">N/A</span></div>
+                                    <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex flex-col items-center justify-center"><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Estado</span><span id="rentas-dispersion-status" class="font-black text-sm text-gray-500">N/A</span></div>
+                                </div>
                             </div>
                         </section>
                     </div> </div> <div id="tab-docjust" class="hidden fade-in no-print">
@@ -511,7 +577,7 @@
 
         window.comps = {
             'terreno': {
-                count: 4, avgId: 'terreno-promedio-unitario', sujetoFields: ['sup'],
+                count: 4, avgId: 'terreno-promedio-unitario', sujetoFields: ['sup', 'param-fsup'],
                 cols: [ { id: 'precio', isCurrency: true }, { id: 'sup', isCurrency: false, isInteger: false } ],
                 calcUnitario: (data) => { const p = data['terreno-precio']||0, s = data['terreno-sup']||0; return s>0 ? p/s : 0; },
                 validateRango: (data, sujeto) => {
@@ -522,7 +588,7 @@
                 }
             },
             'mercado': {
-                count: 6, avgId: 'mercado-promedio-unitario', sujetoFields: ['sup', 'edad'],
+                count: 6, avgId: 'mercado-promedio-unitario', sujetoFields: ['sup', 'edad', 'param-fedad'],
                 cols: [ { id: 'precio', isCurrency: true }, { id: 'sup-terreno', isCurrency: false }, { id: 'sup-const', isCurrency: false }, { id: 'edad', isCurrency: false, isInteger: true } ],
                 calcUnitario: (data) => { const p = data['mercado-precio']||0, sc = data['mercado-sup-const']||0; return sc>0 ? p/sc : 0; },
                 validateRango: (data, sujeto) => {
@@ -538,7 +604,7 @@
                 }
             },
             'rentas': {
-                count: 4, avgId: 'rentas-promedio-unitario', sujetoFields: ['sup', 'edad'],
+                count: 4, avgId: 'rentas-promedio-unitario', sujetoFields: ['sup', 'edad', 'param-fedad'],
                 cols: [ { id: 'precio', isCurrency: true }, { id: 'sup-terreno', isCurrency: false }, { id: 'sup-const', isCurrency: false }, { id: 'edad', isCurrency: false, isInteger: true } ],
                 calcUnitario: (data) => { const r = data['rentas-precio']||0, sc = data['rentas-sup-const']||0; return sc>0 ? r/sc : 0; },
                 validateRango: (data, sujeto) => {
@@ -568,9 +634,51 @@
             config.cols.forEach(col => rowData[`${type}-${col.id}`] = getNumericValue(`${type}-${col.id}-${index}`));
             config.sujetoFields.forEach(f => sujetoData[`${type}-sujeto-${f}`] = getNumericValue(`${type}-sujeto-${f}`));
             
-            const unitario = config.calcUnitario(rowData);
+            let unitarioOriginal = config.calcUnitario(rowData);
+            let unitarioFinal = unitarioOriginal;
+            
+            if (type === 'terreno') {
+                const sComp = rowData['terreno-sup'] || 0;
+                const sSuj = sujetoData['terreno-sujeto-sup'] || 0;
+                
+                let paramInput = document.getElementById('terreno-sujeto-param-fsup')?.value;
+                let paramRaiz = paramInput !== "" && paramInput !== undefined ? parseFloat(paramInput) : 6;
+                if(isNaN(paramRaiz) || paramRaiz === 0) paramRaiz = 6;
+
+                let fSup = 1;
+                if (sSuj > 0 && sComp > 0) fSup = Math.pow((sComp / sSuj), (1 / paramRaiz));
+                
+                const fSupEl = document.getElementById(`terreno-fsup-${index}`);
+                if (fSupEl) fSupEl.textContent = formatNumber(fSup, 4);
+                
+                unitarioFinal = unitarioOriginal * fSup;
+
+            } else if (type === 'mercado' || type === 'rentas') {
+                const eComp = rowData[`${type}-edad`] || 0;
+                const eSuj = sujetoData[`${type}-sujeto-edad`] || 0;
+                
+                let paramInput = document.getElementById(`${type}-sujeto-param-fedad`)?.value;
+                let paramFedad = paramInput !== "" && paramInput !== undefined ? parseFloat(paramInput) : 0.50;
+                if(isNaN(paramFedad)) paramFedad = 0.50;
+                
+                let fEdad = 1;
+                if (eSuj > 0 || eComp > 0) {
+                    let pctSuj = 1 - ((paramFedad / 100) * eSuj);
+                    let pctComp = 1 - ((paramFedad / 100) * eComp);
+                    if (pctComp !== 0) fEdad = pctSuj / pctComp;
+                }
+                
+                const fEdadEl = document.getElementById(`${type}-fedad-${index}`);
+                if (fEdadEl) fEdadEl.textContent = formatNumber(fEdad, 4);
+                
+                unitarioFinal = unitarioOriginal * fEdad;
+            }
+            
             const uEl = document.getElementById(`${type}-unitario-${index}`);
-            if(uEl) { uEl.textContent = (unitario===0||!isFinite(unitario))?'#DIV/0!':formatCurrency(unitario); uEl.dataset.value = unitario||0; }
+            if(uEl) { 
+                uEl.textContent = (unitarioFinal===0||!isFinite(unitarioFinal))?'#DIV/0!':formatCurrency(unitarioFinal); 
+                uEl.dataset.value = unitarioFinal||0; 
+            }
             
             const rEl = document.getElementById(`${type}-rango-${index}`);
             if(rEl) { const r = config.validateRango(rowData, sujetoData); rEl.textContent=r.msg; rEl.className=r.ok?'rango-ok':'rango-error'; }
@@ -601,7 +709,7 @@
                 if(disp < MAX_DISPERSION && disp > 0){ dStat.textContent='CUMPLE (<1.30)'; dStat.className='font-black text-base text-emerald-600';}
                 else { dStat.textContent='NO CUMPLE (≥1.30)'; dStat.className='font-black text-base text-rose-600'; }
             } else {
-                dVal.textContent='N/A'; dStat.textContent='Faltan datos'; dStat.className='font-black text-base text-gray-500';
+                if(dVal) dVal.textContent='N/A'; if(dStat) { dStat.textContent='Faltan datos'; dStat.className='font-black text-base text-gray-500'; }
             }
         };
 
@@ -610,10 +718,16 @@
             const sd = {}; config.sujetoFields.forEach(f => sd[f] = getNumericValue(`${type}-sujeto-${f}`));
             
             if(type==='terreno'){
-                document.getElementById('terreno-sujeto-rango').textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+                const rEl = document.getElementById('terreno-sujeto-rango');
+                if(rEl) rEl.textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
             } else {
-                document.getElementById(`${type}-sujeto-rango-sup`).textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
-                document.getElementById(`${type}-sujeto-rango-edad`).textContent = sd.edad>0 ? `${formatNumber(sd.edad-5,0)} a ${formatNumber(sd.edad+5,0)}` : 'N/A';
+                const rSup = document.getElementById(`${type}-sujeto-rango-sup`);
+                const rEdad = document.getElementById(`${type}-sujeto-rango-edad`);
+                if(rSup) rSup.textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+                if(rEdad) {
+                    let minEdad = Math.max(0, sd.edad - 5);
+                    rEdad.textContent = sd.edad>0 ? `${formatNumber(minEdad,0)} a ${formatNumber(sd.edad+5,0)}` : 'N/A';
+                }
             }
             for(let i=1; i<=config.count; i++) recalculateRow(type, i);
         };
@@ -636,6 +750,49 @@
             recalculateSection(type);
         };
 
+        window.ajustarFilas = (type, operacion) => {
+            const config = window.comps[type];
+            const minFilas = type === 'mercado' ? 6 : 4; 
+            
+            if(operacion === '-' && config.count <= minFilas) {
+                if(typeof showToast !== 'undefined') showToast(`Mínimo de filas alcanzado (${minFilas})`, "error");
+                return;
+            }
+            if(operacion === '+' && config.count >= 15) {
+                if(typeof showToast !== 'undefined') showToast("Máximo de filas alcanzado", "error");
+                return;
+            }
+
+            let backup = [];
+            for(let i=1; i<=config.count; i++){
+                let row = {};
+                config.cols.forEach(c => row[c.id] = document.getElementById(`${type}-${c.id}-${i}`)?.value || '');
+                row.url = document.getElementById(`${type}-url-completa-${i}`)?.value || '';
+                row.liga = document.getElementById(`${type}-liga-acortada-${i}`)?.value || '';
+                backup.push(row);
+            }
+            
+            if(operacion === '+') config.count++;
+            else if(operacion === '-') config.count--;
+            
+            createTableRows();
+            
+            for(let i=1; i<=Math.min(backup.length, config.count); i++){
+                config.cols.forEach(c => {
+                    const el = document.getElementById(`${type}-${c.id}-${i}`);
+                    if(el) el.value = backup[i-1][c.id];
+                });
+                const urlEl = document.getElementById(`${type}-url-completa-${i}`);
+                if(urlEl) urlEl.value = backup[i-1].url;
+                const ligaEl = document.getElementById(`${type}-liga-acortada-${i}`);
+                if(ligaEl) ligaEl.value = backup[i-1].liga;
+                
+                recalculateRow(type, i);
+            }
+            window.handleSujetoChange(type);
+            if(currentFolioId) guardarProgreso(); 
+        };
+
         const createTableRows = () => {
             Object.keys(window.comps).forEach(type => {
                 const config = window.comps[type];
@@ -643,19 +800,31 @@
                 if(!tbody) return;
                 let html = '';
                 for(let i=1; i<=config.count; i++){
-                    html+=`<tr><td class="text-center font-mono text-gray-400">${i}</td>`;
+                    html+=`<tr class="border-b border-slate-200 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"><td class="text-center font-mono text-slate-400 p-2">${i}</td>`;
                     config.cols.forEach(col => {
                         const id = `${type}-${col.id}-${i}`;
                         const ob = col.isCurrency ? `this.value=formatInputCurrency(this.value)` : `this.value=formatInput(this.value, ${col.isInteger})`;
-                        html+=`<td class="p-1">${col.isCurrency?'<span class="absolute ml-2 mt-1.5 text-gray-400">$</span>':''}<input type="text" id="${id}" class="leezar-input ${col.isCurrency?'!pl-6':''}" oninput="recalculateRow('${type}',${i})" onblur="${ob}"></td>`;
+                        html+=`<td class="p-1">${col.isCurrency?'<span class="absolute ml-2 mt-1.5 text-slate-400 font-bold">$</span>':''}<input type="text" id="${id}" class="leezar-input !border-none !bg-transparent !shadow-none ${col.isCurrency?'!pl-6':''}" oninput="recalculateRow('${type}',${i})" onblur="${ob}"></td>`;
                     });
-                    html+=`<td class="p-1 text-center"><span id="${type}-rango-${i}" class="rango-ok">N/A</span></td>`;
-                    html+=`<td id="${type}-unitario-${i}" data-value="0" class="text-right font-bold bg-slate-50 dark:bg-slate-800/50">#DIV/0!</td>`;
-                    html+=`<td class="p-1"><input type="text" id="${type}-url-completa-${i}" class="leezar-input !text-left !text-[10px]" placeholder="https://..."></td>`;
-                    html+=`<td class="p-1"><input type="text" id="${type}-liga-acortada-${i}" class="leezar-input !text-left !text-[10px]" placeholder="bit.ly/..."></td></tr>`;
+                    
+                    html+=`<td class="p-1 text-center"><span id="${type}-rango-${i}" class="text-[9px] font-black uppercase opacity-60">N/A</span></td>`;
+                    
+                    if (type === 'terreno') {
+                        html+=`<td class="p-1 text-center font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/[0.5] dark:bg-emerald-900/10 rounded-md" id="${type}-fsup-${i}">1.0000</td>`;
+                        html+=`<td class="p-1 text-right font-black text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border-x border-slate-200 dark:border-slate-700/50"><span id="${type}-unitario-${i}" data-value="0">0.00</span></td>`;
+                    } else {
+                        html+=`<td class="p-1 text-center font-mono font-black ${type==='mercado'?'text-indigo-600 dark:text-indigo-400':'text-amber-600 dark:text-amber-400'} bg-slate-50/[0.5] dark:bg-slate-800/30 rounded-md">
+                                  <span id="${type}-fedad-${i}">1.0000</span>
+                                  <span id="${type}-unitario-${i}" data-value="0" style="display:none;">0</span>
+                               </td>`;
+                    }
+                    
+                    html+=`<td class="p-1"><div class="flex gap-1"><input type="text" id="${type}-url-completa-${i}" class="leezar-input !text-left !text-[10px] !bg-white dark:!bg-slate-900 !border-slate-200 dark:!border-slate-700 w-full min-w-[100px]" placeholder="URL..."><input type="text" id="${type}-liga-acortada-${i}" class="leezar-input !text-left !text-[10px] !bg-white dark:!bg-slate-900 !border-slate-200 dark:!border-slate-700 w-1/3 min-w-[60px]" placeholder="bit.ly..."></div></td></tr>`;
                 }
                 tbody.innerHTML = html;
-                document.getElementById(`${type}-dispersion-permitida`).textContent = formatNumber(MAX_DISPERSION, 2);
+                if(document.getElementById(`${type}-dispersion-permitida`)){
+                    document.getElementById(`${type}-dispersion-permitida`).textContent = formatNumber(MAX_DISPERSION, 2);
+                }
             });
         };
 
@@ -1049,6 +1218,53 @@
             const txtAnotacion = document.getElementById('info-anotaciones');
             if(txtAnotacion) txtAnotacion.value = d.anotacion || 'Sin anotaciones pendientes.';
 
+            // --- RECUPERAR DATOS GUARDADOS (MERCADO, NOTAS Y DOCS) ---
+            if(document.getElementById('texto-notas-tramite')) document.getElementById('texto-notas-tramite').value = d.notas_captura || '';
+            
+            if(d.docjust) {
+                LISTA_DOC_JUST.forEach((_, i) => {
+                    const chk = document.getElementById(`chk-docjust-${i}`);
+                    if(chk) chk.checked = d.docjust[`item_${i}`] || false;
+                });
+            }
+
+            // Recuperar cantidad de filas guardadas y re-dibujar tablas primero
+            ['terreno', 'mercado', 'rentas'].forEach(type => {
+                if(d[`mercado_${type}`] && d[`mercado_${type}`].rows) {
+                    window.comps[type].count = Math.max(d[`mercado_${type}`].rows.length, type === 'mercado' ? 6 : 4);
+                }
+            });
+            createTableRows(); // Dibuja las tablas con las filas exactas
+
+            // Ahora sí vaciamos los datos en las celdas
+            ['terreno', 'mercado', 'rentas'].forEach(type => {
+                const dbData = d[`mercado_${type}`];
+                if(dbData) {
+                    if(dbData.sujeto) {
+                        window.comps[type].sujetoFields.forEach(f => {
+                            const el = document.getElementById(`${type}-sujeto-${f}`);
+                            if(el && dbData.sujeto[`sujeto-${f}`]) el.value = formatNumber(dbData.sujeto[`sujeto-${f}`]);
+                        });
+                    }
+                    if(dbData.rows && dbData.rows.length > 0) {
+                        for(let i=1; i<=window.comps[type].count; i++) {
+                            const row = dbData.rows[i-1];
+                            if(row) {
+                                window.comps[type].cols.forEach(c => {
+                                    const el = document.getElementById(`${type}-${c.id}-${i}`);
+                                    if(el && row[c.id]) el.value = c.isCurrency ? formatCurrency(row[c.id]) : formatNumber(row[c.id], c.isInteger ? 0 : 2);
+                                });
+                                const urlEl = document.getElementById(`${type}-url-completa-${i}`);
+                                if(urlEl) urlEl.value = row.url || '';
+                                const ligaEl = document.getElementById(`${type}-liga-acortada-${i}`);
+                                if(ligaEl) ligaEl.value = row.liga || '';
+                            }
+                        }
+                    }
+                    window.handleSujetoChange(type);
+                }
+            });
+
             // 3. 🤖 ¡EL GATILLO DE LA IA! (Vaciado automático de datos)
             autollenarConIA(d);
         } // <--- ¡ESTA ES LA LLAVE MÁGICA QUE FALTABA!
@@ -1056,9 +1272,11 @@
         // MÓDULO DE GUARDADO
         async function guardarProgreso() {
             if(!currentFolioId) return showToast("Abre un expediente primero.", "error");
-            const btn = document.querySelector('button[onclick="guardarProgreso()"]');
-            btn.innerHTML = `<span class="material-symbols-rounded text-sm animate-spin">sync</span> Guardando...`;
-            btn.disabled = true;
+            const btn = document.getElementById('btn-flotante-guardar');
+            if(btn) {
+                btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
+                btn.disabled = true;
+            }
 
             const payload = {
                 fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1090,8 +1308,10 @@
             } catch (e) {
                 console.error(e); showToast("Error al guardar", "error");
             } finally {
-                btn.innerHTML = `<span class="material-symbols-rounded text-sm">cloud_upload</span> Guardar Avance`;
-                btn.disabled = false;
+                if(btn) {
+                    btn.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> Guardar Avance`;
+                    btn.disabled = false;
+                }
             }
         }
 
@@ -1386,14 +1606,16 @@
         </div>
     </div>
 
-    <div class="fixed top-24 right-4 z-40">
-        <button onclick="abrirJackModal()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-md hover:bg-slate-50 transition-all group">
-            <div class="w-6 h-6 rounded-full overflow-hidden border border-indigo-200">
-                <img src="img/jack.png" alt="Jack" class="w-full h-full object-cover" onerror="this.src='./jack.jpg';">
-            </div>
-            Consultar a Jack IA
+    <div class="fixed bottom-6 right-6 z-50 flex items-end gap-3 no-print">
+        <button onclick="guardarProgreso()" id="btn-flotante-guardar" class="bg-leezar-600 hover:bg-leezar-500 text-white text-sm px-6 py-4 rounded-full font-black flex items-center gap-2 shadow-[0_10px_25px_-5px_rgba(13,148,136,0.4)] transition-transform hover:scale-105 active:scale-95">
+            <span class="material-symbols-rounded">cloud_upload</span> Guardar Avance
         </button>
-    </div>
+
+        <button onclick="abrirJackModal()" class="w-16 h-16 rounded-full shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] hover:scale-110 transition-transform bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-indigo-800 overflow-hidden group relative" title="Consultar a Jack IA">
+            <img src="img/jack.png" alt="Jack" class="w-full h-full object-cover" onerror="this.src='./jack.jpg';">
+            <div class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white dark:border-slate-800 rounded-full"></div>
+        </button>
+    </div>  
 
     <script>
         function abrirJackModal() {
