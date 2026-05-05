@@ -1107,10 +1107,18 @@
             
             const bar = document.getElementById('decision-bar');
             const btnValidar = document.getElementById('btn-validar');
-            const btnDescartar = document.querySelector('button[onclick="abrirRechazo()"]') || document.querySelector('button[onclick="anularDocumento()"]') || document.querySelector('button[onclick*="admin-file-upload"]');
+            // Buscamos el botón de descartar de forma segura, independientemente del onclick que tenga asignado en ese momento
+            const btnDescartar = bar.querySelector('button:first-of-type'); 
             
             const currentKey = groupKeys[activeGroupIndex];
-            if (['review', 'rejected', 'valid'].includes(req.status) || (req.status === 'pending' && currentKey === 'interno')) {
+            
+            // Evaluamos si debemos mostrar la barra. 
+            // La mostramos SIEMPRE que haya un archivo subido (review, rejected, valid) 
+            // O si es un archivo interno que podemos subir nosotros.
+            // INCLUSO si es opcional.
+            const tieneArchivo = req.url || (req.fotos && req.fotos.length > 0) || req.textoPreview;
+            
+            if (tieneArchivo || (req.status === 'pending' && currentKey === 'interno')) {
                 bar.classList.remove('translate-y-full');
                 
                 if (req.status === 'pending' && currentKey === 'interno') {
@@ -1120,12 +1128,13 @@
                         btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-md active:scale-95 hover:bg-indigo-700 transition-all";
                         btnDescartar.setAttribute('onclick', "document.getElementById('admin-file-upload').click()");
                     }
-                } else if (req.status === 'valid') {
+                } else if (req.status === 'valid' || req.estatus === 'validado') {
                     btnValidar.classList.add('hidden');
                     if(btnDescartar) {
                         btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">warning</span> Anular y Resetear';
                         btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-600 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs transition-all shadow-md active:scale-95";
-                        btnDescartar.setAttribute('onclick', 'anularDocumento()');
+                        // Usamos tu función forzarRechazo (Modo Dios) que ya tienes programada
+                        btnDescartar.setAttribute('onclick', `forzarRechazo('${req.key}', '${req.nombre}')`);
                     }
                 } else {
                     btnValidar.classList.remove('hidden');
