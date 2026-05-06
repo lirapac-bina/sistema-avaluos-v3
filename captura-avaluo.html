@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captura de Avalúo - Leezar V3</title>
+    <title>Captura de Avalúo</title>
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     
     <script src="firebase-config.js"></script>
-    
     <script src="i18n.js"></script>
 
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,7 +21,7 @@
             theme: {
                 extend: {
                     colors: {
-                        leezar: { 500: '#0f172a', 600: '#1e293b', accent: '#0d9488' },
+                        leezar: { 500: '#0f4c81', 600: '#0a365c', accent: '#0d9488' },
                         jack: { 500: '#6366f1', 600: '#4f46e5' }
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -29,124 +30,750 @@
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
+    <style>
+        html { scroll-behavior: smooth; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
+        
+        .uppercase-input { text-transform: uppercase; }
+        
+        /* Estilos para el sidebar activo */
+        .sidebar-link.active {
+            background-color: #f0fdfa; /* emerald-50 */
+            color: #0d9488; /* teal-600 */
+            border-right: 4px solid #0d9488;
+        }
+        .dark .sidebar-link.active {
+            background-color: rgba(13, 148, 136, 0.1);
+            color: #2dd4bf; /* teal-400 */
+            border-right-color: #2dd4bf;
+        }
+    </style>
 </head>
 
 <body class="bg-slate-50 dark:bg-slate-900 h-screen flex flex-col overflow-hidden text-slate-800 dark:text-slate-200 transition-colors duration-300">
 
-    <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 z-20">
-        <div class="flex items-center gap-3">
-            <a href="dashboard.html" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition text-slate-500">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </a>
+    <!-- HEADER MAESTRO -->
+    <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-4">
+            <button onclick="window.close()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition text-slate-500" title="Cerrar Pestaña">
+                <span class="material-symbols-rounded">close</span>
+            </button>
             <div>
-                <h1 class="font-bold text-sm text-leezar-600 dark:text-white flex items-center gap-2">
-                    <span class="material-symbols-rounded text-leezar-500 text-base">architecture</span>
-                    Captura de Avalúo </h1>
-                <p class="text-[10px] text-slate-400">Folio: <span id="lbl-folio">Cargando...</span></p>
+                <h1 class="font-extrabold text-lg text-leezar-500 dark:text-white flex items-center gap-2 leading-none">
+                    <span class="material-symbols-rounded text-leezar-500 dark:text-teal-400 text-xl">architecture</span>
+                    Captura de Avalúo
+                </h1>
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase mt-0.5">Folio: <span id="lbl-folio" class="text-teal-600 dark:text-teal-400">Cargando...</span></p>
             </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
             <button onclick="setLanguage('es')" class="text-lg hover:scale-110 transition" title="Español">🇲🇽</button>
             <button onclick="setLanguage('en')" class="text-lg hover:scale-110 transition" title="English">🇺🇸</button>
             <div class="h-6 w-px bg-slate-200 dark:bg-slate-600 mx-1"></div>
-            <button onclick="toggleTheme()" class="p-2 text-slate-400 hover:text-yellow-500 transition">
+            <button onclick="toggleTheme()" class="p-2 text-slate-400 hover:text-amber-500 transition">
                 <span class="material-symbols-rounded text-xl" id="theme-icon">light_mode</span>
             </button>
-            <button class="bg-leezar-600 hover:bg-leezar-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-leezar-500/30 flex items-center gap-2 transition-all active:scale-95" onclick="guardarProgreso()">
+            <button id="btn-guardar" onclick="guardarDatosAvaluo()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/30 flex items-center gap-2 transition-all active:scale-95">
                 <span class="material-symbols-rounded text-sm">save</span>
-                <span data-i18n="ui_save">Guardar</span>
+                <span data-i18n="ui_save">Guardar Avance</span>
             </button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden relative">
         
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 absolute md:relative z-10 h-full" id="sidebar-menu">
-            <div class="p-4 border-b border-slate-100 dark:border-slate-700">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Secciones</p>
-                <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-leezar-500 h-full w-[5%]" id="progress-bar"></div>
+        <!-- SIDEBAR DE NAVEGACIÓN -->
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 z-10 h-full shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Progreso de Captura</p>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div class="bg-teal-500 h-full w-[10%]" id="progress-bar" style="transition: width 0.3s ease;"></div>
                 </div>
-            </div>
-            <nav class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1" id="secciones-lista">
-                </nav>
-        </aside>
-
-        <div class="max-w-4xl mx-auto mt-6 space-y-6">
-    
-    <section class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="text-lg font-black text-leezar-accent dark:text-teal-400 mb-4 border-b border-slate-100 dark:border-slate-700 pb-2" data-i18n="sec_1">
-            Dirección del Inmueble
-        </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_calle">Calle / Avenida</label>
-                <input type="text" data-i18n="ph_calle" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_num_ext">Num. Ext.</label>
-                    <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_num_int">Num. Int.</label>
-                    <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-                </div>
-            </div>
+            <nav class="flex-1 overflow-y-auto custom-scroll p-3 space-y-1" id="secciones-lista">
+                <a href="#sec-solicitante" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sidebar-link active" data-target="sec-solicitante">
+                    <span class="material-symbols-rounded text-lg">person</span> Datos del Solicitante
+                </a>
+                <a href="#sec-oferente" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sidebar-link" data-target="sec-oferente">
+                    <span class="material-symbols-rounded text-lg">real_estate_agent</span> Datos del Propietario
+                </a>
+                <a href="#sec-inmueble" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors sidebar-link" data-target="sec-inmueble">
+                    <span class="material-symbols-rounded text-lg">home_work</span> Datos del Inmueble
+                </a>
+            </nav>
+        </aside>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_colonia">Colonia / Barrio</label>
-                <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-            </div>
+        <!-- ÁREA PRINCIPAL DE CAPTURA -->
+        <main class="flex-1 overflow-y-auto custom-scroll p-6 md:p-10 bg-slate-50/50 dark:bg-[#0b1121]" id="main-scroll-area">
+            <div class="max-w-5xl mx-auto space-y-8 pb-32">
+                
+                <!-- SECCIÓN 1: SOLICITANTE -->
+                <section id="sec-solicitante" class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 scroll-mt-6 relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-4 mb-6">
+                        <h2 class="text-xl font-black text-leezar-500 dark:text-teal-400 flex items-center gap-2">
+                            <span class="material-symbols-rounded">person</span> Datos del Solicitante
+                        </h2>
+                        <span class="text-[10px] bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 font-bold px-2 py-1 rounded uppercase tracking-widest">Comprador</span>
+                    </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_cp">Código Postal</label>
-                <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5" data-i18n="lbl_nombre_solicitante">Nombre Completo</label>
+                            <input type="text" id="sol-nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white uppercase-input shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">R.F.C.</label>
+                            <input type="text" id="sol-rfc" maxlength="13" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white uppercase-input shadow-inner font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">C.U.R.P.</label>
+                            <input type="text" id="sol-curp" maxlength="18" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white uppercase-input shadow-inner font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">N.S.S. (Opcional)</label>
+                            <input type="text" id="sol-nss" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white shadow-inner font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Teléfono / Celular</label>
+                            <input type="tel" id="sol-telefono" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white shadow-inner font-mono">
+                        </div>
+                    </div>
+                </section>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_municipio">Municipio / Alcaldía</label>
-                <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_estado">Estado</label>
-                <input type="text" data-i18n="ph_escribe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-            </div>
-        </div>
-    </section>
+                <!-- SECCIÓN 2: PROPIETARIO / OFERENTE -->
+                <section id="sec-oferente" class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 scroll-mt-6 relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-4 mb-6">
+                        <h2 class="text-xl font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                            <span class="material-symbols-rounded">real_estate_agent</span> Datos del Propietario
+                        </h2>
+                        <span class="text-[10px] bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold px-2 py-1 rounded uppercase tracking-widest">Vendedor / Oferente</span>
+                    </div>
 
-    <section class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="text-lg font-black text-leezar-accent dark:text-teal-400 mb-4 border-b border-slate-100 dark:border-slate-700 pb-2" data-i18n="sec_solicitante">
-            Datos del Solicitante
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_nombre_solicitante">Nombre Completo</label>
-                <input type="text" data-i18n="ph_nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1" data-i18n="lbl_proposito">Propósito del Avalúo</label>
-                <select class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all dark:text-white">
-                    <option value="" data-i18n="opt_seleccionar">Seleccione una opción...</option>
-                    <option value="infonavit">Infonavit</option>
-                    <option value="fovissste">Fovissste</option>
-                    <option value="bancario">Bancario</option>
-                </select>
-            </div>
-        </div>
-    </section>
-    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Nombre o Razón Social</label>
+                            <input type="text" id="ofe-nombre" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white uppercase-input shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">R.F.C.</label>
+                            <input type="text" id="ofe-rfc" maxlength="13" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white uppercase-input shadow-inner font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">C.U.R.P. (Si es Física)</label>
+                            <input type="text" id="ofe-curp" maxlength="18" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white uppercase-input shadow-inner font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Teléfono (Opcional)</label>
+                            <input type="tel" id="ofe-telefono" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white shadow-inner font-mono">
+                        </div>
+                    </div>
+                </section>
 
+                <!-- SECCIÓN 3: INMUEBLE -->
+                <section id="sec-inmueble" class="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 scroll-mt-6 relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-amber-600 dark:text-amber-400 flex items-center gap-3" data-i18n="sec_inmueble">
+                            <span class="material-symbols-rounded text-3xl">home_work</span> Datos del inmueble
+                        </h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Información geográfica y registral del sujeto a valuar.</p>
+                    </div>
+
+                    <!-- BLOQUE 1: UBICACIÓN GEOGRÁFICA -->
+                    <div class="bg-slate-50/70 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 mb-6">
+                        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-5 flex items-center gap-2" data-i18n="sub_ubicacion">
+                            <span class="material-symbols-rounded text-amber-500 text-lg">pin_drop</span> Ubicación principal
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_cp">Código postal <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="text" id="inm-cp" maxlength="5" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono" placeholder="Ej. 91637">
+                                    <span class="material-symbols-rounded absolute right-3 top-3 text-amber-500 animate-spin hidden" id="spinner-cp">sync</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-9">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_colonia">Colonia <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <select id="inm-colonia" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all cursor-pointer dark:text-white shadow-sm appearance-none disabled:bg-slate-50 disabled:text-slate-400">
+                                        <option value="" data-i18n="opt_seleccionar">Esperando código postal...</option>
+                                    </select>
+                                    <span class="material-symbols-rounded absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                                </div>
+                            </div>
+                            
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_ciudad">Ciudad <span class="text-red-500">*</span></label>
+                                <input type="text" id="inm-ciudad" class="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium outline-none dark:text-slate-400 shadow-inner cursor-not-allowed text-slate-500" readonly>
+                            </div>
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_municipio">Municipio <span class="text-red-500">*</span></label>
+                                <input type="text" id="inm-municipio" class="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium outline-none dark:text-slate-400 shadow-inner cursor-not-allowed text-slate-500" readonly>
+                            </div>
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_estado">Estado <span class="text-red-500">*</span></label>
+                                <input type="text" id="inm-estado" class="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium outline-none dark:text-slate-400 shadow-inner cursor-not-allowed text-slate-500" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE 2: CALLES Y NÚMEROS -->
+                    <div class="bg-slate-50/70 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 mb-6">
+                        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-5 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-amber-500 text-lg">signpost</span> Calles y números
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_tipo_vialidad">Tipo de vialidad <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <select id="inm-tipo-vialidad" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all cursor-pointer dark:text-white shadow-sm appearance-none">
+                                        <option value="" data-i18n="opt_seleccionar">Seleccione...</option>
+                                        <option value="Calle">Calle</option>
+                                        <option value="Avenida">Avenida</option>
+                                        <option value="Boulevard">Boulevard</option>
+                                        <option value="Callejón">Callejón</option>
+                                        <option value="Cerrada">Cerrada</option>
+                                        <option value="Andador">Andador</option>
+                                    </select>
+                                    <span class="material-symbols-rounded absolute right-3 top-3 text-slate-400 pointer-events-none">expand_more</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-5">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_nombre_vialidad">Nombre de vialidad <span class="text-red-500">*</span></label>
+                                <input type="text" id="inm-nombre-vialidad" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm" data-i18n="ph_escribe">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_num_ext">Nº Exterior <span class="text-red-500">*</span></label>
+                                <input type="text" id="inm-num-ext" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm text-center font-mono">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_num_int">Nº Interior</label>
+                                <input type="text" id="inm-num-int" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm text-center font-mono" placeholder="-">
+                            </div>
+
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_calle1">Calle 1 (Entre calle)</label>
+                                <input type="text" id="inm-calle1" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm">
+                            </div>
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_calle2">Calle 2 (Y calle)</label>
+                                <input type="text" id="inm-calle2" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_manzana">Manzana</label>
+                                <input type="text" id="inm-manzana" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono text-center">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_lote">Lote</label>
+                                <input type="text" id="inm-lote" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono text-center">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE 3: DATOS COMPLEMENTARIOS Y CLAVES -->
+                    <div class="bg-slate-50/70 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-5 flex items-center gap-2" data-i18n="sub_complementarios">
+                            <span class="material-symbols-rounded text-amber-500 text-lg">note_add</span> Datos complementarios y registrales
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
+                            <div class="md:col-span-6">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_conjunto">Nombre del conjunto habitacional</label>
+                                <input type="text" id="inm-conjunto" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_reg_conjunto">Nº registro conjunto</label>
+                                <input type="text" id="inm-reg-conjunto" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_supermanzana">Supermanzana</label>
+                                <input type="text" id="inm-supermanzana" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono text-center">
+                            </div>
+                        </div>
+
+                        <!-- Grid interno para Condominios -->
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" data-i18n="lbl_condominio">Condominio</label>
+                                <input type="text" id="inm-condominio" class="w-full bg-transparent border-b border-slate-200 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-amber-500 dark:text-white transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" data-i18n="lbl_edificio">Edificio</label>
+                                <input type="text" id="inm-edificio" class="w-full bg-transparent border-b border-slate-200 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-amber-500 dark:text-white transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" data-i18n="lbl_entrada">Entrada</label>
+                                <input type="text" id="inm-entrada" class="w-full bg-transparent border-b border-slate-200 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-amber-500 dark:text-white transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" data-i18n="lbl_nivel">Nivel</label>
+                                <input type="text" id="inm-nivel" class="w-full bg-transparent border-b border-slate-200 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-amber-500 dark:text-white transition-colors text-center">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" data-i18n="lbl_departamento">Depto.</label>
+                                <input type="text" id="inm-departamento" class="w-full bg-transparent border-b border-slate-200 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-amber-500 dark:text-white transition-colors text-center font-bold">
+                            </div>
+                        </div>
+
+                        <!-- Cuentas y Claves (Bloque Final) -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_cta_predial">Cuenta predial</label>
+                                <input type="text" id="inm-cta-predial" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_cta_agua">Cuenta de agua</label>
+                                <input type="text" id="inm-cta-agua" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_licencia">Licencia de constr.</label>
+                                <input type="text" id="inm-licencia" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-all dark:text-white shadow-sm font-mono">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_cve_municipio">Cve. Mpio.</label>
+                                    <input type="text" id="inm-cve-municipio" class="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none dark:text-slate-400 shadow-inner font-mono text-center cursor-not-allowed" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2" data-i18n="lbl_cve_estado">Cve. Edo.</label>
+                                    <input type="text" id="inm-cve-estado" class="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm outline-none dark:text-slate-400 shadow-inner font-mono text-center cursor-not-allowed" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
         </main>
     </div>
 
-    <script src="app.js"></script>
-    <script src="logic-hoja-trabajo.js"></script>
+    <!-- NOTIFICACIONES -->
+    <div id="toast" class="fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-2xl text-white font-bold text-sm z-50 flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300"></div>
+
+    <script>
+        // --- 1. CONFIGURACIÓN INICIAL Y AUTO-MAYÚSCULAS ---
+        let currentExpedienteId = null;
+        
+        // Forzar mayúsculas en inputs
+        document.querySelectorAll('.uppercase-input').forEach(input => {
+            input.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        });
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-xl shadow-2xl text-white font-bold text-sm z-50 flex items-center gap-2 transform transition-all duration-300 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
+            toast.innerHTML = `<span class="material-symbols-rounded">${type === 'success' ? 'check_circle' : 'error'}</span> ${msg}`;
+            
+            // Animación de entrada
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+
+            // Animación de salida
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').innerText = isDark ? 'dark_mode' : 'light_mode';
+        }
+
+        // --- 2. LÓGICA DE SCROLLSPY (SIDEBAR DINÁMICO) ---
+        const mainArea = document.getElementById('main-scroll-area');
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.sidebar-link');
+
+        mainArea.addEventListener('scroll', () => {
+            let current = '';
+            // Offset para activar la sección antes de que llegue hasta arriba
+            const scrollPosition = mainArea.scrollTop + 150; 
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - mainArea.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-target') === current) {
+                    link.classList.add('active');
+                    // Actualiza barra de progreso visual (10%, 50%, 100%)
+                    const pBar = document.getElementById('progress-bar');
+                    if (current === 'sec-solicitante') pBar.style.width = '33%';
+                    else if (current === 'sec-oferente') pBar.style.width = '66%';
+                    else if (current === 'sec-inmueble') pBar.style.width = '100%';
+                }
+            });
+        });
+
+        // Click suave en el Sidebar
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    // Calculamos el offset para que el scroll quede perfecto
+                    const offsetTop = targetSection.offsetTop - mainArea.offsetTop - 20;
+                    mainArea.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // --- 3. CONEXIÓN A FIREBASE Y LLENADO DE DATOS ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Inicializar icono de tema
+            document.getElementById('theme-icon').innerText = document.documentElement.classList.contains('dark') ? 'dark_mode' : 'light_mode';
+
+            const params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
+            
+            if (!id) {
+                // FALLBACK DE DESARROLLO: Si no hay ID en la URL, forzamos tu expediente de prueba
+                console.warn("⚠️ Abierto sin ID. Usando expediente de prueba: SVh8qqSeSRC1ciG7YYIz");
+                id = "SVh8qqSeSRC1ciG7YYIz"; 
+            }
+
+            currentExpedienteId = id;
+            document.getElementById('lbl-folio').innerText = "Cargando..."; // Feedback visual
+            await cargarDatosDesdeFirebase(id);
+        });
+
+        async function cargarDatosDesdeFirebase(id) {
+            const db = window.db || firebase.firestore();
+            try {
+                const doc = await db.collection('expedientes_avaluos').doc(id).get();
+                if (!doc.exists) {
+                    showToast("El expediente no existe.", "error");
+                    return;
+                }
+
+                const data = doc.data();
+                
+                // Actualizar Header
+                document.getElementById('lbl-folio').innerText = data.folioOperativo && data.folioOperativo !== "SIN FOLIO" ? data.folioOperativo : id.substring(0, 8).toUpperCase();
+
+                // Intentar recuperar datos guardados directamente en el expediente primero
+                if (data.captura_avaluo) {
+                    mapearDatosAlFormulario(data.captura_avaluo);
+                } 
+                // Si no hay datos guardados, intentar extraer del cruce de IA (CEDULA_GYS)
+                else if (data.datos_extraidos && data.datos_extraidos.CEDULA_GYS) {
+                    let iaData = data.datos_extraidos.CEDULA_GYS;
+                    // Limpiar el JSON si Gemini mandó formato Markdown
+                    if (typeof iaData === 'string') {
+                        try {
+                            iaData = JSON.parse(iaData.replace(/```json/gi, '').replace(/```/g, '').trim());
+                        } catch (e) { console.warn("No se pudo parsear el JSON de la IA."); }
+                    }
+                    if (typeof iaData === 'object') {
+                        inyectarDatosDeIA(iaData);
+                    }
+                } else {
+                    // Fallback básico: Poner el nombre del cliente que viene de la gestión
+                    document.getElementById('sol-nombre').value = data.cliente || data.nombreCliente || '';
+                    document.getElementById('sol-telefono').value = data.telefono || data.celular || '';
+                }
+
+                showToast("Datos cargados correctamente");
+
+            } catch (error) {
+                console.error("Error al cargar:", error);
+                showToast("Error de conexión al cargar datos", "error");
+            }
+        }
+
+        // Función para mapear datos guardados previamente
+        function mapearDatosAlFormulario(obj) {
+            // Recorremos el objeto y llenamos los inputs por su ID
+            for (const [key, value] of Object.entries(obj)) {
+                const input = document.getElementById(key);
+                if (input) {
+                    input.value = value;
+                }
+            }
+        }
+
+        // Función para inyectar datos mapeados inteligentemente desde la extracción de Gemini
+        function inyectarDatosDeIA(iaData) {
+            const formatVal = (val) => val && val !== '---' ? String(val).toUpperCase().trim() : '';
+
+            // 1. Solicitante
+            if (iaData.solicitante) {
+                document.getElementById('sol-nombre').value = formatVal(iaData.solicitante.nombre_completo || iaData.solicitante.nombre);
+                document.getElementById('sol-rfc').value = formatVal(iaData.solicitante.rfc);
+                document.getElementById('sol-nss').value = formatVal(iaData.solicitante.nss);
+                document.getElementById('sol-curp').value = formatVal(iaData.solicitante.curp);
+            }
+
+            // 2. Oferente
+            if (iaData.oferente || iaData.propietario) {
+                const ofe = iaData.oferente || iaData.propietario;
+                document.getElementById('ofe-nombre').value = formatVal(ofe.nombre_completo || ofe.nombre);
+                document.getElementById('ofe-rfc').value = formatVal(ofe.rfc);
+                document.getElementById('ofe-curp').value = formatVal(ofe.curp);
+            }
+
+            // 3. Inmueble y Autocompletado de Código Postal
+            if (iaData.inmueble) {
+                const cpIA = formatVal(iaData.inmueble.cp || iaData.inmueble.codigo_postal);
+                const calleIA = formatVal(iaData.inmueble.calle || iaData.inmueble.vialidad || iaData.inmueble.direccion_completa || iaData.inmueble.direccion);
+                const numExtIA = formatVal(iaData.inmueble.numero_exterior || iaData.inmueble.num_ext);
+                const coloniaIA = formatVal(iaData.inmueble.colonia);
+
+                if (cpIA) document.getElementById('inm-cp').value = cpIA;
+                if (calleIA) document.getElementById('inm-nombre-vialidad').value = calleIA;
+                if (numExtIA) document.getElementById('inm-num-ext').value = numExtIA;
+
+                // Si viene colonia, la guardamos temporalmente en el dataset para autoseleccionarla luego de consultar SEPOMEX
+                if (coloniaIA) {
+                     document.getElementById('inm-colonia').dataset.iaValue = coloniaIA;
+                }
+
+                // Magia: Simulamos que un humano escribió el CP para desencadenar la búsqueda en SEPOMEX
+                if (cpIA.length === 5) {
+                    const event = new Event('input', { bubbles: true });
+                    document.getElementById('inm-cp').dispatchEvent(event);
+                }
+            }
+        }
+
+        // --- 5. LÓGICA DE SEPOMEX (CÓDIGOS POSTALES DESDE FIREBASE) ---
+        const inputCP = document.getElementById('inm-cp');
+        
+        if (inputCP) {
+            inputCP.addEventListener('input', async function() {
+                // Solo permitimos números
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                if (this.value.length === 5) {
+                    await buscarCodigoPostalEnFirebase(this.value);
+                } else if (this.value.length < 5) {
+                    limpiarCamposSepomex();
+                }
+            });
+        }
+
+        function limpiarCamposSepomex() {
+            const selectCol = document.getElementById('inm-colonia');
+            selectCol.innerHTML = `<option value="">${DICTIONARY[currentLang]['opt_seleccionar'] || 'Esperando código postal...'}</option>`;
+            selectCol.disabled = true;
+            document.getElementById('inm-ciudad').value = '';
+            document.getElementById('inm-municipio').value = '';
+            document.getElementById('inm-estado').value = '';
+            document.getElementById('inm-cve-municipio').value = '';
+            document.getElementById('inm-cve-estado').value = '';
+        }
+
+        async function buscarCodigoPostalEnFirebase(cp) {
+            const spinner = document.getElementById('spinner-cp');
+            const selectColonia = document.getElementById('inm-colonia');
+            
+            if (spinner) spinner.classList.remove('hidden');
+            selectColonia.innerHTML = '<option value="">Buscando en SEPOMEX...</option>';
+            selectColonia.disabled = true;
+
+            console.log(`🔍 Buscando CP: ${cp} en colección 'codigos_postales'...`);
+
+            try {
+                const db = window.db || firebase.firestore();
+                const doc = await db.collection('codigos_postales').doc(cp).get();
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log(`✅ CP ${cp} encontrado:`, data);
+                    
+                    selectColonia.innerHTML = `<option value="">Seleccione una colonia...</option>`;
+                    
+                    // Renderizamos las opciones siempre en MAYÚSCULAS
+                    if (data.colonias && Array.isArray(data.colonias)) {
+                        data.colonias.forEach(col => {
+                            selectColonia.innerHTML += `<option value="${col.toUpperCase()}">${col.toUpperCase()}</option>`;
+                        });
+                    } else if (data.colonia) {
+                        selectColonia.innerHTML += `<option value="${data.colonia.toUpperCase()}">${data.colonia.toUpperCase()}</option>`;
+                    }
+                    
+                    selectColonia.disabled = false;
+                    
+                    // Autollenado de ubicación en mayúsculas
+                    document.getElementById('inm-ciudad').value = (data.ciudad || data.municipio || '').toUpperCase();
+                    document.getElementById('inm-municipio').value = (data.municipio || '').toUpperCase();
+                    document.getElementById('inm-estado').value = (data.estado || '').toUpperCase();
+                    document.getElementById('inm-cve-municipio').value = data.cve_municipio || '';
+                    document.getElementById('inm-cve-estado').value = data.cve_estado || '';
+                    
+                    // Si la IA guardó una colonia previa, la seleccionamos
+                    if (selectColonia.dataset.iaValue) {
+                        const opts = Array.from(selectColonia.options);
+                        const match = opts.find(o => o.value === selectColonia.dataset.iaValue);
+                        if (match) selectColonia.value = match.value;
+                        delete selectColonia.dataset.iaValue;
+                    }
+
+                    showToast("Código Postal validado", "success");
+                    guardarDatosAvaluo(true); 
+                } else {
+                    console.warn(`❌ El CP ${cp} no existe en la BD.`);
+                    selectColonia.innerHTML = '<option value="">CP no encontrado</option>';
+                    showToast("Código Postal no encontrado", "error");
+                }
+            } catch (error) {
+                console.error("🔥 Error crítico buscando CP:", error);
+                selectColonia.innerHTML = '<option value="">Error de conexión</option>';
+            } finally {
+                if (spinner) spinner.classList.add('hidden');
+            }
+        }
+
+
+        // --- 6. DEFENSA ANTI-RECARGA Y AUTOGUARDADO ---
+        let isFormDirty = false;
+        let autoSaveTimeout;
+
+        // Escuchar cambios en todos los inputs para marcar el formulario como 'sucio'
+        document.querySelectorAll('#main-scroll-area input, #main-scroll-area select').forEach(el => {
+            el.addEventListener('input', () => {
+                isFormDirty = true;
+                clearTimeout(autoSaveTimeout);
+                
+                const btn = document.getElementById('btn-guardar');
+                if(btn && !btn.disabled) {
+                    btn.classList.replace('bg-emerald-600', 'bg-amber-500');
+                    btn.classList.replace('hover:bg-emerald-700', 'hover:bg-amber-600');
+                    btn.innerHTML = `<span class="material-symbols-rounded text-sm">pending</span><span>Sin guardar</span>`;
+                }
+
+                // Disparar autoguardado tras 2.5 segundos de inactividad
+                autoSaveTimeout = setTimeout(() => {
+                    guardarDatosAvaluo(true); 
+                }, 2500);
+            });
+        });
+
+        // Defensa contra recargas accidentales
+        window.addEventListener('beforeunload', (e) => {
+            if (isFormDirty) {
+                e.preventDefault();
+                e.returnValue = 'Tienes cambios sin guardar. ¿Seguro que deseas salir?';
+            }
+        });
+
+        // Modificación a tu función de guardado para soportar el modo silencioso
+        async function guardarDatosAvaluo(isSilent = false) {
+            if (!currentExpedienteId) return;
+
+            const btn = document.getElementById('btn-guardar');
+            const txtGuardar = DICTIONARY[currentLang] ? DICTIONARY[currentLang]['ui_save'] : "Guardar Avance";
+            
+            if (!isSilent && btn) {
+                btn.innerHTML = `<span class="material-symbols-rounded animate-spin text-sm">sync</span> Guardando...`;
+                btn.disabled = true;
+            }
+
+            // Mapeo seguro con encadenamiento opcional
+            const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : '';
+
+            const capturaData = {
+                // Solicitante
+                'sol-nombre': getVal('sol-nombre'),
+                'sol-rfc': getVal('sol-rfc'),
+                'sol-curp': getVal('sol-curp'),
+                'sol-nss': getVal('sol-nss'),
+                'sol-telefono': getVal('sol-telefono'),
+                
+                // Oferente
+                'ofe-nombre': getVal('ofe-nombre'),
+                'ofe-rfc': getVal('ofe-rfc'),
+                'ofe-curp': getVal('ofe-curp'),
+                'ofe-telefono': getVal('ofe-telefono'),
+
+                // Inmueble 
+                'inm-cp': getVal('inm-cp'),
+                'inm-colonia': getVal('inm-colonia'),
+                'inm-ciudad': getVal('inm-ciudad'),
+                'inm-municipio': getVal('inm-municipio'),
+                'inm-estado': getVal('inm-estado'),
+                'inm-pais': getVal('inm-pais'),
+                
+                'inm-tipo-vialidad': getVal('inm-tipo-vialidad'),
+                'inm-nombre-vialidad': getVal('inm-nombre-vialidad'),
+                'inm-num-ext': getVal('inm-num-ext'),
+                'inm-num-int': getVal('inm-num-int'),
+                
+                'inm-conjunto': getVal('inm-conjunto'),
+                'inm-manzana': getVal('inm-manzana'),
+                'inm-supermanzana': getVal('inm-supermanzana'),
+                'inm-lote': getVal('inm-lote'),
+                'inm-calle1': getVal('inm-calle1'),
+                'inm-calle2': getVal('inm-calle2'),
+                
+                'inm-reg-conjunto': getVal('inm-reg-conjunto'),
+                'inm-cve-municipio': getVal('inm-cve-municipio'),
+                'inm-cve-estado': getVal('inm-cve-estado'),
+                'inm-cta-predial': getVal('inm-cta-predial'),
+                
+                'inm-departamento': getVal('inm-departamento'),
+                'inm-entrada': getVal('inm-entrada'),
+                'inm-edificio': getVal('inm-edificio'),
+                'inm-nivel': getVal('inm-nivel'),
+                'inm-condominio': getVal('inm-condominio'),
+                'inm-cta-agua': getVal('inm-cta-agua'),
+                'inm-licencia': getVal('inm-licencia')
+            };
+
+            try {
+                const db = window.db || firebase.firestore();
+                await db.collection('expedientes_avaluos').doc(currentExpedienteId).update({
+                    captura_avaluo: capturaData,
+                    fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                isFormDirty = false; 
+                
+                if (btn) {
+                    btn.classList.replace('bg-amber-500', 'bg-emerald-600');
+                    btn.classList.replace('hover:bg-amber-600', 'hover:bg-emerald-700');
+                    btn.innerHTML = `<span class="material-symbols-rounded text-sm">cloud_done</span><span>${txtGuardar}</span>`;
+                }
+                
+                if (!isSilent) showToast("¡Avance guardado con éxito!", "success");
+
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                if (!isSilent) showToast("Error al guardar en la base de datos.", "error");
+            } finally {
+                if (!isSilent && btn) btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>

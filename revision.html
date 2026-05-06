@@ -548,9 +548,26 @@
         </div>
     </div>
 
+    <div id="global-loader" class="fixed inset-0 z-[100] hidden bg-slate-900/80 backdrop-blur-md flex-col items-center justify-center transition-opacity">
+        <span class="material-symbols-rounded text-6xl text-teal-500 animate-spin mb-4">sync</span>
+        <h3 id="loader-message" class="text-xl font-extrabold text-white mb-2 tracking-wide">Guardando en Drive...</h3>
+        <p class="text-xs text-slate-300">Por favor no des clic en nada ni cierres la ventana.</p>
+    </div>
+
     <input type="file" id="admin-file-upload" class="hidden" accept="application/pdf,image/*" onchange="procesarSubidaInterna(this)">
 
     <script>
+        // Funciones del Loader Global
+        window.showLoader = function(mensaje = 'Procesando...') {
+            const loader = document.getElementById('global-loader');
+            if (document.getElementById('loader-message')) document.getElementById('loader-message').innerText = mensaje;
+            if (loader) { loader.classList.remove('hidden'); loader.classList.add('flex'); }
+        };
+        window.hideLoader = function() {
+            const loader = document.getElementById('global-loader');
+            if (loader) { loader.classList.add('hidden'); loader.classList.remove('flex'); }
+        };
+
         let expediente = { grupos: { solicitante: [], propietario: [], inmueble: [], interno: [] } };
         const groupKeys = ['solicitante', 'propietario', 'inmueble', 'interno'];
         let activeGroupIndex = 0;
@@ -1155,6 +1172,11 @@
             const btnConfirm = document.getElementById('btn-confirm-reject');
             const btnValid = document.getElementById('btn-validar');
             
+            // 🛡️ BLOQUEO ANTI-ANSIEDAD: Activamos la pantalla de carga para bloquear clics
+            if (typeof showLoader === 'function') {
+                showLoader(nuevoEstado === 'rechazado' || nuevoEstado === 'anulado' ? 'Descartando y notificando...' : 'Sincronizando validación en Drive...');
+            }
+            
             try {
                 if(nuevoEstado === 'rechazado') { 
                     btnConfirm.innerHTML = '<span class="animate-spin material-symbols-rounded">sync</span> Descartando...'; 
@@ -1165,10 +1187,13 @@
                     btnValid.disabled = true; 
                 }
                 
+                // 🔐 CANDADO DE ORO: Guardamos la llave actual por si logran burlar el blur
+                const llaveSegura = selectedReqKey;
+
                 const res = await fetch('/.netlify/functions/update-status', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ expedienteId: expediente.id, itemKey: selectedReqKey, nuevoEstado: nuevoEstado, motivo: motivo }) 
+                    body: JSON.stringify({ expedienteId: expediente.id, itemKey: llaveSegura, nuevoEstado: nuevoEstado, motivo: motivo }) 
                 });
                 
                 if(!res.ok) throw new Error("Error en servidor");
@@ -1177,7 +1202,7 @@
                 console.log("📦 RESPUESTA DE NETLIFY:", respuestaServidor);
                 
                 const currentKey = groupKeys[activeGroupIndex];
-                const item = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
+                const item = expediente.grupos[currentKey].find(r => r.key === llaveSegura);
                 
                 if(item) item.status = (nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') ? 'rejected' : 'valid';
 
@@ -1194,6 +1219,9 @@
                 console.error(e); 
                 alert("Error al guardar estado: " + e.message); 
             } finally { 
+                // 🛡️ DESBLOQUEAMOS LA PANTALLA
+                if (typeof hideLoader === 'function') hideLoader();
+
                 btnConfirm.innerHTML = 'Confirmar Descarte'; 
                 btnConfirm.disabled = false; 
                 btnValid.innerHTML = '<span class="material-symbols-rounded text-sm">check_circle</span> Validar'; 

@@ -10,25 +10,48 @@ const DICTIONARY = {
         ui_next: "Siguiente Sección",
         ui_back: "Anterior",
         
-        // MENÚ LATERAL (Nombres de Secciones)
-        sec_1: "Dirección del Inmueble",
-        sec_2: "Geolocalización",
-        sec_3: "Tipo y Clase",
-        // ... (Agregaremos las demás conforme avancemos)
+        // MENÚ LATERAL
+        sec_solicitante: "Datos del solicitante",
+        sec_oferente: "Datos del propietario",
+        sec_inmueble: "Datos del inmueble",
 
-        // SECCIÓN 1: DIRECCIÓN
-        lbl_calle: "Calle / Avenida",
-        lbl_num_ext: "Número Exterior",
-        lbl_num_int: "Número Interior",
-        lbl_colonia: "Colonia / Barrio",
-        lbl_cp: "Código Postal",
-        lbl_municipio: "Municipio / Alcaldía",
-        lbl_estado: "Estado / Provincia",
-        lbl_referencias: "Referencias de ubicación",
+        // UBICACIÓN DEL INMUEBLE
+        sub_ubicacion: "Ubicación del inmueble",
+        lbl_cp: "Código postal *",
+        lbl_colonia: "Colonia *",
+        lbl_ciudad: "Ciudad *",
+        lbl_municipio: "Municipio *",
+        lbl_estado: "Estado *",
+        lbl_pais: "País *",
+        lbl_tipo_vialidad: "Tipo de vialidad *",
+        lbl_nombre_vialidad: "Nombre de vialidad *",
+        lbl_num_ext: "# Exterior *",
+        lbl_num_int: "# Interior",
+
+        // DATOS COMPLEMENTARIOS
+        sub_complementarios: "Datos complementarios",
+        lbl_conjunto: "Nombre del conjunto habitacional",
+        lbl_manzana: "Manzana",
+        lbl_supermanzana: "Supermanzana",
+        lbl_lote: "Lote",
+        lbl_calle1: "Calle 1",
+        lbl_calle2: "Calle 2",
+        lbl_reg_conjunto: "N° registro del conjunto",
+        lbl_cve_municipio: "Clave delegación o municipio *",
+        lbl_cve_estado: "Clave entidad federativa *",
+        lbl_cta_predial: "Cuenta predial",
+        lbl_departamento: "Departamento",
+        lbl_entrada: "Entrada",
+        lbl_edificio: "Edificio",
+        lbl_nivel: "Nivel",
+        lbl_condominio: "Condominio",
+        lbl_cta_agua: "Cuenta de agua",
+        lbl_licencia: "Licencia de construcción",
         
-        // PLACEHOLDERS
-        ph_calle: "Ej. Av. Reforma",
-        ph_escribe: "Escriba aquí..."
+        // PLACEHOLDERS / OPCIONES
+        ph_escribe: "Escriba aquí...",
+        opt_seleccionar: "Seleccione una opción...",
+        opt_mexico: "México"
     },
     en: {
         // GENERAL UI
@@ -38,27 +61,50 @@ const DICTIONARY = {
         ui_back: "Previous",
 
         // SIDEBAR MENU
-        sec_1: "Property Address",
-        sec_2: "Geolocation",
-        sec_3: "Type & Class",
+        sec_solicitante: "Applicant data",
+        sec_oferente: "Owner data",
+        sec_inmueble: "Property data",
 
-        // SECTION 1: ADDRESS
-        lbl_calle: "Street Name",
-        lbl_num_ext: "Ext. Number",
-        lbl_num_int: "Int. Number",
-        lbl_colonia: "Neighborhood",
-        lbl_cp: "Zip Code",
-        lbl_municipio: "City / Municipality",
-        lbl_estado: "State / Province",
-        lbl_referencias: "Location References",
+        // PROPERTY LOCATION
+        sub_ubicacion: "Property location",
+        lbl_cp: "Zip code *",
+        lbl_colonia: "Neighborhood *",
+        lbl_ciudad: "City *",
+        lbl_municipio: "Municipality *",
+        lbl_estado: "State *",
+        lbl_pais: "Country *",
+        lbl_tipo_vialidad: "Road type *",
+        lbl_nombre_vialidad: "Road name *",
+        lbl_num_ext: "Ext. number *",
+        lbl_num_int: "Int. number",
 
-        // PLACEHOLDERS
-        ph_calle: "E.g. 5th Avenue",
-        ph_escribe: "Type here..."
+        // COMPLEMENTARY DATA
+        sub_complementarios: "Complementary data",
+        lbl_conjunto: "Housing complex name",
+        lbl_manzana: "Block",
+        lbl_supermanzana: "Superblock",
+        lbl_lote: "Lot",
+        lbl_calle1: "Cross street 1",
+        lbl_calle2: "Cross street 2",
+        lbl_reg_conjunto: "Complex reg. no.",
+        lbl_cve_municipio: "Municipality key *",
+        lbl_cve_estado: "State key *",
+        lbl_cta_predial: "Property tax account",
+        lbl_departamento: "Department / Apt",
+        lbl_entrada: "Entrance",
+        lbl_edificio: "Building",
+        lbl_nivel: "Level / Floor",
+        lbl_condominio: "Condominium",
+        lbl_cta_agua: "Water account",
+        lbl_licencia: "Building permit",
+
+        // PLACEHOLDERS / OPTIONS
+        ph_escribe: "Type here...",
+        opt_seleccionar: "Select an option...",
+        opt_mexico: "Mexico"
     }
 };
 
-// Lógica de Traducción
 let currentLang = localStorage.getItem('leezar_lang') || 'es';
 
 function setLanguage(lang) {
@@ -66,25 +112,20 @@ function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('leezar_lang', lang);
 
-    // 1. Traducir elementos estáticos (etiquetas, botones)
     document.querySelectorAll('[data-i18n]').forEach(elem => {
         const key = elem.getAttribute('data-i18n');
         if (DICTIONARY[lang][key]) {
             if (elem.tagName === 'INPUT' || elem.tagName === 'TEXTAREA') {
                 elem.placeholder = DICTIONARY[lang][key];
+            } else if (elem.tagName === 'OPTION') {
+                elem.innerText = DICTIONARY[lang][key];
             } else {
                 elem.innerText = DICTIONARY[lang][key];
             }
         }
     });
-
-    // 2. Redibujar Sidebar (para actualizar nombres de menú)
-    if (typeof renderSidebar === 'function') renderSidebar();
-
-    console.log(`🌐 Idioma cambiado a: ${lang.toUpperCase()}`);
 }
 
-// Inicializar al cargar (si se llama directo)
 document.addEventListener('DOMContentLoaded', () => {
     setLanguage(currentLang);
 });
