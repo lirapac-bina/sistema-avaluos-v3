@@ -1013,10 +1013,16 @@
 
             if (req.key === 'UBICACION_MAPS') {
                 if (req.coordenadas) {
-                    document.getElementById('map-address-text').innerText = req.direccion || 'Registrada';
-                    document.getElementById('map-coords-text').innerText = req.coordenadas;
+                    const addressEl = document.getElementById('map-address-text');
+                    const coordsEl = document.getElementById('map-coords-text');
+                    
+                    if (addressEl) addressEl.innerText = req.direccion || 'Registrada';
+                    if (coordsEl) coordsEl.innerText = req.coordenadas; // 🛡️ Blindado contra null
+                    
                     const embedUrl = `https://maps.google.com/maps?q=${req.coordenadas}&t=k&z=19&output=embed`;
-                    document.getElementById('google-map-embed').src = embedUrl;
+                    const mapEmbed = document.getElementById('google-map-embed');
+                    if(mapEmbed) mapEmbed.src = embedUrl;
+                    
                     document.getElementById('map-container').classList.remove('hidden');
                 } else {
                     document.getElementById('preview-placeholder').classList.remove('hidden');
@@ -1059,7 +1065,6 @@
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
             }
-            // 👇 AQUI EMPIEZA LO NUEVO PARA ESCRITURAS MÚLTIPLES (GALERIA_DOCS) 👇
             else if (req.tipo === 'GALERIA_DOCS') {
                 if (req.fotos && req.fotos.length > 0) {
                     const grid = document.getElementById('gallery-grid');
@@ -1092,13 +1097,15 @@
                     document.getElementById('preview-placeholder').classList.remove('hidden');
                 }
             }
-            // 👆 AQUI TERMINA LO NUEVO 👆
             else if (req.url) {
                 const img = document.getElementById('real-image');
                 const urlTransformada = transformDriveUrl(req.url);
                 img.src = urlTransformada;
                 img.classList.remove('hidden');
-                document.getElementById('zoom-overlay').classList.remove('hidden');
+                
+                // 🔥 AQUÍ ESTABA EL ERROR: Agregamos el signo de interrogación de seguridad
+                document.getElementById('zoom-overlay')?.classList.remove('hidden');
+                
                 galleryImages = [{ url: urlTransformada, nombre: req.nombre }];
             } 
             else {
@@ -1107,16 +1114,12 @@
             
             const bar = document.getElementById('decision-bar');
             const btnValidar = document.getElementById('btn-validar');
-            // Buscamos el botón de descartar de forma segura, independientemente del onclick que tenga asignado en ese momento
             const btnDescartar = bar.querySelector('button:first-of-type'); 
             
             const currentKey = groupKeys[activeGroupIndex];
             
-            // Evaluamos si debemos mostrar la barra. 
-            // La mostramos SIEMPRE que haya un archivo subido (review, rejected, valid) 
-            // O si es un archivo interno que podemos subir nosotros.
-            // INCLUSO si es opcional.
-            const tieneArchivo = req.url || (req.fotos && req.fotos.length > 0) || req.textoPreview;
+            // 🔥 AQUÍ ESTABA EL OTRO DETALLE: Faltaba incluir "req.coordenadas" para que valide el mapa
+            const tieneArchivo = req.url || (req.fotos && req.fotos.length > 0) || req.textoPreview || req.coordenadas;
             
             if (tieneArchivo || (req.status === 'pending' && currentKey === 'interno')) {
                 bar.classList.remove('translate-y-full');
@@ -1133,7 +1136,6 @@
                     if(btnDescartar) {
                         btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">warning</span> Anular y Resetear';
                         btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-600 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs transition-all shadow-md active:scale-95";
-                        // Usamos tu función forzarRechazo (Modo Dios) que ya tienes programada
                         btnDescartar.setAttribute('onclick', `forzarRechazo('${req.key}', '${req.nombre}')`);
                     }
                 } else {
