@@ -139,18 +139,17 @@ exports.handler = async (event) => {
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
             try {
-                // 🔗 URL de tu "Implementación" de Google Apps Script
                 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFFJ0aAjm1mTcc7romxhOuHKjz2CRaAGARH9gzMU6P3OU3fnMirhs3GNA2JhbMUK7Z/exec"; 
                 
-                const params = new URLSearchParams({
-                    cliente: nombre,
-                    unidad: unidad
-                });
+                // Usamos una URL con los parámetros incluidos directamente
+                const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
 
-                // Llamamos al script correctamente usando la variable definida arriba
-                fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET' })
-                    .then(() => console.log("✅ [NOTIFICACIÓN] Aviso enviado a Google Apps Script"))
-                    .catch(e => console.error("❌ [NOTIFICACIÓN] Error al avisar a Google:", e));
+                fetch(finalUrl, { 
+                    method: 'POST', // Cambiamos a POST para mayor estabilidad
+                    follow: 20      // Instrucción para seguir redirecciones de Google
+                })
+                .then(() => console.log("✅ [NOTIFICACIÓN] Aviso enviado con éxito"))
+                .catch(e => console.error("❌ [NOTIFICACIÓN] Error al avisar:", e));
             } catch (notifyErr) {
                 console.error("Error en bloque de notificación:", notifyErr);
             }
