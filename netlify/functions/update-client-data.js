@@ -138,7 +138,7 @@ exports.handler = async (event) => {
         // 🚀 BLOQUE DE NOTIFICACIÓN VERSIÓN FINAL
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-Dxqlx5JHU71z3ahIOeFIIVUDvLcKSMOnwPYU-u0Ff13SKRNrV4tNs7jqq8ZW6ce1/exec"; 
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwy6QxSNY36c6Ab9a3fu99rDXSXZ-J_STL4kGEDkpnBbuzkLTUSLaO00o-XzYCwvm-l/exec"; 
             
             // Construimos la URL con los parámetros pegados de forma simple
             const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad);
