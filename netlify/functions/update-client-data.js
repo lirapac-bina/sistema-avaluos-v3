@@ -139,7 +139,7 @@ exports.handler = async (event) => {
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
             try {
-                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFFJ0aAjm1mTcc7romxhOuHKjz2CRaAGARH9gzMU6P3OU3fnMirhs3GNA2JhbMUK7Z/exec"; 
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQYJvksqTB-eOpcpEsx9NKrmmgHI4pHb88-9Q-xZmu2ttt_Qb19h4TPMm9YYnz05un/exec"; 
                 
                 // Usamos una URL con los parámetros incluidos directamente
                 const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
