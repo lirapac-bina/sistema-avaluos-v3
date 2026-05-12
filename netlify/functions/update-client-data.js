@@ -135,24 +135,28 @@ exports.handler = async (event) => {
 
         await docRef.update(updateData);
         // ========================================================
-        // 🚀 NUEVO: AVISAR AL SCRIPT DE GOOGLE PARA MANDAR CORREO
+        // 🚀 BLOQUE DE NOTIFICACIÓN DEFINITIVO
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
-            try {
-                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQYJvksqTB-eOpcpEsx9NKrmmgHI4pHb88-9Q-xZmu2ttt_Qb19h4TPMm9YYnz05un/exec"; 
-                
-                // Usamos una URL con los parámetros incluidos directamente
-                const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQYJvksqTB-eOpcpEsx9NKrmmgHI4pHb88-9Q-xZmu2ttt_Qb19h4TPMm9YYnz05un/exec"; 
+            
+            // Construimos la URL con los parámetros bien pegados
+            const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
 
-                fetch(finalUrl, { 
-                    method: 'POST', // Cambiamos a POST para mayor estabilidad
-                    follow: 20      // Instrucción para seguir redirecciones de Google
-                })
-                .then(() => console.log("✅ [NOTIFICACIÓN] Aviso enviado con éxito"))
-                .catch(e => console.error("❌ [NOTIFICACIÓN] Error al avisar:", e));
-            } catch (notifyErr) {
-                console.error("Error en bloque de notificación:", notifyErr);
-            }
+            console.log(`📡 [NOTIFICACIÓN] Intentando avisar a Google: ${unidad}`);
+
+            // Usamos una configuración de fetch compatible con los saltos de seguridad de Google
+            fetch(finalUrl, { 
+                method: 'POST',
+                redirect: 'follow', // Muy importante para que Google no rechace la conexión
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                console.log(`✅ [NOTIFICACIÓN] Google respondió con estatus: ${response.status}`);
+            })
+            .catch(e => {
+                console.error("❌ [NOTIFICACIÓN] Error crítico al avisar a Google:", e.message);
+            });
         }
 
         return { statusCode: 200, body: JSON.stringify({ message: 'Actualizado', updateData }) };
