@@ -69,8 +69,47 @@
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .fade-in { animation: popIn 0.3s ease-out forwards; }
 
-            #map { height: 300px; width: 100%; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
-            .dark #map { border-color: #1e293b; }
+        #map { height: 300px; width: 100%; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
+        .dark #map { border-color: #1e293b; }
+
+        /* 🔵 BOTÓN FLOTANTE GUÍA DE USO */
+        .help-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 25px;
+            height: 55px;
+            padding: 0 25px;
+            background: #0f4c81;
+            color: white;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(15, 76, 129, 0.5);
+            z-index: 999;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .help-fab:hover { transform: scale(1.05); background: #0a355c; }
+        .help-fab::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 30px;
+            background: inherit;
+            animation: pulse-ring 2s infinite;
+            z-index: -1;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+
+        /* 🎨 DISEÑO DE TARJETAS DE GUÍA */
+        .guia-card { background: white; border-radius: 20px; padding: 15px; border: 1px solid #f1f5f9; margin-bottom: 10px; }
     </style>
 
 
@@ -151,7 +190,10 @@
 
     <div id="dynamicPrivacyModal" class="fixed inset-0 z-[9000] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-[popIn_0.3s_ease-out] flex flex-col max-h-[90vh]">
-            <div id="modal-legal-header" class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-leezar-600 transition-colors duration-500">
+            <div id="modal-legal-header" class="pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 bg-leezar-600 transition-colors duration-500 relative">
+                <button onclick="mostrarModalLegal(false)" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
                 <span class="material-symbols-rounded text-white text-3xl mb-2">verified_user</span>
                 <h2 class="text-2xl font-bold text-white">Aviso de Privacidad</h2>
             </div>
@@ -282,6 +324,10 @@
                     <span id="brand-subtitle" class="text-xs opacity-90 font-bold uppercase tracking-widest text-white/80">Gestión de Avalúos</span>
                 </div>
             </div>
+            
+            <button onclick="toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
+                <span class="material-symbols-rounded" id="dark-mode-icon">dark_mode</span>
+            </button>
         </div>
     </div>
 
@@ -349,17 +395,20 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-xl">
-                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-teal-500">
+                <button id="tab-btn-solicitante" onclick="switchTab('solicitante')" class="tab-btn relative py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-teal-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">person</span> 
                     <span class="text-xs font-bold">Solicitante</span>
+                    <span id="badge-solicitante" class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden shadow-sm border border-white"></span>
                 </button>
-                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-amber-500">
+                <button id="tab-btn-propietario" onclick="switchTab('propietario')" class="tab-btn relative py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-amber-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">group</span> 
                     <span class="text-xs font-bold">Propietario</span>
+                    <span id="badge-propietario" class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden shadow-sm border border-white"></span>
                 </button>
-                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-indigo-500">
+                <button id="tab-btn-inmueble" onclick="switchTab('inmueble')" class="tab-btn relative py-3 rounded-lg flex flex-col items-center justify-center gap-1 transition-all group text-slate-400 hover:text-indigo-500">
                     <span class="material-symbols-rounded text-2xl group-hover:scale-110 transition-transform">home</span> 
                     <span class="text-xs font-bold">Inmueble</span>
+                    <span id="badge-inmueble" class="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden shadow-sm border border-white"></span>
                 </button>
             </div>
 
@@ -635,192 +684,89 @@
             showLoader(`Iniciando subida...`);
 
             try {
-                // 🌟 MAGIA 1: LECTURA DE CONFIGURACIÓN DOC JUST AL INICIO (MODO DEBUG)
-                let autoConvert = false;
-                try {
-                    const configSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
-                    if (configSnap.exists) {
-                        const diccionario = configSnap.data().diccionario || {};
-                        
-                        // 🧠 Buscador Inteligente: Buscamos la llave exacta y la raíz
-                        let baseKey = itemKey;
-                        if (itemKey.includes('_')) {
-                            baseKey = itemKey.split('_')[0]; 
-                        }
-                        
-                        // Busca primero la llave exacta (ej. CURP_SOLICITANTE), si no, la raíz (ej. CURP)
-                        const configItem = diccionario[itemKey] || diccionario[baseKey] || {};
-                        autoConvert = configItem.autoConvertJpg === true;
-                        
-                        // 🕵️‍♂️ LOG DE DETECTIVE: Esto imprimirá la verdad en tu consola F12
-                        console.log(`🔍 [DOC JUST DEBUG] Subiendo Item: ${itemKey}`);
-                        console.log(`🔍 [DOC JUST DEBUG] Raíz detectada: ${baseKey}`);
-                        console.log(`🔍 [DOC JUST DEBUG] ¿Existe en Diccionario?:`, !!configItem.nombre);
-                        console.log(`🔍 [DOC JUST DEBUG] ¿Switch Auto-JPG Activado?:`, autoConvert);
-                    }
-                } catch(e) { console.warn("Error leyendo config", e); }
+                // 🌟 REGLA ESPECIAL: SI ES ESCRITURA Y HAY VARIOS, NO FUSIONAR (PARA EL MOSAICO)
+                if (totalArchivos > 1 && itemKey === 'ESCRITURA') {
+                    showLoader(`Subiendo ${totalArchivos} páginas de Escritura...`);
+                    
+                    for (let i = 0; i < totalArchivos; i++) {
+                        showLoader(`Subiendo página ${i+1} de ${totalArchivos}...`);
+                        const file = files[i];
+                        const extraKey = `ESCRITURA_EXTRA_${Date.now()}_${i}`;
+                        const finalName = `Escritura_Pag_${i+1}_${Date.now()}.${file.type.split('/')[1]}`;
 
-                // 🌟 REGLA ESTRICTA: ESCÁNER DE COLOR (INTACTO)
-                const nameUpper = String(nombreItem).toUpperCase();
-                if (nameUpper.includes('INE') || nameUpper.includes('SOLICITUD')) {
-                    showLoader(`Analizando color original...`);
-                    for (let f of files) {
-                        const esColor = await verificarSiEsColor(f);
-                        if (!esColor) {
-                            throw new Error(`👋 Hola,\n\nHemos detectado que el archivo "${f.name}" parece estar en blanco y negro.\n\nPara que tu trámite fluya sin contratiempos, por favor asegúrate de subir este documento a COLOR. \n\n¡Muchas gracias!`);
-                        }
+                        const res = await fetch('/.netlify/functions/get-upload-url', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ expedienteId, itemKey: extraKey, fileName: finalName, mimeType: file.type })
+                        });
+                        
+                        const { uploadUrl, filePath } = await res.json();
+                        await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+
+                        await fetch('/.netlify/functions/update-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ expedienteId, itemKey: extraKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                        });
                     }
+
+                    // Marcamos el item principal como en revisión
+                    await fetch('/.netlify/functions/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', categoriaItem: categoria })
+                    });
+                    
+                    location.reload();
+                    return; 
                 }
 
+                // 🌟 LÓGICA NORMAL DE FUSIÓN (Para todos los demás documentos)
                 let fileToUpload;
                 let finalName = files[0].name;
-                let finalType = files[0].type;
-
-                // 🌟 LÓGICA DE MÚLTIPLES ARCHIVOS / FUSIÓN UNIVERSAL (INTACTA)
                 if (totalArchivos > 1) {
-                    showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF maestro...`);
-                    
+                    showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF...`);
                     const { PDFDocument } = window.PDFLib;
                     const masterPdf = await PDFDocument.create();
 
                     for (let i = 0; i < totalArchivos; i++) {
-                        showLoader(`Procesando archivo ${i+1} de ${totalArchivos}...`);
                         const file = files[i];
                         const arrayBuffer = await file.arrayBuffer();
-
                         if (file.type === 'application/pdf') {
                             const pdfToMerge = await PDFDocument.load(arrayBuffer);
                             const copiedPages = await masterPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
                             copiedPages.forEach((page) => masterPdf.addPage(page));
-                        } else if (file.type.startsWith('image/')) {
-                            let img;
-                            if (file.type === 'image/png') {
-                                img = await masterPdf.embedPng(arrayBuffer);
-                            } else {
-                                img = await masterPdf.embedJpg(arrayBuffer);
-                            }
-                            
+                        } else {
+                            const img = file.type === 'image/png' ? await masterPdf.embedPng(arrayBuffer) : await masterPdf.embedJpg(arrayBuffer);
                             const page = masterPdf.addPage();
                             const { width, height } = page.getSize();
                             const scale = Math.min((width - 40) / img.width, (height - 40) / img.height, 1);
-                            
-                            const imgWidth = img.width * scale;
-                            const imgHeight = img.height * scale;
-                            const x = (width / 2) - (imgWidth / 2);
-                            const y = (height / 2) - (imgHeight / 2);
-                            
-                            page.drawImage(img, { x, y, width: imgWidth, height: imgHeight });
-                        } else {
-                            throw new Error(`El archivo ${file.name} no es válido. Solo sube PDFs o Fotos.`);
+                            page.drawImage(img, { x: 20, y: (height - img.height * scale) / 2, width: img.width * scale, height: img.height * scale });
                         }
                     }
-
                     const pdfBytes = await masterPdf.save();
                     fileToUpload = new Blob([pdfBytes], { type: 'application/pdf' });
                     finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
-                    finalType = 'application/pdf';
-
                 } else {
-                    // 🌟 LÓGICA DE 1 SOLO ARCHIVO (INTACTA)
-                    const f = files[0];
-                    if (f.type !== 'application/pdf' && !f.type.startsWith('image/')) {
-                         throw new Error("Formato inválido. Solo se admiten PDFs o Fotos (JPG/PNG).");
-                    }
-                    fileToUpload = f;
+                    fileToUpload = files[0];
                 }
 
-                showLoader(`Cargando archivo para revisión...`);
-
-                let uploadUrl, filePath;
-                try {
-                    const res = await fetch('/.netlify/functions/get-upload-url', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: finalType })
-                    });
-                    if (!res.ok) throw new Error("Servidor rechazó la conexión inicial.");
-                    const dataUrl = await res.json();
-                    uploadUrl = dataUrl.uploadUrl;
-                    filePath = dataUrl.filePath;
-                } catch (err) {
-                    throw new Error("Error de seguridad al pedir permiso: " + err.message);
-                }
-
-                try {
-                    const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': finalType } });
-                    if (!uploadRes.ok) throw new Error("Google Cloud rechazó el archivo.");
-                } catch (err) {
-                    throw new Error("Fallo de red. Revisa tu conexión a internet.");
-                }
-
-                // 🌟 MAGIA 2: RENDERIZADO A JPG PARA DOC JUST (VÍA NUBE SEGURA)
-                let pathsJpg = [];
-                if (autoConvert) {
-                    showLoader(`Renderizando documento para DOC JUST...`);
-                    
-                    if (finalType === 'application/pdf') {
-                        try {
-                            const imagenesJpgBase64 = await convertirPdfAJpgs(fileToUpload);
-                            for (let j = 0; j < imagenesJpgBase64.length; j++) {
-                                showLoader(`Guardando copia HD ${j+1} de ${imagenesJpgBase64.length}...`);
-                                const resJpg = await fetch(imagenesJpgBase64[j]);
-                                const blobJpg = await resJpg.blob();
-                                const jpgName = `DOCJUST_${itemKey}_${Date.now()}_pag${j+1}.jpg`;
-
-                                // Pedimos permiso a Netlify para subir la foto de forma segura
-                                const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
-                                });
-                                
-                                if (resPermiso.ok) {
-                                    const dataPermiso = await resPermiso.json();
-                                    await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
-                                    pathsJpg.push(dataPermiso.filePath);
-                                }
-                            }
-                        } catch(errPdf) { console.error("Error convirtiendo PDF", errPdf); }
-                    } else if (finalType.startsWith('image/')) {
-                        // Si ya es imagen, mandamos la misma ruta del archivo original
-                        pathsJpg.push(filePath);
-                    }
-                }
-
-                showLoader('Guardando estatus...');
-                
-                const bodyPayload = { 
-                    expedienteId, 
-                    itemKey, 
-                    nuevoEstado: 'revision', 
-                    archivoPath: filePath, 
-                    categoriaItem: categoria 
-                };
-                
-                // Inyectamos las rutas de los JPGs en el paquete para Netlify
-                if (autoConvert && pathsJpg.length > 0) {
-                    bodyPayload.autoConvertJpg = true;
-                    bodyPayload.pathsJpg = pathsJpg;
-                }
-
-                const updateRes = await fetch('/.netlify/functions/update-status', {
+                // ... Resto de tu función de subida (fetch get-upload-url, etc.)
+                const res = await fetch('/.netlify/functions/get-upload-url', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyPayload)
+                    body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: fileToUpload.type })
                 });
-
-                if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
-            
-                // 🔥 REGISTRO DE AUDITORÍA
-                await registrarLog('NUEVO DOCUMENTO', `El cliente subió y fusionó ${totalArchivos} archivo(s).`, itemKey);
-
+                const { uploadUrl, filePath } = await res.json();
+                await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': fileToUpload.type } });
+                await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                });
                 location.reload();
-
-            } catch (error) {
-                console.error("Error subida:", error);
-                alert("❌ " + error.message);
-            } finally {
-                input.value = ''; 
+            } catch (e) {
+                alert("Error: " + e.message);
                 hideLoader();
             }
         }
@@ -974,7 +920,7 @@
                             
                             <label class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-all active:scale-95 group">
                                 <span class="material-symbols-rounded text-lg text-indigo-500 group-hover:-translate-y-1 transition-transform">upload_file</span> 
-                                <span class="text-left leading-tight">Cargar PDF / Fotos<span class="block text-[9px] font-normal text-slate-400 mt-[-1px]">Soporta selección múltiple</span></span>
+                                <span class="text-left leading-tight">Cargar PDF / Documentos<span class="block text-[9px] font-bold text-indigo-600 mt-[-1px] animate-pulse">¡Selecciona varios a la vez!</span></span>
                                 <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
                             </label>
                         </div>
@@ -1044,10 +990,10 @@
             
             // 🔥 DICCIONARIO DE IDENTIDADES CORREGIDO (Nombres, Colores y Entidad Legal)
             const brands = {
-                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-rose-700', name: 'EME LEEZAR', legal: 'EME Leezar S.A. de C.V.' },
+                'EME': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-rose-700', name: 'EME LEEZAR', legal: 'INGENIERÍA LEEZAR' },
                 'APN': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA', legal: 'Avalúos Pamela Nogueira' },
                 'PNA': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-apn-AR01j0421Zt5DBjo.png', color: 'bg-orange-600', name: 'AVALÚOS PAMELA NOGUEIRA', legal: 'Avalúos Pamela Nogueira' },
-                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-emerald-700', name: 'GYS AVE EME', legal: 'Asesoría Valuación y Estudios (AVE)' }
+                'AVE': { logo: 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png', color: 'bg-emerald-700', name: 'GYS AVE EME', legal: 'INGENIERÍA LEEZAR' }
             };
             
             const config = brands[unidad] || brands['AVE'];
@@ -1069,15 +1015,15 @@
 
             const containers = { 'solicitante': document.getElementById('list-solicitante'), 'propietario': document.getElementById('list-propietario'), 'inmueble': document.getElementById('list-inmueble') };
             
-            // Inyectamos el Hint Educativo al inicio de cada contenedor
+            // Inyectamos el Hint Educativo mejorado
             const hintEducativo = `
                 <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 mb-4 rounded-xl flex items-start gap-3 shadow-sm">
                     <span class="material-symbols-rounded text-indigo-500 mt-0.5">lightbulb</span>
                     <div class="text-xs text-indigo-800 dark:text-indigo-300">
                         <p class="font-bold mb-1 uppercase tracking-wide">¿Cómo subir tus documentos?</p>
-                        <ul class="list-disc pl-4 space-y-0.5 opacity-90">
-                            <li>Usa <b>Escanear</b> para tomar fotos directas con la cámara de tu celular (se unirán en un PDF automático).</li>
-                            <li>Usa <b>Cargar PDF / Fotos</b> para subir un archivo existente. <br><span class="font-bold">💡 Tip:</span> Puedes seleccionar <i>varias fotos a la vez</i> (ej. INE frente y reverso) y el sistema las unirá por ti.</li>
+                        <ul class="list-disc pl-4 space-y-1 opacity-90">
+                            <li>Usa <b>Escanear</b> para tomar fotos directas con tu cámara.</li>
+                            <li><b class="text-indigo-600 dark:text-indigo-400 underline">IMPORTANTE:</b> Si tienes varios archivos (ej. 2 recibos o INE frente y vuelta), <b>selecciónalos todos juntos</b> en una sola carga. El sistema los unirá automáticamente en un solo PDF.</li>
                         </ul>
                     </div>
                 </div>
@@ -1193,6 +1139,29 @@
             
             // 1. ACTUALIZAR BARRAS DE PROGRESO
             updateProgressBars(completados, revisionCount, totalRequisitos);
+
+            // 🧠 Lógica de burbujas rojas (Tareas pendientes)
+            const pendientesObj = { solicitante: 0, propietario: 0, inmueble: 0 };
+            Object.values(data.checklist || {}).forEach(i => {
+                const statusLocal = (i.estatus || 'pendiente').toLowerCase().trim();
+                const catLocal = i.categoria || 'solicitante';
+                // Si es obligatorio y está pendiente o rechazado, sumamos al badge
+                if ((statusLocal === 'pendiente' || statusLocal === 'rechazado') && i.obligatorio !== false) {
+                    if (pendientesObj[catLocal] !== undefined) pendientesObj[catLocal]++;
+                }
+            });
+
+            ['solicitante', 'propietario', 'inmueble'].forEach(cat => {
+                const badge = document.getElementById(`badge-${cat}`);
+                if (badge) {
+                    if (pendientesObj[cat] > 0) {
+                        badge.innerText = pendientesObj[cat];
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
             
             // 2. DISPARADOR DE AGENDA CONTROLADA
             const validacionCompleta = (completados === totalRequisitos && totalRequisitos > 0);
@@ -1404,23 +1373,41 @@
 
         function mostrarModalLegal(mostrar) { 
             const modal = document.getElementById('dynamicPrivacyModal');
+            const btnStart = document.getElementById('btnStartDynamic');
+            const check = document.getElementById('acceptCheckDynamic');
+
             if (mostrar) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 document.getElementById('legal-dynamic-content').innerHTML = "Cargando aviso de privacidad...";
                 
+                // 🔥 NUEVO: Si el usuario ya aceptó previamente (es una consulta desde el footer)
+                if (localStorage.getItem(`legal_${expedienteId}`)) {
+                    btnStart.disabled = false;
+                    btnStart.innerText = "Entendido / Cerrar";
+                    btnStart.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed');
+                    btnStart.classList.add('bg-leezar-500', 'text-white');
+                    btnStart.onclick = () => mostrarModalLegal(false);
+                    // Ocultamos el checkbox porque ya aceptó
+                    check.parentElement.classList.add('hidden');
+                } else {
+                    // Reiniciamos estado por si acaso
+                    check.parentElement.classList.remove('hidden');
+                }
+
                 // 🛡️ Identidad Gráfica y Legal en Modal
                 const unidad = (typeof expedienteGlobal !== 'undefined' && expedienteGlobal && expedienteGlobal.unidad) ? expedienteGlobal.unidad : 'AVE';
                 const brands = {
-                    'EME': { color: 'bg-rose-700', legal: 'EME Leezar S.A. de C.V.' },
+                    'EME': { color: 'bg-rose-700', legal: 'Ingeniería Leezar' },
                     'APN': { color: 'bg-orange-600', legal: 'Avalúos Pamela Nogueira' },
                     'PNA': { color: 'bg-orange-600', legal: 'Avalúos Pamela Nogueira' },
-                    'AVE': { color: 'bg-emerald-700', legal: 'Asesoría Valuación y Estudios (AVE)' }
+                    'AVE': { color: 'bg-emerald-700', legal: 'Ingeniería Leezar' }
                 };
                 const config = brands[unidad] || brands['AVE'];
                 
                 const headerModal = document.getElementById('modal-legal-header');
-                if(headerModal) headerModal.className = `pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 transition-colors duration-500 ${config.color}`;
+                // Aseguramos que mantenga relative por si le agregaste el botón X en el HTML
+                if(headerModal) headerModal.className = `pt-6 pb-4 text-center px-6 shrink-0 border-b border-gray-100 dark:border-slate-700 transition-colors duration-500 relative ${config.color}`;
 
                 fetch('/.netlify/functions/get-legal')
                     .then(r => r.json())
@@ -1892,6 +1879,30 @@
             });
         }
 
+        // 🌓 LÓGICA DE MODO OSCURO
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('dark-mode-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                if(icon) icon.innerText = 'dark_mode';
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                if(icon) icon.innerText = 'light_mode';
+                localStorage.theme = 'dark';
+            }
+        }
+
+        // Verificar preferencia al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                const icon = document.getElementById('dark-mode-icon');
+                if(icon) icon.innerText = 'light_mode';
+            }
+        });
     
     </script>
 
@@ -1911,6 +1922,107 @@
                 Confirmar Cita <span class="material-symbols-rounded text-lg">check_circle</span>
             </button>
         </div>
+    </div>
+
+    <div id="timelineModal" class="fixed inset-0 z-[9900] hidden bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 transition-all">
+        <div class="bg-slate-50 dark:bg-slate-900 w-full max-w-md rounded-[35px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div class="p-6 bg-white dark:bg-slate-800 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-rounded">auto_stories</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-[#0f4c81] dark:text-white uppercase leading-none">Expediente para avalúo</h3>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sigue estas recomendaciones para compartir de forma segura tus documentos</p>
+                    </div>
+                </div>
+                <button onclick="cerrarTimeline()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500"><span class="material-symbols-rounded">close</span></button>
+            </div>
+
+            <div class="p-5 overflow-y-auto thin-scroll">
+                
+                <div class="space-y-3 mb-6">
+                    <div class="guia-card border-l-4 border-l-indigo-500">
+                        <div class="flex gap-4 items-start">
+                            <span class="material-symbols-rounded text-indigo-500 text-3xl">photo_camera</span>
+                            <div>
+                                <h4 class="text-[11px] font-black uppercase text-slate-800 mb-1">Escanear (usar la cámara)</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight">Usa tu cámara de tu celular o tableta para capturar hojas físicas una por una. Procura que no salgan sombras o parte del documento cortado <b>El sistema las unirá automáticamente en un solo archivo por ti.</b></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-card border-l-4 border-l-teal-500">
+                        <div class="flex gap-4 items-start">
+                            <span class="material-symbols-rounded text-teal-500 text-3xl">upload_file</span>
+                            <div>
+                                <h4 class="text-[11px] font-black uppercase text-slate-800 mb-1">Cargar PDF / Documentos</h4>
+                                <p class="text-[10px] text-slate-600 leading-tight">Si tienes tus archivos en tu celular, tablet o PC, ¡puedes elegir <b>más de 1 archivo a la vez</b>! (Ej: Selecciona tus 6 recibos de agua y súbelos de un solo golpe).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-5 rounded-[24px] mb-6">
+                    <div class="flex gap-3 items-center mb-2">
+                        <span class="material-symbols-rounded text-amber-600 text-xl">verified_user</span>
+                        <h4 class="text-xs font-black uppercase text-amber-800 leading-none">Importante: Revisión de Documentos</h4>
+                    </div>
+                    <p class="text-[10px] text-amber-700 leading-normal">
+                        <b>Subir tus documentos no habilita la agenda de inmediato.</b> Cada documento será revisado. Si un documento es ilegible o está incompleto, te notificaremos para que lo subas nuevamente.
+                    </p>
+                </div>
+
+                <div class="px-2">
+                    <h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Pasos finales</h5>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 items-center opacity-60">
+                            <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold">1</div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Sube tus requisitos al 100%</p>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">2</div>
+                            <p class="text-[10px] font-bold text-slate-800 uppercase">Validación (Espera nuestra revisión)</p>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold animate-bounce">3</div>
+                            <p class="text-[10px] font-bold text-slate-800 uppercase">Agenda tu cita en el calendario</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border-t border-slate-100">
+                <button onclick="cerrarTimeline()" class="w-full bg-[#0f4c81] text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                    Entendido, ¡gracias!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function abrirTimeline() {
+            const modal = document.getElementById('timelineModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Truco para reiniciar la animación CSS cada vez que se abre
+            const steps = document.querySelectorAll('.step-animate');
+            steps.forEach(step => {
+                step.style.animation = 'none';
+                step.offsetHeight; /* trigger reflow */
+                step.style.animation = null; 
+            });
+        }
+        function cerrarTimeline() {
+            document.getElementById('timelineModal').classList.add('hidden');
+            document.getElementById('timelineModal').classList.remove('flex');
+        }
+    </script>
+<div class="help-fab" onclick="abrirTimeline()">
+        <span class="material-symbols-rounded">menu_book</span>
+        <span class="text-xs font-black uppercase tracking-widest">Cómo usar el portal</span>
     </div>
 </body>
 </html>

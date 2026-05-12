@@ -860,109 +860,80 @@
         };
 
         window.generarTextoNotas = async () => {
-            if(!currentFolioId) return showToast("Selecciona un expediente primero", "error");
-            
+            if(!currentFolioId || !currentExpediente) return showToast("Error: Datos no cargados", "error");
+
             const btn = document.querySelector('button[onclick="generarTextoNotas()"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Redactando...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Aplicando Plantilla Inteligente...';
             btn.disabled = true;
 
             try {
-                let txt = "NOTAS COMPLEMENTARIAS AL AVALÚO\n\n";
+                // 1. TRAER EL TEXTO (EL LÁPIZ) DESDE FIREBASE
+                const tramiteSeleccionado = document.getElementById('nota-tipo-tramite').value;
+                const notasSnapshot = await db.collection('configuracion').doc('notas').get();
+                let plantilla = "";
 
-                // 1. FECHA Y UBICACIÓN
-                const fechaVisita = document.getElementById('nota-fecha-visita').value || "[FALTA FECHA DE VISITA]";
-                txt += `El presente avalúo se realizó con base en la visita de inspección efectuada el día ${fechaVisita}.\n\n`;
-
-                // 2. DOCUMENTOS (Solo redacta los que tienen la casilla palomeada)
-                txt += `DOCUMENTACIÓN PROPORCIONADA (COPIAS SIMPLES):\n`;
-                let hayDocs = false;
-
-                if(document.querySelector('input[value="Escritura"]').checked) {
-                    const num = document.getElementById('nota-esc-numero').value || "___";
-                    const vol = document.getElementById('nota-esc-libro').value ? ` libro/volumen ${document.getElementById('nota-esc-libro').value},` : "";
-                    const fecha = document.getElementById('nota-esc-fecha').value || "___";
-                    const notario = document.getElementById('nota-esc-notario').value || "___";
-                    const numNot = document.getElementById('nota-esc-notaria-num').value || "___";
-                    const cdNot = document.getElementById('nota-esc-notaria-ciudad').value || "___";
-                    txt += `- Escritura Pública: Número ${num},${vol} de fecha ${fecha}, pasada ante la fe del ${notario}, titular de la Notaría Pública No. ${numNot} de la ciudad de ${cdNot}.\n`;
-                    hayDocs = true;
-                }
-                
-                if(document.querySelector('input[value="Cédula Catastral"]').checked) {
-                    const fecha = document.getElementById('nota-cedula-fecha').value || "___";
-                    const folio = document.getElementById('nota-cedula-folio').value || "___";
-                    txt += `- Cédula Catastral: Expedida con fecha ${fecha}, con número de folio ${folio}.\n`;
-                    hayDocs = true;
+                if (notasSnapshot.exists && notasSnapshot.data().tramites) {
+                    const tramites = notasSnapshot.data().tramites;
+                    if(tramites[tramiteSeleccionado] && tramites[tramiteSeleccionado].texto_base) {
+                        plantilla = tramites[tramiteSeleccionado].texto_base;
+                    }
                 }
 
-                if(document.querySelector('input[value="Boleta Predial"]').checked) {
-                    const cve = document.getElementById('nota-predial-clave').value || "___";
-                    const fol = document.getElementById('nota-predial-folio').value || "___";
-                    txt += `- Boleta Predial: Clave Catastral ${cve}, con número de folio o recibo ${fol}.\n`;
-                    hayDocs = true;
+                if (!plantilla) {
+                    showToast("No hay plantilla para este trámite en Admin.", "warning");
+                    return;
                 }
 
-                if(document.querySelector('input[value="Recibo de Agua"]').checked) {
-                    const cta = document.getElementById('nota-agua-cuenta').value || "___";
-                    const exp = document.getElementById('nota-agua-expedido').value || "___";
-                    txt += `- Recibo de Agua: Cuenta ${cta}, expedido por ${exp}.\n`;
-                    hayDocs = true;
+                // 2. EXTRAER DATOS GLOBALES
+                const extraidos = currentExpediente.datos_extraidos || {};
+                let fVisita = currentExpediente.cita?.fecha || "___";
+                const supConst = document.getElementById('nota-sup-total')?.value || "___";
+                const cpVal = document.getElementById('nota-cp')?.value || "___";
+                const colVal = document.getElementById('nota-cp-asentamiento')?.value || "___";
+
+                // Listas dinámicas (solo lo que está palomeado)
+                let docsList = [];
+                document.querySelectorAll('input[name="nota-docs"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
+                let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
+
+                let servList = [];
+                document.querySelectorAll('input[name="nota-serv"]:checked').forEach(el => servList.push(el.value.toUpperCase()));
+                let servTexto = servList.length > 0 ? servList.join(', ') : '___';
+
+                // 3. 🧠 REEMPLAZO DE ETIQUETAS FIJAS
+                let textoFinal = plantilla
+                    .replace(/\[FECHA_VISITA\]/g, fVisita.toUpperCase())
+                    .replace(/\[LISTA_DOCUMENTOS\]/g, docsTexto)
+                    .replace(/\[LISTA_SERVICIOS\]/g, servTexto)
+                    .replace(/\[CP\]/g, cpVal)
+                    .replace(/\[COLONIA\]/g, colVal)
+                    .replace(/\[SUPERFICIE_LEVANTAMIENTO\]/g, supConst);
+
+                // 4. 🧠 MAGIA ABSOLUTA: Reemplazo Dinámico de cualquier etiqueta [REQUISITO.campo]
+                textoFinal = textoFinal.replace(/\[([A-Z0-9_]+)\.([a-zA-Z0-9_]+)\]/g, function(match, reqKey, campo) {
+                    // Si el requisito existe en la extracción y el campo también
+                    if (extraidos[reqKey] && extraidos[reqKey][campo]) {
+                        return String(extraidos[reqKey][campo]).toUpperCase();
+                    }
+                    return '___'; // Si no encontró el dato, pone guiones para revisión manual
+                });
+
+                // 5. MOSTRAR EN PANTALLA
+                const textarea = document.getElementById('texto-notas-tramite');
+                if(textarea) {
+                    textarea.value = textoFinal;
+                    textarea.style.height = 'auto';
+                    textarea.style.height = (textarea.scrollHeight + 20) + 'px';
                 }
 
-                if(document.querySelector('input[value="Constancia de Alineamiento y Número Oficial"]').checked) {
-                    const ofic = document.getElementById('nota-alin-oficio').value || "___";
-                    const fech = document.getElementById('nota-alin-fecha').value || "___";
-                    txt += `- Constancia de Alineamiento y Número Oficial: Con número de oficio ${ofic}, expedida con fecha ${fech}.\n`;
-                    hayDocs = true;
-                }
-
-                if(document.querySelector('input[value="Constancia de Datos Catastrales"]').checked) {
-                    const ofic = document.getElementById('nota-datos-oficio').value || "___";
-                    const fech = document.getElementById('nota-datos-fecha').value || "___";
-                    txt += `- Constancia de Datos Catastrales: Con número de oficio ${ofic}, expedida con fecha ${fech}.\n`;
-                    hayDocs = true;
-                }
-
-                if(document.querySelector('input[value="Recibo de Servicio de Energía Eléctrica"]').checked) {
-                    txt += `- Recibo de Servicio de Energía Eléctrica (CFE).\n`;
-                    hayDocs = true;
-                }
-
-                if(!hayDocs) txt += `- No se marcaron documentos de justificación.\n`;
-                txt += `\n`;
-
-                // 3. SERVICIOS Y VENTILACIÓN
-                const ventilacion = document.getElementById('nota-ventilacion').value;
-                txt += `El inmueble cuenta con ventilación ${ventilacion.toLowerCase()} en todos los espacios arquitectónicos, permitiendo la luz y ventilación natural para un buen funcionamiento.\n\n`;
-
-                let servicios = [];
-                document.querySelectorAll('input[name="nota-serv"]:checked').forEach(s => servicios.push(s.value));
-                if(servicios.length > 0) {
-                    txt += `SERVICIOS DEL INMUEBLE:\nEl inmueble cuenta con los siguientes servicios al momento de la inspección: ${servicios.join(', ')}.\n\n`;
-                }
-
-                // 4. SUPERFICIES
-                const supPriv = document.getElementById('nota-sup-privativa').value;
-                const supAcc = document.getElementById('nota-sup-accesoria').value;
-                const supTot = document.getElementById('nota-sup-total').value;
-                
-                if(supPriv || supTot) {
-                    txt += `SUPERFICIES DE LEVANTAMIENTO FÍSICO:\n`;
-                    if(supPriv) txt += `- Área Privativa Construida: ${supPriv}\n`;
-                    if(supAcc) txt += `- Superficie Accesoria: ${supAcc} (${document.getElementById('nota-sup-accesoria-desc').value || 'N/A'})\n`;
-                    if(supTot) txt += `- Superficie Total de Construcción: ${supTot}\n`;
-                }
-
-                document.getElementById('texto-notas-tramite').value = txt;
-                showToast("Notas auto-redactadas con éxito ✨", "success");
+                showToast("Notas generadas mágicamente ✨", "success");
 
             } catch (error) {
-                console.error(error);
-                showToast("Error al redactar", "error");
+                console.error("Error al redactar:", error);
+                showToast("Error al procesar la plantilla", "error");
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
             }
         };
 
@@ -1435,7 +1406,8 @@
         // 🤖 AUTO-RELLENO CON IA (GEMINI)
         // ==========================================
         function autollenarConIA(expediente) {
-            console.log("🕵️‍♂️ DIAGNÓSTICO IA - Abriendo expediente:", expediente.cliente);
+            console.log("🕵️‍♂️ DIAGNÓSTICO IA - Sincronizando datos técnicos...");
+            const extraidos = expediente.datos_extraidos || {};
             
             // 🎨 FUNCIÓN INTERNA: Evalúa y Colorea Coincidencias en Verde
             const compararYColorear = () => {

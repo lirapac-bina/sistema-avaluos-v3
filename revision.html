@@ -79,39 +79,34 @@
                     </div>
                 </div>
 
-                <div class="flex gap-2 items-center self-start md:self-center">
-                    <button onclick="declararIncidencia()" class="h-10 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-red-800" title="Detener trámite y reportar problema">
-                        <span class="material-symbols-rounded text-lg">warning</span>
-                        <span class="hidden md:inline">Incidencia</span>
+                <div class="flex flex-wrap gap-2 items-center self-start md:self-center">
+                    <button onclick="declararIncidencia()" class="h-9 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-colors text-[10px] active:scale-95 border border-red-800">
+                        <span class="material-symbols-rounded text-base">warning</span>
+                        <span class="hidden lg:inline">Incidencia</span>
                     </button>
 
-                    <button onclick="abrirCarpetaDrive()" class="h-10 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-amber-700" title="Abrir carpeta del cliente en Google Drive">
-                        <span class="material-symbols-rounded text-lg">folder_open</span>
-                        <span class="hidden md:inline">Ver Drive</span>
+                    <button onclick="abrirCarpetaDrive()" class="h-9 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-colors text-[10px] active:scale-95 border border-amber-700">
+                        <span class="material-symbols-rounded text-base">folder_open</span>
+                        <span class="hidden lg:inline">Ver Drive</span>
                     </button>
 
-                    <button onclick="location.reload()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" title="Recargar datos">
+                    <button onclick="toggleComparador()" id="btn-comparador" class="h-9 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-colors text-[10px] active:scale-95 border border-indigo-800">
+                        <span class="material-symbols-rounded text-base">splitscreen</span>
+                        <span class="hidden lg:inline">Comparar Docs</span>
+                    </button>
+
+                    <button id="btn-generar-analisis" onclick="generarPDFAnalisis()" class="hidden h-9 items-center gap-2 bg-[#0f4c81] hover:bg-[#0a355c] text-white font-bold py-2 px-3 rounded-lg shadow-md transition-all active:scale-95 border border-[#051b30] whitespace-nowrap">
+                        <span class="material-symbols-rounded text-base">description</span>
+                        <span class="text-[10px] uppercase">Análisis Doc.</span>
+                    </button>
+
+                    <button onclick="toggleFullscreen()" class="h-9 w-9 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700" title="Pantalla Completa">
+                        <span class="material-symbols-rounded text-lg">fullscreen</span>
+                    </button>
+                    
+                    <button onclick="location.reload()" class="h-9 w-9 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700">
                         <span class="material-symbols-rounded text-xl">refresh</span>
                     </button>
-
-                    <!-- NUEVO BOTÓN: GENERAR PDF -->
-                    <!-- BOTÓN MODO COMPARADOR -->
-                    <button onclick="toggleComparador()" id="btn-comparador" class="h-10 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-xs active:scale-95 border border-indigo-800 ml-2">
-                        <span class="material-symbols-rounded text-lg">splitscreen</span>
-                        <span class="hidden md:inline">Comparar Docs</span>
-                    </button>
-
-                    <!-- BOTÓN PANTALLA COMPLETA -->
-                    <button onclick="toggleFullscreen()" class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 ml-2" title="Pantalla Completa">
-                        <span class="material-symbols-rounded text-xl">fullscreen</span>
-                    </button>
-
-                    <div id="action-container" class="hidden ml-4">
-                    <button onclick="abrirModalAsignacion()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center gap-2 animate-bounce">
-                    <span class="material-symbols-rounded">assignment_ind</span>
-                    ASIGNAR A CAPTURA
-                    </button>
-                    </div>
                 </div>
             </div>
         </header>
@@ -778,21 +773,28 @@
 
             const checklist = data.checklist || {};
             const fotosGaleria = [];
+            const escrituraGaleria = []; // 🚀 NUEVA LISTA SEPARADA PARA ESCRITURA
             
             Object.keys(checklist).forEach(key => {
-                if (key.includes('FOTO_EXTRA_')) {
-                    const url = checklist[key].archivoUrl || checklist[key].driveLink || checklist[key].url;
-                    if (url) fotosGaleria.push({ url: transformDriveUrl(url), nombre: checklist[key].nombre || 'Foto' });
+                const url = checklist[key].archivoUrl || checklist[key].driveLink || checklist[key].url;
+                if (url) {
+                    if (key.includes('FOTO_EXTRA_')) {
+                        fotosGaleria.push({ url: transformDriveUrl(url), nombre: checklist[key].nombre || 'Foto' });
+                    } else if (key.includes('ESCRITURA_EXTRA_')) {
+                        escrituraGaleria.push({ url: transformDriveUrl(url), nombre: checklist[key].nombre || 'Página' });
+                    }
                 }
             });
 
             Object.keys(checklist).forEach(key => {
-                if(key.includes('FOTO_EXTRA_')) return; 
+                if(key.includes('FOTO_EXTRA_') || key.includes('ESCRITURA_EXTRA_')) return; 
 
                 const item = checklist[key];
                 let cat = item.categoria || 'solicitante';
                 if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
                 if (key === 'FOTOS_INTERIORES_GENERAL') { cat = 'inmueble'; item.nombre = 'Fotos Interiores y Entorno'; }
+                // Forzamos que la Portada sea del grupo Inmueble para el reporte
+                if (key === 'FOTO_PORTADA') { cat = 'inmueble'; item.nombre = 'Foto Portada / Fachada'; }
 
                 const urlReal = item.archivoUrl || item.driveLink || item.url;
                 let uiStatus = 'pending';
@@ -818,7 +820,7 @@
                 } 
                 // 2. Detección normal
                 else if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
-                else if(key === 'FOTOS_INTERIORES_GENERAL') tipoArchivo = 'GALERIA';
+                else if(key === 'FOTOS_INTERIORES_GENERAL' || key === 'ESCRITURA') tipoArchivo = 'GALERIA';
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (urlReal) {
                     if (urlReal.toLowerCase().includes('.pdf') || (item.mimeType && item.mimeType.includes('pdf'))) tipoArchivo = 'PDF';
@@ -837,7 +839,8 @@
                         direccion: item.direccion,
                         textoPreview: item.textoPreview,
                         // Si es GALERIA normal usa fotosGaleria, si es GALERIA_DOCS usa multiplesArchivos
-                        fotos: tipoArchivo === 'GALERIA_DOCS' ? multiplesArchivos : (key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : null),
+                        // Separamos estrictamente para que la Escritura no muestre las fotos de la casa
+                        fotos: tipoArchivo === 'GALERIA_DOCS' ? multiplesArchivos : (key === 'FOTOS_INTERIORES_GENERAL' ? fotosGaleria : (key === 'ESCRITURA' ? escrituraGaleria : null)),
                         obligatorio: item.obligatorio !== false
                     });
                 }
@@ -994,19 +997,32 @@
 
             const tabIA = document.getElementById('tab-ia-view');
             const dataIA = expediente.datos_extraidos ? expediente.datos_extraidos[req.key] : null;
-            const iaAprobada = expediente.checklist && expediente.checklist[req.key] && expediente.checklist[req.key].ia_aprobada === true;
+            const itemConf = expediente.checklist ? expediente.checklist[req.key] : {};
+            const iaAprobada = itemConf && itemConf.ia_aprobada === true;
+            
+            // 🛡️ REGLA ESTRICTA: ¿Este documento usa IA según el diccionario global de Admin?
+            const requiereIA = itemConf && (itemConf.usar_ia === true || itemConf.usaIA === true || (itemConf.prompt && String(itemConf.prompt).trim() !== "") || (itemConf.promptIA && String(itemConf.promptIA).trim() !== ""));
 
             if (tabIA) {
-                if (dataIA) {
+                if (requiereIA) {
+                    // Si REQUIERE IA, mostramos la pestaña
                     tabIA.classList.remove('hidden');
-                    if (iaAprobada) {
+                    
+                    if (dataIA && iaAprobada) {
                         tabIA.innerHTML = '<span class="material-symbols-rounded text-[14px] text-emerald-500">verified</span> IA OK';
-                        tabIA.classList.remove('animate-pulse', 'text-orange-500');
-                    } else {
+                        tabIA.classList.remove('animate-pulse', 'text-orange-500', 'text-slate-400');
+                    } else if (dataIA && !iaAprobada) {
                         tabIA.innerHTML = '<span class="material-symbols-rounded text-[14px] text-orange-500">compare</span> Revisar IA';
                         tabIA.classList.add('animate-pulse', 'text-orange-500');
+                        tabIA.classList.remove('text-slate-400');
+                    } else {
+                        // No hay datos aún, pero el documento está configurado para llevar IA
+                        tabIA.innerHTML = '<span class="material-symbols-rounded text-[14px] text-slate-400">document_scanner</span> Extraer IA';
+                        tabIA.classList.remove('animate-pulse', 'text-orange-500');
+                        tabIA.classList.add('text-slate-400');
                     }
                 } else {
+                    // 🚫 Si NO requiere IA (ej. croquis a mano), se oculta por completo para no estorbar
                     tabIA.classList.add('hidden');
                 }
             }
@@ -1211,6 +1227,12 @@
                     motivo ? `Motivo: ${motivo}` : 'El revisor determinó que el documento cumple con los criterios y fue respaldado en Drive.'
                 );
                 
+                // 🤖 AUTO-SCANNER: Si validan el doc y no hay datos, lanzar la IA automáticamente
+                if (nuevoEstado === 'validado' && (!expediente.datos_extraidos || !expediente.datos_extraidos[llaveSegura])) {
+                    console.log("Activando extracción automática tras validación de: " + llaveSegura);
+                    extraerDatosConIA(llaveSegura, expediente.id);
+                }
+
                 renderCurrentGroup(); 
                 document.getElementById('decision-bar').classList.add('translate-y-full'); 
                 if(nuevoEstado === 'rechazado') cerrarRechazo();
@@ -2050,163 +2072,207 @@
             }
         };
 
-        // 🖨️ NUEVO GENERADOR DE PDF NATIVO CON FORMATO EXACTO "CYNTHIA"
         window.generarPDFAnalisis = async function() {
-            if(!expediente.datos_extraidos || Object.keys(expediente.datos_extraidos).length === 0) {
-                alert("Aún no hay datos extraídos por IA para este expediente."); return;
+            const checklist = expediente.checklist || {};
+            const extraidos = expediente.datos_extraidos || {};
+            const faltantes = [];
+
+            // 1. REGLA DE NEGOCIO Y EXCLUSIONES
+            Object.keys(checklist).forEach(key => {
+                if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return;
+
+                const conf = checklist[key];
+                const requiereIA = conf.usar_ia === true || (conf.prompt && conf.prompt.trim() !== "");
+                
+                if (requiereIA) {
+                    const tieneArchivo = conf.archivoUrl || conf.driveUrl || conf.url || conf.archivoPath;
+                    if (tieneArchivo && !extraidos[key]) {
+                        faltantes.push(conf.nombre || key);
+                    }
+                }
+            });
+
+            if (faltantes.length > 0) {
+                const continuar = confirm("⚠️ EXTRACCIÓN PENDIENTE en:\n\n" + faltantes.map(f => `• ${f}`).join('\n') + "\n\n¿Deseas generar el PDF de Análisis de todas formas como borrador?");
+                if (!continuar) return;
             }
 
             const btn = document.getElementById('btn-generar-analisis');
             const orig = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Generando...';
             btn.disabled = true;
 
-            let solRows = '', propRows = '', inmRows = '';
-            let contSol = 1, contPro = 1, contInm = 1;
-
-            const tramiteHtml = document.getElementById('header-tramite') ? document.getElementById('header-tramite').innerText : '';
-
-            Object.entries(expediente.datos_extraidos).forEach(([key, val]) => {
-                let obj = val;
-                if(typeof val === 'string') { 
-                    try { 
-                        const cleanVal = val.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        obj = JSON.parse(cleanVal); 
-                    } catch(e){} 
-                }
-
-                let docName = expediente.checklist[key]?.nombre || key.replace(/_/g, ' ');
-                docName = docName.charAt(0).toUpperCase() + docName.slice(1).toLowerCase();
-
-                const esAprobada = expediente.checklist[key]?.ia_aprobada;
-                const checkStatus = esAprobada ? '' : '<br><span style="color:#e11d48; font-size:9px;">[PENDIENTE APROBAR IA]</span>';
-
-                const camposPermitidos = expediente.checklist[key]?.campos_pdf;
-
-                const parseProps = (o, currentPath = '') => {
-                    let arr = [];
-                    for(let [k, v] of Object.entries(o)) {
-                        const path = currentPath ? `${currentPath}.${k}` : k;
-                        if(typeof v === 'object' && v !== null) {
-                            const sub = parseProps(v, path);
-                            if(sub) arr.push(sub);
-                        } else if(v && v !== '---' && String(v).toLowerCase() !== 'null' && String(v).toLowerCase() !== 'n/a' && String(v).trim() !== '') {
-                            // Filtro de Seguridad: Solo inyectar lo seleccionado por el revisor
-                            if (camposPermitidos && !camposPermitidos.includes(path)) continue;
-
-                            let cleanKey = k.replace(/_/g, ' ');
-                            cleanKey = cleanKey.charAt(0).toUpperCase() + cleanKey.slice(1).toLowerCase();
-                            arr.push('<span style="color:#0f4c81;">• <b>' + cleanKey + ':</b></span> ' + String(v).toUpperCase());
+            try {
+                // 🚀 SUPER FUNCIÓN: Convierte una URL a pixeles puros (Base64) para evadir bloqueos
+                const urlToBase64 = async (url) => {
+                    try {
+                        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+                        const response = await fetch(proxyUrl);
+                        if (!response.ok) throw new Error("Fallo en proxy primario");
+                        const blob = await response.blob();
+                        return await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (e) {
+                        try { // Proxy secundario de respaldo
+                            const proxy2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+                            const response2 = await fetch(proxy2);
+                            const blob2 = await response2.blob();
+                            return await new Promise(resolve => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.readAsDataURL(blob2);
+                            });
+                        } catch (err) {
+                            return url; // Si todo falla, devuelve la URL original
                         }
                     }
-                    return arr.join('<br>');
                 };
 
-                let contentStr = '';
-                if(typeof obj === 'object') {
-                    contentStr = parseProps(obj); 
-                } else {
-                    if (camposPermitidos && camposPermitidos.length === 0) contentStr = '';
-                    else contentStr = String(obj);
-                }
+                let solRows = '', propRows = '', inmRows = '', portadaHtml = '', galeriaHtml = '';
+                let conts = { sol: 1, pro: 1, inm: 1 };
 
-                // Mantener formato limpio (idéntico al documento origen, sin "Ok")
-                if (contentStr === "") {
-                    contentStr = '<span style="color:#94a3b8; font-style:italic;">(Sin datos a inyectar)</span>';
-                }
+                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Procesando texto...';
 
-                const cat = expediente.checklist[key]?.categoria || '';
+                // 2. PROCESAR DATOS DE TEXTO
+                Object.entries(extraidos).forEach(([key, val]) => {
+                    if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return; 
+
+                    let obj = val;
+                    if(typeof val === 'string') { try { obj = JSON.parse(val.replace(/```json/gi, '').replace(/```/gi, '').trim()); } catch(e){} }
+
+                    const conf = checklist[key] || {};
+                    let docName = conf.nombre || key.replace(/_/g, ' ');
+                    docName = docName.charAt(0).toUpperCase() + docName.slice(1).toLowerCase();
+                    const campos = conf.campos_pdf || [];
+
+                    const buildContent = (o, path = '') => {
+                        let lines = [];
+                        for(let [k, v] of Object.entries(o)) {
+                            const curPath = path ? `${path}.${k}` : k;
+                            if(typeof v === 'object' && v !== null) lines.push(buildContent(v, curPath));
+                            else if(v && v !== '---' && String(v).trim() !== '') {
+                                if (campos.length > 0 && !campos.includes(curPath)) continue;
+                                let label = k.replace(/_/g, ' ').charAt(0).toUpperCase() + k.replace(/_/g, ' ').slice(1).toLowerCase();
+                                lines.push(`• <b style="color:#000;">${label}:</b> ${String(v).toUpperCase()}`);
+                            }
+                        }
+                        return lines.join('<br>');
+                    };
+
+                    let content = typeof obj === 'object' ? buildContent(obj) : String(obj).toUpperCase();
+                    if (content.trim() !== "") {
+                        const cat = conf.categoria || 'solicitante';
+                        const html = `
+                            <div style="margin-bottom:12px; page-break-inside: avoid;">
+                                <div style="font-weight:bold; font-size:12px; margin-bottom:2px;">
+                                    <span style="color:#999;">${conts[cat === 'solicitante' ? 'sol' : (cat === 'propietario' ? 'pro' : 'inm')]}.</span> ${docName}
+                                </div>
+                                <div style="padding-left:22px; font-size:11px; color:#333; line-height:1.4;">${content}</div>
+                            </div>`;
+                        if(cat === 'solicitante') { solRows += html; conts.sol++; } 
+                        else if(cat === 'propietario') { propRows += html; conts.pro++; } 
+                        else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmRows += html; conts.inm++; }
+                    }
+                });
+
+                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Descargando fotos...';
+
+                // 3. MAPA SATELITAL (Inyección de Base64)
+                const mapKey = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0");
+                const mapItem = Object.values(checklist).find(i => i.key === 'UBICACION_MAPS' || (i.nombre && i.nombre.toUpperCase().includes('UBICACIÓN')));
                 
-                const rowHtml = '<tr>' +
-                    '<td class="col-num">' + '{NUM}.</td>' +
-                    '<td class="col-doc">' + docName + ':' + checkStatus + '</td>' +
-                    '<td class="col-data">' + contentStr + '</td>' +
-                '</tr>';
-
-                if(cat === 'solicitante') { solRows += rowHtml.replace('{NUM}', contSol++); } 
-                else if(cat === 'propietario') { propRows += rowHtml.replace('{NUM}', contPro++); } 
-                else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmRows += rowHtml.replace('{NUM}', contInm++); }
-            });
-
-            if(expediente.grupos.inmueble) {
-                const mapData = expediente.grupos.inmueble.find(r => r.key === 'UBICACION_MAPS');
-                if(mapData && mapData.coordenadas) {
-                    const embedUrl = `https://maps.google.com/maps?q=${mapData.coordenadas}&t=k&z=19&output=embed`;
-                    inmRows += '<tr>' +
-                        '<td class="col-num">' + (contInm++) + '.</td>' +
-                        '<td class="col-doc">Coordenadas y ubicación satelital:</td>' +
-                        '<td class="col-data">' + 
-                            '<b>' + mapData.coordenadas + '</b><br><br>' + 
-                            '<iframe width="100%" height="250" frameborder="0" style="border:1px solid #cbd5e1; border-radius: 8px;" src="' + embedUrl + '"></iframe>' +
-                        '</td>' +
-                    '</tr>';
+                if(mapItem && mapItem.coordenadas) {
+                    const originalMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=19&size=640x320&maptype=satellite&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
+                    const base64Map = await urlToBase64(originalMapUrl); // Convertimos el mapa a código base64
+                    
+                    inmRows += `
+                        <div style="page-break-inside: avoid; margin-top:15px;">
+                            <div style="font-weight:bold; font-size:12px;">${conts.inm}. Ubicación y Entorno Satelital:</div>
+                            <div style="padding-left:22px; margin-top:5px;">
+                                <p style="font-size:10px; color:#666; margin-bottom:5px;">Coordenadas: ${mapItem.coordenadas}</p>
+                                <img src="${base64Map}" style="width:100%; border-radius:8px; border:1px solid #ddd;">
+                            </div>
+                        </div>`;
                 }
-            }
 
-            const htmlContent = '<!DOCTYPE html>' +
-                '<html>' +
-                '<head>' +
-                    '<meta charset="UTF-8">' +
-                    '<title>Análisis_' + expediente.cliente + '</title>' +
-                    '<style>' +
-                        'body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 20px; line-height: 1.4; max-width: 800px; margin: auto; }' +
-                        '.header-title { text-align: center; font-size: 13px; font-weight: normal; margin-bottom: 20px; }' +
-                        'table { width: 100%; border-collapse: collapse; table-layout: fixed; }' +
-                        'td { padding: 8px 10px; vertical-align: top; font-size: 11px; border-bottom: 1px solid #f9fafb; }' +
-                        '.section-header td { font-weight: bold; font-size: 11px; border-bottom: 1px solid #000; padding-top: 25px; padding-bottom: 6px; text-transform: uppercase; border-top: none; }' +
-                        '.tramite-text { font-size: 10px; font-weight: normal; font-style: italic; display: block; margin-top: 2px; text-transform: uppercase; }' +
-                        '@media print { ' +
-                            '@page { size: letter portrait; margin: 15mm; } ' +
-                            'body { padding: 0; max-width: 100%; } ' +
-                            'td { page-break-inside: avoid; } ' +
-                            '.section-header { page-break-after: avoid; } ' +
-                        '}' +
-                    '</style>' +
-                '</head>' +
-                '<body>' +
-                    '<div class="header-title">Análisis documentación</div>' +
-                    '<table>' +
-                        '<colgroup>' +
-                            '<col style="width: 5%;">' +
-                            '<col style="width: 35%;">' +
-                            '<col style="width: 60%;">' +
-                        '</colgroup>' +
-                        '<tbody>' +
-                            '<!-- SECCIÓN SOLICITANTE -->' +
-                            '<tr class="section-header">' +
-                                '<td colspan="2">SOLICITANTE<br><span style="font-size:9px; font-weight:normal; text-transform: lowercase;">(comprador)</span></td>' +
-                                '<td>' + expediente.cliente + '<br><span class="tramite-text">*' + tramiteHtml + '*</span></td>' +
-                            '</tr>' +
-                            solRows +
-                            
-                            '<!-- SECCIÓN PROPIETARIO -->' +
-                            '<tr class="section-header">' +
-                                '<td colspan="2">PROPIETARIO</td>' +
-                                '<td></td>' +
-                            '</tr>' +
-                            propRows +
-                            
-                            '<!-- SECCIÓN INMUEBLE -->' +
-                            '<tr class="section-header">' +
-                                '<td colspan="2">INMUEBLE</td>' +
-                                '<td></td>' +
-                            '</tr>' +
-                            inmRows +
-                        '</tbody>' +
-                    '</table>' +
-                '</body>' +
-                '</html>';
+                // 4. FOTOS EVIDENCIA (Inyección de Base64)
+                const port = Object.values(checklist).find(i => i.key === 'FOTO_PORTADA' && (i.url || i.archivoUrl || i.driveLink));
+                if(port) {
+                    const pUrl = transformDriveUrl(port.url || port.archivoUrl || port.driveLink);
+                    const base64Portada = await urlToBase64(pUrl);
+                    portadaHtml = `
+                        <div style="page-break-inside: avoid; margin-top:30px; text-align:center;">
+                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:2px solid #0f4c81; padding-bottom:5px; margin-bottom:15px; text-align:left;">EVIDENCIA FOTOGRÁFICA</div>
+                            <img src="${base64Portada}" style="width:100%; max-height:400px; object-fit:contain; border:1px solid #eee; border-radius:8px;">
+                            <p style="font-size:10px; font-weight:bold; color:#888; margin-top:8px;">FOTO PORTADA / FACHADA</p>
+                        </div>`;
+                }
 
-            const printWin = window.open('', '_blank');
-            printWin.document.write(htmlContent);
-            printWin.document.close();
-            
-            setTimeout(() => {
-                printWin.focus();
-                printWin.print();
+                const gal = Object.values(checklist).find(i => i.key === 'FOTOS_INTERIORES_GENERAL');
+                if(gal && gal.fotos && gal.fotos.length > 0) {
+                    galeriaHtml = `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:15px;">`;
+                    // Convertimos TODAS las fotos de la galería a Base64 una por una
+                    for (let i = 0; i < gal.fotos.length; i++) {
+                        const base64Interior = await urlToBase64(gal.fotos[i].url);
+                        galeriaHtml += `
+                            <div style="width:48%; border:1px solid #eee; padding:5px; text-align:center; page-break-inside:avoid; border-radius:6px;">
+                                <img src="${base64Interior}" style="width:100%; height:200px; object-fit:cover; border-radius:4px;">
+                                <p style="font-size:9px; font-weight:bold; margin-top:4px; color:#999;">INTERIOR / ENTORNO ${i+1}</p>
+                            </div>`;
+                    }
+                    galeriaHtml += `</div>`;
+                }
+
+                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Ensamblando PDF...';
+
+                // 5. ENSAMBLAJE HTML (TEXTO PLANO CON PIXELES INCRUSTADOS)
+                const finalHtml = `
+                    <div style="font-family: Arial, sans-serif; color: #000; width: 800px; padding: 30px; background: white;">
+                        <div style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 30px; border-bottom: 3px solid #0f4c81; padding-bottom: 10px; color: #0f4c81;">Análisis de documentación - ${expediente.cliente}</div>
+                        
+                        <div style="margin-bottom:25px;">
+                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Solicitante (Comprador)</div>
+                            ${solRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
+                        </div>
+                        
+                        <div style="margin-bottom:25px;">
+                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Propietario</div>
+                            ${propRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
+                        </div>
+                        
+                        <div style="margin-bottom:25px;">
+                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Inmueble</div>
+                            ${inmRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
+                        </div>
+                        
+                        ${portadaHtml}
+                        ${galeriaHtml}
+                    </div>`;
+
+                // 6. EXPORTACIÓN JS-PDF
+                const opt = {
+                    margin: 10,
+                    filename: `Análisis Doc - ${expediente.cliente}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true, 
+                        letterRendering: true
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                await html2pdf().set(opt).from(finalHtml).save();
+
+            } catch (err) {
+                console.error("Error crítico PDF:", err);
+                alert("Error al generar el documento. Revisa tu consola para más detalles.");
+            } finally {
                 btn.innerHTML = orig;
                 btn.disabled = false;
-            }, 500);
+            }
         };
 
         // ==========================================

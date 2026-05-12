@@ -3,6 +3,8 @@ const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
 
+const fetch = require('node-fetch'); // Asegúrate de que esta línea esté o instálala
+
 // 1. Inicialización Segura Firebase
 let serviceAccount = null;
 
@@ -132,6 +134,28 @@ exports.handler = async (event) => {
         }
 
         await docRef.update(updateData);
+        // ========================================================
+        // 🚀 NUEVO: AVISAR AL SCRIPT DE GOOGLE PARA MANDAR CORREO
+        // ========================================================
+        if (unidad && unidad !== 'POR ASIGNAR') {
+            try {
+                // 🔗 URL de tu "Implementación" de Google Apps Script
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFFJ0aAjm1mTcc7romxhOuHKjz2CRaAGARH9gzMU6P3OU3fnMirhs3GNA2JhbMUK7Z/exec"; 
+                
+                const params = new URLSearchParams({
+                    cliente: nombre,
+                    unidad: unidad
+                });
+
+                // Llamamos al script correctamente usando la variable definida arriba
+                fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET' })
+                    .then(() => console.log("✅ [NOTIFICACIÓN] Aviso enviado a Google Apps Script"))
+                    .catch(e => console.error("❌ [NOTIFICACIÓN] Error al avisar a Google:", e));
+            } catch (notifyErr) {
+                console.error("Error en bloque de notificación:", notifyErr);
+            }
+        }
+
         return { statusCode: 200, body: JSON.stringify({ message: 'Actualizado', updateData }) };
 
     } catch (error) {
