@@ -135,24 +135,22 @@ exports.handler = async (event) => {
 
         await docRef.update(updateData);
         // ========================================================
-        // 🚀 BLOQUE DE NOTIFICACIÓN REFORZADO (CON AWAIT)
+        // 🚀 BLOQUE DE NOTIFICACIÓN VERSIÓN FINAL
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
             const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQYJvksqTB-eOpcpEsx9NKrmmgHI4pHb88-9Q-xZmu2ttt_Qb19h4TPMm9YYnz05un/exec"; 
             
-            const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
+            // Construimos la URL con los parámetros pegados de forma simple
+            const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad);
 
-            console.log(`📡 [NOTIFICACIÓN] Avisando a Google para unidad: ${unidad}`);
+            console.log("📡 [NOTIFICACIÓN] Enviando señal a:", finalUrl);
 
             try {
-                // AGREGAMOS AWAIT para que Netlify no cierre la función antes de tiempo
-                const response = await fetch(finalUrl, { 
-                    method: 'POST',
-                    redirect: 'follow'
-                });
-                console.log(`✅ [NOTIFICACIÓN] Google respondió: ${response.status}`);
+                // Usamos fetch de la forma más básica posible, que es la que mejor le va a Google
+                await fetch(finalUrl, { method: 'POST' });
+                console.log("✅ [NOTIFICACIÓN] Señal enviada con éxito");
             } catch (e) {
-                console.error("❌ [NOTIFICACIÓN] Error en el envío:", e.message);
+                console.error("❌ [NOTIFICACIÓN] Error en la conexión:", e.message);
             }
         }
 
