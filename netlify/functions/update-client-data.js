@@ -135,28 +135,25 @@ exports.handler = async (event) => {
 
         await docRef.update(updateData);
         // ========================================================
-        // 🚀 BLOQUE DE NOTIFICACIÓN DEFINITIVO
+        // 🚀 BLOQUE DE NOTIFICACIÓN REFORZADO (CON AWAIT)
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
             const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQYJvksqTB-eOpcpEsx9NKrmmgHI4pHb88-9Q-xZmu2ttt_Qb19h4TPMm9YYnz05un/exec"; 
             
-            // Construimos la URL con los parámetros bien pegados
             const finalUrl = `${APPS_SCRIPT_URL}?cliente=${encodeURIComponent(nombre)}&unidad=${encodeURIComponent(unidad)}`;
 
-            console.log(`📡 [NOTIFICACIÓN] Intentando avisar a Google: ${unidad}`);
+            console.log(`📡 [NOTIFICACIÓN] Avisando a Google para unidad: ${unidad}`);
 
-            // Usamos una configuración de fetch compatible con los saltos de seguridad de Google
-            fetch(finalUrl, { 
-                method: 'POST',
-                redirect: 'follow', // Muy importante para que Google no rechace la conexión
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => {
-                console.log(`✅ [NOTIFICACIÓN] Google respondió con estatus: ${response.status}`);
-            })
-            .catch(e => {
-                console.error("❌ [NOTIFICACIÓN] Error crítico al avisar a Google:", e.message);
-            });
+            try {
+                // AGREGAMOS AWAIT para que Netlify no cierre la función antes de tiempo
+                const response = await fetch(finalUrl, { 
+                    method: 'POST',
+                    redirect: 'follow'
+                });
+                console.log(`✅ [NOTIFICACIÓN] Google respondió: ${response.status}`);
+            } catch (e) {
+                console.error("❌ [NOTIFICACIÓN] Error en el envío:", e.message);
+            }
         }
 
         return { statusCode: 200, body: JSON.stringify({ message: 'Actualizado', updateData }) };
