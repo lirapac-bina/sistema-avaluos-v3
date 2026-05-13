@@ -270,6 +270,17 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Tipo de Inmueble</label>
+                    <select id="edit-inmueble" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                        <option value="POR DEFINIR">POR DEFINIR</option>
+                        <option value="CASA">CASA HABITACIÓN</option>
+                        <option value="CASA EN CONDOMINIO">CASA EN CONDOMINIO</option>
+                        <option value="DEPARTAMENTO">DEPARTAMENTO</option>
+                        <option value="TERRENO">TERRENO</option>
+                        <option value="LOCAL">LOCAL COMERCIAL</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Anotación Interna (Máx 140 caracteres)</label>
                     <textarea id="edit-anotacion" maxlength="140" rows="3" placeholder="Escribe aquí observaciones importantes..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-medium transition-all text-sm uppercase resize-none custom-scroll placeholder:text-slate-400" oninput="document.getElementById('char-counter').innerText = this.value.length;"></textarea>
                     
@@ -442,7 +453,8 @@
                             visitaAgendada: data.visitaAgendada || null,
                             
                             fechasPropuestas: data.fechasPropuestas || null, // 🌟 EL ESLABÓN PERDIDO
-                            anotacion: data.anotacion || ''
+                            anotacion: data.anotacion || '',
+                            tipoInmueble: data.tipoInmueble || 'POR DEFINIR'
                         });
                     });
 
@@ -684,7 +696,7 @@
             const unidadFilter = document.getElementById('filter-unidad') ? document.getElementById('filter-unidad').value : '';
 
             datosFiltrados = dbExpedientes.filter(e => {
-                const dataString = `${e.cliente} ${e.id} ${e.capturista || ''} ${e.visitador || ''} ${e.dibujante || ''}`.toUpperCase();
+                const dataString = `${e.cliente} ${e.id} ${e.folioOperativo || ''} ${e.anotacion || ''} ${e.capturista || ''} ${e.visitador || ''} ${e.dibujante || ''}`.toUpperCase();
                 const matchTexto = dataString.includes(texto);
                 
                 // 🔥 CALCULAMOS EL PORCENTAJE PARA SABER SU ETAPA REAL (IGNORANDO OPCIONALES)
@@ -1017,7 +1029,7 @@
                         
                         <td class="px-4 py-3 text-center">
                             <div class="flex justify-center gap-1 items-center w-full">
-                                <button onclick="abrirModalEditar('${exp.id}', '${exp.cliente}', '${exp.telefono}', '${exp.unidad}', '${exp.anotacion || ''}', '${exp.folioOperativo || ''}')" 
+                                <button onclick="abrirModalEditar('${exp.id}')" 
                                     class="text-amber-500 hover:text-amber-600 p-1.5 rounded transition-all hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                                     title="Editar">
                                     <span class="material-symbols-rounded text-lg">edit</span>
@@ -1049,7 +1061,10 @@
             });
         }
 
-            function abrirModalEditar(id, nombre, telefono, unidad, anotacion, folio) {
+            function abrirModalEditar(id) {
+            const exp = dbExpedientes.find(e => e.id === id);
+            if (!exp) return;
+
             const userStr = localStorage.getItem('leezar_user_active');
             const user = userStr ? JSON.parse(userStr) : {};
             const rol = (user.rol || '').toUpperCase();
@@ -1059,14 +1074,13 @@
                 return;
             }
 
-            document.getElementById('edit-id').value = id;
-            // Inyectamos el Folio
-            document.getElementById('edit-folio').value = (folio && folio !== 'undefined' && folio !== 'null') ? folio : '';
-            document.getElementById('edit-nombre').value = nombre;
-            document.getElementById('edit-telefono').value = (telefono && telefono !== 'undefined' && telefono !== 'null') ? telefono : '';
+            document.getElementById('edit-id').value = exp.id;
+            document.getElementById('edit-folio').value = (exp.folioOperativo && exp.folioOperativo !== 'SIN FOLIO') ? exp.folioOperativo : '';
+            document.getElementById('edit-nombre').value = exp.cliente;
+            document.getElementById('edit-telefono').value = exp.telefono || '';
             
             let siglaUnidadModal = 'POR ASIGNAR';
-            const uniStrModal = (unidad || '').toUpperCase();
+            const uniStrModal = (exp.unidad || '').toUpperCase();
             if (uniStrModal.includes('APN') || uniStrModal.includes('PNA') || uniStrModal.includes('PAMELA')) siglaUnidadModal = 'APN';
             else if (uniStrModal.includes('AVE')) siglaUnidadModal = 'AVE';
             else if (uniStrModal.includes('EME')) siglaUnidadModal = 'EME';
@@ -1074,7 +1088,6 @@
             const selectUnidad = document.getElementById('edit-unidad');
             selectUnidad.value = siglaUnidadModal;
 
-            // 🔒 ESCUDO: Bloquear unidad si ya fue asignada previamente
             if (siglaUnidadModal !== 'POR ASIGNAR') {
                 selectUnidad.disabled = true;
                 selectUnidad.title = "La unidad ya fue asignada y estructurada en Drive. No se puede modificar.";
@@ -1083,9 +1096,8 @@
                 selectUnidad.title = "Selecciona la unidad de valuación.";
             }
 
-            document.getElementById('edit-anotacion').value = (anotacion && anotacion !== 'undefined' && anotacion !== 'null') ? anotacion : '';
-
-            // 🌟 NUEVO: Actualizamos el contador al abrir el modal
+            document.getElementById('edit-inmueble').value = exp.tipoInmueble || 'POR DEFINIR';
+            document.getElementById('edit-anotacion').value = exp.anotacion || '';
             document.getElementById('char-counter').innerText = document.getElementById('edit-anotacion').value.length;
 
             document.getElementById('modal-editar-cliente').classList.remove('hidden');
@@ -1099,6 +1111,7 @@
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
             const unidad = document.getElementById('edit-unidad').value;
+            const tipoInmueble = document.getElementById('edit-inmueble').value;
             const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase();
             const btn = document.getElementById('btn-save-edit');
 
@@ -1117,6 +1130,7 @@
                     cliente: nombre,
                     telefono: telefono,
                     unidad: unidad,
+                    tipoInmueble: tipoInmueble,
                     anotacion: anotacion 
                 };
 
@@ -1124,7 +1138,7 @@
                 try {
                     const peticionBackend = await fetch('/.netlify/functions/update-client-data', {
                         method: 'POST',
-                        body: JSON.stringify({ id: id, nombre: nombre, telefono: telefono, folioOperativo: folio, anotacion: anotacion, unidad: unidad })
+                        body: JSON.stringify({ id: id, nombre: nombre, telefono: telefono, folioOperativo: folio, anotacion: anotacion, unidad: unidad, tipoInmueble: tipoInmueble })
                     });
                     
                     const respuestaBackend = await peticionBackend.json();
@@ -1147,6 +1161,8 @@
                     exp.telefono = telefono; 
                     exp.unidad = unidad;
                     exp.folioOperativo = folio;
+                    exp.tipoInmueble = tipoInmueble;
+                    exp.anotacion = anotacion;
                     if (updateData.carpeta_drive) exp.carpeta_drive = updateData.carpeta_drive;
                 }
                 
