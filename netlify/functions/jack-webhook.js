@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 
-// 1. CONEXIÓN A FIREBASE (Versión Dieta AWS)
+// 1. CONEXIÓN A FIREBASE
 if (!admin.apps.length) {
     const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
     admin.initializeApp({
@@ -9,8 +9,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-
-// 🔐 LEEMOS EL TOKEN DIRECTAMENTE DE LA BÓVEDA DE NETLIFY
 const TOKEN_SECRETO = process.env.JACK_SECRET_TOKEN;
 
 // --- FUNCIONES HELPER ---
@@ -40,7 +38,6 @@ exports.handler = async (event, context) => {
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
     if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Método no permitido.' };
 
-    // 🛡️ VERIFICACIÓN DEL ESCUDO
     const incomingToken = event.headers['x-jack-token'];
     
     if (!TOKEN_SECRETO) return { statusCode: 500, headers, body: JSON.stringify({ error: "Configuración de servidor incompleta." }) };
@@ -51,8 +48,8 @@ exports.handler = async (event, context) => {
 
         if (!data.nombreCompleto) return { statusCode: 400, headers, body: JSON.stringify({ error: "Falta el nombre del cliente" }) };
 
-        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (CEREBRO RELACIONAL) ---
-        const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO ---
+        const entidadBusqueda = normalizar(data.entidad || data.estado || 'NACIONAL (MASTER)'); 
         const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
         const numSol = parseInt(data.numSolicitantes) || 1;
         const numProp = parseInt(data.numPropietarios) || 1;
@@ -68,17 +65,23 @@ exports.handler = async (event, context) => {
                 diccionarioGlobal = dbData.diccionario || {};
                 const matriz = dbData.matriz || {};
                 
-                // 1. Buscar la entidad DENTRO de la Matriz
+                // 1. Buscar la entidad específica primero (Ej. "JALISCO")
                 let plantillaEntidad = matriz[entidadBusqueda] || matriz[Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda)];
                 
-                // 2. Buscar el trámite
+                // 🌟 2. FALLBACK MAESTRO: Si no existe el estado, jalamos "NACIONAL (MASTER)"
+                if (!plantillaEntidad) {
+                    console.log(`Entidad '${entidadBusqueda}' no encontrada. Usando NACIONAL (MASTER)...`);
+                    let masterKey = Object.keys(matriz).find(k => normalizar(k) === normalizar('NACIONAL (MASTER)'));
+                    plantillaEntidad = matriz[masterKey];
+                }
+                
+                // 3. Buscar el trámite dentro de la entidad encontrada
                 if (plantillaEntidad) {
                     plantilla = plantillaEntidad[tramiteBusqueda] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramiteBusqueda)];
                 }
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
-        // Si la base de datos falla, usamos el respaldo de emergencia
         if (!plantilla) plantilla = PLANTILLA_RESPALDO;
 
         let checklistFinal = {};
@@ -86,9 +89,7 @@ exports.handler = async (event, context) => {
         const procesarItems = (items, categoria, cantidad = 1) => {
             if (!items) return;
             items.forEach(item => {
-                // 3. CRUZAR CON EL DICCIONARIO para obtener nombre real, tipo y plantilla
                 const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
-                
                 const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
                 
                 for (let i = 0; i < loop; i++) {
@@ -104,8 +105,6 @@ exports.handler = async (event, context) => {
                         tipo: infoDic.tipo || 'MIXTO', 
                         originalId: item.id
                     };
-                    
-                    // Si el diccionario tiene una plantilla PDF, se la pasamos al cliente
                     if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
                 }
             });
@@ -114,11 +113,7 @@ exports.handler = async (event, context) => {
         procesarItems(obtenerListaSegura(plantilla, 'solicitante'), 'solicitante', numSol);
         procesarItems(obtenerListaSegura(plantilla, 'propietario'), 'propietario', numProp);
         procesarItems(obtenerListaSegura(plantilla, 'inmueble'), 'inmueble', 1);
-
-        // Fijos inquebrantables
         checklistFinal['UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
-        
-        // 🧠 --- FIN LÓGICA DE CHECKLIST ---
 
         // 🔥 CREACIÓN DEL EXPEDIENTE
         const nuevoExpediente = {
@@ -126,10 +121,10 @@ exports.handler = async (event, context) => {
             nombreCliente: data.nombreCompleto.toUpperCase(), 
             telefono: data.celular || 'Sin teléfono',
             celular: data.celular || 'Sin teléfono',
-            entidad: data.entidad || 'GLOBAL',
+            entidad: data.entidad || 'NACIONAL (MASTER)',
             tramite: data.servicio || 'No especificado',
             tipoTramite: data.servicio || 'No especificado', 
-            tipoInmueble: data.tipoInmueble || 'CASA',
+            tipoInmueble: 'POR DEFINIR', // <--- LO DEJAMOS ASÍ PARA QUE TÚ LO LLENES DESPUÉS
             numSolicitantes: numSol,
             numPropietarios: numProp,
             estatus: 'PENDIENTE',
@@ -140,7 +135,10 @@ exports.handler = async (event, context) => {
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        const docRef = await db.collection('expedientes_avaluos').add(nuevoExpediente);
+        // Guardamos dependiendo de si es avalúo o hipoteca (Misma lógica que create-expediente)
+        const coleccionDestino = (data.servicio && data.servicio.toUpperCase().includes('HIPOTECA')) ? 'expedientes_hipotecas' : 'expedientes_avaluos';
+        const docRef = await db.collection(coleccionDestino).add(nuevoExpediente);
+        
         console.log(`¡Jack atrapó un expediente! ID: ${docRef.id}`);
 
         return { statusCode: 200, headers, body: JSON.stringify({ message: "¡Pesca exitosa!", id: docRef.id }) };

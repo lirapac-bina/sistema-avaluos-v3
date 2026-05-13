@@ -50,7 +50,7 @@ exports.handler = async (event) => {
 
     try {
         const bodyObj = JSON.parse(event.body);
-        const { id, nombre, telefono, folioOperativo, anotacion, unidad } = bodyObj;
+        const { id, nombre, telefono, folioOperativo, anotacion, unidad, tipoInmueble } = bodyObj;
 
         if (!id) return { statusCode: 400, body: 'Falta ID' };
 
@@ -70,11 +70,14 @@ exports.handler = async (event) => {
         if (folioOperativo !== undefined) updateData.folioOperativo = folioFinal;
         if (anotacion !== undefined) updateData.anotacion = anotacion;
         if (unidad !== undefined) updateData.unidad = unidad;
+        
+        // 👇 AQUÍ ESTÁ TU NUEVA LÍNEA BIEN PUESTA
+        if (tipoInmueble !== undefined) updateData.tipoInmueble = tipoInmueble;
 
         if (folioFinal !== "SIN FOLIO") nuevoNombreDrive = `${folioFinal} - ${nombre}`;
 
         let driveFolderId = dataAnterior.driveFolderId;
-        
+                
         // 🌟 MAGIA: CREACIÓN DE CARPETA (Si venía de Google Forms y no tenía)
         if (!driveFolderId && unidad && unidad !== 'POR ASIGNAR' && driveService) {
             console.log(`🚀 [DRIVE] El expediente no tiene carpeta. Creando nativamente para la unidad: ${unidad}`);
