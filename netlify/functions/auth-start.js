@@ -56,13 +56,13 @@ exports.handler = async (event, context) => {
 
     const scopes = [
       'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/drive.file'
+      'https://www.googleapis.com/auth/userinfo.profile'
+      // Eliminamos la línea de drive.file para evitar la pantalla roja de Google
     ];
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      prompt: 'consent',
+      //prompt: 'consent',
       scope: scopes
     });
 
