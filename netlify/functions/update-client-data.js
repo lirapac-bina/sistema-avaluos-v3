@@ -138,10 +138,10 @@ exports.handler = async (event) => {
         // 🚀 BLOQUE DE NOTIFICACIÓN VERSIÓN FINAL
         // ========================================================
         if (unidad && unidad !== 'POR ASIGNAR') {
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQpPqEzzrRnBTTB1ko_zO2fPPeCp-B2Xq_kujSfb4RR1dpxZDR1-srCLhUSDxmEup2/exec"; 
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4nnDgy6zAo36T-YuF5BUQmLeSwmnZQV0R4D5gi34zKpSn_pTuMe7Ls5MVAmy070Be/exec"; 
             
             // Construimos la URL con los parámetros pegados de forma simple
-            const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad);
+            const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad) + "&main=" + encodeURIComponent(id);
 
             console.log("📡 [NOTIFICACIÓN] Enviando señal a:", finalUrl);
 
