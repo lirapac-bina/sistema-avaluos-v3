@@ -62,7 +62,7 @@ exports.handler = async (event, context) => {
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      //prompt: 'consent',
+      prompt: 'select_account', // <--- ESTO FUERZA A GOOGLE A PREGUNTAR CON QUÉ CUENTA ENTRAR
       scope: scopes
     });
 
