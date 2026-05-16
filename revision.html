@@ -99,6 +99,11 @@
                         <span class="material-symbols-rounded text-base">description</span>
                         <span class="text-[10px] uppercase">Análisis Doc.</span>
                     </button>
+                    
+                    <button id="btn-fechas-header" onclick="abrirModalProponerFechas()" class="hidden h-9 items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-all active:scale-95 border border-teal-800 whitespace-nowrap">
+                        <span class="material-symbols-rounded text-base">calendar_month</span>
+                        <span class="text-[10px] uppercase hidden lg:inline">Proponer Fechas</span>
+                    </button>
 
                     <button onclick="toggleFullscreen()" class="h-9 w-9 flex items-center justify-center rounded-lg shadow-md transition-all active:scale-95 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700" title="Pantalla Completa">
                         <span class="material-symbols-rounded text-lg">fullscreen</span>
@@ -790,6 +795,55 @@
                 if(key.includes('FOTO_EXTRA_') || key.includes('ESCRITURA_EXTRA_')) return; 
 
                 const item = checklist[key];
+                
+                // 🌟 FIX UNIVERSAL: Manejamos si la escritura es Array o String
+                if (key === 'ESCRITURA') {
+                    if (!item.archivos) item.archivos = [];
+
+                    // 1. Si viene como archivo único normal
+                    const urlPrincipal = item.archivoUrl || item.driveLink || item.url || (typeof item === 'string' ? item : null);
+                    if (urlPrincipal && typeof urlPrincipal === 'string' && urlPrincipal.trim() !== '') {
+                        item.url = urlPrincipal; // Aseguramos la URL para el visor normal
+                        item.archivos.push({
+                            url: urlPrincipal,
+                            nombre: item.nombre || 'Escritura Principal',
+                            esPdf: urlPrincipal.toLowerCase().includes('.pdf')
+                        });
+                    }
+
+                    // 2. Si viene de la nueva opción de Admin (Múltiples archivos/Array)
+                    if (item.archivosSubidos && Array.isArray(item.archivosSubidos)) {
+                        item.archivosSubidos.forEach((a, idx) => {
+                            if (a && a.url && !item.archivos.some(ext => ext.url === a.url)) {
+                                item.archivos.push({
+                                    url: a.url,
+                                    nombre: a.nombre || `Parte ${idx + 1}`,
+                                    esPdf: (a.url || '').toLowerCase().includes('.pdf') || (a.nombre || '').toLowerCase().includes('.pdf')
+                                });
+                            }
+                        });
+                    }
+
+                    // 3. Si viene del método viejo de extras
+                    if (escrituraGaleria && escrituraGaleria.length > 0) {
+                        escrituraGaleria.forEach(extra => {
+                            if (!item.archivos.some(a => a.url === extra.url)) {
+                                item.archivos.push({
+                                    url: extra.url,
+                                    nombre: extra.nombre || 'Página extra',
+                                    esPdf: (extra.url || '').toLowerCase().includes('.pdf') || (extra.nombre || '').toLowerCase().endsWith('.pdf')
+                                });
+                            }
+                        });
+                    }
+
+                    // Forzar a 1 solo archivo si solo hay 1 en la lista, para que se abra gigante y directo
+                    if (item.archivos.length === 1) {
+                        item.url = item.archivos[0].url;
+                        item.archivos = []; // Lo vaciamos para que no lo clasifique como galería
+                    }
+                }
+                
                 let cat = item.categoria || 'solicitante';
                 if (key === 'UBICACION_MAPS') { cat = 'inmueble'; item.nombre = 'Ubicación Inmueble'; }
                 if (key === 'FOTOS_INTERIORES_GENERAL') { cat = 'inmueble'; item.nombre = 'Fotos Interiores y Entorno'; }
@@ -806,7 +860,6 @@
                 let multiplesArchivos = []; 
 
                 // 1. Detección SUPER-ROBUSTA de múltiples archivos (Escrituras u otros)
-                // Checa si existe un array 'archivos' con al menos 1 elemento (incluso si es 1, si viene en array, lo tratamos como galería para evitar errores de renderizado)
                 if (item.archivos && Array.isArray(item.archivos) && item.archivos.length > 0) {
                     tipoArchivo = 'GALERIA_DOCS'; 
                     multiplesArchivos = item.archivos.map((a, i) => {
@@ -820,7 +873,7 @@
                 } 
                 // 2. Detección normal
                 else if(key === 'UBICACION_MAPS') tipoArchivo = 'MAPA';
-                else if(key === 'FOTOS_INTERIORES_GENERAL' || key === 'ESCRITURA') tipoArchivo = 'GALERIA';
+                else if(key === 'FOTOS_INTERIORES_GENERAL') tipoArchivo = 'GALERIA'; // 🌟 FIX: Quitamos la Escritura de aquí
                 else if (item.textoPreview || key.includes('CORREO')) tipoArchivo = 'TXT'; 
                 else if (urlReal) {
                     if (urlReal.toLowerCase().includes('.pdf') || (item.mimeType && item.mimeType.includes('pdf'))) tipoArchivo = 'PDF';
@@ -1157,6 +1210,21 @@
             if (tieneArchivo || (req.status === 'pending' && currentKey === 'interno')) {
                 bar.classList.remove('translate-y-full');
                 
+                // 🌟 FIX: Si está en revisión, mostramos el contenedor de acciones si todos los docs están listos (la lógica de qué botones mostrar está en verificarProgresoGlobal)
+                if ((expediente.estatus === 'PENDIENTE' || expediente.estatus === 'EN REVISIÓN') && 
+                    document.getElementById('action-container') && 
+                    !document.getElementById('action-container').classList.contains('hidden')) {
+                     // El botón se muestra/oculta en verificarProgresoGlobal, aquí solo nos aseguramos de que el contenedor padre lo permita si es necesario.
+                }
+                
+                // 🌟 FIX: Si el expediente está en REVISIÓN o PENDIENTE, y están todos los documentos validados, mostramos la opción de fechas
+                const statusExpediente = (expediente.estatus || '').toUpperCase();
+                if ((statusExpediente === 'PENDIENTE' || statusExpediente === 'EN REVISIÓN') && 
+                    document.getElementById('action-container') && 
+                    !document.getElementById('action-container').classList.contains('hidden')) {
+                     // El botón se maneja en verificarProgresoGlobal, aquí solo aseguramos que la barra principal lo permita
+                }
+                
                 if (req.status === 'pending' && currentKey === 'interno') {
                     btnValidar.classList.add('hidden');
                     if(btnDescartar) {
@@ -1205,6 +1273,21 @@
                 
                 // 🔐 CANDADO DE ORO: Guardamos la llave actual por si logran burlar el blur
                 const llaveSegura = selectedReqKey;
+
+                // 🌟 FIX: Destrucción total de la Galería de Escrituras en Firebase antes de llamar al backend
+                if ((nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') && llaveSegura === 'ESCRITURA') {
+                    const expRef = db.collection('expedientes_avaluos').doc(expediente.id);
+                    let updatesExtras = { [`checklist.ESCRITURA.archivosSubidos`]: firebase.firestore.FieldValue.delete() };
+                    
+                    if (expediente.checklist) {
+                        Object.keys(expediente.checklist).forEach(k => {
+                            if (k.startsWith('ESCRITURA_EXTRA_')) {
+                                updatesExtras[`checklist.${k}`] = firebase.firestore.FieldValue.delete();
+                            }
+                        });
+                    }
+                    await expRef.update(updatesExtras); // Fuego purificador a la BD local
+                }
 
                 const res = await fetch('/.netlify/functions/update-status', { 
                     method: 'POST', 
@@ -1392,6 +1475,7 @@
         function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
         function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
 
+        // 🌟 FIX: Lógica de progreso global con máquina de estados completa para el botón de fechas
         function verificarProgresoGlobal() {
             if (!expediente || !expediente.grupos) return;
 
@@ -1409,40 +1493,54 @@
                 });
             });
 
-            const btnContainer = document.getElementById('action-container');
-            if (btnContainer) {
-                if (totalGlobal > 0 && validGlobal === totalGlobal) {
-                    btnContainer.classList.remove('hidden');
+            const btnFechasHeader = document.getElementById('btn-fechas-header');
+            if (btnFechasHeader) {
+                const statusExpediente = (expediente.estatus || '').toUpperCase().trim();
+                const tieneEquipo = (expediente.equipo && (expediente.equipo.visitador || expediente.equipo.dibujante)) || expediente.visitador || expediente.dibujante;
+                
+                // 1️⃣ CASO: Cita Confirmada y/o Equipo Asignado (MÁXIMA PRIORIDAD)
+                if (statusExpediente === 'CAPTURA' || statusExpediente === 'VISITA REALIZADA' || statusExpediente === 'FINALIZADO' || tieneEquipo) {
+                    btnFechasHeader.classList.remove('hidden');
+                    btnFechasHeader.classList.add('flex');
+                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">event_available</span><span class="text-[10px] uppercase hidden lg:inline">Cita Confirmada</span>`;
+                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold py-2 px-3 rounded-lg shadow-md border border-emerald-300 whitespace-nowrap active:scale-95 transition-all cursor-pointer";
+                    btnFechasHeader.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                } 
+                // 2️⃣ CASO: El cliente ya eligió en su portal, pero falta asignar equipo
+                else if (expediente.visitaAgendada && expediente.visitaAgendada.estatus === 'SOLICITADA') {
+                    btnFechasHeader.classList.remove('hidden');
+                    btnFechasHeader.classList.add('flex');
+                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base animate-spin">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando Asignación</span>`;
+                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-blue-100 text-blue-700 font-bold py-2 px-3 rounded-lg shadow-md border border-blue-300 whitespace-nowrap cursor-not-allowed opacity-90";
+                    btnFechasHeader.onclick = null;
+                }
+                // 3️⃣ CASO: 100% Validado. Se esperan fechas o ya se mandaron al cliente
+                else if (totalGlobal > 0 && validGlobal === totalGlobal) {
+                    btnFechasHeader.classList.remove('hidden');
+                    btnFechasHeader.classList.add('flex');
                     
-                    const btn = btnContainer.querySelector('button');
-                    const statusGYS = (expediente.estatus || '').toUpperCase().trim();
-                    const tieneEquipo = (expediente.equipo && (expediente.equipo.visitador || expediente.equipo.dibujante)) || expediente.visitador || expediente.dibujante;
-                    
-                    if (statusGYS === 'CAPTURA' || statusGYS === 'VISITA REALIZADA' || statusGYS === 'FINALIZADO' || tieneEquipo) {
-                        btn.innerHTML = `<span class="material-symbols-rounded text-sm">event_available</span> CITA Y EQUIPO CONFIRMADOS`;
-                        btn.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
-                        btn.className = "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all";
-                    } 
-                    else if (expediente.visitaAgendada && expediente.visitaAgendada.estatus === 'SOLICITADA') {
-                        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO ASIGNACIÓN EN GESTIÓN`;
-                        btn.onclick = null;
-                        btn.className = "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700 px-5 py-2 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 cursor-default";
-                    } else if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
-                        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> ESPERANDO AL CLIENTE`;
-                        btn.onclick = null;
-                        btn.className = "bg-amber-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center gap-2 cursor-not-allowed opacity-90";
+                    if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
+                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando al cliente</span>`;
+                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-amber-500 text-white font-bold py-2 px-3 rounded-lg shadow-md cursor-not-allowed opacity-90 border border-amber-600 whitespace-nowrap";
+                        btnFechasHeader.onclick = null;
                     } else {
-                        btn.innerHTML = `<span class="material-symbols-rounded">calendar_month</span> PROPONER FECHAS`;
-                        btn.onclick = () => {
-                            document.getElementById('modal-proponer-fechas').classList.remove('hidden');
-                            document.getElementById('modal-proponer-fechas').classList.add('flex');
-                        };
-                        btn.className = "bg-teal-600 hover:bg-teal-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-lg shadow-teal-500/30 flex items-center gap-2 animate-bounce";
+                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">calendar_month</span><span class="text-[10px] uppercase hidden lg:inline">Proponer Fechas</span>`;
+                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-all active:scale-95 border border-teal-800 whitespace-nowrap animate-bounce";
+                        btnFechasHeader.onclick = abrirModalProponerFechas;
                     }
-                } else {
-                    btnContainer.classList.add('hidden');
+                } 
+                // 4️⃣ CASO: Faltan documentos por validar, el botón se oculta
+                else {
+                    btnFechasHeader.classList.add('hidden');
+                    btnFechasHeader.classList.remove('flex');
                 }
             }
+        }
+
+        // Función para abrir el modal de fechas
+        function abrirModalProponerFechas() {
+            document.getElementById('modal-proponer-fechas').classList.remove('hidden');
+            document.getElementById('modal-proponer-fechas').classList.add('flex');
         }
 
         // 🔥 FUNCIÓN 1: GUARDAR FECHAS (La que manda el calendario al cliente)

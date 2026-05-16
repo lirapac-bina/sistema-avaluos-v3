@@ -601,13 +601,29 @@
                     await db.collection('expedientes_avaluos').doc(id).update({ [rol]: colaborador });
                 }
                 
+                // 🔥 1. Actualizamos la memoria local al instante para evitar lag visual
+                const exp = dbExpedientes.find(e => e.id === id);
+                if (exp) exp[rol] = colaborador;
+
+                // 🔒 2. VOLVEMOS A CONGELAR EL MENÚ (Seguridad por PIN activa)
                 selectElement.setAttribute('data-original', colaborador);
+                selectElement.disabled = true; 
+
+                // 🔥 3. Cambio de color: Azul si está asignado, Blanco si no
+                if (colaborador && colaborador !== 'Sin Asignar') {
+                    selectElement.classList.remove('bg-white', 'dark:bg-slate-900', 'border-slate-200', 'dark:border-slate-600', 'text-slate-600', 'dark:text-slate-300');
+                    selectElement.classList.add('bg-indigo-50', 'dark:bg-indigo-900/20', 'border-indigo-200', 'dark:border-indigo-800', 'text-indigo-700', 'dark:text-indigo-300');
+                } else {
+                    selectElement.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/20', 'border-indigo-200', 'dark:border-indigo-800', 'text-indigo-700', 'dark:text-indigo-300');
+                    selectElement.classList.add('bg-white', 'dark:bg-slate-900', 'border-slate-200', 'dark:border-slate-600', 'text-slate-600', 'dark:text-slate-300');
+                }
+
                 filtrarTabla(true);
 
             } catch (error) {
                 console.error("Error de conexión:", error);
                 alert("Error al actualizar. Verifica tu conexión.");
-                selectElement.disabled = false;
+                selectElement.disabled = true; // Se mantiene bloqueado por seguridad
                 selectElement.value = original || "";
             } 
         }

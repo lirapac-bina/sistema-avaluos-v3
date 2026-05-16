@@ -189,8 +189,43 @@
                 });
         }
 
-        function expVisitador(d, u) { return d.visitador === u.email || d.visitador_asignado === u.email; }
-        function expDibujante(d, u) { return d.dibujante === u.email || d.dibujante_asignado === u.email; }
+        // 🛡️ SÚPER FILTRO BLINDADO ANTI-ERRORES
+        function coincideConUsuario(asignacionBD, userObj) {
+            // 0. Si el usuario aún no carga, esperamos para que no se rompa la pantalla
+            if (!userObj) return false;
+
+            // 1. Roles que siempre ven todo (Rayos X)
+            const rol = (userObj.rol || '').toUpperCase();
+            if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'GESTOR', 'GESTORA', 'CEO', 'DIRECTOR'].includes(rol)) return true; 
+
+            // 2. Si no hay asignación válida, se oculta sin romper el código
+            if (!asignacionBD || typeof asignacionBD !== 'string' || asignacionBD.trim() === '' || asignacionBD.toLowerCase() === 'sin asignar') return false;
+
+            // 3. Comparamos los correos exactos (Todo en minúsculas)
+            const asig = asignacionBD.toLowerCase().trim();
+            const miEmail = (userObj.email || '').toLowerCase().trim();
+            const miNombre = (userObj.nombre || '').toLowerCase().trim();
+
+            if (asig === miEmail || asig === miNombre) return true;
+
+            // 4. Magia del prefijo (Si la BD dice "bichoscasa" y entra "bichoscasa1077@gmail.com")
+            const asigPrefijo = asig.split('@')[0];
+            const miPrefijo = miEmail.split('@')[0];
+
+            if (asigPrefijo === miPrefijo) return true;
+            if (asigPrefijo.length > 3 && miPrefijo.includes(asigPrefijo)) return true;
+            if (miPrefijo.length > 3 && asigPrefijo.includes(miPrefijo)) return true;
+
+            return false;
+        }
+
+        // Aplicamos el súper filtro a las funciones originales
+        function expVisitador(d, u) { 
+            return coincideConUsuario(d.visitador, u) || coincideConUsuario(d.visitador_asignado, u); 
+        }
+        function expDibujante(d, u) { 
+            return coincideConUsuario(d.dibujante, u) || coincideConUsuario(d.dibujante_asignado, u); 
+        }
 
         // 🌟 CALCULAR DÍAS NATURALES DESDE LA ASIGNACIÓN (Lunes a Domingo)
         function calcularDiasHabilesAsignacion(fechaString) {

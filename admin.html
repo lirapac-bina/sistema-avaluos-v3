@@ -284,7 +284,7 @@ Analiza este documento y extrae exactamente estos datos en formato JSON estricto
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase">Correo Electrónico (ID)</label>
-                           <input type="email" id="user-email-edit" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400" placeholder="ejemplo@dominio.com">
+                           <input type="email" id="user-email-edit" oninput="this.value = this.value.toLowerCase()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400" placeholder="ejemplo@dominio.com">
                         </div>
                         <div class="space-y-4">
                             <div>

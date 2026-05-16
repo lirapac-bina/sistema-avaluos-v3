@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
+const fetch = require('node-fetch'); // 🌟 AÑADIDO PARA PODER HABLAR CON TELEGRAM
 
 // --- INICIALIZACIÓN BLINDADA PARA NETLIFY ---
 if (admin.apps.length === 0) {
@@ -30,7 +31,12 @@ exports.handler = async (event, context) => {
 
     try {
         const data = JSON.parse(event.body);
-        const { expedienteId, colaborador, rol } = data; // rol puede ser: 'capturista', 'dibujante', 'visitador'
+        let { expedienteId, colaborador, rol } = data; // 🌟 CAMBIAMOS 'const' POR 'let'
+
+        // 🔒 CANDADO MAESTRO DE BACKEND: Siempre a minúsculas y sin espacios
+        if (colaborador && colaborador !== 'Sin Asignar') {
+            colaborador = colaborador.trim().toLowerCase();
+        }
 
         if (!expedienteId || !colaborador || !rol) {
             return { statusCode: 400, body: 'Faltan datos (ID, Colaborador o Rol)' };
@@ -46,19 +52,65 @@ exports.handler = async (event, context) => {
             return { statusCode: 404, body: 'Expediente no encontrado en Avalúos.' };
         }
 
+        const expData = doc.data(); // 🌟 EXTRAEMOS LA INFO DEL EXPEDIENTE
+
         // Construir objeto de actualización dinámica
         let updateData = {};
-        
-        // 1. Guardar el nombre en el campo del rol (ej: 'capturista': 'Ana')
         updateData[rol] = colaborador;
         
-        // 2. Guardar la fecha de asignación específica (ej: 'fechaAsignacionCapturista')
-        // Convertimos la primera letra del rol a mayúscula para el nombre del campo (ej: Capturista)
         const rolCapitalizado = rol.charAt(0).toUpperCase() + rol.slice(1);
         updateData[`fechaAsignacion${rolCapitalizado}`] = new Date().toISOString();
 
         // Actualizar en Firebase
         await docRef.update(updateData);
+
+        // ===========================================================
+        // 🤖 EL BOT ENTRA EN ACCIÓN (TELEGRAM)
+        // ===========================================================
+        // Si están desasignando a alguien (colaborador = 'Sin Asignar' o vacío), no mandamos mensaje.
+        if (colaborador && colaborador !== 'Sin Asignar') {
+            try {
+                // Usamos las llaves de Jack que ya sabemos que funcionan perfectamente
+                const TELEGRAM_TOKEN = "8832075655:AAF9d8vnvgKhQM_2tOIduIn8iOfsP9TeSac";
+                const TELEGRAM_CHAT_ID = "-1003934917323";
+
+                // Le ponemos su icono visual dependiendo del trabajo
+                let emoji = "👤";
+                let nombreRol = rol.toUpperCase();
+                if(rol === 'capturista') { emoji = "💻"; nombreRol = "CAPTURISTA"; }
+                if(rol === 'visitador') { emoji = "📸"; nombreRol = "VISITADOR"; }
+                if(rol === 'dibujante') { emoji = "📐"; nombreRol = "DIBUJANTE"; }
+
+                // Armamos los datos limpios
+                const folio = expData.folioOperativo && expData.folioOperativo !== 'SIN FOLIO' ? expData.folioOperativo : expedienteId.substring(0,8);
+                const cliente = expData.cliente || 'Cliente Desconocido';
+                const unidad = expData.unidad || 'POR ASIGNAR';
+                const nombreColaborador = colaborador.split('@')[0].toUpperCase(); // Extraemos "PAME" de "pame@gmail.com"
+
+                const mensaje = `🔔 *NUEVA ASIGNACIÓN TÉCNICA*\n` +
+                                `──────────────────\n` +
+                                `📋 *Folio:* ${folio}\n` +
+                                `👤 *Cliente:* ${cliente}\n` +
+                                `🏢 *Unidad:* ${unidad}\n\n` +
+                                `${emoji} *Rol:* ${nombreRol}\n` +
+                                `👷 *Asignado a:* ${nombreColaborador}\n\n` +
+                                `👉 [Abrir Sistema Leezar](https://ecosistema-leezar.netlify.app/)`;
+
+                const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: mensaje,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                console.log("✅ Notificación de Telegram enviada con éxito.");
+            } catch(telErr) {
+                console.error("❌ Error enviando mensaje a Telegram:", telErr);
+            }
+        }
 
         return {
             statusCode: 200,

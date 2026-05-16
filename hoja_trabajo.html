@@ -1095,8 +1095,8 @@
             const db = window.db || firebase.firestore();
             const rolUsuario = (activeUser.rol || '').toUpperCase().trim();
             
-            // 🌟 FIX: Definimos quiénes tienen la "Vista de Rayos X"
-            const puedeVerTodo = ['SUPER ADMIN', 'ADMIN', 'GESTORA'].includes(rolUsuario);
+            // 🌟 FIX: Definimos quiénes tienen la "Vista de Rayos X" (Añadido CEO y DIRECTOR)
+            const puedeVerTodo = ['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'GESTOR', 'GESTORA', 'CEO', 'DIRECTOR'].includes(rolUsuario);
 
             db.collection('expedientes_avaluos').onSnapshot((snapshot) => {
                 misExpedientes = {};
@@ -1104,14 +1104,41 @@
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
+
+                    // 👻 ¡EL FANTASMA ANIQUILADO! Filtro de Soft Delete
+                    if (data.eliminado === true) return; 
+
                     data.id = doc.id;
                     const est = (data.estatus||'').toUpperCase();
                     if(est.includes('FINALIZADO')||est.includes('ENTREGADO')) return;
                     
-                    // 🛡️ FILTRO INTELIGENTE: Si NO eres supervisor, aplica la regla estricta
+                    // 🛡️ FILTRO SÚPER INTELIGENTE PARA EQUIPO TÉCNICO
                     if (!puedeVerTodo) {
-                        const asig = (data.capturista||'').toLowerCase().trim();
-                        if(asig !== (activeUser.email||'').toLowerCase() && asig !== (activeUser.nombre||'').toLowerCase()) return;
+                        const miEmail = (activeUser.email || '').toLowerCase().trim();
+                        const miNombre = (activeUser.nombre || '').toLowerCase().trim();
+                        const miPrefijo = miEmail.split('@')[0]; // Ejemplo: "bichoscasa1077"
+                        
+                        // Extraemos quién está asignado a cada rol
+                        const asigCap = (data.capturista || '').toLowerCase().trim();
+                        const asigVis = (data.visitador || '').toLowerCase().trim();
+                        const asigDib = (data.dibujante || '').toLowerCase().trim();
+
+                        // Función de match a prueba de balas
+                        const coincide = (asig) => {
+                            if (!asig || asig === '' || asig === 'sin asignar') return false;
+                            if (asig === miEmail || asig === miNombre) return true;
+                            
+                            const asigPrefijo = asig.split('@')[0]; // Ejemplo BD: "bichoscasa"
+                            if (asigPrefijo === miPrefijo) return true;
+                            
+                            // Si "bichoscasa" está dentro de "bichoscasa1077" o viceversa
+                            if (asigPrefijo.length > 3 && miPrefijo.includes(asigPrefijo)) return true;
+                            if (miPrefijo.length > 3 && asigPrefijo.includes(miPrefijo)) return true;
+                            
+                            return false;
+                        };
+
+                        if (!coincide(asigCap) && !coincide(asigVis) && !coincide(asigDib)) return;
                     }
                     
                     arrayExpedientes.push(data);
