@@ -377,7 +377,7 @@
                                     </div>
                                 </div>
                                 <div class="bg-leezar-500/10 dark:bg-leezar-500/20 border border-leezar-500/30 px-5 py-2 rounded-2xl flex items-center gap-4 shadow-inner">
-                                    <span class="text-[10px] font-black text-leezar-600 dark:text-leezar-400 uppercase tracking-widest">Promedio Mercado:</span>
+                                    <span class="text-[10px] font-black text-leezar-600 dark:text-leezar-400 uppercase tracking-widest">Promedio Terreno:</span>
                                     <span id="terreno-promedio-unitario" class="font-black text-lg text-leezar-600 dark:text-leezar-400">$ 0.00</span>
                                 </div>
                             </div>
@@ -454,7 +454,9 @@
                                     <table class="w-full text-xs min-w-[1100px]">
                                         <thead><tr class="bg-slate-100 dark:bg-slate-800">
                                             <th class="w-8 !text-slate-600 dark:!text-slate-300 border-r border-slate-200 dark:border-slate-700">#</th><th class="w-32 !text-slate-600 dark:!text-slate-300">Precio ($)</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Terr.</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Const.</th><th class="w-12 !text-slate-600 dark:!text-slate-300">Edad</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Rango</th>
-                                            <th class="w-20 !text-indigo-600 dark:!text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 border-r border-slate-200 dark:border-slate-700">F. EDAD</th>
+                                            <th class="w-24 !text-slate-600 dark:!text-slate-300">$/m² Original</th>
+                                            <th class="w-20 !text-indigo-600 dark:!text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10">F. EDAD</th>
+                                            <th class="w-28 sortable-header !text-indigo-700 dark:!text-indigo-300 font-black border-r border-slate-200 dark:border-slate-700" onclick="sortTable('mercado', 7)">$/m² Hom.</th>
                                             <th class="!text-slate-600 dark:!text-slate-300">URL / ACORTADA</th>
                                         </tr></thead>
                                         <tbody id="mercado-rows"></tbody>
@@ -507,7 +509,9 @@
                                     <table class="w-full text-xs min-w-[1100px]">
                                         <thead><tr class="bg-slate-100 dark:bg-slate-800">
                                             <th class="w-8 !text-slate-600 dark:!text-slate-300 border-r border-slate-200 dark:border-slate-700">#</th><th class="w-32 !text-slate-600 dark:!text-slate-300">Renta ($)</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Terr.</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Const.</th><th class="w-12 !text-slate-600 dark:!text-slate-300">Edad</th><th class="w-16 !text-slate-600 dark:!text-slate-300">Rango</th>
-                                            <th class="w-20 !text-amber-600 dark:!text-amber-400 bg-amber-50/50 dark:bg-amber-900/10 border-r border-slate-200 dark:border-slate-700">F. EDAD</th>
+                                            <th class="w-24 !text-slate-600 dark:!text-slate-300">$/m² Original</th>
+                                            <th class="w-20 !text-amber-600 dark:!text-amber-400 bg-amber-50/50 dark:bg-amber-900/10">F. EDAD</th>
+                                            <th class="w-28 sortable-header !text-amber-700 dark:!text-amber-300 font-black border-r border-slate-200 dark:border-slate-700" onclick="sortTable('rentas', 7)">$/m² Hom.</th>
                                             <th class="!text-slate-600 dark:!text-slate-300">URL / ACORTADA</th>
                                         </tr></thead>
                                         <tbody id="rentas-rows"></tbody>
@@ -618,10 +622,18 @@
                 validateRango: (data, sujeto) => {
                     const sc = data['mercado-sup-const']||0, ed = data['mercado-edad']||0;
                     const ss = sujeto['mercado-sujeto-sup']||0, es = sujeto['mercado-sujeto-edad']||0;
+                    const inputEdadRaw = document.getElementById(`mercado-sujeto-edad`)?.value.trim();
+                    const tieneEdadSujeto = inputEdadRaw === '0' || es > 0;
+
                     let sok = true, eok = true;
                     if(ss>0) sok = (sc >= ss*0.7 && sc <= ss*1.3);
-                    if(es>0) eok = (ed >= es-5 && ed <= es+5);
-                    if(ss===0 && es===0) return {ok:true, msg:'N/A'};
+                    if(tieneEdadSujeto) {
+                        let minEdad = Math.max(0, es - 5);
+                        let maxEdad = es + 5;
+                        if (inputEdadRaw === '0') { minEdad = 0; maxEdad = 5; } // Candado estricto edad 0
+                        eok = (ed >= minEdad && ed <= maxEdad);
+                    }
+                    if(ss===0 && !tieneEdadSujeto) return {ok:true, msg:'N/A'};
                     if(sok && eok) return {ok:true, msg:'CUMPLE'};
                     if(!sok && !eok) return {ok:false, msg:'AMBOS ERROR'};
                     return {ok:false, msg: !sok?'SUP ERROR':'EDAD ERROR'};
@@ -634,10 +646,18 @@
                 validateRango: (data, sujeto) => {
                     const sc = data['rentas-sup-const']||0, ed = data['rentas-edad']||0;
                     const ss = sujeto['rentas-sujeto-sup']||0, es = sujeto['rentas-sujeto-edad']||0;
+                    const inputEdadRaw = document.getElementById(`rentas-sujeto-edad`)?.value.trim();
+                    const tieneEdadSujeto = inputEdadRaw === '0' || es > 0;
+
                     let sok = true, eok = true;
                     if(ss>0) sok = (sc >= ss*0.7 && sc <= ss*1.3);
-                    if(es>0) eok = (ed >= es-5 && ed <= es+5);
-                    if(ss===0 && es===0) return {ok:true, msg:'N/A'};
+                    if(tieneEdadSujeto) {
+                        let minEdad = Math.max(0, es - 5);
+                        let maxEdad = es + 5;
+                        if (inputEdadRaw === '0') { minEdad = 0; maxEdad = 5; } // Candado estricto edad 0
+                        eok = (ed >= minEdad && ed <= maxEdad);
+                    }
+                    if(ss===0 && !tieneEdadSujeto) return {ok:true, msg:'N/A'};
                     if(sok && eok) return {ok:true, msg:'CUMPLE'};
                     if(!sok && !eok) return {ok:false, msg:'AMBOS ERROR'};
                     return {ok:false, msg: !sok?'SUP ERROR':'EDAD ERROR'};
@@ -692,6 +712,10 @@
                     if (pctComp !== 0) fEdad = pctSuj / pctComp;
                 }
                 
+                // 🌟 FIX: Renderizamos el $/m² Original sin factor en su celda independiente
+                const origEl = document.getElementById(`${type}-orig-${index}`);
+                if (origEl) origEl.textContent = (unitarioOriginal===0||!isFinite(unitarioOriginal))?'$ 0.00':formatCurrency(unitarioOriginal);
+
                 const fEdadEl = document.getElementById(`${type}-fedad-${index}`);
                 if (fEdadEl) fEdadEl.textContent = formatNumber(fEdad, 4);
                 
@@ -737,23 +761,60 @@
             }
         };
 
+        // 🌟 FIX: Efecto espejo entre Mercado/Rentas y cálculo correcto para Edad 0 sin negativos
         window.handleSujetoChange = (type) => {
             const config = window.comps[type];
-            const sd = {}; config.sujetoFields.forEach(f => sd[f] = getNumericValue(`${type}-sujeto-${f}`));
             
-            if(type==='terreno'){
-                const rEl = document.getElementById('terreno-sujeto-rango');
-                if(rEl) rEl.textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
-            } else {
-                const rSup = document.getElementById(`${type}-sujeto-rango-sup`);
-                const rEdad = document.getElementById(`${type}-sujeto-rango-edad`);
-                if(rSup) rSup.textContent = sd.sup>0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
-                if(rEdad) {
-                    let minEdad = Math.max(0, sd.edad - 5);
-                    rEdad.textContent = sd.edad>0 ? `${formatNumber(minEdad,0)} a ${formatNumber(sd.edad+5,0)}` : 'N/A';
-                }
+            // 🔄 Sincronización en espejo para Mercado y Rentas
+            if (type === 'mercado' || type === 'rentas') {
+                const espejo = type === 'mercado' ? 'rentas' : 'mercado';
+                
+                const supOrigen = document.getElementById(`${type}-sujeto-sup`);
+                const edadOrigen = document.getElementById(`${type}-sujeto-edad`);
+                const fEdadOrigen = document.getElementById(`${type}-sujeto-param-fedad`);
+                
+                const supDestino = document.getElementById(`${espejo}-sujeto-sup`);
+                const edadDestino = document.getElementById(`${espejo}-sujeto-edad`);
+                const fEdadDestino = document.getElementById(`${espejo}-sujeto-param-fedad`);
+                
+                if (supOrigen && supDestino && document.activeElement === supOrigen) supDestino.value = supOrigen.value;
+                if (edadOrigen && edadDestino && document.activeElement === edadOrigen) edadDestino.value = edadOrigen.value;
+                if (fEdadOrigen && fEdadDestino && document.activeElement === fEdadOrigen) fEdadDestino.value = fEdadOrigen.value;
             }
-            for(let i=1; i<=config.count; i++) recalculateRow(type, i);
+
+            // Ejecutamos el render de rangos de forma independiente para cada sección
+            ['terreno', 'mercado', 'rentas'].forEach(t => {
+                const sd = {}; 
+                window.comps[t].sujetoFields.forEach(f => sd[f] = getNumericValue(`${t}-sujeto-${f}`));
+                
+                if (t === 'terreno') {
+                    const rEl = document.getElementById('terreno-sujeto-rango');
+                    if (rEl) rEl.textContent = sd.sup > 0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+                } else {
+                    const rSup = document.getElementById(`${t}-sujeto-rango-sup`);
+                    const rEdad = document.getElementById(`${t}-sujeto-rango-edad`);
+                    
+                    if (rSup) rSup.textContent = sd.sup > 0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
+                    
+                    if (rEdad) {
+                        const inputEdadRaw = document.getElementById(`${t}-sujeto-edad`)?.value.trim();
+                        // 🌟 FIX EDAD 0: Si explícitamente se escribió 0 o un valor numérico equivalente
+                        if (inputEdadRaw === '0' || sd.edad === 0 && inputEdadRaw !== '') {
+                            rEdad.textContent = "0 a 5";
+                        } else if (sd.edad > 0) {
+                            let minEdad = Math.max(0, sd.edad - 5);
+                            rEdad.textContent = `${formatNumber(minEdad, 0)} a ${formatNumber(sd.edad + 5, 0)}`;
+                        } else {
+                            rEdad.textContent = 'N/A';
+                        }
+                    }
+                }
+                
+                // Recalculamos filas del tipo de sección actual iterado
+                for (let i = 1; i <= window.comps[t].count; i++) {
+                    recalculateRow(t, i);
+                }
+            });
         };
 
         window.sortTable = (type, colIndex) => {
@@ -837,10 +898,10 @@
                         html+=`<td class="p-1 text-center font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/[0.5] dark:bg-emerald-900/10 rounded-md" id="${type}-fsup-${i}">1.0000</td>`;
                         html+=`<td class="p-1 text-right font-black text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border-x border-slate-200 dark:border-slate-700/50"><span id="${type}-unitario-${i}" data-value="0">0.00</span></td>`;
                     } else {
-                        html+=`<td class="p-1 text-center font-mono font-black ${type==='mercado'?'text-indigo-600 dark:text-indigo-400':'text-amber-600 dark:text-amber-400'} bg-slate-50/[0.5] dark:bg-slate-800/30 rounded-md">
-                                  <span id="${type}-fedad-${i}">1.0000</span>
-                                  <span id="${type}-unitario-${i}" data-value="0" style="display:none;">0</span>
-                               </td>`;
+                        // 🌟 FIX: Columnas separadas para $/m² Original, Factor y el Final Homologado a la derecha
+                        html+=`<td class="p-1 text-right font-medium text-slate-500"><span id="${type}-orig-${i}">$ 0.00</span></td>`;
+                        html+=`<td class="p-1 text-center font-mono font-bold text-slate-600 dark:text-slate-400" id="${type}-fedad-${i}">1.0000</td>`;
+                        html+=`<td class="p-1 text-right font-black text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border-x border-slate-200 dark:border-slate-700/50"><span id="${type}-unitario-${i}" data-value="0">0.00</span></td>`;
                     }
                     
                     html+=`<td class="p-1"><div class="flex gap-1"><input type="text" id="${type}-url-completa-${i}" class="leezar-input !text-left !text-[10px] !bg-white dark:!bg-slate-900 !border-slate-200 dark:!border-slate-700 w-full min-w-[100px]" placeholder="URL..."><input type="text" id="${type}-liga-acortada-${i}" class="leezar-input !text-left !text-[10px] !bg-white dark:!bg-slate-900 !border-slate-200 dark:!border-slate-700 w-1/3 min-w-[60px]" placeholder="bit.ly..."></div></td></tr>`;
