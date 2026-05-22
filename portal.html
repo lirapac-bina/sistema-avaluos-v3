@@ -219,11 +219,17 @@
             <div class="p-4 bg-white dark:bg-slate-800 z-10 space-y-3 shrink-0 shadow-sm">
                 <div class="relative">
                     <span class="material-symbols-rounded absolute left-3 top-3 text-gray-400">search</span>
-                    <input id="pac-input" type="text" placeholder="Buscar calle o colonia..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                    <input id="pac-input" type="text" placeholder="Buscar calle, número o colonia..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium">
                 </div>
-                <button onclick="usarMiUbicacion()" id="btn-my-location" class="w-full py-2.5 px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-sm font-bold flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors">
-                    <span class="material-symbols-rounded">my_location</span> Usar mi ubicación actual
-                </button>
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <span class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-lg">pin_drop</span>
+                        <input id="coord-input" type="text" placeholder="Coordenadas (ej. 19.54, -96.91)" onchange="actualizarDesdeCoordenadas(this.value)" class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-xs font-mono">
+                    </div>
+                    <button onclick="usarMiUbicacion()" id="btn-my-location" class="px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors whitespace-nowrap active:scale-95" title="Mi ubicación GPS">
+                        <span class="material-symbols-rounded text-lg">my_location</span> <span class="hidden sm:inline">Mi GPS</span>
+                    </button>
+                </div>
             </div>
             <div class="flex-1 relative bg-gray-100 w-full h-full">
                 <div id="map"></div>
@@ -1531,14 +1537,47 @@
         
         function actualizaPos(lat, lng) { 
             selectedLocation = { lat, lng }; 
-            document.getElementById('coordenadas-texto').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`; 
+            const coordString = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            
+            // Actualizamos los textos inferiores y el nuevo input superior
+            document.getElementById('coordenadas-texto').innerText = coordString; 
+            const coordInput = document.getElementById('coord-input');
+            if(coordInput && document.activeElement !== coordInput) {
+                coordInput.value = coordString;
+            }
+
             geocoder.geocode({ location: { lat, lng } }, (r, s) => { 
                 if (s === 'OK' && r[0]) {
                     selectedLocation.address = r[0].formatted_address; 
+                } else {
+                    selectedLocation.address = "Ubicación marcada en el mapa";
                 }
-                document.getElementById('direccion-texto').innerText = selectedLocation.address || "Ubicación marcada"; 
+                document.getElementById('direccion-texto').innerText = selectedLocation.address; 
             }); 
         }
+
+        // 🔥 NUEVO: Función para volar a la coordenada si el cliente la escribe/pega manualmente
+        window.actualizarDesdeCoordenadas = function(val) {
+            if (!val || !map) return;
+            
+            // Limpiamos espacios y separamos por la coma
+            const parts = val.replace(/\s/g, '').split(',');
+            if (parts.length === 2) {
+                const lat = parseFloat(parts[0]);
+                const lng = parseFloat(parts[1]);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const pos = { lat, lng };
+                    map.setCenter(pos);
+                    map.setZoom(19);
+                    actualizaPos(lat, lng);
+                } else {
+                    alert("Formato de coordenadas inválido. Usa el formato: Latitud, Longitud");
+                }
+            } else {
+                alert("Por favor separa la latitud y la longitud con una coma.");
+            }
+        };
 
         async function confirmarUbicacion() { 
             if (!selectedLocation) return; 
