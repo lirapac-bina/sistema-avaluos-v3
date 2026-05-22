@@ -761,60 +761,40 @@
             }
         };
 
-        // 🌟 FIX: Efecto espejo entre Mercado/Rentas y cálculo correcto para Edad 0 sin negativos
+        // 🌟 FIX: Lógica aislada, recalculación 100% segura (Se eliminó el efecto espejo a petición)
         window.handleSujetoChange = (type) => {
-            const config = window.comps[type];
+            // 🔄 Procesamos SOLO la pestaña en la que el usuario está trabajando para evitar desastres
+            const t = type;
+            const sd = {}; 
             
-            // 🔄 Sincronización en espejo para Mercado y Rentas
-            if (type === 'mercado' || type === 'rentas') {
-                const espejo = type === 'mercado' ? 'rentas' : 'mercado';
+            window.comps[t].sujetoFields.forEach(f => sd[f] = getNumericValue(`${t}-sujeto-${f}`));
+            
+            if (t === 'terreno') {
+                const rEl = document.getElementById('terreno-sujeto-rango');
+                if (rEl) rEl.textContent = sd.sup > 0 ? `${formatNumber(sd.sup * 0.7)} a ${formatNumber(sd.sup * 1.3)}` : 'N/A';
+            } else {
+                const rSup = document.getElementById(`${t}-sujeto-rango-sup`);
+                const rEdad = document.getElementById(`${t}-sujeto-rango-edad`);
                 
-                const supOrigen = document.getElementById(`${type}-sujeto-sup`);
-                const edadOrigen = document.getElementById(`${type}-sujeto-edad`);
-                const fEdadOrigen = document.getElementById(`${type}-sujeto-param-fedad`);
+                if (rSup) rSup.textContent = sd.sup > 0 ? `${formatNumber(sd.sup * 0.7)} a ${formatNumber(sd.sup * 1.3)}` : 'N/A';
                 
-                const supDestino = document.getElementById(`${espejo}-sujeto-sup`);
-                const edadDestino = document.getElementById(`${espejo}-sujeto-edad`);
-                const fEdadDestino = document.getElementById(`${espejo}-sujeto-param-fedad`);
-                
-                if (supOrigen && supDestino && document.activeElement === supOrigen) supDestino.value = supOrigen.value;
-                if (edadOrigen && edadDestino && document.activeElement === edadOrigen) edadDestino.value = edadOrigen.value;
-                if (fEdadOrigen && fEdadDestino && document.activeElement === fEdadOrigen) fEdadDestino.value = fEdadOrigen.value;
-            }
-
-            // Ejecutamos el render de rangos de forma independiente para cada sección
-            ['terreno', 'mercado', 'rentas'].forEach(t => {
-                const sd = {}; 
-                window.comps[t].sujetoFields.forEach(f => sd[f] = getNumericValue(`${t}-sujeto-${f}`));
-                
-                if (t === 'terreno') {
-                    const rEl = document.getElementById('terreno-sujeto-rango');
-                    if (rEl) rEl.textContent = sd.sup > 0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
-                } else {
-                    const rSup = document.getElementById(`${t}-sujeto-rango-sup`);
-                    const rEdad = document.getElementById(`${t}-sujeto-rango-edad`);
-                    
-                    if (rSup) rSup.textContent = sd.sup > 0 ? `${formatNumber(sd.sup*0.7)} a ${formatNumber(sd.sup*1.3)}` : 'N/A';
-                    
-                    if (rEdad) {
-                        const inputEdadRaw = document.getElementById(`${t}-sujeto-edad`)?.value.trim();
-                        // 🌟 FIX EDAD 0: Si explícitamente se escribió 0 o un valor numérico equivalente
-                        if (inputEdadRaw === '0' || sd.edad === 0 && inputEdadRaw !== '') {
-                            rEdad.textContent = "0 a 5";
-                        } else if (sd.edad > 0) {
-                            let minEdad = Math.max(0, sd.edad - 5);
-                            rEdad.textContent = `${formatNumber(minEdad, 0)} a ${formatNumber(sd.edad + 5, 0)}`;
-                        } else {
-                            rEdad.textContent = 'N/A';
-                        }
+                if (rEdad) {
+                    const inputEdadRaw = document.getElementById(`${t}-sujeto-edad`)?.value.trim();
+                    if (inputEdadRaw === '0' || (sd.edad === 0 && inputEdadRaw !== '')) {
+                        rEdad.textContent = "0 a 5";
+                    } else if (sd.edad > 0) {
+                        let minEdad = Math.max(0, sd.edad - 5);
+                        rEdad.textContent = `${formatNumber(minEdad, 0)} a ${formatNumber(sd.edad + 5, 0)}`;
+                    } else {
+                        rEdad.textContent = 'N/A';
                     }
                 }
-                
-                // Recalculamos filas del tipo de sección actual iterado
-                for (let i = 1; i <= window.comps[t].count; i++) {
-                    recalculateRow(t, i);
-                }
-            });
+            }
+            
+            // Recalculamos SOLO las filas de la tabla actual
+            for (let i = 1; i <= window.comps[t].count; i++) {
+                recalculateRow(t, i);
+            }
         };
 
         window.sortTable = (type, colIndex) => {
@@ -860,7 +840,8 @@
             if(operacion === '+') config.count++;
             else if(operacion === '-') config.count--;
             
-            createTableRows();
+            // 🌟 FIX CRÍTICO: Pasamos el tipo para SOLO redibujar la tabla que presionaste y salvar a las otras
+            createTableRows(type);
             
             for(let i=1; i<=Math.min(backup.length, config.count); i++){
                 config.cols.forEach(c => {
@@ -878,8 +859,10 @@
             if(currentFolioId) guardarProgreso(); 
         };
 
-        const createTableRows = () => {
-            Object.keys(window.comps).forEach(type => {
+        // 🌟 FIX CRÍTICO: Recibe un parámetro específico para NO borrar las otras tablas
+        const createTableRows = (specificType = null) => {
+            const types = specificType ? [specificType] : Object.keys(window.comps);
+            types.forEach(type => {
                 const config = window.comps[type];
                 const tbody = document.getElementById(`${type}-rows`);
                 if(!tbody) return;
@@ -898,7 +881,6 @@
                         html+=`<td class="p-1 text-center font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/[0.5] dark:bg-emerald-900/10 rounded-md" id="${type}-fsup-${i}">1.0000</td>`;
                         html+=`<td class="p-1 text-right font-black text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border-x border-slate-200 dark:border-slate-700/50"><span id="${type}-unitario-${i}" data-value="0">0.00</span></td>`;
                     } else {
-                        // 🌟 FIX: Columnas separadas para $/m² Original, Factor y el Final Homologado a la derecha
                         html+=`<td class="p-1 text-right font-medium text-slate-500"><span id="${type}-orig-${i}">$ 0.00</span></td>`;
                         html+=`<td class="p-1 text-center font-mono font-bold text-slate-600 dark:text-slate-400" id="${type}-fedad-${i}">1.0000</td>`;
                         html+=`<td class="p-1 text-right font-black text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border-x border-slate-200 dark:border-slate-700/50"><span id="${type}-unitario-${i}" data-value="0">0.00</span></td>`;
@@ -1423,7 +1405,8 @@
                             }
                         }
                     }
-                    window.handleSujetoChange(type);
+                    // 🌟 Pasamos true para avisarle al sistema que está en modo lectura segura
+                    window.handleSujetoChange(type, true);
                 }
             });
 
