@@ -680,26 +680,32 @@
         }
 
         // ==========================================
-        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos + DOC JUST)
+        // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos + DOC JUST HD)
         // ==========================================
-        async function subirArchivo(itemKey, nombreItem, categoria, input) {
+        // 🌟 Recibimos el parámetro 'autoConvert' directamente desde la base de datos
+        async function subirArchivo(itemKey, nombreItem, categoria, input, autoConvert = false) {
             const files = Array.from(input.files);
-            if(files.length === 0) return;
+            if (files.length === 0) return;
 
             const totalArchivos = files.length;
             showLoader(`Iniciando subida...`);
+            
+            // Ya no calculamos autoConvert aquí, usamos el valor que viene desde Firebase
 
             try {
-                // 🌟 REGLA ESPECIAL: SI ES ESCRITURA Y HAY VARIOS, NO FUSIONAR (PARA EL MOSAICO)
+                // ----------------------------------------------------
+                // CASO A: ESCRITURA MÚLTIPLE (Mosaico de páginas individuales)
+                // ----------------------------------------------------
                 if (totalArchivos > 1 && itemKey === 'ESCRITURA') {
                     showLoader(`Subiendo ${totalArchivos} páginas de Escritura...`);
                     
                     for (let i = 0; i < totalArchivos; i++) {
-                        showLoader(`Subiendo página ${i+1} de ${totalArchivos}...`);
+                        showLoader(`Procesando página ${i+1} de ${totalArchivos}...`);
                         const file = files[i];
                         const extraKey = `ESCRITURA_EXTRA_${Date.now()}_${i}`;
                         const finalName = `Escritura_Pag_${i+1}_${Date.now()}.${file.type.split('/')[1]}`;
 
+                        // Pedimos permiso a Netlify para subir el archivo principal de esta página
                         const res = await fetch('/.netlify/functions/get-upload-url', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -709,27 +715,67 @@
                         const { uploadUrl, filePath } = await res.json();
                         await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
 
+                        // 🌟 RENDERIZADO A JPG PARA DOC JUST DE ESTA PÁGINA INDIVIDUAL
+                        let pathsJpg = [];
+                        if (autoConvert) {
+                            showLoader(`Renderizando copia HD para página ${i+1}...`);
+                            if (file.type === 'application/pdf') {
+                                try {
+                                    const imagenesJpgBase64 = await convertirPdfAJpgs(file);
+                                    for (let j = 0; j < imagenesJpgBase64.length; j++) {
+                                        const resJpg = await fetch(imagenesJpgBase64[j]);
+                                        const blobJpg = await resJpg.blob();
+                                        const jpgName = `DOCJUST_${extraKey}_${Date.now()}_pag${j+1}.jpg`;
+
+                                        const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
+                                        });
+                                        if (resPermiso.ok) {
+                                            const dataPermiso = await resPermiso.json();
+                                            await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
+                                            pathsJpg.push(dataPermiso.filePath);
+                                        }
+                                    }
+                                } catch(errPdf) { console.error("Error convirtiendo página de Escritura", errPdf); }
+                            } else if (file.type.startsWith('image/')) {
+                                pathsJpg.push(filePath);
+                            }
+                        }
+
+                        const bodyPayload = { expedienteId, itemKey: extraKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria };
+                        if (autoConvert && pathsJpg.length > 0) {
+                            bodyPayload.autoConvertJpg = true;
+                            bodyPayload.pathsJpg = pathsJpg;
+                        }
+
                         await fetch('/.netlify/functions/update-status', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ expedienteId, itemKey: extraKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                            body: JSON.stringify(bodyPayload)
                         });
                     }
 
-                    // Marcamos el item principal como en revisión
+                    // Reportamos el fin de la carga de la raíz principal
                     await fetch('/.netlify/functions/update-status', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', categoriaItem: categoria })
                     });
                     
+                    await registrarLog('NUEVO DOCUMENTO', `El cliente subió en mosaico ${totalArchivos} páginas de Escritura.`, itemKey);
                     location.reload();
                     return; 
                 }
 
-                // 🌟 LÓGICA NORMAL DE FUSIÓN (Para todos los demás documentos)
+                // ----------------------------------------------------
+                // CASO B: LÓGICA NORMAL DE FUSIÓN (Todos los demás documentos)
+                // ----------------------------------------------------
                 let fileToUpload;
                 let finalName = files[0].name;
+                let finalType = files[0].type;
+
                 if (totalArchivos > 1) {
                     showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF...`);
                     const { PDFDocument } = window.PDFLib;
@@ -753,26 +799,76 @@
                     const pdfBytes = await masterPdf.save();
                     fileToUpload = new Blob([pdfBytes], { type: 'application/pdf' });
                     finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
+                    finalType = 'application/pdf';
                 } else {
                     fileToUpload = files[0];
                 }
 
-                // ... Resto de tu función de subida (fetch get-upload-url, etc.)
+                // Pedimos permiso a Netlify para el documento principal
                 const res = await fetch('/.netlify/functions/get-upload-url', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: fileToUpload.type })
+                    body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: finalType })
                 });
                 const { uploadUrl, filePath } = await res.json();
-                await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': fileToUpload.type } });
-                await fetch('/.netlify/functions/update-status', {
+                await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': finalType } });
+
+                // 🌟 RESTAURACIÓN NATIVA: RENDERIZADO A JPG PARA DOC JUST (VÍA NUBE SEGURA)
+                let pathsJpg = [];
+                if (autoConvert) {
+                    showLoader(`Renderizando documento para DOC JUST...`);
+                    
+                    if (finalType === 'application/pdf') {
+                        try {
+                            const imagenesJpgBase64 = await convertirPdfAJpgs(fileToUpload);
+                            for (let j = 0; j < imagenesJpgBase64.length; j++) {
+                                showLoader(`Guardando copia HD ${j+1} de ${imagenesJpgBase64.length}...`);
+                                const resJpg = await fetch(imagenesJpgBase64[j]);
+                                const blobJpg = await resJpg.blob();
+                                const jpgName = `DOCJUST_${itemKey}_${Date.now()}_pag${j+1}.jpg`;
+
+                                const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
+                                });
+                                
+                                if (resPermiso.ok) {
+                                    const dataPermiso = await resPermiso.json();
+                                    await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
+                                    pathsJpg.push(dataPermiso.filePath);
+                                }
+                            }
+                        } catch(errPdf) { console.error("Error convirtiendo PDF", errPdf); }
+                    } else if (finalType.startsWith('image/')) {
+                        pathsJpg.push(filePath);
+                    }
+                }
+
+                showLoader('Guardando estatus...');
+                const bodyPayload = { expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria };
+                
+                if (autoConvert && pathsJpg.length > 0) {
+                    bodyPayload.autoConvertJpg = true;
+                    bodyPayload.pathsJpg = pathsJpg;
+                }
+
+                const updateRes = await fetch('/.netlify/functions/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                    body: JSON.stringify(bodyPayload)
                 });
+
+                if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
+            
+                await registrarLog('NUEVO DOCUMENTO', `El cliente subió y fusionó ${totalArchivos} archivo(s).`, itemKey);
                 location.reload();
-            } catch (e) {
-                alert("Error: " + e.message);
+
+            } catch (error) {
+                console.error("Error subida:", error);
+                alert("❌ " + error.message);
+            } finally {
+                input.value = ''; 
                 hideLoader();
             }
         }
@@ -927,7 +1023,7 @@
                             <label class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-all active:scale-95 group">
                                 <span class="material-symbols-rounded text-lg text-indigo-500 group-hover:-translate-y-1 transition-transform">upload_file</span> 
                                 <span class="text-left leading-tight">Cargar PDF / Documentos<span class="block text-[9px] font-bold text-indigo-600 mt-[-1px] animate-pulse">¡Selecciona varios a la vez!</span></span>
-                                <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this)">
+                                <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this, ${item.autoJpg === true})">
                             </label>
                         </div>
                     </div>
