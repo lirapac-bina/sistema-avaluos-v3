@@ -1006,6 +1006,9 @@
                 </div>`;
             }
 
+            // 🌟 FIX CRÍTICO: Escáner a prueba de balas para interpretar la bandera de Firebase
+            const needsHD = (item.autoJpg === true || item.autoJpg === 'true' || item.autoJpg === 'on' || item.autoJpg === 1);
+
             let controlHtml = '';
             if (estatus === 'pendiente' || estatus === 'rechazado') {
                 controlHtml = `
@@ -1015,7 +1018,7 @@
                     <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full justify-end">
                         ${downloadLink}
                         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                            <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}')" class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95 group">
+                            <button onclick="iniciarCapturaEvidencia('${key}', '${nombre}', ${needsHD})" class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-700 transition-all active:scale-95 group">
                                 <span class="material-symbols-rounded text-lg group-hover:scale-110 transition-transform">photo_camera</span> 
                                 <span>Escanear<span class="block text-[9px] font-normal opacity-80 mt-[-2px]">Usar Cámara</span></span>
                             </button>
@@ -1023,7 +1026,7 @@
                             <label class="w-full sm:w-auto px-4 py-2.5 flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg font-bold text-xs shadow-sm cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-all active:scale-95 group">
                                 <span class="material-symbols-rounded text-lg text-indigo-500 group-hover:-translate-y-1 transition-transform">upload_file</span> 
                                 <span class="text-left leading-tight">Cargar PDF / Documentos<span class="block text-[9px] font-bold text-indigo-600 mt-[-1px] animate-pulse">¡Selecciona varios a la vez!</span></span>
-                                <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this, ${item.autoJpg === true})">
+                                <input type="file" multiple accept="image/*,application/pdf" class="hidden" onchange="subirArchivo('${key}', '${nombre}', '${categoria}', this, ${needsHD})">
                             </label>
                         </div>
                     </div>
@@ -1726,8 +1729,8 @@
         let evidenceImages = []; 
         let currentDoc = null;
         
-        function iniciarCapturaEvidencia(id, label) { 
-            currentDoc = { id, label }; 
+        function iniciarCapturaEvidencia(id, label, needsHD = false) { 
+            currentDoc = { id, label, needsHD }; 
             evidenceImages = []; 
             document.getElementById('evidenceModal').classList.remove('hidden'); 
             document.getElementById('evidence-modal-title').innerText = label; 
@@ -1835,15 +1838,50 @@
                     headers: { 'Content-Type': 'application/pdf' }
                 });
 
+                // 🌟 NUEVO: COPIA HD AUTOMÁTICA TAMBIÉN PARA FOTOS ESCANEADAS CON LA CÁMARA
+                let pathsJpg = [];
+                if (currentDoc.needsHD) {
+                    showLoader('Renderizando copia HD de la evidencia para DOC JUST...');
+                    try {
+                        const docJustFrames = await convertirPdfAJpgs(pdfBlob);
+                        for (let j = 0; j < docJustFrames.length; j++) {
+                            showLoader(`Guardando copia HD ${j+1} de ${docJustFrames.length}...`);
+                            const resJpg = await fetch(docJustFrames[j]);
+                            const blobJpg = await resJpg.blob();
+                            const jpgName = `DOCJUST_${currentDoc.id}_${Date.now()}_pag${j+1}.jpg`;
+
+                            const resDocJust = await fetch('/.netlify/functions/get-upload-url', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
+                            });
+                            
+                            if (resDocJust.ok) {
+                                const dataPermiso = await resDocJust.json();
+                                await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
+                                pathsJpg.push(dataPermiso.filePath);
+                            }
+                        }
+                    } catch(errPdf) { console.error("Error DOC JUST Cámara", errPdf); }
+                }
+
+                const bodyPayload = {
+                    expedienteId,
+                    itemKey: currentDoc.id,
+                    nuevoEstado: 'revision',
+                    archivoPath: filePath,
+                    categoriaItem: 'solicitante'
+                };
+
+                if (currentDoc.needsHD && pathsJpg.length > 0) {
+                    bodyPayload.autoConvertJpg = true;
+                    bodyPayload.pathsJpg = pathsJpg;
+                }
+
                 await fetch('/.netlify/functions/update-status', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        expedienteId,
-                        itemKey: currentDoc.id,
-                        nuevoEstado: 'revision',
-                        archivoPath: filePath,
-                        categoriaItem: 'solicitante'
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyPayload)
                 });
 
                 // 🔥 REGISTRO DE AUDITORÍA
