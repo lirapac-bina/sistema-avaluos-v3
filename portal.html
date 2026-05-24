@@ -59,7 +59,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .dark body { background-color: #0f172a; }
-        #map { height: 100%; width: 100%; min-height: 400px; touch-action: none; }
+        #map { height: 100%; width: 100%; touch-action: none; }
         .pac-container { z-index: 10000 !important; font-family: 'Inter', sans-serif; border-radius: 8px; margin-top: 5px; }
         .btn-upload { transition: all 0.2s ease; cursor: pointer; user-select: none; }
         .btn-upload:active { transform: scale(0.98); }
@@ -69,8 +69,6 @@
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .fade-in { animation: popIn 0.3s ease-out forwards; }
 
-        #map { height: 300px; width: 100%; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
-        .dark #map { border-color: #1e293b; }
 
         /* 🔵 BOTÓN FLOTANTE GUÍA DE USO */
         .help-fab {
@@ -211,7 +209,7 @@
     </div>
 
     <div id="mapModal" class="fixed inset-0 z-[5000] hidden bg-black/90 flex items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-800 w-full h-full sm:h-[85vh] sm:max-w-lg sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-[popIn_0.3s_ease-out]">
+        <div class="bg-white dark:bg-slate-800 w-full h-full sm:h-auto sm:max-h-[95vh] sm:max-w-lg sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-[popIn_0.3s_ease-out]">
             <div class="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 z-10 shrink-0">
                 <h3 class="font-bold text-slate-800 dark:text-white">Ubicación Exacta</h3>
                 <button onclick="cerrarMapa()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:text-red-500 transition-colors"><span class="material-symbols-rounded">close</span></button>
@@ -226,12 +224,12 @@
                         <span class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-lg">pin_drop</span>
                         <input id="coord-input" type="text" placeholder="Coordenadas (ej. 19.54, -96.91)" onchange="actualizarDesdeCoordenadas(this.value)" class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-xs font-mono">
                     </div>
-                    <button onclick="usarMiUbicacion()" id="btn-my-location" class="px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors whitespace-nowrap active:scale-95" title="Mi ubicación GPS">
-                        <span class="material-symbols-rounded text-lg">my_location</span> <span class="hidden sm:inline">Mi GPS</span>
+                    <button onclick="usarMiUbicacion()" id="btn-my-location" class="px-4 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold flex border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors whitespace-nowrap active:scale-95" title="Mi ubicación GPS">
+                        <span class="material-symbols-rounded text-lg">my_location</span> <span class="hidden sm:inline ml-1">Mi GPS</span>
                     </button>
                 </div>
             </div>
-            <div class="flex-1 relative bg-gray-100 w-full h-full">
+            <div class="flex-1 min-h-[200px] relative bg-gray-100 w-full">
                 <div id="map"></div>
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none z-10" style="margin-top: -18px;">
                      <span class="material-symbols-rounded text-5xl text-red-600 drop-shadow-xl">location_on</span>
@@ -678,7 +676,6 @@
                 img.src = URL.createObjectURL(file);
             });
         }
-
         // ==========================================
         // 2. SUBIDA DE ARCHIVOS INTELIGENTE 5.0 (Fusión Universal PDF + Fotos + DOC JUST)
         // ==========================================
@@ -690,7 +687,40 @@
             showLoader(`Iniciando subida...`);
 
             try {
-                // 🌟 REGLA ESPECIAL: SI ES ESCRITURA Y HAY VARIOS, NO FUSIONAR (PARA EL MOSAICO)
+                // 🔄 REINICIO DEFENSIVO BLINDADO (Anti-Error de Referencia)
+                try {
+                    if (typeof db !== 'undefined' && expedienteId) {
+                        await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                            visitaAgendada: firebase.firestore.FieldValue.delete(),
+                            fechasPropuestas: firebase.firestore.FieldValue.delete()
+                        });
+                        console.log("🔄 Agenda liberada exitosamente.");
+                    } else {
+                        console.warn("⚠️ Firebase DB no lista o expedienteId nulo, saltando reinicio.");
+                    }
+                } catch(errReset) { 
+                    console.error("Error en reinicio defensivo:", errReset); 
+                }
+
+                // 🌟 MAGIA 1 RECUPERADA: LECTURA EN VIVO DEL DICCIONARIO PARA DOC JUST
+                let autoConvert = false;
+                try {
+                    const configSnap = await db.collection('configuracion').doc('plantilla_maestra').get();
+                    if (configSnap.exists) {
+                        const diccionario = configSnap.data().diccionario || {};
+                        let baseKey = itemKey;
+                        // Buscador inteligente para llaves con sufijos
+                        if (itemKey.includes('_')) {
+                            baseKey = itemKey.split('_')[0]; 
+                        }
+                        const configItem = diccionario[itemKey] || diccionario[baseKey] || {};
+                        autoConvert = configItem.autoConvertJpg === true;
+                    }
+                } catch(e) { 
+                    console.warn("Error leyendo configuración de Auto-JPG", e); 
+                }
+
+                // 🌟 REGLA ESPECIAL NUEVA: SI ES ESCRITURA Y HAY VARIOS, NO FUSIONAR (MOSAICO)
                 if (totalArchivos > 1 && itemKey === 'ESCRITURA') {
                     showLoader(`Subiendo ${totalArchivos} páginas de Escritura...`);
                     
@@ -730,6 +760,8 @@
                 // 🌟 LÓGICA NORMAL DE FUSIÓN (Para todos los demás documentos)
                 let fileToUpload;
                 let finalName = files[0].name;
+                let finalType = files[0].type; 
+
                 if (totalArchivos > 1) {
                     showLoader(`Uniendo ${totalArchivos} archivos en un solo PDF...`);
                     const { PDFDocument } = window.PDFLib;
@@ -753,24 +785,88 @@
                     const pdfBytes = await masterPdf.save();
                     fileToUpload = new Blob([pdfBytes], { type: 'application/pdf' });
                     finalName = `${itemKey}_Unificado_${Date.now()}.pdf`;
+                    finalType = 'application/pdf'; // Aseguramos el tipo para la subida
                 } else {
                     fileToUpload = files[0];
                 }
 
-                // ... Resto de tu función de subida (fetch get-upload-url, etc.)
+                // Obtenemos la URL de subida para el archivo principal
                 const res = await fetch('/.netlify/functions/get-upload-url', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: fileToUpload.type })
+                    body: JSON.stringify({ expedienteId, itemKey, fileName: finalName, mimeType: finalType })
                 });
                 const { uploadUrl, filePath } = await res.json();
-                await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': fileToUpload.type } });
-                await fetch('/.netlify/functions/update-status', {
+                
+                // Subimos el archivo principal
+                await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': finalType } });
+
+                // 🌟 MAGIA 2: RENDERIZADO A JPG PARA DOC JUST (VÍA NUBE SEGURA)
+                let pathsJpg = [];
+
+                if (autoConvert) {
+                    showLoader(`Renderizando documento para DOC JUST...`);
+                    
+                    if (finalType === 'application/pdf') {
+                        try {
+                            const imagenesJpgBase64 = await convertirPdfAJpgs(fileToUpload);
+                            for (let j = 0; j < imagenesJpgBase64.length; j++) {
+                                showLoader(`Guardando copia HD ${j+1} de ${imagenesJpgBase64.length}...`);
+                                const resJpg = await fetch(imagenesJpgBase64[j]);
+                                const blobJpg = await resJpg.blob();
+                                const jpgName = `DOCJUST_${itemKey}_${Date.now()}_pag${j+1}.jpg`;
+
+                                // Pedimos permiso a Netlify para subir la foto HD
+                                const resPermiso = await fetch('/.netlify/functions/get-upload-url', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ expedienteId, itemKey: 'DOCJUST', fileName: jpgName, mimeType: 'image/jpeg' })
+                                });
+                                
+                                if (resPermiso.ok) {
+                                    const dataPermiso = await resPermiso.json();
+                                    await fetch(dataPermiso.uploadUrl, { method: 'PUT', body: blobJpg, headers: { 'Content-Type': 'image/jpeg' } });
+                                    pathsJpg.push(dataPermiso.filePath);
+                                }
+                            }
+                        } catch(errPdf) { console.error("Error convirtiendo PDF", errPdf); }
+                    } else if (finalType.startsWith('image/')) {
+                        // Si ya es imagen originally, mandamos la ruta directa
+                        pathsJpg.push(filePath);
+                    }
+                }
+
+                showLoader('Guardando estatus...');
+                
+                // Armamos un único paquete de datos
+                const bodyPayload = { 
+                    expedienteId, 
+                    itemKey, 
+                    nuevoEstado: 'revision', 
+                    archivoPath: filePath, 
+                    categoriaItem: categoria 
+                };
+                
+                // Inyectamos las rutas de los JPGs en el paquete si se generaron
+                if (autoConvert && pathsJpg.length > 0) {
+                    bodyPayload.autoConvertJpg = true;
+                    bodyPayload.pathsJpg = pathsJpg;
+                }
+
+                // Ejecutamos UN SOLO FETCH limpio
+                const updateRes = await fetch('/.netlify/functions/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ expedienteId, itemKey, nuevoEstado: 'revision', archivoPath: filePath, categoriaItem: categoria })
+                    body: JSON.stringify(bodyPayload)
                 });
+
+                if (!updateRes.ok) throw new Error("El archivo subió, pero falló al reportar el estatus de revisión.");
+            
+                // 🔥 REGISTRO DE AUDITORÍA
+                await registrarLog('NUEVO DOCUMENTO', `El cliente subió y fusionó ${totalArchivos} archivo(s).`, itemKey);
+
                 location.reload();
+                
             } catch (e) {
                 alert("Error: " + e.message);
                 hideLoader();
@@ -1122,7 +1218,15 @@
                             galCard.onclick = () => abrirGaleria();
                         }
                     }
-                    return; // 🛑 MAGIA: Cortamos la ejecución aquí. No suma al conteo global ni genera tarjeta genérica.
+                    
+                    // 🛑 FIX VITAL: ¡LA GALERÍA SÍ DEBE SUMAR AL CONTEO DE BLOQUEO! 
+                    if (!esOpcional) { 
+                        totalRequisitos++; 
+                        if(estatus === 'validado') completados++; 
+                        else if(estatus === 'revision') revisionCount++; 
+                    }
+                    
+                    return; // Cortamos la ejecución aquí para no generar tarjeta doble.
                 }
 
                 if (key.includes('FOTO_EXTRA_')) return; 
@@ -1278,6 +1382,12 @@
                                 })()}
                             </p>
                         </div>
+                        
+                        <div class="mt-8 border-t border-slate-100 dark:border-slate-700 pt-6">
+                            <button onclick="solicitarReagendarCita()" class="text-xs font-bold text-slate-400 hover:text-red-500 hover:border-red-200 dark:hover:border-red-900/50 transition-colors flex items-center justify-center gap-1 mx-auto bg-slate-50 dark:bg-slate-900/50 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 active:scale-95 transition-all">
+                                <span class="material-symbols-rounded text-sm">event_repeat</span> ¿Necesitas reagendar o corregir documentos? Toca aquí
+                            </button>
+                        </div>
                     </div>`;
                 } else {
                     // 🚀 ETAPA B: LA CITA YA PASÓ (Avalúo en Proceso)
@@ -1298,6 +1408,26 @@
                 }
                 
                 pantallaFinal.classList.remove('hidden');
+            }
+
+// 🧠 ANTI-STUCK EN PORTAL: Si bajó del 100% (Rechazo), forzamos a ocultar TODO y regresar al checklist
+            if (!validacionCompleta) {
+                const modalAgenda = document.getElementById('agendaModal');
+                if (modalAgenda) {
+                    modalAgenda.classList.add('hidden');
+                    modalAgenda.classList.remove('flex');
+                }
+                const pantallaFinal = document.getElementById('pantalla-final');
+                if (pantallaFinal) {
+                    pantallaFinal.classList.add('hidden');
+                    pantallaFinal.innerHTML = '';
+                }
+                
+                // 🛡️ LIMPIEZA TOTAL: Ocultamos banners engañosos por si se quedaron pegados
+                document.getElementById('persistent-waiting-dates-banner')?.classList.add('hidden');
+                document.getElementById('successModal')?.classList.add('hidden');
+
+                document.getElementById('main-container').classList.remove('hidden');
             }
             
             // 3. MAGIA UX: Leer la memoria y abrir la pestaña en la que se quedó el cliente
@@ -1942,6 +2072,30 @@
                 if(icon) icon.innerText = 'light_mode';
             }
         });
+
+        // ==========================================
+        // 🔄 FUNCIÓN PARA LIBERAR LA CITA Y EL PANEL DE DOCUMENTOS
+        // ==========================================
+        async function solicitarReagendarCita() {
+            if (!confirm("¿Estás seguro de que deseas liberar la cita actual? Esto abrirá nuevamente el panel de documentos para que puedas realizar correcciones o subir archivos pendientes.")) return;
+            
+            showLoader('Liberando agenda...');
+            try {
+                // Borramos de Firestore de forma atómica la cita confirmada y las propuestas viejas
+                await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                    visitaAgendada: firebase.firestore.FieldValue.delete(),
+                    fechasPropuestas: firebase.firestore.FieldValue.delete()
+                });
+                
+                // Registramos el movimiento en la auditoría de logs
+                await registrarLog('CITA LIBERADA', 'El cliente solicitó liberar la cita para reagendar o corregir archivos.', 'UBICACION_MAPS');
+                
+                location.reload();
+            } catch (e) {
+                hideLoader();
+                alert("Error al liberar la cita: " + e.message);
+            }
+        }
     
     </script>
 
