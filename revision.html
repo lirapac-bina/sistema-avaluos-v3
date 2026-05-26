@@ -606,20 +606,104 @@
             });
         });
         
-        async function fetchDetalles(id) {
+        function fetchDetalles(id) {
             try {
-                const docRef = await db.collection('expedientes_avaluos').doc(id).get();
-                if (!docRef.exists) throw new Error("Expediente no encontrado en la base de datos.");
+                // 🌟 FIX: Cambiamos a onSnapshot para tener Tiempo Real absoluto sin recargar
+                db.collection('expedientes_avaluos').doc(id).onSnapshot((docRef) => {
+                    if (!docRef.exists) {
+                        console.error("Expediente no encontrado en la BD.");
+                        return;
+                    }
 
-                const data = docRef.data();
-                data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
+                    const data = docRef.data();
+                    data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
 
-                transformarDatos(id, data);
-                renderCurrentGroup();
-                renderStaffPanel(data);
+                    transformarDatos(id, data);
+                    renderCurrentGroup();
+                    renderStaffPanel(data);
+                    
+                    // Si el revisor tiene un documento abierto, refrescamos los botones sin cerrar la imagen
+                    if (selectedReqKey) {
+                        const currentKey = groupKeys[activeGroupIndex];
+                        const req = expediente.grupos[currentKey].find(r => r.key === selectedReqKey);
+                        if (req) refrescarSoloDecisionBar(req);
+                    }
+
+                    // 🌟 NUEVO: Contador de documentos pendientes en vivo
+                    actualizarBurbujasPendientes();
+                }, (error) => {
+                    console.error("Error en tiempo real:", error);
+                });
             } catch (e) {
-                console.error("Error cargando detalles:", e);
-                alert("No se pudieron cargar los datos del expediente. " + e.message);
+                console.error("Error inicializando listener:", e);
+            }
+        }
+
+        // Funciones de apoyo para el Tiempo Real
+        function refrescarSoloDecisionBar(req) {
+            const bar = document.getElementById('decision-bar');
+            const btnValidar = document.getElementById('btn-validar');
+            const btnDescartar = bar.querySelector('button:first-of-type'); 
+            const currentKey = groupKeys[activeGroupIndex];
+            
+            const tieneArchivo = req.url || (req.fotos && req.fotos.length > 0) || req.textoPreview || req.coordenadas;
+            
+            if (tieneArchivo || (req.status === 'pending' && currentKey === 'interno')) {
+                bar.classList.remove('translate-y-full');
+                
+                if (req.status === 'pending' && currentKey === 'interno') {
+                    btnValidar.classList.add('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">upload_file</span> Subir Cédula';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-md active:scale-95 hover:bg-indigo-700 transition-all";
+                        btnDescartar.setAttribute('onclick', "document.getElementById('admin-file-upload').click()");
+                    }
+                } else if (req.status === 'valid' || req.estatus === 'validado') {
+                    btnValidar.classList.add('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">warning</span> Anular y Resetear';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-600 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs transition-all shadow-md active:scale-95";
+                        btnDescartar.setAttribute('onclick', `forzarRechazo('${req.key}', '${req.nombre}')`);
+                    }
+                } else {
+                    btnValidar.classList.remove('hidden');
+                    if(btnDescartar) {
+                        btnDescartar.innerHTML = '<span class="material-symbols-rounded text-sm">thumb_down</span> Descartar';
+                        btnDescartar.className = "flex items-center gap-1 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs transition-all dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20";
+                        btnDescartar.setAttribute('onclick', 'abrirRechazo()');
+                    }
+                }
+            } else {
+                bar.classList.add('translate-y-full');
+            }
+        }
+
+        // 🟠 Función de Burbujas Naranjas (Visualización Mejorada)
+        function actualizarBurbujasPendientes() {
+            let pendientes = 0;
+            Object.values(expediente.grupos).forEach(grupo => {
+                grupo.forEach(doc => {
+                    if (doc.status === 'review') pendientes++;
+                });
+            });
+
+            // Buscamos dónde inyectar la burbuja
+            let badge = document.getElementById('badge-pendientes-revision');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.id = 'badge-pendientes-revision';
+                // 🌟 FIX: Lo insertamos justo debajo del nombre del cliente para máxima visibilidad
+                const headerTitleContainer = document.getElementById('header-client-name').parentNode;
+                headerTitleContainer.appendChild(badge);
+            }
+
+            if (pendientes > 0) {
+                // Clases Tailwind para un botón tipo píldora muy llamativo
+                badge.className = "mt-2 inline-flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1 rounded-full border border-orange-600 text-[10px] font-black shadow-md animate-pulse uppercase tracking-widest";
+                badge.innerHTML = `<span class="material-symbols-rounded text-[14px]">notification_important</span> ${pendientes} documento(s) por revisar`;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
         }
 
@@ -1289,6 +1373,15 @@
                     await expRef.update(updatesExtras); // Fuego purificador a la BD local
                 }
 
+                // 🔥 PURGA ATÓMICA DE AGENDA: Si hay un rechazo (normal o anulación), tumbamos la agenda y regresamos estatus a EN REVISIÓN
+                if (nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') {
+                    await db.collection('expedientes_avaluos').doc(expediente.id).update({
+                        estatus: 'EN REVISIÓN',
+                        visitaAgendada: firebase.firestore.FieldValue.delete(),
+                        fechasPropuestas: firebase.firestore.FieldValue.delete()
+                    }).catch(e => console.warn("No había agenda que limpiar", e));
+                }
+
                 const res = await fetch('/.netlify/functions/update-status', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
@@ -1496,43 +1589,44 @@
             const btnFechasHeader = document.getElementById('btn-fechas-header');
             if (btnFechasHeader) {
                 const statusExpediente = (expediente.estatus || '').toUpperCase().trim();
-                const tieneEquipo = (expediente.equipo && (expediente.equipo.visitador || expediente.equipo.dibujante)) || expediente.visitador || expediente.dibujante;
-                
-                // 1️⃣ CASO: Cita Confirmada y/o Equipo Asignado (MÁXIMA PRIORIDAD)
-                if (statusExpediente === 'CAPTURA' || statusExpediente === 'VISITA REALIZADA' || statusExpediente === 'FINALIZADO' || tieneEquipo) {
-                    btnFechasHeader.classList.remove('hidden');
-                    btnFechasHeader.classList.add('flex');
-                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">event_available</span><span class="text-[10px] uppercase hidden lg:inline">Cita Confirmada</span>`;
-                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold py-2 px-3 rounded-lg shadow-md border border-emerald-300 whitespace-nowrap active:scale-95 transition-all cursor-pointer";
-                    btnFechasHeader.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
-                } 
-                // 2️⃣ CASO: El cliente ya eligió en su portal, pero falta asignar equipo
-                else if (expediente.visitaAgendada && expediente.visitaAgendada.estatus === 'SOLICITADA') {
-                    btnFechasHeader.classList.remove('hidden');
-                    btnFechasHeader.classList.add('flex');
-                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base animate-spin">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando Asignación</span>`;
-                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-blue-100 text-blue-700 font-bold py-2 px-3 rounded-lg shadow-md border border-blue-300 whitespace-nowrap cursor-not-allowed opacity-90";
-                    btnFechasHeader.onclick = null;
-                }
-                // 3️⃣ CASO: 100% Validado. Se esperan fechas o ya se mandaron al cliente
-                else if (totalGlobal > 0 && validGlobal === totalGlobal) {
-                    btnFechasHeader.classList.remove('hidden');
-                    btnFechasHeader.classList.add('flex');
-                    
-                    if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
-                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando al cliente</span>`;
-                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-amber-500 text-white font-bold py-2 px-3 rounded-lg shadow-md cursor-not-allowed opacity-90 border border-amber-600 whitespace-nowrap";
-                        btnFechasHeader.onclick = null;
-                    } else {
-                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">calendar_month</span><span class="text-[10px] uppercase hidden lg:inline">Proponer Fechas</span>`;
-                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-all active:scale-95 border border-teal-800 whitespace-nowrap animate-bounce";
-                        btnFechasHeader.onclick = abrirModalProponerFechas;
-                    }
-                } 
-                // 4️⃣ CASO: Faltan documentos por validar, el botón se oculta
-                else {
+
+                // 🔥 ESCUDO ANTI-BUGS: Si no estamos al 100%, ocultamos el botón inmediatamente y abortamos
+                if (totalGlobal > 0 && validGlobal < totalGlobal) {
                     btnFechasHeader.classList.add('hidden');
                     btnFechasHeader.classList.remove('flex');
+                    return;
+                }
+
+                // 🌟 NUEVA LÓGICA BLINDADA: Basada estrictamente en la BD de agenda (no en historial muerto de "equipos")
+                if (expediente.visitaAgendada && expediente.visitaAgendada.fecha) {
+                    // 1️⃣ CASO: El cliente ya agendó en su portal
+                    if (statusExpediente === 'CAPTURA' || statusExpediente === 'VISITA REALIZADA' || statusExpediente === 'FINALIZADO' || expediente.capturista || expediente.visitador) {
+                        btnFechasHeader.classList.remove('hidden');
+                        btnFechasHeader.classList.add('flex');
+                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">event_available</span><span class="text-[10px] uppercase hidden lg:inline">Cita Confirmada</span>`;
+                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold py-2 px-3 rounded-lg shadow-md border border-emerald-300 whitespace-nowrap active:scale-95 transition-all cursor-pointer";
+                        btnFechasHeader.onclick = () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                    } else {
+                        btnFechasHeader.classList.remove('hidden');
+                        btnFechasHeader.classList.add('flex');
+                        btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base animate-spin">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando Asignación</span>`;
+                        btnFechasHeader.className = "flex h-9 items-center gap-2 bg-blue-100 text-blue-700 font-bold py-2 px-3 rounded-lg shadow-md border border-blue-300 whitespace-nowrap cursor-not-allowed opacity-90";
+                        btnFechasHeader.onclick = null;
+                    }
+                } else if (expediente.fechasPropuestas && expediente.fechasPropuestas.length > 0) {
+                    // 2️⃣ CASO: 100% Validado y ya propusiste las fechas, el cliente no ha respondido
+                    btnFechasHeader.classList.remove('hidden');
+                    btnFechasHeader.classList.add('flex');
+                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">sync</span><span class="text-[10px] uppercase hidden lg:inline">Esperando al cliente</span>`;
+                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-amber-500 text-white font-bold py-2 px-3 rounded-lg shadow-md cursor-not-allowed opacity-90 border border-amber-600 whitespace-nowrap";
+                    btnFechasHeader.onclick = null;
+                } else {
+                    // 3️⃣ CASO: 100% Validado LIMPIO. Es momento de proponer fechas.
+                    btnFechasHeader.classList.remove('hidden');
+                    btnFechasHeader.classList.add('flex');
+                    btnFechasHeader.innerHTML = `<span class="material-symbols-rounded text-base">calendar_month</span><span class="text-[10px] uppercase hidden lg:inline">Proponer Fechas</span>`;
+                    btnFechasHeader.className = "flex h-9 items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-all active:scale-95 border border-teal-800 whitespace-nowrap animate-bounce";
+                    btnFechasHeader.onclick = abrirModalProponerFechas;
                 }
             }
         }
@@ -1828,6 +1922,13 @@
             if (typeof showLoader !== 'undefined') showLoader('Aplicando rechazo forzado...');
             
             try {
+                // 🔥 PURGA ATÓMICA DE AGENDA (MODO DIOS): Tumbamos la agenda y estatus directamente en BD
+                await db.collection('expedientes_avaluos').doc(expedienteId).update({
+                    estatus: 'EN REVISIÓN',
+                    visitaAgendada: firebase.firestore.FieldValue.delete(),
+                    fechasPropuestas: firebase.firestore.FieldValue.delete()
+                }).catch(e => console.warn("No había agenda que limpiar", e));
+
                 const res = await fetch('/.netlify/functions/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
