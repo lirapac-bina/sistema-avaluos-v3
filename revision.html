@@ -1568,9 +1568,16 @@
         function cerrarZoom() { document.getElementById('zoom-modal').classList.add('hidden'); }
         function copiarCoords() { navigator.clipboard.writeText(document.getElementById('map-coords-text').innerText).then(() => alert("Coordenadas copiadas")); }
 
-        // 🌟 FIX: Lógica de progreso global con máquina de estados completa para el botón de fechas
+        // 🌟 FIX: Lógica de progreso global con máquina de estados completa para el botón de fechas y análisis siempre activo
         function verificarProgresoGlobal() {
             if (!expediente || !expediente.grupos) return;
+
+            // 🔥 ESCUDO VISUAL: Nos aseguramos de que el botón de ANÁLISIS DOC siempre sea accesible para generar borradores
+            const btnAnalisis = document.getElementById('btn-generar-analisis');
+            if (btnAnalisis) {
+                btnAnalisis.classList.remove('hidden');
+                btnAnalisis.classList.add('flex');
+            }
 
             let totalGlobal = 0;
             let validGlobal = 0;
@@ -1590,7 +1597,7 @@
             if (btnFechasHeader) {
                 const statusExpediente = (expediente.estatus || '').toUpperCase().trim();
 
-                // 🔥 ESCUDO ANTI-BUGS: Si no estamos al 100%, ocultamos el botón inmediatamente y abortamos
+                // 🔥 ESCUDO ANTI-BUGS: Si no estamos al 100%, ocultamos el botón de fechas inmediatamente y abortamos
                 if (totalGlobal > 0 && validGlobal < totalGlobal) {
                     btnFechasHeader.classList.add('hidden');
                     btnFechasHeader.classList.remove('flex');
@@ -2276,198 +2283,112 @@
             const extraidos = expediente.datos_extraidos || {};
             const faltantes = [];
 
-            // 1. REGLA DE NEGOCIO Y EXCLUSIONES
+            // 1. REVISAR SI FALTAN EXTRACCIONES IA
             Object.keys(checklist).forEach(key => {
                 if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return;
-
                 const conf = checklist[key];
                 const requiereIA = conf.usar_ia === true || (conf.prompt && conf.prompt.trim() !== "");
-                
                 if (requiereIA) {
                     const tieneArchivo = conf.archivoUrl || conf.driveUrl || conf.url || conf.archivoPath;
-                    if (tieneArchivo && !extraidos[key]) {
-                        faltantes.push(conf.nombre || key);
-                    }
+                    if (tieneArchivo && !extraidos[key]) faltantes.push(conf.nombre || key);
                 }
             });
 
             if (faltantes.length > 0) {
-                const continuar = confirm("⚠️ EXTRACCIÓN PENDIENTE en:\n\n" + faltantes.map(f => `• ${f}`).join('\n') + "\n\n¿Deseas generar el PDF de Análisis de todas formas como borrador?");
+                const continuar = confirm("⚠️ EXTRACCIÓN PENDIENTE en:\n\n" + faltantes.map(f => `• ${f}`).join('\n') + "\n\n¿Deseas generar el Google Doc de todas formas como borrador?");
                 if (!continuar) return;
             }
 
             const btn = document.getElementById('btn-generar-analisis');
             const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Creando Google Doc...';
             btn.disabled = true;
 
             try {
-                // 🚀 SUPER FUNCIÓN: Convierte una URL a pixeles puros (Base64) para evadir bloqueos
-                const urlToBase64 = async (url) => {
-                    try {
-                        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
-                        const response = await fetch(proxyUrl);
-                        if (!response.ok) throw new Error("Fallo en proxy primario");
-                        const blob = await response.blob();
-                        return await new Promise(resolve => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (e) {
-                        try { // Proxy secundario de respaldo
-                            const proxy2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-                            const response2 = await fetch(proxy2);
-                            const blob2 = await response2.blob();
-                            return await new Promise(resolve => {
-                                const reader = new FileReader();
-                                reader.onloadend = () => resolve(reader.result);
-                                reader.readAsDataURL(blob2);
-                            });
-                        } catch (err) {
-                            return url; // Si todo falla, devuelve la URL original
-                        }
-                    }
-                };
+                let textos = { solicitante: '', propietario: '', inmueble: '', coordenadas: '' };
+                let imagenes = { mapa: null, portada: null, interiores: [] };
 
-                let solRows = '', propRows = '', inmRows = '', portadaHtml = '', galeriaHtml = '';
-                let conts = { sol: 1, pro: 1, inm: 1 };
-
-                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Procesando texto...';
-
-                // 2. PROCESAR DATOS DE TEXTO
+                // 2. RECOPILAR TEXTOS IA
                 Object.entries(extraidos).forEach(([key, val]) => {
                     if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return; 
-
                     let obj = val;
                     if(typeof val === 'string') { try { obj = JSON.parse(val.replace(/```json/gi, '').replace(/```/gi, '').trim()); } catch(e){} }
 
                     const conf = checklist[key] || {};
-                    let docName = conf.nombre || key.replace(/_/g, ' ');
-                    docName = docName.charAt(0).toUpperCase() + docName.slice(1).toLowerCase();
                     const campos = conf.campos_pdf || [];
 
-                    const buildContent = (o, path = '') => {
+                    const buildContent = (o) => {
                         let lines = [];
                         for(let [k, v] of Object.entries(o)) {
-                            const curPath = path ? `${path}.${k}` : k;
-                            if(typeof v === 'object' && v !== null) lines.push(buildContent(v, curPath));
+                            if(typeof v === 'object' && v !== null) lines.push(buildContent(v));
                             else if(v && v !== '---' && String(v).trim() !== '') {
-                                if (campos.length > 0 && !campos.includes(curPath)) continue;
-                                let label = k.replace(/_/g, ' ').charAt(0).toUpperCase() + k.replace(/_/g, ' ').slice(1).toLowerCase();
-                                lines.push(`• <b style="color:#000;">${label}:</b> ${String(v).toUpperCase()}`);
+                                let label = k.replace(/_/g, ' ').toUpperCase();
+                                lines.push(`${label}: ${String(v).toUpperCase()}`);
                             }
                         }
-                        return lines.join('<br>');
+                        return lines.join('\n');
                     };
 
                     let content = typeof obj === 'object' ? buildContent(obj) : String(obj).toUpperCase();
                     if (content.trim() !== "") {
                         const cat = conf.categoria || 'solicitante';
-                        const html = `
-                            <div style="margin-bottom:12px; page-break-inside: avoid;">
-                                <div style="font-weight:bold; font-size:12px; margin-bottom:2px;">
-                                    <span style="color:#999;">${conts[cat === 'solicitante' ? 'sol' : (cat === 'propietario' ? 'pro' : 'inm')]}.</span> ${docName}
-                                </div>
-                                <div style="padding-left:22px; font-size:11px; color:#333; line-height:1.4;">${content}</div>
-                            </div>`;
-                        if(cat === 'solicitante') { solRows += html; conts.sol++; } 
-                        else if(cat === 'propietario') { propRows += html; conts.pro++; } 
-                        else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') { inmRows += html; conts.inm++; }
+                        if(cat === 'solicitante') textos.solicitante += `\n[${conf.nombre || key}]\n${content}\n`;
+                        else if(cat === 'propietario') textos.propietario += `\n[${conf.nombre || key}]\n${content}\n`;
+                        else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') textos.inmueble += `\n[${conf.nombre || key}]\n${content}\n`;
                     }
                 });
 
-                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Descargando fotos...';
-
-                // 3. MAPA SATELITAL (Inyección de Base64)
+                // 3. RECOPILAR IMÁGENES Y COORDENADAS
                 const mapKey = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0");
-                const mapItem = Object.values(checklist).find(i => i.key === 'UBICACION_MAPS' || (i.nombre && i.nombre.toUpperCase().includes('UBICACIÓN')));
-                
+                const mapItem = Object.values(checklist).find(i => i.key === 'UBICACION_MAPS');
                 if(mapItem && mapItem.coordenadas) {
-                    const originalMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=19&size=640x320&maptype=satellite&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
-                    const base64Map = await urlToBase64(originalMapUrl); // Convertimos el mapa a código base64
-                    
-                    inmRows += `
-                        <div style="page-break-inside: avoid; margin-top:15px;">
-                            <div style="font-weight:bold; font-size:12px;">${conts.inm}. Ubicación y Entorno Satelital:</div>
-                            <div style="padding-left:22px; margin-top:5px;">
-                                <p style="font-size:10px; color:#666; margin-bottom:5px;">Coordenadas: ${mapItem.coordenadas}</p>
-                                <img src="${base64Map}" style="width:100%; border-radius:8px; border:1px solid #ddd;">
-                            </div>
-                        </div>`;
+                    textos.coordenadas = `Coordenadas Google Maps: ${mapItem.coordenadas}\nDirección: ${mapItem.direccion || 'No especificada'}`;
+                    imagenes.mapa = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=19&size=640x640&maptype=satellite&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
                 }
 
-                // 4. FOTOS EVIDENCIA (Inyección de Base64)
                 const port = Object.values(checklist).find(i => i.key === 'FOTO_PORTADA' && (i.url || i.archivoUrl || i.driveLink));
-                if(port) {
-                    const pUrl = transformDriveUrl(port.url || port.archivoUrl || port.driveLink);
-                    const base64Portada = await urlToBase64(pUrl);
-                    portadaHtml = `
-                        <div style="page-break-inside: avoid; margin-top:30px; text-align:center;">
-                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:2px solid #0f4c81; padding-bottom:5px; margin-bottom:15px; text-align:left;">EVIDENCIA FOTOGRÁFICA</div>
-                            <img src="${base64Portada}" style="width:100%; max-height:400px; object-fit:contain; border:1px solid #eee; border-radius:8px;">
-                            <p style="font-size:10px; font-weight:bold; color:#888; margin-top:8px;">FOTO PORTADA / FACHADA</p>
-                        </div>`;
-                }
+                if(port) imagenes.portada = transformDriveUrl(port.url || port.archivoUrl || port.driveLink);
 
                 const gal = Object.values(checklist).find(i => i.key === 'FOTOS_INTERIORES_GENERAL');
                 if(gal && gal.fotos && gal.fotos.length > 0) {
-                    galeriaHtml = `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:15px;">`;
-                    // Convertimos TODAS las fotos de la galería a Base64 una por una
-                    for (let i = 0; i < gal.fotos.length; i++) {
-                        const base64Interior = await urlToBase64(gal.fotos[i].url);
-                        galeriaHtml += `
-                            <div style="width:48%; border:1px solid #eee; padding:5px; text-align:center; page-break-inside:avoid; border-radius:6px;">
-                                <img src="${base64Interior}" style="width:100%; height:200px; object-fit:cover; border-radius:4px;">
-                                <p style="font-size:9px; font-weight:bold; margin-top:4px; color:#999;">INTERIOR / ENTORNO ${i+1}</p>
-                            </div>`;
-                    }
-                    galeriaHtml += `</div>`;
+                    imagenes.interiores = gal.fotos.map(f => transformDriveUrl(f.url));
                 }
 
-                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Ensamblando PDF...';
+                // Extraer el ID de la carpeta de Drive si existe
+                let folderId = null;
+                if (expediente.carpeta_drive) {
+                    const match = expediente.carpeta_drive.match(/folders\/([a-zA-Z0-9_-]+)/);
+                    if (match) folderId = match[1];
+                }
 
-                // 5. ENSAMBLAJE HTML (TEXTO PLANO CON PIXELES INCRUSTADOS)
-                const finalHtml = `
-                    <div style="font-family: Arial, sans-serif; color: #000; width: 800px; padding: 30px; background: white;">
-                        <div style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 30px; border-bottom: 3px solid #0f4c81; padding-bottom: 10px; color: #0f4c81;">Análisis de documentación - ${expediente.cliente}</div>
-                        
-                        <div style="margin-bottom:25px;">
-                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Solicitante (Comprador)</div>
-                            ${solRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
-                        </div>
-                        
-                        <div style="margin-bottom:25px;">
-                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Propietario</div>
-                            ${propRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
-                        </div>
-                        
-                        <div style="margin-bottom:25px;">
-                            <div style="font-weight:bold; font-size:14px; text-transform:uppercase; border-bottom:1px solid #eee; margin-bottom:10px; color:#0f4c81;">Inmueble</div>
-                            ${inmRows || '<p style="font-size:11px; color:#999;">Sin información procesada.</p>'}
-                        </div>
-                        
-                        ${portadaHtml}
-                        ${galeriaHtml}
-                    </div>`;
+                // 4. LLAMAR AL BACKEND PARA GENERAR EL DOC
+                const res = await fetch('/.netlify/functions/generar-doc-analisis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        expedienteId: expediente.id,
+                        cliente: expediente.cliente || 'Cliente',
+                        textos: textos,
+                        imagenes: imagenes,
+                        driveFolderId: folderId
+                    })
+                });
 
-                // 6. EXPORTACIÓN JS-PDF
-                const opt = {
-                    margin: 10,
-                    filename: `Análisis Doc - ${expediente.cliente}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2, 
-                        useCORS: true, 
-                        letterRendering: true
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                await html2pdf().set(opt).from(finalHtml).save();
+                if (!res.ok) throw new Error("Fallo en el servidor al generar Google Doc");
+                
+                const data = await res.json();
+                
+                // 5. ABRIR EL GOOGLE DOC
+                if (data.success && data.docUrl) {
+                    if (typeof showToast !== 'undefined') showToast("¡Documento de Word generado con éxito!", "success");
+                    window.open(data.docUrl, '_blank'); // Abre el Doc en una nueva pestaña
+                } else {
+                    throw new Error(data.error || "No se recibió la URL del documento");
+                }
 
             } catch (err) {
-                console.error("Error crítico PDF:", err);
-                alert("Error al generar el documento. Revisa tu consola para más detalles.");
+                console.error("Error crítico Doc:", err);
+                alert("Error al generar el documento de Word en la nube. Revisa tu consola para más detalles.");
             } finally {
                 btn.innerHTML = orig;
                 btn.disabled = false;
