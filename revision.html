@@ -2281,87 +2281,78 @@
         window.generarPDFAnalisis = async function() {
             const checklist = expediente.checklist || {};
             const extraidos = expediente.datos_extraidos || {};
-            const faltantes = [];
-
-            // 1. REVISAR SI FALTAN EXTRACCIONES IA
-            Object.keys(checklist).forEach(key => {
-                if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return;
-                const conf = checklist[key];
-                const requiereIA = conf.usar_ia === true || (conf.prompt && conf.prompt.trim() !== "");
-                if (requiereIA) {
-                    const tieneArchivo = conf.archivoUrl || conf.driveUrl || conf.url || conf.archivoPath;
-                    if (tieneArchivo && !extraidos[key]) faltantes.push(conf.nombre || key);
-                }
-            });
-
-            if (faltantes.length > 0) {
-                const continuar = confirm("⚠️ EXTRACCIÓN PENDIENTE en:\n\n" + faltantes.map(f => `• ${f}`).join('\n') + "\n\n¿Deseas generar el Google Doc de todas formas como borrador?");
-                if (!continuar) return;
-            }
-
             const btn = document.getElementById('btn-generar-analisis');
             const orig = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Creando Google Doc...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Creando Reporte Premium...';
             btn.disabled = true;
 
             try {
                 let textos = { solicitante: '', propietario: '', inmueble: '', coordenadas: '' };
                 let imagenes = { mapa: null, portada: null, interiores: [] };
 
-                // 2. RECOPILAR TEXTOS IA
+                // 1. RECOPILAR TEXTOS (CON FILTRO ANTI-BASURA)
                 Object.entries(extraidos).forEach(([key, val]) => {
                     if (key.includes('CEDULA_GYS') || key === 'CEDULA_GYS') return; 
                     let obj = val;
                     if(typeof val === 'string') { try { obj = JSON.parse(val.replace(/```json/gi, '').replace(/```/gi, '').trim()); } catch(e){} }
 
                     const conf = checklist[key] || {};
-                    const campos = conf.campos_pdf || [];
 
                     const buildContent = (o) => {
                         let lines = [];
                         for(let [k, v] of Object.entries(o)) {
                             if(typeof v === 'object' && v !== null) lines.push(buildContent(v));
                             else if(v && v !== '---' && String(v).trim() !== '') {
-                                let label = k.replace(/_/g, ' ').toUpperCase();
-                                lines.push(`${label}: ${String(v).toUpperCase()}`);
+                                let valStr = String(v).trim();
+                                if (valStr.toUpperCase() === 'NULL' || valStr.toUpperCase() === 'N/A' || valStr === 'null') continue;
+                                
+                                let label = isNaN(k) ? k.replace(/_/g, ' ').toUpperCase() : '-';
+                                if (valStr.length > 90) {
+                                    lines.push(`${label}: ${valStr.charAt(0).toUpperCase() + valStr.slice(1).toLowerCase()}`);
+                                } else {
+                                    lines.push(`${label}: ${valStr.toUpperCase()}`);
+                                }
                             }
                         }
-                        return lines.join('\n');
+                        return lines.filter(l => l.trim() !== '-' && l.trim() !== '').join('\n');
                     };
 
                     let content = typeof obj === 'object' ? buildContent(obj) : String(obj).toUpperCase();
                     if (content.trim() !== "") {
                         const cat = conf.categoria || 'solicitante';
-                        if(cat === 'solicitante') textos.solicitante += `\n[${conf.nombre || key}]\n${content}\n`;
-                        else if(cat === 'propietario') textos.propietario += `\n[${conf.nombre || key}]\n${content}\n`;
-                        else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') textos.inmueble += `\n[${conf.nombre || key}]\n${content}\n`;
+                        const tituloDoc = conf.nombre || key;
+                        if(cat === 'solicitante') textos.solicitante += `\n[${tituloDoc}]\n${content}\n`;
+                        else if(cat === 'propietario') textos.propietario += `\n[${tituloDoc}]\n${content}\n`;
+                        else if(cat === 'inmueble' && key !== 'UBICACION_MAPS') textos.inmueble += `\n[${tituloDoc}]\n${content}\n`;
                     }
                 });
 
-                // 3. RECOPILAR IMÁGENES Y COORDENADAS
-                const mapKey = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0");
+                // 2. RECOPILAR IMÁGENES Y MAPAS (AQUÍ ESTÁ LA MAGIA QUE FALTABA)
+                const mapKey = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
                 const mapItem = Object.values(checklist).find(i => i.key === 'UBICACION_MAPS');
+                
+                // Extraemos las coordenadas directamente de lo que guardó el cliente
                 if(mapItem && mapItem.coordenadas) {
-                    textos.coordenadas = `Coordenadas Google Maps: ${mapItem.coordenadas}\nDirección: ${mapItem.direccion || 'No especificada'}`;
+                    textos.coordenadas = `Coordenadas exactas: ${mapItem.coordenadas}\nDirección Maps: ${mapItem.direccion || 'No especificada'}`;
                     imagenes.mapa = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=19&size=640x640&maptype=satellite&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
                 }
 
+                // Extraemos la Portada y las Fotos Interiores
                 const port = Object.values(checklist).find(i => i.key === 'FOTO_PORTADA' && (i.url || i.archivoUrl || i.driveLink));
-                if(port) imagenes.portada = transformDriveUrl(port.url || port.archivoUrl || port.driveLink);
+                if(port) imagenes.portada = port.url || port.archivoUrl || port.driveLink;
 
                 const gal = Object.values(checklist).find(i => i.key === 'FOTOS_INTERIORES_GENERAL');
                 if(gal && gal.fotos && gal.fotos.length > 0) {
-                    imagenes.interiores = gal.fotos.map(f => transformDriveUrl(f.url));
+                    imagenes.interiores = gal.fotos.map(f => f.url);
                 }
 
-                // Extraer el ID de la carpeta de Drive si existe
                 let folderId = null;
                 if (expediente.carpeta_drive) {
                     const match = expediente.carpeta_drive.match(/folders\/([a-zA-Z0-9_-]+)/);
                     if (match) folderId = match[1];
                 }
 
-                // 4. LLAMAR AL BACKEND PARA GENERAR EL DOC
+                // 3. ENVIAR A NETLIFY
                 const res = await fetch('/.netlify/functions/generar-doc-analisis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2374,21 +2365,19 @@
                     })
                 });
 
-                if (!res.ok) throw new Error("Fallo en el servidor al generar Google Doc");
-                
+                if (!res.ok) throw new Error("Fallo en el servidor al generar el Reporte Premium");
                 const data = await res.json();
                 
-                // 5. ABRIR EL GOOGLE DOC
                 if (data.success && data.docUrl) {
-                    if (typeof showToast !== 'undefined') showToast("¡Documento de Word generado con éxito!", "success");
-                    window.open(data.docUrl, '_blank'); // Abre el Doc en una nueva pestaña
+                    if (typeof showToast !== 'undefined') showToast("¡Reporte Ejecutivo generado!", "success");
+                    window.open(data.docUrl, '_blank');
                 } else {
                     throw new Error(data.error || "No se recibió la URL del documento");
                 }
 
             } catch (err) {
                 console.error("Error crítico Doc:", err);
-                alert("Error al generar el documento de Word en la nube. Revisa tu consola para más detalles.");
+                alert("Error al generar el documento. Revisa tu consola.");
             } finally {
                 btn.innerHTML = orig;
                 btn.disabled = false;

@@ -5,7 +5,7 @@ exports.handler = async (event, context) => {
         const data = JSON.parse(event.body);
 
         // 🚀 PEGA AQUÍ LA URL DE TU SCRIPT RECIÉN PUBLICADO
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHVjWSHxf5x5DEYsfGyQFOQo6yQ_py0gSbTBkC4I0MssGHqkhnNaZLiwoZqiBhDJB0/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSN_DW9r4F-XjhBXGhdcEOXZsS1VwCUGBh4OHjIbeOGbFv1wBHi1hTTSBW0rApvC8z/exec";
 
         console.log(`🚀 Mandando orden a Apps Script para generar Word de: ${data.cliente}`);
 
