@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Mando - EME Estimaciones</title>
+    
+    <!-- LIBRERÍAS BASE DE FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- CONFIGURACIÓN TAILWIND (IDENTIDAD EME) -->
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        eme: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#e11d48', 600: '#be123c', 700: '#9f1239', 800: '#881337', 900: '#4c0519' },
+                        slate: { 850: '#151e2e' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                } 
+            } 
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .dark body { background-color: #0f172a; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        /* Ocultar flechas en inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .thin-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
+    </style>
+</head>
+
+<body class="text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- BARRA DE NAVEGACIÓN ADMIN EME -->
+    <header class="bg-eme-700 text-white shadow-lg z-40 sticky top-0 h-16 flex items-center">
+        <div class="max-w-7xl w-full mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="h-8 w-auto bg-white p-1 rounded shadow-sm flex items-center justify-center">
+                    <img src="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png" alt="Logo EME" class="h-full w-auto object-contain">
+                </div>
+                <span class="font-bold tracking-tight text-lg uppercase">Estimaciones <span class="text-eme-200 font-normal">Admin</span></span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="estimaciones.html" class="hidden sm:flex items-center gap-1 text-xs font-bold bg-eme-800 hover:bg-eme-900 px-3 py-1.5 rounded-lg transition-colors border border-eme-600 text-white">
+                    <span class="material-symbols-rounded text-sm">home</span> Ir al Estimador
+                </a>
+                <button onclick="toggleDarkMode()" class="p-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg transition-colors text-white flex items-center justify-center" title="Cambiar Tema">
+                    <span class="material-symbols-rounded text-sm" id="dark-mode-icon">dark_mode</span>
+                </button>
+                <button onclick="cerrarSesionAdmin()" class="flex items-center gap-2 text-sm font-semibold text-eme-100 hover:text-white transition-colors">
+                    Salir <span class="material-symbols-rounded text-base">logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- PANTALLA DE CARGA / SEGURIDAD -->
+    <div id="loader-admin" class="min-h-[80vh] flex flex-col items-center justify-center">
+        <span class="material-symbols-rounded text-4xl text-eme-600 animate-spin mb-4">sync</span>
+        <h2 class="font-semibold text-slate-500 dark:text-slate-400 tracking-widest uppercase text-sm">Verificando credenciales...</h2>
+    </div>
+
+    <!-- CONTENIDO DEL DASHBOARD -->
+    <main id="admin-content" class="max-w-7xl mx-auto px-6 py-8 hidden animate-fade-in">
+        
+        <div class="mb-8 border-l-4 border-eme-600 pl-4">
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-white tracking-tight uppercase">Centro de Mando</h1>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Ecosistema SaaS • Centro Integral Inmobiliario</p>
+        </div>
+
+        <!-- TARJETAS DE MÉTRICAS (KPIs) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors relative">
+                <div class="w-14 h-14 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-rounded text-3xl">payments</span>
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ingresos Totales</p>
+                        <input type="month" id="filtro-mes" onchange="cargarIngresos()" class="text-[10px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded px-1 outline-none cursor-pointer dark:text-slate-300">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-2xl font-bold text-slate-800 dark:text-white tracking-tight" id="kpi-ingresos">****</h3>
+                        <button onclick="toggleIngresos()" class="text-slate-400 hover:text-eme-600 transition-colors" title="Mostrar/Ocultar"><span class="material-symbols-rounded text-sm" id="icon-ingresos">visibility</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+                <div class="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-rounded text-3xl">group</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Clientes Activos</p>
+                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="kpi-usuarios">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:border-eme-500 dark:hover:border-eme-500 transition-colors">
+                <div class="w-14 h-14 rounded-xl bg-eme-50 dark:bg-eme-900/30 text-eme-600 flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-rounded text-3xl">database</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Créditos en Sistema</p>
+                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="kpi-creditos">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOS COLUMNAS: TABLA DE CLIENTES Y CONFIGURACIÓN -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- TABLA DE CLIENTES (Ocupa 2/3) -->
+            <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-eme-600"></div>
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <h2 class="text-base font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2 uppercase">
+                        <span class="material-symbols-rounded text-eme-600">list_alt</span> Base de Usuarios
+                    </h2>
+                    <button onclick="cargarDatos()" class="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-eme-600 flex items-center justify-center transition-colors shadow-sm" title="Actualizar datos">
+                        <span class="material-symbols-rounded text-[18px]">refresh</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto h-[400px] overflow-y-auto thin-scroll">
+                    <table class="w-full text-left border-collapse relative">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-white dark:bg-slate-800 text-[10px] uppercase tracking-widest font-bold text-slate-400 border-b border-slate-100 dark:border-slate-700">
+                                <th class="p-4 pl-6">Usuario / Cliente</th>
+                                <th class="p-4">Email</th>
+                                <th class="p-4 text-center">Créditos</th>
+                                <th class="p-4">Rol</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-clientes" class="text-sm font-medium text-slate-700 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
+                            <!-- Datos dinámicos -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL DE CONFIGURACIÓN (Ocupa 1/3) -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative self-start">
+                <div class="absolute top-0 left-0 w-full h-1 bg-slate-400 dark:bg-slate-500"></div>
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                    <h2 class="text-base font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2 uppercase">
+                        <span class="material-symbols-rounded text-slate-500">settings</span> Configuración 
+                    </h2>
+                </div>
+                <div class="p-6 space-y-6">
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Estado del Servicio</label>
+                        <select id="config-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 text-xs font-semibold bg-slate-50 cursor-pointer">
+                            <option value="true">🟢 Activo (Operando)</option>
+                            <option value="false">🔴 Mantenimiento (Pausado)</option>
+                        </select>
+                    </div>
+
+                    <div class="border border-amber-200 dark:border-amber-900/50 rounded-xl p-4 bg-amber-50/50 dark:bg-amber-900/10">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-sm">campaign</span> Campaña Marketing</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="promo-activa" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+                        <div class="space-y-3">
+                            <input type="text" id="promo-nombre" placeholder="Ej. HOT SALE" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs font-bold outline-none uppercase dark:text-white">
+                            <div class="relative">
+                                <input type="number" id="promo-descuento" placeholder="20" class="w-full pl-3 pr-10 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold outline-none dark:text-white">
+                                <span class="absolute right-3 top-2 text-slate-400 text-xs font-bold">% OFF</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Paquetes (MXN Base)</label>
+                            <button onclick="agregarPaquete()" class="text-[10px] font-bold text-eme-600 hover:text-eme-700 flex items-center gap-1"><span class="material-symbols-rounded text-sm">add_circle</span> Nuevo</button>
+                        </div>
+                        <div id="lista-paquetes" class="space-y-3 max-h-[200px] overflow-y-auto thin-scroll pr-1"></div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                        <button onclick="guardarConfiguracion()" id="btn-save-config" class="w-full mt-2 bg-slate-800 hover:bg-slate-900 dark:bg-eme-600 dark:hover:bg-eme-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <span class="material-symbols-rounded">save</span> Aplicar Cambios
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let paquetesConfig = []; // Memoria global de paquetes
+        let ingresosBrutos = 0;
+        let ingresosOcultos = true;
+
+        // Establecer el mes actual en el input
+        const hoy = new Date();
+        document.getElementById('filtro-mes').value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+
+        // MODO OSCURO
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('dark-mode-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); icon.innerText = 'dark_mode'; localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark'); icon.innerText = 'light_mode'; localStorage.theme = 'dark';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark'); document.getElementById('dark-mode-icon').innerText = 'light_mode';
+            }
+        });
+
+        // 1. EL CADENERO
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const docSnap = await db.collection('usuarios_estimador').doc(user.uid).get();
+                    if (docSnap.exists && docSnap.data().rol === 'admin') {
+                        document.getElementById('loader-admin').classList.add('hidden');
+                        document.getElementById('admin-content').classList.remove('hidden');
+                        cargarDatos(); 
+                        cargarIngresos(); // NUEVO
+                        cargarConfiguracionMotor(); 
+                    } else {
+                        alert("Acceso denegado. Solo directivos pueden ver esta sección.");
+                        window.location.href = 'estimaciones.html';
+                    }
+                } catch (error) {
+                    console.error("Error validando seguridad:", error);
+                    window.location.href = 'index.html';
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // 2. EXTRAER USUARIOS
+        async function cargarDatos() {
+            try {
+                let totalUsuarios = 0; let totalCreditos = 0;
+                const tabla = document.getElementById('tabla-clientes');
+                tabla.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400"><span class="material-symbols-rounded animate-spin">sync</span> Cargando base de datos...</td></tr>';
+
+                const snapshotUsuarios = await db.collection('usuarios_estimador').get();
+                tabla.innerHTML = ''; 
+
+                let usuarios = [];
+                snapshotUsuarios.forEach(doc => usuarios.push({ id: doc.id, ...doc.data() }));
+                usuarios.sort((a, b) => {
+                    const timeA = a.fechaRegistro ? a.fechaRegistro.toMillis() : 0;
+                    const timeB = b.fechaRegistro ? b.fechaRegistro.toMillis() : 0;
+                    return timeB - timeA; 
+                });
+
+                const rolesDisponibles = ['cliente', 'perito', 'admin'];
+
+                usuarios.forEach(data => {
+                    totalUsuarios++;
+                    totalCreditos += (data.creditos || 0);
+
+                    let colorClase = 'bg-slate-100 dark:bg-slate-700 text-slate-600 border-slate-200 dark:border-slate-600'; 
+                    if(data.rol === 'admin') colorClase = 'bg-eme-50 dark:bg-eme-900/30 text-eme-600 border-eme-200 dark:border-eme-800 font-bold';
+                    if(data.rol === 'perito') colorClase = 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 border-indigo-200 dark:border-indigo-800 font-bold';
+
+                    const opcionesRoles = rolesDisponibles.map(r => 
+                        `<option value="${r}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white" ${data.rol === r ? 'selected' : ''}>${r.toUpperCase()}</option>`
+                    ).join('');
+
+                    const selectorRol = `
+                        <select onchange="cambiarRol('${data.id}', this.value, this)" class="${colorClase} px-2 py-1 rounded text-[10px] uppercase tracking-widest border outline-none cursor-pointer hover:border-slate-400 transition-colors">
+                            ${opcionesRoles}
+                        </select>
+                    `;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-4 pl-6 font-semibold uppercase">${data.nombre || 'Sin Nombre'}</td>
+                        <td class="p-4 text-slate-500 dark:text-slate-400 font-normal">${data.email}</td>
+                        <td class="p-4 text-center">
+                            <span class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white px-3 py-1 rounded-full font-bold text-xs border border-slate-200 dark:border-slate-600">${data.creditos || 0}</span>
+                        </td>
+                        <td class="p-4">${selectorRol}</td>
+                    `;
+                    tabla.appendChild(tr);
+                });
+
+                document.getElementById('kpi-usuarios').innerText = totalUsuarios;
+                document.getElementById('kpi-creditos').innerText = totalCreditos;
+
+            } catch (error) {
+                console.error("Error completo:", error);
+            }
+        }
+
+        // 3. NUEVAS FUNCIONES DE INGRESOS (Privacidad y Filtro por Mes)
+        async function cargarIngresos() {
+            ingresosBrutos = 0;
+            const filtroStr = document.getElementById('filtro-mes').value; // Ej: "2026-05"
+            const anioFiltro = parseInt(filtroStr.split('-')[0]);
+            const mesFiltro = parseInt(filtroStr.split('-')[1]) - 1; // En JavaScript los meses son 0-11
+
+            const inicioMes = new Date(anioFiltro, mesFiltro, 1);
+            const finMes = new Date(anioFiltro, mesFiltro + 1, 0, 23, 59, 59);
+
+            try {
+                const snapshot = await db.collection('ingresos_estimador')
+                    .where('fecha', '>=', inicioMes)
+                    .where('fecha', '<=', finMes)
+                    .get();
+
+                snapshot.forEach(doc => { ingresosBrutos += (doc.data().montoMXN || 0); });
+                renderizarIngresos();
+            } catch (error) {
+                console.error("Error leyendo ingresos:", error);
+            }
+        }
+
+        function toggleIngresos() {
+            ingresosOcultos = !ingresosOcultos;
+            document.getElementById('icon-ingresos').innerText = ingresosOcultos ? 'visibility' : 'visibility_off';
+            renderizarIngresos();
+        }
+
+        function renderizarIngresos() {
+            if (ingresosOcultos) {
+                document.getElementById('kpi-ingresos').innerText = '****';
+            } else {
+                const formatoDinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+                document.getElementById('kpi-ingresos').innerText = formatoDinero.format(ingresosBrutos);
+            }
+        }
+
+        async function cambiarRol(uid, nuevoRol, selectElement) {
+            const originalColor = selectElement.className;
+            selectElement.className = "bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest border border-amber-200 outline-none";
+            try {
+                await db.collection('usuarios_estimador').doc(uid).update({ rol: nuevoRol });
+                if(nuevoRol === 'admin') selectElement.className = 'bg-eme-50 dark:bg-eme-900/30 text-eme-600 dark:text-eme-400 px-2 py-1 rounded text-[10px] font-bold border border-eme-200 dark:border-eme-800 outline-none cursor-pointer';
+                else if(nuevoRol === 'perito') selectElement.className = 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 outline-none cursor-pointer';
+                else selectElement.className = 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-1 rounded text-[10px] border border-slate-200 dark:border-slate-600 outline-none cursor-pointer';
+            } catch(e) {
+                console.error(e);
+                selectElement.className = originalColor;
+            }
+        }
+
+        async function cargarConfiguracionMotor() {
+            try {
+                const docSnap = await db.collection('configuracion').doc('estimador_eme').get();
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    document.getElementById('config-status').value = data.activo !== false ? "true" : "false";
+                    
+                    // Cargar Promo
+                    if(data.promo) {
+                        document.getElementById('promo-activa').checked = data.promo.activa;
+                        document.getElementById('promo-nombre').value = data.promo.nombre;
+                        document.getElementById('promo-descuento').value = data.promo.descuento;
+                    }
+
+                    paquetesConfig = data.paquetes || [{ creditos: 1, precio: 1000 }, { creditos: 5, precio: 4000 }];
+                    renderizarPaquetes();
+                }
+            } catch (error) {
+                console.error("Error cargando configuración:", error);
+            }
+        }
+
+        function renderizarPaquetes() {
+            const contenedor = document.getElementById('lista-paquetes');
+            contenedor.innerHTML = '';
+            if(paquetesConfig.length === 0) {
+                contenedor.innerHTML = '<p class="text-xs text-slate-400 italic">No hay paquetes definidos.</p>';
+                return;
+            }
+            paquetesConfig.forEach((paq, index) => {
+                contenedor.innerHTML += `
+                    <div class="flex gap-3 items-center bg-slate-50 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700 animate-fade-in group hover:border-indigo-300 transition-colors">
+                        <div class="w-1/3">
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Créditos</label>
+                            <input type="number" value="${paq.creditos}" onchange="actualizarPaquete(${index}, 'creditos', this.value)" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs font-bold outline-none focus:border-indigo-500 text-center dark:text-white">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Precio (MXN)</label>
+                            <div class="relative">
+                                <span class="absolute left-2 top-1.5 text-slate-400 font-bold text-xs">$</span>
+                                <input type="number" value="${paq.precio}" onchange="actualizarPaquete(${index}, 'precio', this.value)" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg pl-5 p-2 text-xs font-bold outline-none focus:border-indigo-500 dark:text-white">
+                            </div>
+                        </div>
+                        <button onclick="eliminarPaquete(${index})" class="w-8 h-8 mt-4 rounded flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Eliminar Paquete">
+                            <span class="material-symbols-rounded text-[18px]">delete</span>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function agregarPaquete() { paquetesConfig.push({ creditos: 1, precio: 0 }); renderizarPaquetes(); }
+        function eliminarPaquete(index) { paquetesConfig.splice(index, 1); renderizarPaquetes(); }
+        function actualizarPaquete(index, campo, valor) { paquetesConfig[index][campo] = parseInt(valor) || 0; }
+
+        async function guardarConfiguracion() {
+            const btn = document.getElementById('btn-save-config');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Guardando...';
+            btn.disabled = true;
+
+            try {
+                const statusStr = document.getElementById('config-status').value;
+                const paquetesLimpios = paquetesConfig.filter(p => p.creditos > 0 && p.precio > 0);
+                
+                // Objeto de Promoción
+                const promo = {
+                    activa: document.getElementById('promo-activa').checked,
+                    nombre: document.getElementById('promo-nombre').value || 'PROMO',
+                    descuento: parseInt(document.getElementById('promo-descuento').value) || 0
+                };
+
+                await db.collection('configuracion').doc('estimador_eme').set({
+                    activo: statusStr === "true",
+                    paquetes: paquetesLimpios,
+                    promo: promo,
+                    modificadoPor: auth.currentUser.uid,
+                    fechaModificacion: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                paquetesConfig = paquetesLimpios; 
+                renderizarPaquetes(); 
+
+                btn.classList.replace('bg-slate-800', 'bg-emerald-600');
+                btn.classList.replace('dark:bg-eme-600', 'dark:bg-emerald-600');
+                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> Aplicado';
+                
+                setTimeout(() => {
+                    btn.classList.replace('bg-emerald-600', 'bg-slate-800');
+                    btn.classList.replace('dark:bg-emerald-600', 'dark:bg-eme-600');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al guardar: " + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function cerrarSesionAdmin() {
+            auth.signOut().then(() => window.location.href = 'index.html');
+        }
+    </script>
+</body>
+</html>

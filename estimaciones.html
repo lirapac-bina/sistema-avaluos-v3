@@ -55,7 +55,14 @@
                 </div>
             </div>
             
-            <button onclick="toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
+            <div class="flex items-center gap-3">
+                <a href="admin-estimaciones.html" id="btn-link-admin" class="hidden items-center gap-1 text-xs font-bold bg-slate-900 hover:bg-black px-3 py-1.5 rounded-lg transition-colors border border-slate-700 shadow-md">
+                    <span class="material-symbols-rounded text-sm">admin_panel_settings</span> Panel Admin
+                </a>
+                <button onclick="toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
+                    <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
+                </button>
+            </div>
                 <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
             </button>
         </div>
@@ -63,6 +70,11 @@
 
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="max-w-3xl mx-auto px-4 pt-28 pb-12">
+
+        <div id="promo-banner" class="hidden mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-3 rounded-xl shadow-md flex items-center justify-center gap-2 animate-pulse">
+            <span class="material-symbols-rounded text-xl">local_fire_department</span>
+            <span class="font-black tracking-widest uppercase text-sm" id="promo-text">¡PROMOCIÓN ACTIVA!</span>
+        </div>
         
         <div id="auth-screen" class="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in hidden">
             <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 text-center w-full max-w-md relative overflow-hidden">
@@ -97,9 +109,14 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="text-right">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saldo Disponible</p>
-                        <p class="text-lg font-black text-eme-600 dark:text-eme-400"><span id="user-credits">0</span> Créditos</p>
+                    <div class="text-right flex items-center gap-3">
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saldo Disponible</p>
+                            <p class="text-lg font-black text-eme-600 dark:text-eme-400"><span id="user-credits">0</span> Créditos</p>
+                        </div>
+                        <button onclick="document.getElementById('paywallModal').classList.replace('hidden', 'flex')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-1 transition-colors dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800">
+                            <span class="material-symbols-rounded text-sm">add_circle</span> Recargar
+                        </button>
                     </div>
                     <button onclick="cerrarSesion()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors" title="Cerrar Sesión">
                         <span class="material-symbols-rounded text-[18px]">logout</span>
@@ -209,7 +226,6 @@
         // 1. CARGA PARAMÉTRICA DESDE FIREBASE
         async function cargarConfiguracion() {
             try {
-                // Buscamos el documento maestro en la colección 'configuracion'
                 const docSnap = await db.collection('configuracion').doc('estimador_eme').get();
                 if (docSnap.exists) {
                     configuracionEstimador = docSnap.data();
@@ -220,13 +236,89 @@
                         document.getElementById('btn-calcular-estimacion').classList.add('opacity-50', 'cursor-not-allowed');
                     }
 
-                    const costo = configuracionEstimador.costo_mxn || 0;
-                    document.getElementById('costo-texto').innerText = costo > 0 ? `Costo por consulta: $${costo} MXN (1 Crédito)` : 'Consulta Gratuita';
+                    // REVISAR CAMPAÑA DE MARKETING
+                    if(configuracionEstimador.promo && configuracionEstimador.promo.activa) {
+                        const banner = document.getElementById('promo-banner');
+                        banner.classList.remove('hidden');
+                        document.getElementById('promo-text').innerText = `¡${configuracionEstimador.promo.nombre} ACTIVO! ${configuracionEstimador.promo.descuento}% OFF`;
+                    }
+
+                    const costo = configuracionEstimador.paquetes && configuracionEstimador.paquetes.length > 0 
+                        ? configuracionEstimador.paquetes[0].precio
+                        : 1000;
+                    
+                    document.getElementById('costo-texto').innerText = costo > 0 ? `Costo base desde: $${costo} MXN` : 'Consulta Gratuita';
+
+                    // MANDAMOS A RENDERIZAR LOS PAQUETES
+                    if (configuracionEstimador.paquetes) {
+                        renderizarPaywall(configuracionEstimador.paquetes, configuracionEstimador.promo);
+                    }
                 }
             } catch (error) {
                 console.error("Error al cargar configuración:", error);
                 document.getElementById('costo-texto').innerText = "Sistema en modo local";
             }
+        }
+
+        // 1.5 DIBUJAR LOS PAQUETES CON DESCUENTOS MATEMÁTICOS
+        function renderizarPaywall(paquetes, promo) {
+            const container = document.getElementById('paquetes-container');
+            container.innerHTML = '';
+
+            if (!paquetes || paquetes.length === 0) {
+                container.innerHTML = '<p class="col-span-full text-center text-slate-500 text-sm font-bold">No hay paquetes disponibles en este momento.</p>';
+                return;
+            }
+
+            const paquetesOrdenados = [...paquetes].sort((a, b) => a.precio - b.precio);
+            const formatoDinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+            paquetesOrdenados.forEach((paq, index) => {
+                const esDestacado = index === paquetesOrdenados.length - 1 && paquetesOrdenados.length > 1;
+                const textoBoton = paq.creditos === 1 ? 'Adquirir 1 Crédito' : `Adquirir ${paq.creditos} Créditos`;
+                
+                // MAGIA: Aplicar el descuento si la campaña está encendida
+                let precioHTML = `${formatoDinero.format(paq.precio)}`;
+                if(promo && promo.activa && promo.descuento > 0) {
+                    const precioConDescuento = paq.precio * (1 - (promo.descuento / 100));
+                    precioHTML = `<span class="text-sm line-through text-slate-400 mr-2">${formatoDinero.format(paq.precio)}</span> <span class="text-eme-600 dark:text-eme-400">${formatoDinero.format(precioConDescuento)}</span>`;
+                }
+
+                let cardHTML = '';
+                if (esDestacado) {
+                    cardHTML = `
+                    <div class="bg-white dark:bg-slate-800 border-2 border-eme-500 rounded-2xl p-6 text-center shadow-lg relative flex flex-col justify-between overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-eme-500 text-white text-[9px] font-bold uppercase px-3 py-1 tracking-widest rounded-bl-lg">Más Popular</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-eme-600 dark:text-eme-400 uppercase tracking-wider mb-2">Paquete Volumen</h4>
+                            <p class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">${precioHTML} <span class="text-sm font-semibold text-slate-400">MXN</span></p>
+                            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-6 py-1 px-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-full inline-block">Incluye ${paq.creditos} Créditos</p>
+                        </div>
+                        <button onclick="comprarPaquete(${paq.creditos}, this)" class="w-full py-3 rounded-xl font-bold text-sm bg-eme-600 hover:bg-eme-700 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-rounded text-base">lock</span> ${textoBoton}
+                        </button>
+                    </div>`;
+                } else {
+                    cardHTML = `
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center shadow-sm hover:border-eme-400 dark:hover:border-eme-500 transition-all flex flex-col justify-between group">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">Consulta Única</h4>
+                            <p class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">${precioHTML} <span class="text-sm font-semibold text-slate-400">MXN</span></p>
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 py-1 px-3 bg-slate-100 dark:bg-slate-700 rounded-full inline-block">${paq.creditos} Crédito${paq.creditos > 1 ? 's' : ''}</p>
+                        </div>
+                        <button onclick="comprarPaquete(${paq.creditos}, this)" class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-eme-50 group-hover:text-eme-700 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-600">
+                            <span class="material-symbols-rounded text-base text-slate-400 group-hover:text-eme-600 transition-colors">lock</span> ${textoBoton}
+                        </button>
+                    </div>`;
+                }
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        // 1.6 STUB: Nueva función de compra (preparando para el nuevo backend)
+        async function comprarPaqueteEspecial(creditosElegidos, btnElement) {
+            alert(`Has elegido comprar ${creditosElegidos} créditos. Próximamente se conectará al nuevo motor de Stripe paramétrico.`);
+            // Aquí irá el Fetch a nuestra Netlify Function renovada
         }
 
         // 2. MODO OSCURO (UI LIMPIA)
@@ -252,11 +344,6 @@
             cargarConfiguracion();
         });
 
-        // Simulación de validación de créditos
-        document.getElementById('btn-calcular-estimacion').addEventListener('click', () => {
-            // Aquí iría la lógica: if(authUser.creditos <= 0) { ... }
-            document.getElementById('paywallModal').classList.remove('hidden');
-        });
 
         function cerrarPaywall() {
             document.getElementById('paywallModal').classList.add('hidden');
@@ -330,6 +417,15 @@
                         
                         // Guardamos localmente para poder validar antes de calcular
                         authUser.creditos = data.creditos || 0; 
+                        
+                        // SI ES ADMIN, MOSTRAR BOTÓN DE NAVEGACIÓN DIRECTA
+                        if(data.rol === 'admin') {
+                            const btnAdmin = document.getElementById('btn-link-admin');
+                            if(btnAdmin) {
+                                btnAdmin.classList.remove('hidden');
+                                btnAdmin.classList.add('flex');
+                            }
+                        }
                     }
                 });
             } catch (error) {
@@ -344,10 +440,16 @@
             }
         }
 
-        // 7. INTERCEPTAR EL CLIC EN EL BOTÓN "GENERAR"
-        document.getElementById('btn-calcular-estimacion').addEventListener('click', () => {
-            if (authUser && authUser.creditos <= 0) {
-                // No tiene créditos, mostramos el Paywall (asegúrate de tener el modal de la respuesta anterior en tu HTML)
+        // 7. INTERCEPTAR EL CLIC EN EL BOTÓN "GENERAR" (ÚNICO EVENTO)
+        document.getElementById('btn-calcular-estimacion').onclick = () => {
+            if (!authUser) {
+                alert("Por seguridad, inicia sesión para continuar.");
+                return;
+            }
+
+            // Validamos si tiene créditos
+            if (authUser.creditos <= 0) {
+                // No tiene créditos, mostramos el Paywall
                 const paywall = document.getElementById('paywallModal');
                 if(paywall) {
                     paywall.classList.remove('hidden');
@@ -355,13 +457,12 @@
                 } else {
                     alert("No cuentas con créditos suficientes. Por favor adquiere un paquete.");
                 }
-                return;
+            } else {
+                // SÍ TIENE CRÉDITOS
+                alert(`¡Tienes ${authUser.creditos} créditos listos! Conectando con API de Leezar...`);
+                // AQUÍ INTEGRAREMOS LA LLAMADA A LA API CUANDO NOS DEN EL JSON
             }
-
-            // Si tiene créditos, aquí ejecutaremos la fórmula matemática
-            alert("¡Tienes créditos! Procesando algoritmo de estimación...");
-            // TODO: Integrar lógica del algoritmo y consumir 1 crédito.
-        });
+        };
 
 
     </script>
@@ -376,40 +477,24 @@
                 <div class="w-16 h-16 bg-eme-50 dark:bg-eme-900/30 text-eme-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
                     <span class="material-symbols-rounded text-3xl">account_balance_wallet</span>
                 </div>
-                <h3 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Saldo Insuficiente</h3>
-                <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Adquiere créditos para generar tu reporte</p>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Tienda de Créditos</h3>
+                <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Adquiere créditos para operar en el ecosistema</p>
             </div>
 
-            <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900/50">
-                
-                <div class="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center shadow-sm hover:border-eme-400 transition-all cursor-pointer flex flex-col justify-between group">
-                    <div>
-                        <h4 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-2">Consulta Única</h4>
-                        <p class="text-4xl font-black text-slate-800 dark:text-white mb-2">$1,000 <span class="text-sm font-bold text-slate-400">MXN</span></p>
-                        <p class="text-xs font-bold text-slate-500 mb-6 py-1 px-3 bg-slate-100 dark:bg-slate-700 rounded-full inline-block">1 Crédito</p>
-                    </div>
-                    <button onclick="comprarPaquete('basico', this)" class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-eme-50 group-hover:text-eme-700 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-600">
-                        <span class="material-symbols-rounded text-base">credit_card</span> Pagar $1,000 MXN
-                    </button>
+            <div id="paquetes-container" class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900/50">
+                <div class="col-span-full text-center text-slate-400 py-8 flex flex-col items-center justify-center">
+                    <span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span>
+                    <p class="text-xs font-bold uppercase tracking-widest">Cargando paquetes disponibles...</p>
                 </div>
-
-                <div class="bg-white dark:bg-slate-800 border-2 border-eme-500 rounded-2xl p-6 text-center shadow-lg relative flex flex-col justify-between overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-eme-500 text-white text-[9px] font-black uppercase px-3 py-1 tracking-widest rounded-bl-lg">Más Popular</div>
-                    <div>
-                        <h4 class="text-sm font-black text-eme-600 dark:text-eme-400 uppercase tracking-wider mb-2">Paquete Inversor</h4>
-                        <p class="text-4xl font-black text-slate-800 dark:text-white mb-2">$4,000 <span class="text-sm font-bold text-slate-400">MXN</span></p>
-                        <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-6 py-1 px-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-full inline-block">5 Créditos (Ahorras $1,000)</p>
-                    </div>
-                    <button onclick="comprarPaquete('inversor', this)" class="w-full py-3 rounded-xl font-black text-sm bg-eme-600 hover:bg-eme-700 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-rounded text-base">credit_card</span> Pagar $4,000 MXN
-                    </button>
-                </div>
-
             </div>
             
-            <div class="p-4 bg-white dark:bg-slate-800 text-center border-t border-slate-100 dark:border-slate-700">
-                <p class="text-[10px] font-bold text-slate-400 flex items-center justify-center gap-1">
-                    <span class="material-symbols-rounded text-xs">verified</span> Pagos procesados de forma segura vía Stripe & PayPal
+            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 text-center border-t border-slate-100 dark:border-slate-700">
+                <div class="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1.5">
+                    <span class="material-symbols-rounded text-lg">verified_user</span>
+                    <p class="text-xs font-bold uppercase tracking-widest">Pago 100% Seguro</p>
+                </div>
+                <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    No almacenamos datos de tarjetas, direcciones ni cuentas bancarias. Las transacciones son encriptadas y procesadas de extremo a extremo por <span class="font-bold">Stripe Inc</span>.
                 </p>
             </div>
         </div>
