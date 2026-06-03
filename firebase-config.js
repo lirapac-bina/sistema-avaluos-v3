@@ -24,6 +24,29 @@ if (typeof firebase !== 'undefined') {
     // Usamos 'window.db' para asegurar que TODOS los archivos la vean
     window.db = firebase.firestore();
     console.log("✅ Base de datos conectada y global.");
+
+    // 4. 🔥 AUTENTICACIÓN OFICIAL DE FIREBASE (NUEVO)
+    // Función rápida para leer la cookie que genera Netlify
+    const getCookie = (name) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    };
+
+    const fbToken = getCookie('leezar_token');
+    
+    if (fbToken) {
+        // Le entregamos el gafete oficial a Firebase Auth
+        firebase.auth().signInWithCustomToken(fbToken)
+            .then(() => {
+                console.log("🔐 Conexión segura establecida con Firebase Auth.");
+            })
+            .catch((error) => {
+                console.error("❌ Error de credenciales Firebase:", error);
+            });
+    }
+
 } else {
     console.error("❌ Error: Librerías de Firebase no cargadas antes de la configuración.");
 }

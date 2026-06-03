@@ -113,17 +113,19 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 6. GENERAR SESIÓN
-        // Guardamos el token real de Google en la cookie
-        const authCookie = cookie.serialize('leezar_token', tokens.access_token, {
+        // 6. GENERAR SESIÓN FIREBASE
+        // Creamos un token oficial de Firebase Auth usando el correo como Identificador (UID)
+        const firebaseToken = await admin.auth().createCustomToken(userEmail);
+
+        // Guardamos el token de Firebase en la cookie en lugar del de Google
+        const authCookie = cookie.serialize('leezar_token', firebaseToken, {
             secure: process.env.NODE_ENV === 'production',
-            httpOnly: false, 
+            httpOnly: false, // Mantenemos false para que layout.js pueda leerlo
             path: '/',
             maxAge: 60 * 60 * 24 * 7 // 1 semana
         });
 
         // Redirigir al Dashboard
-        // Pasamos datos visuales por URL. El token seguro va en la cookie.
         const targetUrl = `/dashboard.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
 
         return {
