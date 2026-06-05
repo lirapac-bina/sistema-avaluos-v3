@@ -325,6 +325,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. FUNCIONES GLOBALES DE INTERFAZ
     // =================================================================
     
+    // 🛡️ HERRAMIENTA ANTI-XSS GLOBAL (Purificador de texto)
+    window.escapeHTML = function(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
     // 🧹 BOMBA ANTI-CACHÉ GLOBAL (Disponible en todas las páginas)
     window.limpiarCachéProfunda = () => {
         console.log("🧹 Pasando la escoba anti-caché...");
