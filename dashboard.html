@@ -341,9 +341,8 @@
             if (arr.length === 0) { cont.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-xs font-bold py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl mx-2">Bandeja Vacía</div>`; return; }
             
             cont.innerHTML = arr.map(exp => {
-                const yaTerminado = elId === 'list-fase3'; // En Captura es la última activa
+                const yaTerminado = elId === 'list-fase3'; 
                 
-                // 🔥 SI ES INCIDENCIA, SOBREESCRIBIMOS EL TEMA DE COLOR A ROJO
                 const esIncidencia = exp.isIncidencia;
                 const colorClasesTexto = esIncidencia ? 'text-red-600 bg-red-100' : (colorTheme === 'amber' ? 'text-amber-600 bg-amber-100' : colorTheme === 'blue' ? 'text-blue-600 bg-blue-100' : 'text-purple-600 bg-purple-100');
                 const cardBorderClass = esIncidencia ? 'border-red-400 bg-red-50 dark:bg-red-900/20 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-700 hover:border-indigo-400';
@@ -357,17 +356,21 @@
                     else if (exp.dias > 5) badgeDias = `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded border text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" title="¡CUELLO DE BOTELLA!">🔥 ${exp.dias}d</span>`;
                 }
 
+                // 🔥 PROTECCIÓN ANTI-XSS:
+                const safeNombre = escapeHTML(exp.nombre);
+                const safeTramite = escapeHTML(exp.tramite);
+
                 return `
                 <div class="p-3 rounded-xl border relative group cursor-pointer transition-colors ${cardBorderClass}" onclick="window.location.href='revision.html'">
                     <div class="flex justify-between items-start mb-2">
                         <div class="w-full pr-2">
                             <div class="flex items-center gap-2">
-                                <p class="text-xs font-black ${esIncidencia ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-white'} truncate max-w-[130px]" title="${exp.nombre}">
-                                    ${esIncidencia ? '⚠️ ' : ''}${exp.nombre}
+                                <p class="text-xs font-black ${esIncidencia ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-white'} truncate max-w-[130px]" title="${safeNombre}">
+                                    ${esIncidencia ? '⚠️ ' : ''}${safeNombre}
                                 </p>
                                 ${badgeDias}
                             </div>
-                            <p class="text-[9px] ${esIncidencia ? 'text-red-500' : 'text-slate-500'} uppercase mt-0.5 truncate">${exp.tramite}</p>
+                            <p class="text-[9px] ${esIncidencia ? 'text-red-500' : 'text-slate-500'} uppercase mt-0.5 truncate">${safeTramite}</p>
                         </div>
                         <span class="text-[10px] font-black ${colorClasesTexto} px-1.5 py-0.5 rounded shrink-0">${exp.pctV}%</span>
                     </div>
@@ -454,13 +457,16 @@
                 cacheFase1 = []; cacheFase2 = []; cacheFase3 = []; 
                 let marcadoresNuevos = []; 
 
-                snapshot.forEach((doc) => {
+snapshot.forEach((doc) => {
                     // 🔥 ESCUDO ANTI-CRASH: Si un expediente tiene datos corruptos, lo omite sin romper el dashboard
                     try {
                         const data = doc.data();
                         
+                        // 🌟 REPARACIÓN 1: Ignorar los expedientes ocultos (Soft Delete)
+                        if (data.eliminado === true) return;
+                        
                         if (esOperativo) {
-                            const emailUsr = activeUser.email.toLowerCase();
+                            const emailUsr = activeUser.email ? activeUser.email.toLowerCase() : '';
                             const esMio = (
                                 String(data.capturista_asignado || '').toLowerCase() === emailUsr || 
                                 String(data.visitador_asignado || '').toLowerCase() === emailUsr || 
@@ -469,7 +475,9 @@
                             if (!esMio) return; 
                         }
 
+                        // Ahora sí, sumamos al total real
                         total++;
+                        
                         // 🛡️ Forzamos a String para evitar que toUpperCase() explote si alguien guarda un número o booleano
                         const st = String(data.estatus || data.status || data.estado || 'PENDIENTE').toUpperCase();
                         const uni = String(data.unidad || 'POR ASIGNAR').toUpperCase();
@@ -499,14 +507,18 @@
                         const timestamp = (fechaObj && !isNaN(fechaObj)) ? fechaObj.getTime() : 0;
                         const diasActivo = calcularDiasHabiles(timestamp);
 
+                        // 🌟 REPARACIÓN 2: Sincronizar el pipeline inteligente de gestion.html
+                        const esperandoCliente = st.includes('ESPERANDO') || (data.fechasPropuestas && data.fechasPropuestas.length > 0 && (!data.visitaAgendada || data.visitaAgendada.estatus !== 'SOLICITADA'));
+
                         let step = 0;
                         if (st === 'NUEVO' || uni === 'POR ASIGNAR') step = 1;
                         else if (st.includes('INCIDENCIA')) step = 5;
                         else if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) step = 6;
-                        else if (st.includes('CAPTURA') || (pctValidado === 100 && items.length > 0 && equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 4;
-                        else if (st.includes('ASIGNACION') || (pctValidado === 100 && items.length > 0 && !equipoCompleto && (st === 'ACTIVO' || st === 'PENDIENTE'))) step = 3;
+                        else if (st.includes('CAPTURA') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidado === 100 && items.length > 0 && equipoCompleto)) step = 4;
+                        else if (st.includes('ASIGNACION') || esperandoCliente || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidado === 100 && items.length > 0 && !equipoCompleto) || (data.visitaAgendada && data.visitaAgendada.estatus === 'SOLICITADA')) step = 3;
                         else step = 2; 
 
+                        // Sumamos a los contadores principales del KPI
                         if (step === 6) {
                             terminados++;
                             let inicio = data.fechaCreacion || data.fecha_creacion; let fin = data.fecha_conclusion || data.fechaActualizacion;
@@ -640,7 +652,12 @@
                         if (!container) return;
                         const keys = Object.keys(obj).sort((a, b) => obj[b] - obj[a]); 
                         if (keys.length === 0) return container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Nadie asignado</p>';
-                        container.innerHTML = keys.map(k => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${k.split('@')[0].toUpperCase()}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`).join('');
+                        
+                        // 🔥 PROTECCIÓN ANTI-XSS:
+                        container.innerHTML = keys.map(k => {
+                            const safeName = escapeHTML(k.split('@')[0].toUpperCase());
+                            return `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate pr-2">${safeName}</span><span class="text-[10px] font-black ${colorClass} bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${obj[k]} Exp</span></div>`;
+                        }).join('');
                     };
                     renderListaP(cargaPersonal.visitadores, 'list-visitadores', 'text-indigo-600 dark:text-indigo-400'); 
                     renderListaP(cargaPersonal.dibujantes, 'list-dibujantes', 'text-orange-600 dark:text-orange-400'); 
@@ -714,14 +731,19 @@
                 const posicion = { lat: m.lat, lng: m.lng };
                 const marker = new google.maps.Marker({ position: posicion, map: window.mapaOperativo, icon: pinIcon, title: m.cliente });
 
+                // 🔥 PROTECCIÓN ANTI-XSS:
+                const safeFolio = escapeHTML(m.folio);
+                const safeCliente = escapeHTML(m.cliente);
+                const safeTramite = escapeHTML(m.tramite);
+
                 const popupHtml = `
                     <div style="text-align:center; font-family:sans-serif; min-width:140px; padding:4px;">
                         <div style="display:inline-block; background-color:${tagBg}; color:${tagText}; padding:2px 8px; border-radius:4px; font-size:9px; font-weight:900; letter-spacing:1px; margin-bottom:6px; border:1px solid ${tagText}33;">
                             ${m.incidencia ? '⚠️ INCIDENCIA ACTIVA' : sigla}
                         </div>
-                        <div style="font-weight:900; color:#1e293b; font-size:12px; margin-bottom:2px;">${m.folio}</div>
-                        <div style="font-size:11px; color:#475569; font-weight:bold; margin-bottom:2px;">${m.cliente}</div>
-                        <div style="font-size:9px; color:#94a3b8; text-transform:uppercase;">${m.tramite}</div>
+                        <div style="font-weight:900; color:#1e293b; font-size:12px; margin-bottom:2px;">${safeFolio}</div>
+                        <div style="font-size:11px; color:#475569; font-weight:bold; margin-bottom:2px;">${safeCliente}</div>
+                        <div style="font-size:9px; color:#94a3b8; text-transform:uppercase;">${safeTramite}</div>
                     </div>`;
                     
                 // 🔥 UX PREMIUM: Al dar clic, el fantasma adopta el HTML y viaja a este pin
