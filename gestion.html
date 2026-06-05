@@ -955,31 +955,37 @@
                     iconoUnidad = '🐶';
                 }
 
-                // 🔥 RENDERIZADO DE LA FILA
+                // 🔥 RENDERIZADO DE LA FILA (PROTEGIDO CONTRA XSS)
+                const safeAnotacion = escapeHTML(exp.anotacion);
+                const safeCliente = escapeHTML(exp.cliente);
+                const safeFolio = escapeHTML(exp.folioOperativo);
+                const safeTramite = escapeHTML(exp.tramite);
+                const safeId = escapeHTML(exp.id.substring(0,8));
+
                 // Agregamos 'whitespace-normal' y 'break-words' para obligar al texto a bajar de renglón
-                const anotacionUI = exp.anotacion ? `<div class="text-[10px] text-slate-400 mt-1.5 italic leading-tight normal-case whitespace-normal break-words">"${exp.anotacion}"</div>` : '';
+                const anotacionUI = safeAnotacion ? `<div class="text-[10px] text-slate-400 mt-1.5 italic leading-tight normal-case whitespace-normal break-words">"${safeAnotacion}"</div>` : '';
 
                 const row = `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 group">
                         <td class="px-4 py-3 font-bold text-slate-700 dark:text-white text-xs uppercase max-w-[200px]">
                             
                             <div class="text-teal-600 dark:text-teal-400 font-black text-sm mb-0.5" title="Folio Operativo">
-                                ${exp.folioOperativo && exp.folioOperativo !== 'SIN FOLIO' ? exp.folioOperativo : `<span class="text-[10px] text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">ID: ${exp.id.substring(0,8)}</span>`}
+                                ${safeFolio && safeFolio !== 'SIN FOLIO' ? safeFolio : `<span class="text-[10px] text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">ID: ${safeId}</span>`}
                             </div>
                             
-                            <div class="truncate text-[11px] text-slate-500 dark:text-slate-400 font-bold" title="Cliente: ${exp.cliente}">${exp.cliente}</div>
+                            <div class="truncate text-[11px] text-slate-500 dark:text-slate-400 font-bold" title="Cliente: ${safeCliente}">${safeCliente}</div>
                             
                             ${anotacionUI}
                             
                             <div class="inline-block mt-1.5 px-1.5 py-0.5 border rounded text-[9px] font-black tracking-widest uppercase ${unidadColorClass}">
-                                ${iconoUnidad} ${siglaUnidad}
+                                ${iconoUnidad} ${escapeHTML(siglaUnidad)}
                             </div>
                             
                         </td>
                         
                         <td class="px-4 py-3 text-center">
                             <span class="bg-slate-100 dark:bg-transparent text-slate-600 dark:text-slate-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-slate-200 dark:border-slate-600">
-                                ${exp.tramite}
+                                ${safeTramite}
                             </span>
                         </td>
                         
@@ -994,8 +1000,8 @@
                             ${(() => {
                                 let badgesHtml = '';
                                 
-                                // Función rápida para limpiar el correo y sacar solo el nombre para el tooltip
-                                const getShortName = (email) => email ? email.split('@')[0].toUpperCase() : '';
+                                // Función rápida para limpiar el correo y sacar solo el nombre para el tooltip (AHORA BLINDADA)
+                                const getShortName = (email) => email ? escapeHTML(email.split('@')[0].toUpperCase()) : '';
 
                                 // 🔥 Iconos separados, sin superposición y con animación
                                 if (exp.capturista) badgesHtml += `<div class="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 dark:bg-blue-900/40 dark:border-blue-800 text-blue-700 dark:text-blue-400 flex items-center justify-center shadow-sm hover:scale-110 transition-transform cursor-help" title="Captura: ${getShortName(exp.capturista)}"><span class="material-symbols-rounded text-[16px]">computer</span></div>`;
