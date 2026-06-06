@@ -776,10 +776,11 @@
                 grid.innerHTML = '';
                 
                 galleryImages.forEach((foto, index) => {
+                    const safeNombre = escapeHTML(foto.nombre);
                     grid.innerHTML += `
                         <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
                             <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
-                            <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre}</div>
+                            <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${safeNombre}</div>
                         </div>`;
                 });
                 document.getElementById('gallery-container').classList.remove('hidden');
@@ -799,12 +800,14 @@
                         fileUrl = fileUrl.replace('/view', '/preview');
                     }
 
+                    const safeName = escapeHTML(file.nombre);
+
                     grid.innerHTML += `
                         <a href="${fileUrl}" target="_blank" class="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-all gap-3 text-center group shadow-sm">
                             <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center ${iconColor} group-hover:scale-110 transition-transform shadow-inner">
                                 <span class="material-symbols-rounded text-2xl">${icon}</span>
                             </div>
-                            <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${file.nombre}">${file.nombre}</p>
+                            <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${safeName}">${safeName}</p>
                             <span class="text-[9px] text-slate-400 uppercase font-black bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 flex items-center gap-1 group-hover:text-indigo-500 group-hover:border-indigo-200 transition-colors shadow-sm">
                                 <span class="material-symbols-rounded text-[10px]">open_in_new</span> Abrir
                             </span>
@@ -1078,7 +1081,10 @@
 
                 let badgeOpcional = req.obligatorio ? '' : '<span class="ml-2 text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold uppercase">Opcional</span>';
 
-                itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px] flex items-center">${req.nombre} ${badgeOpcional}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
+                // 🔥 PROTECCIÓN ANTI-XSS:
+                const safeNombre = escapeHTML(req.nombre);
+
+                itemDiv.innerHTML = `<div class="flex justify-between items-center"><div class="flex items-center gap-3">${displayIcon}<div class="overflow-hidden"><p class="font-bold text-sm text-slate-700 dark:text-slate-200 truncate max-w-[180px] flex items-center">${safeNombre} ${badgeOpcional}</p><p class="text-[10px] text-slate-400 font-bold">${req.tipo} • ${statusText}</p></div></div></div>`;
                 container.appendChild(itemDiv);
             });
         }
@@ -1226,10 +1232,11 @@
                     galleryImages = req.fotos; 
                     grid.innerHTML = '';
                     galleryImages.forEach((foto, index) => {
+                        const safeNombreFoto = escapeHTML(foto.nombre || 'Foto');
                         grid.innerHTML += `
                             <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
                                 <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
-                                <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${foto.nombre || 'Foto'}</div>
+                                <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${safeNombreFoto}</div>
                             </div>`;
                     });
                     document.getElementById('gallery-container').classList.remove('hidden');
@@ -1253,12 +1260,14 @@
                             fileUrl = fileUrl.replace('/view', '/preview');
                         }
 
+                        const safeNombreDoc = escapeHTML(doc.nombre);
+
                         grid.innerHTML += `
                             <a href="${fileUrl}" target="_blank" class="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-all gap-3 text-center group shadow-sm">
                                 <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center ${iconColor} group-hover:scale-110 transition-transform shadow-inner">
                                     <span class="material-symbols-rounded text-2xl">${icon}</span>
                                 </div>
-                                <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${doc.nombre}">${doc.nombre}</p>
+                                <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 w-full truncate px-2" title="${safeNombreDoc}">${safeNombreDoc}</p>
                                 <span class="text-[9px] text-slate-400 uppercase font-black bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 flex items-center gap-1 group-hover:text-indigo-500 group-hover:border-indigo-200 transition-colors shadow-sm">
                                     <span class="material-symbols-rounded text-[10px]">open_in_new</span> Abrir Doc
                                 </span>
@@ -1857,6 +1866,9 @@
 
                     let badgeAccion = `<span class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-slate-100 dark:bg-slate-800 ${iconObj.text}">${log.accion}</span>`;
 
+                    const safeDetalle = escapeHTML(log.detalle);
+                    const safeUsuario = escapeHTML(log.usuario);
+
                     html += `
                         <div class="relative pl-6 animate-[fadeIn_0.3s_ease-out]">
                             <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full ${iconObj.color} border-2 border-white dark:border-slate-800 shadow-sm"></div>
@@ -1865,9 +1877,9 @@
                                 <span class="text-[10px] text-slate-400 font-mono ml-auto">${fechaStr}</span>
                             </div>
                             <div class="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
-                                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">${log.detalle}</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">${safeDetalle}</p>
                                 <p class="text-[9px] text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                    <span class="material-symbols-rounded text-[11px]">person</span> ${log.usuario}
+                                    <span class="material-symbols-rounded text-[11px]">person</span> ${safeUsuario}
                                 </p>
                             </div>
                         </div>`;
