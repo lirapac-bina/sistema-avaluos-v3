@@ -20,7 +20,7 @@
     <script src="firebase-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4&callback=inicializarMapa" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDX3hYW2u-OhYJWJ9B2gAAntV0OZykfk4" async defer></script>
 
     
 
@@ -49,6 +49,15 @@
         .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         .dark .thin-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
     </style>
+
+    <script>
+    // Parche de emergencia para evitar que Google Maps crashee la página
+    if (!window.inicializarMapa) {
+        window.inicializarMapa = function() {
+            console.log("⚠️ Callback de Maps interceptado y neutralizado.");
+        };
+    }
+</script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 min-h-screen flex flex-col">
     
@@ -457,7 +466,7 @@
                 cacheFase1 = []; cacheFase2 = []; cacheFase3 = []; 
                 let marcadoresNuevos = []; 
 
-snapshot.forEach((doc) => {
+                    snapshot.forEach((doc) => {
                     // 🔥 ESCUDO ANTI-CRASH: Si un expediente tiene datos corruptos, lo omite sin romper el dashboard
                     try {
                         const data = doc.data();
@@ -510,13 +519,24 @@ snapshot.forEach((doc) => {
                         // 🌟 REPARACIÓN 2: Sincronizar el pipeline inteligente de gestion.html
                         const esperandoCliente = st.includes('ESPERANDO') || (data.fechasPropuestas && data.fechasPropuestas.length > 0 && (!data.visitaAgendada || data.visitaAgendada.estatus !== 'SOLICITADA'));
 
+                        // 🌟 REPARACIÓN: Lógica de pasos inteligente y resiliente
                         let step = 0;
-                        if (st === 'NUEVO' || uni === 'POR ASIGNAR') step = 1;
-                        else if (st.includes('INCIDENCIA')) step = 5;
-                        else if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) step = 6;
-                        else if (st.includes('CAPTURA') || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidado === 100 && items.length > 0 && equipoCompleto)) step = 4;
-                        else if (st.includes('ASIGNACION') || esperandoCliente || ((st === 'ACTIVO' || st === 'PENDIENTE') && pctValidado === 100 && items.length > 0 && !equipoCompleto) || (data.visitaAgendada && data.visitaAgendada.estatus === 'SOLICITADA')) step = 3;
-                        else step = 2; 
+                        const tieneProgreso = pctValidado > 0;
+
+                        if (st.includes('FINALIZADO') || st.includes('COMPLETADO') || st.includes('VALIDA')) {
+                            step = 6;
+                        } else if (st.includes('INCIDENCIA')) {
+                            step = 5;
+                        } else if (tieneProgreso || st.includes('CAPTURA')) {
+                            // Clasificación dinámica según el avance real del expediente
+                            if (pctValidado >= 70) step = 4; // Captura
+                            else if (pctValidado >= 30) step = 3; // Asignación / Revisión
+                            else step = 2; // Portal
+                        } else if (st === 'NUEVO' || uni === 'POR ASIGNAR') {
+                            step = 1;
+                        } else {
+                            step = 2;
+                        } 
 
                         // Sumamos a los contadores principales del KPI
                         if (step === 6) {

@@ -1402,7 +1402,7 @@
                 if(!res.ok) throw new Error("Error en servidor");
 
                 const respuestaServidor = await res.json();
-                console.log("📦 RESPUESTA DE NETLIFY:", respuestaServidor);
+                // console.log("📦 RESPUESTA DE NETLIFY:", respuestaServidor);
                 
                 const currentKey = groupKeys[activeGroupIndex];
                 const item = expediente.grupos[currentKey].find(r => r.key === llaveSegura);
@@ -1416,7 +1416,7 @@
                 
                 // 🤖 AUTO-SCANNER: Si validan el doc y no hay datos, lanzar la IA automáticamente
                 if (nuevoEstado === 'validado' && (!expediente.datos_extraidos || !expediente.datos_extraidos[llaveSegura])) {
-                    console.log("Activando extracción automática tras validación de: " + llaveSegura);
+                    // console.log("Activando extracción automática tras validación de: " + llaveSegura);
                     extraerDatosConIA(llaveSegura, expediente.id);
                 }
 
@@ -1482,7 +1482,7 @@
                     return; // Abortamos la ejecución y NO llamamos al backend
                 }
 
-                console.log(`🧠 Prompt que se enviará a Gemini:`, promptUniversal);
+                //console.log(`🧠 Prompt que se enviará a Gemini:`, promptUniversal);
 
                 const docFresco = await db.collection('expedientes_avaluos').doc(expId).get({ source: 'server' });
                 const docActualizado = docFresco.data().checklist[reqKey];
@@ -1499,7 +1499,7 @@
                 const match = urlReal.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
                 const fileId = match ? match[1] : null;
 
-                console.log(`🚀 IA: Mandando petición a Netlify...`);
+                // console.log(`🚀 IA: Mandando petición a Netlify...`);
 
                 const res = await fetch('/.netlify/functions/extraer-datos-ia-background', {
                     method: 'POST',

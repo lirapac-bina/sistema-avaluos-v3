@@ -983,8 +983,12 @@
             btn.disabled = true;
 
             try {
-                // 1. TRAER EL TEXTO (EL LÁPIZ) DESDE FIREBASE
-                const tramiteSeleccionado = document.getElementById('nota-tipo-tramite').value;
+                // 1. LEER EL TRÁMITE CORRECTO (SOLUCIÓN AL CRASH)
+                // Leemos directamente de la celda de Trámite del Expediente en los Datos Generales
+                const valTramite = document.getElementById('info-tramite')?.value || '';
+                // Si por alguna razón está vacío, usamos INFONAVIT por defecto
+                const tramiteSeleccionado = valTramite.toUpperCase().trim() || 'INFONAVIT';
+
                 const notasSnapshot = await db.collection('configuracion').doc('notas').get();
                 let plantilla = "";
 
@@ -996,20 +1000,25 @@
                 }
 
                 if (!plantilla) {
-                    showToast("No hay plantilla para este trámite en Admin.", "warning");
+                    showToast(`No hay plantilla configurada para: ${tramiteSeleccionado}`, "warning");
                     return;
                 }
 
                 // 2. EXTRAER DATOS GLOBALES
                 const extraidos = currentExpediente.datos_extraidos || {};
-                let fVisita = currentExpediente.cita?.fecha || "___";
+                
+                // Prioridad: Lo que el valuador escribió > Lo de la Agenda > Rayitas
+                let fVisita = document.getElementById('nota-fecha-visita')?.value.trim();
+                if (!fVisita) fVisita = currentExpediente.cita?.fecha || "___";
+
                 const supConst = document.getElementById('nota-sup-total')?.value || "___";
                 const cpVal = document.getElementById('nota-cp')?.value || "___";
                 const colVal = document.getElementById('nota-cp-asentamiento')?.value || "___";
 
-                // Listas dinámicas (solo lo que está palomeado)
+                // Listas dinámicas (SOLUCIÓN A LA "S" FALTANTE)
                 let docsList = [];
-                document.querySelectorAll('input[name="nota-docs"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
+                // Se corrigió de 'nota-docs' a 'nota-doc' para que coincida con el HTML
+                document.querySelectorAll('input[name="nota-doc"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
                 let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
 
                 let servList = [];
@@ -1022,16 +1031,15 @@
                     .replace(/\[LISTA_DOCUMENTOS\]/g, docsTexto)
                     .replace(/\[LISTA_SERVICIOS\]/g, servTexto)
                     .replace(/\[CP\]/g, cpVal)
-                    .replace(/\[COLONIA\]/g, colVal)
+                    .replace(/\[COLONIA\]/g, colVal.toUpperCase())
                     .replace(/\[SUPERFICIE_LEVANTAMIENTO\]/g, supConst);
 
-                // 4. 🧠 MAGIA ABSOLUTA: Reemplazo Dinámico de cualquier etiqueta [REQUISITO.campo]
+                // 4. 🧠 MAGIA ABSOLUTA: Reemplazo Dinámico [REQUISITO.campo]
                 textoFinal = textoFinal.replace(/\[([A-Z0-9_]+)\.([a-zA-Z0-9_]+)\]/g, function(match, reqKey, campo) {
-                    // Si el requisito existe en la extracción y el campo también
                     if (extraidos[reqKey] && extraidos[reqKey][campo]) {
                         return String(extraidos[reqKey][campo]).toUpperCase();
                     }
-                    return '___'; // Si no encontró el dato, pone guiones para revisión manual
+                    return '___'; 
                 });
 
                 // 5. MOSTRAR EN PANTALLA
