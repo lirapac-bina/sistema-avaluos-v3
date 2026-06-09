@@ -253,7 +253,17 @@
 
                 <div id="tab-notas" class="hidden fade-in no-print">
                     <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-6 bg-white dark:bg-[#0f172a]">
-                        <h2 class="text-lg font-black text-leezar-600 dark:text-leezar-400 mb-6 flex items-center gap-2"><span class="material-symbols-rounded">magic_button</span> Generador de Notas Infonavit</h2>
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <h2 class="text-lg font-black text-leezar-600 dark:text-leezar-400 flex items-center gap-2">
+        <span class="material-symbols-rounded">magic_button</span> Generador Inteligente de Notas
+    </h2>
+    <div class="flex items-center gap-2">
+        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plantilla:</label>
+        <select id="selector-plantilla-notas" class="bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 font-bold text-sm rounded-xl px-4 py-2 outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+            <option value="">Cargando plantillas...</option>
+        </select>
+    </div>
+</div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div class="notas-input-group"><label class="leezar-label">Fecha de la Visita</label><input type="text" id="nota-fecha-visita" class="leezar-input !text-left" placeholder="Ej. 24 de octubre de 2025"></div>
@@ -599,12 +609,13 @@
             </div>
         </div>
         
-        <div id="toast" class="fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg shadow-xl hidden text-sm font-bold transition-opacity z-50 flex items-center gap-2"></div>
+        <div id="toast" class="fixed top-6 right-6 text-white px-6 py-3 rounded-lg shadow-xl hidden text-sm font-bold transition-opacity z-[9999] flex items-center gap-2"></div>
     </main>
 
     <script>
         // --- 1. VARIABLES Y MOTOR DE COMPARABLES ---
         let currentFolioId = null;
+        let currentExpediente = null; // <--- AGREGA ESTA LÍNEA
         let misExpedientes = {};
         const MAX_DISPERSION = 1.30;
 
@@ -974,40 +985,96 @@
             div.style.display = chk.checked ? 'grid' : 'none';
         };
 
+        // ==========================================
+        // 🗂️ CARGADOR DINÁMICO DE PLANTILLAS
+        // ==========================================
+        window.cargarSelectorPlantillas = async () => {
+            const select = document.getElementById('selector-plantilla-notas');
+            if(!select) return;
+            try {
+                const snapshot = await db.collection('plantillas_notas').get();
+                if(snapshot.empty) {
+                    select.innerHTML = '<option value="">No hay plantillas en el Admin</option>';
+                    return;
+                }
+                let html = '';
+                snapshot.forEach(doc => {
+                    // Ponemos el ID del documento como valor y formateamos el texto a mostrar
+                    html += `<option value="${doc.id}">${doc.id.replace(/_/g, ' ')}</option>`;
+                });
+                select.innerHTML = html;
+            } catch (e) {
+                console.error("Error cargando plantillas:", e);
+                select.innerHTML = '<option value="">Error de conexión</option>';
+            }
+        };
+
+        // ==========================================
+        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON)
+        // ==========================================
         window.generarTextoNotas = async () => {
-            if(!currentFolioId || !currentExpediente) return showToast("Error: Datos no cargados", "error");
+            if(!currentFolioId || !currentExpediente) return showToast("Error: Expediente no cargado", "error");
+
+            const tramiteSeleccionado = document.getElementById('selector-plantilla-notas').value;
+            if(!tramiteSeleccionado) return showToast("Selecciona una plantilla del menú desplegable", "warning");
 
             const btn = document.querySelector('button[onclick="generarTextoNotas()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Aplicando Plantilla Inteligente...';
-            btn.disabled = true;
+            const originalText = btn ? btn.innerHTML : 'Generar Notas';
+            if(btn) {
+                btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Procesando IA...';
+                btn.disabled = true;
+            }
 
             try {
-                // 1. LEER EL TRÁMITE CORRECTO (SOLUCIÓN AL CRASH)
-                // Leemos directamente de la celda de Trámite del Expediente en los Datos Generales
-                const valTramite = document.getElementById('info-tramite')?.value || '';
-                // Si por alguna razón está vacío, usamos INFONAVIT por defecto
-                const tramiteSeleccionado = valTramite.toUpperCase().trim() || 'INFONAVIT';
-
-                const notasSnapshot = await db.collection('configuracion').doc('notas').get();
+                // 1. TRAER LA PLANTILLA SELECCIONADA
+                const notasSnapshot = await db.collection('plantillas_notas').doc(tramiteSeleccionado).get();
                 let plantilla = "";
 
-                if (notasSnapshot.exists && notasSnapshot.data().tramites) {
-                    const tramites = notasSnapshot.data().tramites;
-                    if(tramites[tramiteSeleccionado] && tramites[tramiteSeleccionado].texto_base) {
-                        plantilla = tramites[tramiteSeleccionado].texto_base;
-                    }
+                if (notasSnapshot.exists && notasSnapshot.data().contenido) {
+                    plantilla = notasSnapshot.data().contenido;
                 }
 
                 if (!plantilla) {
-                    showToast(`No hay plantilla configurada para: ${tramiteSeleccionado}`, "warning");
+                    showToast(`La plantilla está vacía en el Admin`, "warning");
                     return;
                 }
 
-                // 2. EXTRAER DATOS GLOBALES
-                const extraidos = currentExpediente.datos_extraidos || {};
-                
-                // Prioridad: Lo que el valuador escribió > Lo de la Agenda > Rayitas
+                // 2. 🧠 PARSEADOR IA BLINDADO (El Bisturí JSON)
+                const rawExtraidos = currentExpediente.datos_extraidos || {};
+                const extraidosProcesados = {};
+
+                for (const [key, value] of Object.entries(rawExtraidos)) {
+                    let parsedVal = value;
+                    if (typeof value === 'string') {
+                        try {
+                            // 🔥 BISTURÍ: Extraemos SOLO lo que está entre llaves { }
+                            const jsonMatch = value.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                parsedVal = JSON.parse(jsonMatch[0]);
+                            } else {
+                                // Fallback por si acaso
+                                const cleanStr = value.replace(/```json/gi, '').replace(/```/g, '').trim();
+                                parsedVal = JSON.parse(cleanStr);
+                            }
+                        } catch (e) {
+                            console.warn(`Fallo al parsear JSON de ${key}, se usará texto plano.`);
+                            parsedVal = value; 
+                        }
+                    }
+                    
+                    // Convertimos llaves a minúsculas para coincidir con tu diccionario global
+                    if (typeof parsedVal === 'object' && parsedVal !== null) {
+                        const objMinusculas = {};
+                        for (const [k, v] of Object.entries(parsedVal)) {
+                            objMinusculas[k.toLowerCase().trim()] = v;
+                        }
+                        extraidosProcesados[key.toUpperCase().trim()] = objMinusculas;
+                    } else {
+                        extraidosProcesados[key.toUpperCase().trim()] = parsedVal;
+                    }
+                }
+
+                // 3. EXTRAER DATOS DEL FRONTEND
                 let fVisita = document.getElementById('nota-fecha-visita')?.value.trim();
                 if (!fVisita) fVisita = currentExpediente.cita?.fecha || "___";
 
@@ -1015,9 +1082,7 @@
                 const cpVal = document.getElementById('nota-cp')?.value || "___";
                 const colVal = document.getElementById('nota-cp-asentamiento')?.value || "___";
 
-                // Listas dinámicas (SOLUCIÓN A LA "S" FALTANTE)
                 let docsList = [];
-                // Se corrigió de 'nota-docs' a 'nota-doc' para que coincida con el HTML
                 document.querySelectorAll('input[name="nota-doc"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
                 let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
 
@@ -1025,7 +1090,7 @@
                 document.querySelectorAll('input[name="nota-serv"]:checked').forEach(el => servList.push(el.value.toUpperCase()));
                 let servTexto = servList.length > 0 ? servList.join(', ') : '___';
 
-                // 3. 🧠 REEMPLAZO DE ETIQUETAS FIJAS
+                // 4. REEMPLAZO DE ETIQUETAS FIJAS
                 let textoFinal = plantilla
                     .replace(/\[FECHA_VISITA\]/g, fVisita.toUpperCase())
                     .replace(/\[LISTA_DOCUMENTOS\]/g, docsTexto)
@@ -1034,23 +1099,44 @@
                     .replace(/\[COLONIA\]/g, colVal.toUpperCase())
                     .replace(/\[SUPERFICIE_LEVANTAMIENTO\]/g, supConst);
 
-                // 4. 🧠 MAGIA ABSOLUTA: Reemplazo Dinámico [REQUISITO.campo]
-                textoFinal = textoFinal.replace(/\[([A-Z0-9_]+)\.([a-zA-Z0-9_]+)\]/g, function(match, reqKey, campo) {
-                    if (extraidos[reqKey] && extraidos[reqKey][campo]) {
-                        return String(extraidos[reqKey][campo]).toUpperCase();
+                // 5. 🧠 MAGIA ABSOLUTA: MATCH PERFECTO
+                textoFinal = textoFinal.replace(/\[([^\]\.]+)\.([^\]]+)\]/g, function(match, reqKey, campo) {
+                    const keyUpper = reqKey.toUpperCase().trim(); // Ej: REQUISITO_02_ESCRITURA
+                    const campoLower = campo.toLowerCase().trim(); // Ej: superficie_terreno
+                    
+                    // Buscamos la llave exacta (basada en tu arquitectura unificada)
+                    if (extraidosProcesados[keyUpper] && extraidosProcesados[keyUpper][campoLower] !== undefined) {
+                        let extractedVal = extraidosProcesados[keyUpper][campoLower];
+                        
+                        // Si Gemini devolvió un objeto (ej. "inmueble": {"direccion_completa": "...", "cp": "..."})
+                        if (typeof extractedVal === 'object' && extractedVal !== null) {
+                            extractedVal = Object.values(extractedVal).filter(v => v).join(', '); // Lo une como texto
+                        }
+
+                        const valStr = String(extractedVal).trim();
+                        if (valStr.toUpperCase() !== 'NULL' && valStr !== '') {
+                            return valStr.toUpperCase();
+                        }
                     }
-                    return '___'; 
+                    return '________'; 
                 });
 
-                // 5. MOSTRAR EN PANTALLA
+                // 6. MOSTRAR Y GUARDAR
                 const textarea = document.getElementById('texto-notas-tramite');
                 if(textarea) {
                     textarea.value = textoFinal;
                     textarea.style.height = 'auto';
                     textarea.style.height = (textarea.scrollHeight + 20) + 'px';
+                    
+                    await db.collection('expedientes_avaluos').doc(currentFolioId).update({
+                        notas_tramite: textoFinal,
+                        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    currentExpediente.notas_tramite = textoFinal;
                 }
 
-                showToast("Notas generadas mágicamente ✨", "success");
+                showToast("Notas generadas y guardadas ✨", "success");
 
             } catch (error) {
                 console.error("Error al redactar:", error);
@@ -1120,6 +1206,12 @@
             document.getElementById('contenedor-excel-docs').innerHTML = LISTA_DOC_JUST.map((item, i) => `<label class="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded"><input type="checkbox" id="chk-docjust-${i}"> <span class="text-xs font-bold">${item}</span></label>`).join('');
             
             createTableRows(); // Crea las 3 tablas de mercado
+            
+            // 🔥 AQUÍ ENCENDEMOS EL SELECTOR DE PLANTILLAS
+            if(typeof window.cargarSelectorPlantillas === 'function') {
+                window.cargarSelectorPlantillas();
+            }
+
             iniciarHojaTrabajo(user);
         });
 
@@ -1211,7 +1303,7 @@
             navigator.clipboard.writeText(txtArea.value.toUpperCase()).then(() => showToast("¡Copiado en MAYÚSCULAS! 🔠", "success"));
         };
 
-        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-50 flex items-center gap-2 ${type==='error'?'bg-red-600':'bg-emerald-600'}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
+        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed top-6 right-6 px-6 py-3 rounded-lg shadow-xl text-white font-bold text-sm z-[9999] flex items-center gap-2 ${type==='error'?'bg-red-600':'bg-emerald-600'}`; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 3000); }
 
         // MÓDULO DE CARGA FIREBASE MEJORADO (Orden y Etiquetas)
         async function iniciarHojaTrabajo(activeUser) {
@@ -1402,6 +1494,10 @@
 
         function seleccionarExpediente(id, etiqueta) {
             currentFolioId = id; const d = misExpedientes[id];
+            
+        // 🔥 AQUÍ ESTÁ LA LÍNEA QUE FALTA PARA CONECTAR TODO:
+            currentExpediente = d;
+
             document.getElementById('workspace-container').classList.remove('opacity-50', 'pointer-events-none');
             cerrarModalExpedientes(); showToast("Expediente Cargado", "success");
 

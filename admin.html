@@ -1,4 +1,53 @@
- 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Sistema</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <script src="firebase-config.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: { bg: '#0b1121', card: '#1e293b' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    
+    <script src="js/layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .uppercase-input { text-transform: uppercase; }
+        
+        .birthday-bounce { animation: bounce-slow 2s infinite; }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
+        }
+    </style>
+</head>
 <body class="bg-gray-50 text-slate-600 dark:bg-leezar-bg dark:text-slate-300 font-sans text-sm transition-colors duration-300 overflow-hidden">
 
     <div id="admin-lock" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-leezar-bg transition-all duration-500">
@@ -335,51 +384,53 @@ Analiza este documento y extrae exactamente estos datos en formato JSON estricto
 
     <script>
 
-        // --- MOTOR RELACIONAL ---
+// --- MOTOR RELACIONAL Y AUTENTICACIÓN ---
         let catalogoData = null;
         let currentEntidad = null, currentServicio = null;
         let editMode = false, activeTabConfig = 'matriz';
         let activeUser = null;
         let avatarBase64 = '';
+        const db = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. Validar el Token Local
             const userData = localStorage.getItem('leezar_user_active');
-            if(userData) {
-                try {
-                    activeUser = JSON.parse(userData);
-                    document.getElementById('lock-status').innerText = `Hola, ${activeUser.nombre || 'Usuario'}. Confirma tu PIN.`;
-                    document.getElementById('user-display').innerText = activeUser.email;
-                    
-                    if (activeUser.fechaNacimiento) {
-                        const hoy = new Date();
-                        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-                        const dia = String(hoy.getDate()).padStart(2, '0');
-                        const fechaHoy = `${mes}-${dia}`;
-                        const cumpleUsuario = activeUser.fechaNacimiento.slice(5, 10);
-
-                        if (cumpleUsuario === fechaHoy) {
-                            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-                            const saludo = document.getElementById('user-display');
-                            if(saludo) {
-                                saludo.innerHTML = `
-                                    <div class="flex flex-col items-center animate-bounce">
-                                        <span class="text-4xl">🎂</span>
-                                        <span class="text-indigo-500 font-black text-lg">¡FELIZ CUMPLEAÑOS!</span>
-                                        <span class="text-xs text-slate-400">Hoy celebramos a ${activeUser.nombre ? activeUser.nombre.split(' ')[0] : 'ti'}</span>
-                                    </div>
-                                `;
-                            }
-                        }
-                    }
-                } catch(e) { }
+            
+            if (!userData) {
+                console.warn("No hay sesión. Redirigiendo...");
+                window.location.replace('index.html');
+                return;
             }
 
-            if (activeUser && activeUser.rol !== 'SUPER ADMIN' && activeUser.rol !== 'SUPER_ADMIN') {
-                const optSuper = document.getElementById('opt-superadmin');
-                if (optSuper) optSuper.remove();
-            }
+            try {
+                activeUser = JSON.parse(userData);
+                
+                // 2. Seguridad: Verificar que sea Admin
+                const rol = String(activeUser.rol).toUpperCase();
+                if (rol !== 'SUPER ADMIN' && rol !== 'ADMIN') {
+                    alert("Acceso denegado. Solo administradores.");
+                    window.location.replace('dashboard.html');
+                    return;
+                }
 
-            document.getElementById('login-pin').focus();
+                // 3. Pintar datos en la pantalla de bloqueo
+                const lockStatus = document.getElementById('lock-status');
+                if(lockStatus) lockStatus.innerText = `Hola, ${activeUser.nombre || activeUser.email.split('@')[0]}. Confirma tu PIN.`;
+                
+                const userDisplay = document.getElementById('user-display');
+                if(userDisplay) userDisplay.innerText = activeUser.email;
+                
+                // 4. Activar el "Enter" para el PIN
+                const pinInput = document.getElementById('login-pin');
+                if(pinInput) {
+                    pinInput.focus();
+                    pinInput.addEventListener('keypress', function (e) {
+                        if (e.key === 'Enter') validarAdmin();
+                    });
+                }
+            } catch(e) {
+                console.error("Error leyendo sesión", e);
+            }
         });
 
         async function validarAdmin() {
@@ -391,32 +442,28 @@ Analiza este documento y extrae exactamente estos datos en formato JSON estricto
 
             btn.disabled = true;
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Validando...';
-            errorMsg.classList.add('hidden');
+            if(errorMsg) errorMsg.classList.add('hidden');
 
             try {
-                const res = await fetch('/.netlify/functions/get-users');
-                const users = await res.json();
-                
-                let foundUser = null;
+                // 🔐 Validación ultrarrápida directo en Firestore
+                const snapshot = await db.collection('usuarios')
+                                         .where('email', '==', activeUser.email)
+                                         .where('pin', '==', pinInput)
+                                         .get();
 
-                if (activeUser) {
-                    foundUser = users.find(u => u.email === activeUser.email && u.pin === pinInput);
-                } else {
-                    const matches = users.filter(u => u.pin === pinInput);
-                    if (matches.length === 1) foundUser = matches[0];
-                }
-
-                if (foundUser) {
-                    activeUser = foundUser;
-                    localStorage.setItem('leezar_user_active', JSON.stringify(foundUser)); 
-                    document.getElementById('user-display').innerText = foundUser.email;
+                if (!snapshot.empty) {
+                    // 🎉 PIN CORRECTO
                     desbloquearPantalla();
                 } else {
+                    // ❌ PIN INCORRECTO
                     throw new Error("PIN Incorrecto");
                 }
             } catch (e) {
                 console.error(e);
-                errorMsg.classList.remove('hidden');
+                if(errorMsg) {
+                    errorMsg.classList.remove('hidden');
+                    errorMsg.innerText = "❌ PIN Incorrecto. Intenta de nuevo.";
+                }
                 document.getElementById('login-pin').value = '';
                 btn.disabled = false;
                 btn.innerHTML = '<span class="material-symbols-rounded">lock_open</span> Desbloquear';
@@ -424,15 +471,19 @@ Analiza este documento y extrae exactamente estos datos en formato JSON estricto
         }
 
         function desbloquearPantalla() {
-            document.getElementById('admin-lock').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('main-content').classList.remove('filter', 'blur-sm');
-            setTimeout(() => { document.getElementById('admin-lock').remove(); }, 500);
+            const lock = document.getElementById('admin-lock');
+            if(lock) {
+                lock.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => { lock.classList.add('hidden'); }, 500);
+            }
+            const main = document.getElementById('main-content');
+            if(main) main.classList.remove('filter', 'blur-sm');
         }
 
         function cerrarSesion() {
             if(confirm("¿Seguro que deseas salir del panel de administración?")) {
                 localStorage.removeItem('leezar_user_active');
-                location.reload();
+                window.location.replace('index.html');
             }
         }
 
