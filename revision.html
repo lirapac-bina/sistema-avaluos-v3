@@ -2051,9 +2051,9 @@
             }
         }
 
-        // ⚡ FUNCIÓN MÁGICA: ENVIAR TODOS LOS DOCUMENTOS VIEJOS A IA
+        // ⚡ FUNCIÓN MÁGICA: ENVIAR TODOS LOS DOCUMENTOS VIEJOS A IA (VERSIÓN BLINDADA)
         async function forzarSincronizacionIA(event) {
-            if (!confirm("¿Deseas re-procesar todos los documentos con IA? Esto tomará unos segundos.")) return;
+            if (!confirm("¿Deseas re-procesar todos los documentos con la IA usando los nuevos Prompts? Esto tomará unos segundos.")) return;
             
             const btn = event.currentTarget;
             const originalHtml = btn.innerHTML;
@@ -2061,6 +2061,12 @@
             btn.disabled = true;
 
             try {
+                // 1. 🧠 OBTENER EL DICCIONARIO GLOBAL CON TUS NUEVOS PROMPTS
+                const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
+                const dataConf = docConfig.exists ? docConfig.data() : {};
+                const diccionario = dataConf.requisitos || dataConf.diccionario || {};
+
+                // 2. LEER LOS ARCHIVOS DEL EXPEDIENTE
                 const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get();
                 const checklist = doc.data().checklist || {};
                 let tareas = [];
@@ -2072,23 +2078,35 @@
                     if (ligaDrive) {
                         const match = ligaDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
                         const fileId = match ? match[1] : null;
+                        
                         if (fileId) {
                             let promptIA = null;
-                            if (key === 'CEDULA_GYS') {
+                            const configReq = diccionario[key]; // Buscamos en tu diccionario
+
+                            // 3. ASIGNAR PROMPT INTELIGENTE
+                            if (configReq && configReq.usaIA) {
+                                // Toma el prompt blindado que guardaste en Admin
+                                promptIA = configReq.promptIA || configReq.prompt || configReq.instrucciones; 
+                            } else if (key === 'CEDULA_GYS') {
                                 promptIA = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
                             }
-                            tareas.push({ fileId, expId: expediente.id, reqKey: key, promptPersonalizado: promptIA });
+
+                            // Solo metemos a la fila de IA los documentos que tengan Prompt
+                            if (promptIA) {
+                                tareas.push({ fileId, expId: expediente.id, reqKey: key, promptPersonalizado: promptIA });
+                            }
                         }
                     }
                 });
 
                 if (tareas.length === 0) {
-                    alert("No se detectaron archivos en Drive para procesar.");
+                    alert("No se detectaron archivos configurados para IA en este expediente.");
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                     return;
                 }
                 
+                // 4. EL BUCLE DE RE-PROCESAMIENTO
                 for (let i = 0; i < tareas.length; i++) {
                     btn.innerHTML = `<span class="animate-spin material-symbols-rounded text-sm">sync</span> Procesando ${i + 1} de ${tareas.length}...`;
                     
@@ -2098,10 +2116,11 @@
                         body: JSON.stringify(tareas[i])
                     });
                     
+                    // Espera 3 segundos entre cada uno para no saturar a Gemini
                     await new Promise(r => setTimeout(r, 3000));
                 }
 
-                alert(`¡Éxito! Se enviaron ${tareas.length} documentos a Gemini de forma segura. 🛡️\n\nLos datos aparecerán en tu Hoja de Trabajo en breve.`);
+                alert(`¡Éxito! Se re-procesaron ${tareas.length} documentos con tus nuevos prompts de nivel corporativo. 🛡️\n\nLos datos limpios aparecerán en tu Hoja de Trabajo en breve.`);
                 
             } catch (e) {
                 alert("Error al sincronizar: " + e.message);
