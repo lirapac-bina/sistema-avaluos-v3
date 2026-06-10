@@ -1578,6 +1578,18 @@
                                 if(urlEl) urlEl.value = row.url || '';
                                 const ligaEl = document.getElementById(`${type}-liga-acortada-${i}`);
                                 if(ligaEl) ligaEl.value = row.liga || '';
+
+                                // 🔒 NUEVO: RESTAURAR EL CANDADO SI ESTABA CERRADO EN FIREBASE
+                                const btnLock = document.getElementById(`btn-lock-${type}-${i}`);
+                                if (btnLock && row.isLocked) {
+                                    if(btnLock.querySelector('span').textContent === 'lock_open') {
+                                        btnLock.click(); 
+                                    }
+                                } else if (btnLock && !row.isLocked) {
+                                    if(btnLock.querySelector('span').textContent === 'lock') {
+                                        btnLock.click();
+                                    }
+                                }
                             }
                         }
                     }
@@ -1618,6 +1630,13 @@
                     window.comps[type].cols.forEach(c => row[c.id] = getNumericValue(`${type}-${c.id}-${i}`));
                     row.url = document.getElementById(`${type}-url-completa-${i}`)?.value || '';
                     row.liga = document.getElementById(`${type}-liga-acortada-${i}`)?.value || '';
+                    
+                    // 🔒 NUEVO: LEER Y GUARDAR EL ESTADO DEL CANDADO
+                    const btnLock = document.getElementById(`btn-lock-${type}-${i}`);
+                    if (btnLock) {
+                        row.isLocked = btnLock.querySelector('span').textContent === 'lock';
+                    }
+                    
                     tData.rows.push(row);
                 }
                 payload[`mercado_${type}`] = tData;
