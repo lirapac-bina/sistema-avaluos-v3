@@ -63,18 +63,22 @@ exports.handler = async (event) => {
         const dataAnterior = doc.data();
         let updateData = { nombreCliente: nombre, cliente: nombre, telefono: telefono };
 
-        // Armado de nombres
-        let nuevoNombreDrive = nombre;
-        const folioFinal = folioOperativo !== undefined ? folioOperativo.trim().toUpperCase() : (dataAnterior.folioOperativo || "SIN FOLIO");
+        // 🛠️ REPARACIÓN DEL GUION: Si viene vacío, forzamos que sea "SIN FOLIO"
+        let folioLimpio = folioOperativo !== undefined ? folioOperativo.trim().toUpperCase() : (dataAnterior.folioOperativo || "SIN FOLIO");
+        if (folioLimpio === "") folioLimpio = "SIN FOLIO";
+        
+        const folioFinal = folioLimpio;
         
         if (folioOperativo !== undefined) updateData.folioOperativo = folioFinal;
         if (anotacion !== undefined) updateData.anotacion = anotacion;
         if (unidad !== undefined) updateData.unidad = unidad;
-        
-        // 👇 AQUÍ ESTÁ TU NUEVA LÍNEA BIEN PUESTA
         if (tipoInmueble !== undefined) updateData.tipoInmueble = tipoInmueble;
 
-        if (folioFinal !== "SIN FOLIO") nuevoNombreDrive = `${folioFinal} - ${nombre}`;
+        // Armado de nombres: Solo pone el guion si realmente hay un folio válido
+        let nuevoNombreDrive = nombre;
+        if (folioFinal !== "SIN FOLIO") {
+            nuevoNombreDrive = `${folioFinal} - ${nombre}`;
+        }
 
         let driveFolderId = dataAnterior.driveFolderId;
                 
@@ -138,15 +142,19 @@ exports.handler = async (event) => {
 
         await docRef.update(updateData);
         // ========================================================
-        // 🚀 BLOQUE DE NOTIFICACIÓN VERSIÓN FINAL
+        // 🚀 BLOQUE DE NOTIFICACIÓN (VERSIÓN ANTI-SPAM)
         // ========================================================
-        if (unidad && unidad !== 'POR ASIGNAR') {
+        // Solo avisamos si el expediente era "Huérfano" de Jack y le acabas de asignar Unidad.
+        const eraHuerfano = !dataAnterior.driveFolderId || dataAnterior.unidad === 'POR ASIGNAR';
+        const yaTieneUnidad = unidad && unidad !== 'POR ASIGNAR';
+
+        if (eraHuerfano && yaTieneUnidad) {
             const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkOxixZXOLp4mfNOA7Vg_OPLmdRJpSBO6FHW8R-ARVFVZfCjUnlhro17PIQSsldKuW/exec"; 
             
             // Construimos la URL con los parámetros pegados de forma simple
             const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad) + "&main=" + encodeURIComponent(id);
 
-            console.log("📡 [NOTIFICACIÓN] Enviando señal a:", finalUrl);
+            console.log("📡 [NOTIFICACIÓN] Enviando señal de Asignación de Jack a:", finalUrl);
 
             try {
                 // Usamos fetch de la forma más básica posible, que es la que mejor le va a Google
