@@ -206,9 +206,11 @@ exports.handler = async (event) => {
                     const extension = archivo.pathEnNube && archivo.pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
                     const mimeType = extension === '.pdf' ? 'application/pdf' : 'image/jpeg';
                     
-                    // Limitamos el nombre si es muy largo (Nombres Limpios sin hash aleatorio)
-                    const nomCorto = archivo.nombreBase.substring(0, 40).trim();
-                    const fileNameDrive = `${nomCorto}_${docData.cliente}${extension}`;
+                    // --- INICIO DEL BLOQUE DE LIMPIEZA ---
+                    // Limpiamos el nombre de caracteres prohibidos por Drive
+                    const nomLimpio = archivo.nombreBase.replace(/[/\\?%*:|"<>]/g, '-').substring(0, 40).trim();
+                    const fileNameDrive = `${nomLimpio}${extension}`;
+                    // --- FIN DEL BLOQUE ---
 
                     try {
                         const scriptResponse = await fetch(APPS_SCRIPT_WEBHOOK, {
@@ -217,7 +219,7 @@ exports.handler = async (event) => {
                             body: JSON.stringify({
                                 secretToken: "LeezarMagia2026",
                                 fileUrl: archivo.url, 
-                                fileName: fileNameDrive,
+                                fileName: fileNameDrive, // Esta variable ya usa nomLimpio
                                 mimeType: mimeType,
                                 folderId: driveFolderId
                             })
