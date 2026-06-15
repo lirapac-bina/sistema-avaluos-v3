@@ -1158,16 +1158,24 @@
                     anotacion: anotacion 
                 };
 
-                // 🌟 DESPEDIMOS AL ALBAÑIL (Apps Script) Y USAMOS EL INGENIERO (Netlify)
+                // 🌟 LLAMADA ÚNICA A NETLIFY: Él se encarga de crear, renombrar y mandar la señal a Telegram
                 try {
                     const peticionBackend = await fetch('/.netlify/functions/update-client-data', {
                         method: 'POST',
-                        body: JSON.stringify({ id: id, nombre: nombre, telefono: telefono, folioOperativo: folio, anotacion: anotacion, unidad: unidad, tipoInmueble: tipoInmueble })
+                        body: JSON.stringify({ 
+                            id: id, 
+                            nombre: nombre, 
+                            telefono: telefono, 
+                            folioOperativo: folio, 
+                            anotacion: anotacion, 
+                            unidad: unidad, 
+                            tipoInmueble: tipoInmueble,
+                            driveFolderId: exp.driveFolderId || null
+                        })
                     });
                     
                     const respuestaBackend = await peticionBackend.json();
                     
-                    // Si el backend creó la carpeta, atrapamos los enlaces y los unimos
                     if (respuestaBackend.updateData && respuestaBackend.updateData.carpeta_drive) {
                         updateData.carpeta_drive = respuestaBackend.updateData.carpeta_drive;
                     }
@@ -1175,7 +1183,7 @@
                     console.warn("Aviso conectando con backend:", e); 
                 }
 
-                // Guardamos todo de un golpe en Firebase localmente por redundancia
+                // Guardamos en Firebase localmente por redundancia
                 btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Actualizando base...`;
                 await db.collection('expedientes_avaluos').doc(id).update(updateData);
 
