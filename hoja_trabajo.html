@@ -1010,7 +1010,7 @@
         };
 
         // ==========================================
-        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON)
+        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON) - VERSIÓN BLINDADA
         // ==========================================
         window.generarTextoNotas = async () => {
             if(!currentFolioId || !currentExpediente) return showToast("Error: Expediente no cargado", "error");
@@ -1047,12 +1047,10 @@
                     let parsedVal = value;
                     if (typeof value === 'string') {
                         try {
-                            // 🔥 BISTURÍ: Extraemos SOLO lo que está entre llaves { }
                             const jsonMatch = value.match(/\{[\s\S]*\}/);
                             if (jsonMatch) {
                                 parsedVal = JSON.parse(jsonMatch[0]);
                             } else {
-                                // Fallback por si acaso
                                 const cleanStr = value.replace(/```json/gi, '').replace(/```/g, '').trim();
                                 parsedVal = JSON.parse(cleanStr);
                             }
@@ -1062,7 +1060,6 @@
                         }
                     }
                     
-                    // Convertimos llaves a minúsculas para coincidir con tu diccionario global
                     if (typeof parsedVal === 'object' && parsedVal !== null) {
                         const objMinusculas = {};
                         for (const [k, v] of Object.entries(parsedVal)) {
@@ -1074,14 +1071,7 @@
                     }
                 }
 
-                // 3. EXTRAER DATOS DEL FRONTEND
-                let fVisita = document.getElementById('nota-fecha-visita')?.value.trim();
-                if (!fVisita) fVisita = currentExpediente.cita?.fecha || "___";
-
-                const supConst = document.getElementById('nota-sup-total')?.value || "___";
-                const cpVal = document.getElementById('nota-cp')?.value || "___";
-                const colVal = document.getElementById('nota-cp-asentamiento')?.value || "___";
-
+                // 3. EXTRAER DATOS DEL FRONTEND (MAPEO COMPLETO)
                 let docsList = [];
                 document.querySelectorAll('input[name="nota-doc"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
                 let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
@@ -1090,35 +1080,114 @@
                 document.querySelectorAll('input[name="nota-serv"]:checked').forEach(el => servList.push(el.value.toUpperCase()));
                 let servTexto = servList.length > 0 ? servList.join(', ') : '___';
 
-                // 4. REEMPLAZO DE ETIQUETAS FIJAS
-                let textoFinal = plantilla
-                    .replace(/\[FECHA_VISITA\]/g, fVisita.toUpperCase())
-                    .replace(/\[LISTA_DOCUMENTOS\]/g, docsTexto)
-                    .replace(/\[LISTA_SERVICIOS\]/g, servTexto)
-                    .replace(/\[CP\]/g, cpVal)
-                    .replace(/\[COLONIA\]/g, colVal.toUpperCase())
-                    .replace(/\[SUPERFICIE_LEVANTAMIENTO\]/g, supConst);
+                const getValue = (id) => {
+                    const el = document.getElementById(id);
+                    return (el && el.value && el.value.trim() !== '') ? el.value.trim().toUpperCase() : "___";
+                };
 
-                // 5. 🧠 MAGIA ABSOLUTA: MATCH PERFECTO
-                textoFinal = textoFinal.replace(/\[([^\]\.]+)\.([^\]]+)\]/g, function(match, reqKey, campo) {
-                    const keyUpper = reqKey.toUpperCase().trim(); // Ej: REQUISITO_02_ESCRITURA
-                    const campoLower = campo.toLowerCase().trim(); // Ej: superficie_terreno
+                let fVisita = getValue('nota-fecha-visita');
+                if (fVisita === "___" && currentExpediente.cita) fVisita = currentExpediente.cita.fecha || "___";
+
+                // Diccionario de reemplazos exactos del UI
+                const reemplazosUI = {
+                    '[FECHA_VISITA]': fVisita,
+                    '[LISTA_DOCUMENTOS]': docsTexto,
+                    '[LISTA_SERVICIOS]': servTexto,
+                    '[CP]': getValue('nota-cp'),
+                    '[COLONIA]': getValue('nota-cp-asentamiento'),
+                    '[SUPERFICIE_LEVANTAMIENTO]': getValue('nota-sup-total'),
                     
-                    // Buscamos la llave exacta (basada en tu arquitectura unificada)
-                    if (extraidosProcesados[keyUpper] && extraidosProcesados[keyUpper][campoLower] !== undefined) {
-                        let extractedVal = extraidosProcesados[keyUpper][campoLower];
-                        
-                        // Si Gemini devolvió un objeto (ej. "inmueble": {"direccion_completa": "...", "cp": "..."})
-                        if (typeof extractedVal === 'object' && extractedVal !== null) {
-                            extractedVal = Object.values(extractedVal).filter(v => v).join(', '); // Lo une como texto
-                        }
+                    // Escritura
+                    '[NUM_ESCRITURA]': getValue('nota-esc-numero'),
+                    '[LIBRO_ESCRITURA]': getValue('nota-esc-libro'),
+                    '[FECHA_ESCRITURA]': getValue('nota-esc-fecha'),
+                    '[NOTARIO_ESCRITURA]': getValue('nota-esc-notario'),
+                    '[NUM_NOTARIA]': getValue('nota-esc-notaria-num'),
+                    '[CIUDAD_NOTARIA]': getValue('nota-esc-notaria-ciudad'),
+                    
+                    // Cédula
+                    '[FECHA_CEDULA]': getValue('nota-cedula-fecha'),
+                    '[FOLIO_CEDULA]': getValue('nota-cedula-folio'),
+                    '[MUNICIPIO_CEDULA]': getValue('nota-cedula-ayuntamiento'),
+                    '[EDAD_CEDULA]': getValue('nota-cedula-edad'),
+                    
+                    // Predial
+                    '[CLAVE_PREDIAL]': getValue('nota-predial-clave'),
+                    '[FOLIO_PREDIAL]': getValue('nota-predial-folio'),
+                    '[FECHA_PREDIAL]': getValue('nota-predial-fecha'),
+                    
+                    // Alineamiento
+                    '[NUM_ALINEAMIENTO]': getValue('nota-alin-oficio'),
+                    '[OFICIO_ALINEAMIENTO]': getValue('nota-alin-oficio'),
+                    '[FECHA_ALINEAMIENTO]': getValue('nota-alin-fecha'),
+                    
+                    // Datos Catastrales
+                    '[OFICIO_DATOS]': getValue('nota-datos-oficio'),
+                    '[FECHA_DATOS]': getValue('nota-datos-fecha'),
+                    
+                    // Agua
+                    '[CUENTA_AGUA]': getValue('nota-agua-cuenta'),
+                    '[FOLIO_AGUA]': getValue('nota-agua-folio'),
+                    '[FECHA_AGUA]': getValue('nota-agua-fecha'),
+                    '[EXPEDIDO_AGUA]': getValue('nota-agua-expedido')
+                };
 
-                        const valStr = String(extractedVal).trim();
-                        if (valStr.toUpperCase() !== 'NULL' && valStr !== '') {
-                            return valStr.toUpperCase();
+                // 4. REEMPLAZO PRIMARIO (DATOS DE LA INTERFAZ)
+                let textoFinal = plantilla;
+                for (const [tag, val] of Object.entries(reemplazosUI)) {
+                    // Usar split y join es más seguro que un replace global dinámico
+                    textoFinal = textoFinal.split(tag).join(val);
+                }
+
+                // 5. 🧠 MAGIA ABSOLUTA: MATCH PERFECTO IA (Para datos que no están en el UI)
+                textoFinal = textoFinal.replace(/\[([A-Za-z0-9_.]+)\]/g, function(match, tagInside) {
+                    // Si la etiqueta tiene punto, buscamos el nodo exacto: [ESCRITURA.superficie_terreno]
+                    if (tagInside.includes('.')) {
+                        const parts = tagInside.split('.');
+                        const reqKey = parts[0].toUpperCase().trim();
+                        const campoLower = parts.slice(1).join('.').toLowerCase().trim();
+                        
+                        if (extraidosProcesados[reqKey] && extraidosProcesados[reqKey][campoLower] !== undefined) {
+                            let extractedVal = extraidosProcesados[reqKey][campoLower];
+                            if (typeof extractedVal === 'object' && extractedVal !== null) {
+                                extractedVal = Object.values(extractedVal).filter(v => v).join(', ');
+                            }
+                            const valStr = String(extractedVal).trim();
+                            if (valStr.toUpperCase() !== 'NULL' && valStr !== '') return valStr.toUpperCase();
+                        }
+                    } 
+                    // Búsqueda difusa para etiquetas sin punto (Ej: [SUPERFICIE_CEDULA] o [MUNICIPIO_PREDIAL])
+                    else {
+                        const tagLower = tagInside.toLowerCase().trim();
+                        
+                        // Estrategia: Si la etiqueta menciona el documento, buscar ahí primero
+                        let docsABuscar = Object.keys(extraidosProcesados);
+                        if(tagLower.includes('cedula')) docsABuscar = docsABuscar.filter(k => k.includes('CEDULA'));
+                        else if(tagLower.includes('predial')) docsABuscar = docsABuscar.filter(k => k.includes('PREDIAL'));
+                        else if(tagLower.includes('escritura')) docsABuscar = docsABuscar.filter(k => k.includes('ESCRITURA'));
+
+                        for (const docKey of docsABuscar) {
+                            const docObj = extraidosProcesados[docKey];
+                            if(!docObj) continue;
+
+                            // Match exacto en las llaves del json
+                            if (docObj[tagLower] !== undefined) {
+                                let val = docObj[tagLower];
+                                if (typeof val === 'object' && val !== null) val = Object.values(val).filter(v=>v).join(', ');
+                                if (String(val).trim().toUpperCase() !== 'NULL' && String(val).trim() !== '') return String(val).toUpperCase();
+                            }
+                            
+                            // Match por coincidencia de palabras
+                            for (const [campoKey, campoVal] of Object.entries(docObj)) {
+                                if (campoKey.length > 3 && (tagLower.includes(campoKey) || campoKey.includes(tagLower))) {
+                                    let val = campoVal;
+                                    if (typeof val === 'object' && val !== null) val = Object.values(val).filter(v=>v).join(', ');
+                                    if (String(val).trim().toUpperCase() !== 'NULL' && String(val).trim() !== '') return String(val).toUpperCase();
+                                }
+                            }
                         }
                     }
-                    return '________'; 
+                    return match; // Dejar original si no hubo suerte
                 });
 
                 // 6. MOSTRAR Y GUARDAR
@@ -1129,11 +1198,11 @@
                     textarea.style.height = (textarea.scrollHeight + 20) + 'px';
                     
                     await db.collection('expedientes_avaluos').doc(currentFolioId).update({
-                        notas_tramite: textoFinal,
+                        notas_tramite: textoFinal, // <--- ACTUALIZADO: Nombre correcto de variable
                         fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
-                    currentExpediente.notas_tramite = textoFinal;
+                    currentExpediente.notas_tramite = textoFinal; // <--- ACTUALIZADO: Sincronización local
                 }
 
                 showToast("Notas generadas y guardadas ✨", "success");
