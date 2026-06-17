@@ -271,50 +271,88 @@
                             <div class="notas-input-group"><label class="leezar-label">Asentamiento (SEPOMEX)</label><input type="text" id="nota-cp-asentamiento" class="leezar-input !text-left" placeholder="Ej. Fracc Valle Real, Xalapa"></div>
                         </div>
 
-                        <fieldset class="mb-6 p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
-                            <legend class="leezar-label px-2">Documentos Proporcionados (Copias Simples)</legend>
-                            <div class="checkbox-grid mb-4">
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Escritura" class="mr-2" onchange="toggleConditionalFields('escritura')"> Escritura</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Cédula Catastral" class="mr-2" onchange="toggleConditionalFields('cedula')"> Cédula Catastral</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Boleta Predial" class="mr-2" onchange="toggleConditionalFields('predial')"> Boleta Predial</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Constancia de Alineamiento y Número Oficial" class="mr-2" onchange="toggleConditionalFields('alineamiento')"> Alineamiento y Num Oficial</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Constancia de Datos Catastrales" class="mr-2" onchange="toggleConditionalFields('datos')"> Datos Catastrales</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Recibo de Agua" class="mr-2" onchange="toggleConditionalFields('agua')"> Recibo de Agua</label>
-                                <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Recibo de Servicio de Energía Eléctrica" class="mr-2"> Recibo de Luz</label>
+<fieldset class="mb-6 p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                            <div class="flex justify-between items-center mb-4">
+                                <legend class="leezar-label px-2 mb-0">Documentos del Expediente</legend>
+                                <span class="text-[10px] text-slate-400 font-bold bg-white dark:bg-slate-900 px-2 py-1 rounded shadow-sm">⚠️ Borde rojo: No analizado con IA</span>
                             </div>
+                            
+                            <div class="checkbox-grid mb-4" id="dynamic-docs-notas"></div>
 
                             <div id="conditional-fields-escritura" class="conditional-fields" style="display: none;">
+                                <div class="col-span-full flex justify-between items-center border-b border-indigo-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">📄 Datos de Escritura</h4>
+                                    <button onclick="toggleLockSection('escritura')" id="btn-lock-sec-escritura" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
                                 <div><label class="leezar-label">Num Escritura</label><input type="text" id="nota-esc-numero" class="leezar-input !text-left" placeholder="Ej. 30,308"></div>
                                 <div><label class="leezar-label">Libro (Opcional)</label><input type="text" id="nota-esc-libro" class="leezar-input !text-left" placeholder="Ej. 1059"></div>
-                                <div><label class="leezar-label">Fecha Escritura</label><input type="text" id="nota-esc-fecha" class="leezar-input !text-left" placeholder="Ej. 26 de febrero de 2019"></div>
-                                <div><label class="leezar-label">Notario (Nombre)</label><input type="text" id="nota-esc-notario" class="leezar-input !text-left" placeholder="Ej. Lic. Francisco Saucedo"></div>
+                                <div><label class="leezar-label">Fecha Escritura</label><input type="text" id="nota-esc-fecha" class="leezar-input !text-left" placeholder="Ej. 26 feb 2019"></div>
+                                <div><label class="leezar-label">Notario (Nombre)</label><input type="text" id="nota-esc-notario" class="leezar-input !text-left" placeholder="Ej. Lic. Francisco"></div>
                                 <div><label class="leezar-label">Num Notaría</label><input type="text" id="nota-esc-notaria-num" class="leezar-input !text-left" placeholder="Ej. 3"></div>
-                                <div><label class="leezar-label">Ciudad Notaría</label><input type="text" id="nota-esc-notaria-ciudad" class="leezar-input !text-left" placeholder="Ej. Coatepec, Ver."></div>
+                                <div><label class="leezar-label">Ciudad Notaría</label><input type="text" id="nota-esc-notaria-ciudad" class="leezar-input !text-left" placeholder="Ej. Coatepec"></div>
                             </div>
+                            
                             <div id="conditional-fields-cedula" class="conditional-fields" style="display: none;">
+                                <div class="col-span-full flex justify-between items-center border-b border-emerald-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">🗺️ Cédula Catastral</h4>
+                                    <button onclick="toggleLockSection('cedula')" id="btn-lock-sec-cedula" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
                                 <div><label class="leezar-label">Fecha Cédula</label><input type="text" id="nota-cedula-fecha" class="leezar-input !text-left" placeholder="Ej. 2 sep 2025"></div>
                                 <div><label class="leezar-label">Folio Cédula</label><input type="text" id="nota-cedula-folio" class="leezar-input !text-left" placeholder="Ej. 05949/25"></div>
                                 <div><label class="leezar-label">Ayuntamiento</label><input type="text" id="nota-cedula-ayuntamiento" class="leezar-input !text-left" placeholder="Ej. Xalapa, Ver"></div>
                                 <div><label class="leezar-label">Edad (Cédula)</label><input type="text" id="nota-cedula-edad" class="leezar-input !text-left" placeholder="Ej. 6 años"></div>
                             </div>
+
                             <div id="conditional-fields-predial" class="conditional-fields" style="display: none;">
+                                <div class="col-span-full flex justify-between items-center border-b border-rose-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest">🏡 Boleta Predial</h4>
+                                    <button onclick="toggleLockSection('predial')" id="btn-lock-sec-predial" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
                                 <div><label class="leezar-label">Clave Catastral</label><input type="text" id="nota-predial-clave" class="leezar-input !text-left" placeholder="Ej. 30-03-200..."></div>
                                 <div><label class="leezar-label">Folio Predial</label><input type="text" id="nota-predial-folio" class="leezar-input !text-left" placeholder="Ej. WM96531"></div>
                                 <div><label class="leezar-label">Fecha Predial</label><input type="text" id="nota-predial-fecha" class="leezar-input !text-left" placeholder="Ej. 3 ene 2025"></div>
                             </div>
+
                             <div id="conditional-fields-alineamiento" class="conditional-fields" style="display: none;">
-                                <div><label class="leezar-label">Num Oficio Alineamiento</label><input type="text" id="nota-alin-oficio" class="leezar-input !text-left" placeholder="Ej. DDU/1826/2025"></div>
-                                <div><label class="leezar-label">Fecha Alineamiento</label><input type="text" id="nota-alin-fecha" class="leezar-input !text-left" placeholder="Ej. 7 ago 2025"></div>
+                                <div class="col-span-full flex justify-between items-center border-b border-amber-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">📏 Alineamiento y Num Oficial</h4>
+                                    <button onclick="toggleLockSection('alineamiento')" id="btn-lock-sec-alineamiento" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
+                                <div><label class="leezar-label">Num Oficio</label><input type="text" id="nota-alin-oficio" class="leezar-input !text-left" placeholder="Ej. DDU/1826/2025"></div>
+                                <div><label class="leezar-label">Fecha Oficio</label><input type="text" id="nota-alin-fecha" class="leezar-input !text-left" placeholder="Ej. 7 ago 2025"></div>
                             </div>
+
                             <div id="conditional-fields-datos" class="conditional-fields" style="display: none;">
-                                <div><label class="leezar-label">Num Oficio Datos Cat.</label><input type="text" id="nota-datos-oficio" class="leezar-input !text-left" placeholder="Ej. TMDI-DC-1786/2025"></div>
-                                <div><label class="leezar-label">Fecha Datos Cat.</label><input type="text" id="nota-datos-fecha" class="leezar-input !text-left" placeholder="Ej. 22 ago 2025"></div>
+                                <div class="col-span-full flex justify-between items-center border-b border-purple-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-purple-500 uppercase tracking-widest">🏢 Datos Catastrales</h4>
+                                    <button onclick="toggleLockSection('datos')" id="btn-lock-sec-datos" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
+                                <div><label class="leezar-label">Num Oficio</label><input type="text" id="nota-datos-oficio" class="leezar-input !text-left" placeholder="Ej. TMDI-DC-1786"></div>
+                                <div><label class="leezar-label">Fecha Oficio</label><input type="text" id="nota-datos-fecha" class="leezar-input !text-left" placeholder="Ej. 22 ago 2025"></div>
                             </div>
+
                             <div id="conditional-fields-agua" class="conditional-fields" style="display: none;">
-                                <div><label class="leezar-label">Num Cuenta Agua</label><input type="text" id="nota-agua-cuenta" class="leezar-input !text-left" placeholder="Ej. 161196"></div>
+                                <div class="col-span-full flex justify-between items-center border-b border-cyan-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-cyan-500 uppercase tracking-widest">💧 Recibo de Agua</h4>
+                                    <button onclick="toggleLockSection('agua')" id="btn-lock-sec-agua" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
+                                <div><label class="leezar-label">Num Cuenta</label><input type="text" id="nota-agua-cuenta" class="leezar-input !text-left" placeholder="Ej. 161196"></div>
                                 <div><label class="leezar-label">Folio Agua</label><input type="text" id="nota-agua-folio" class="leezar-input !text-left" placeholder="Ej. 165"></div>
                                 <div><label class="leezar-label">Fecha Agua</label><input type="text" id="nota-agua-fecha" class="leezar-input !text-left" placeholder="Ej. 23 jul 2025"></div>
                                 <div><label class="leezar-label">Expedido por</label><input type="text" id="nota-agua-expedido" class="leezar-input !text-left" placeholder="Ej. CMAS"></div>
+                            </div>
+
+                            <div id="conditional-fields-licencia" class="conditional-fields" style="display: none;">
+                                <div class="col-span-full flex justify-between items-center border-b border-orange-100 dark:border-slate-700 pb-1 mb-1">
+                                    <h4 class="text-[10px] font-black text-orange-500 uppercase tracking-widest">🏗️ Licencia de Construcción</h4>
+                                    <button onclick="toggleLockSection('licencia')" id="btn-lock-sec-licencia" class="text-slate-400 hover:text-amber-500 transition-colors" title="Bloquear edición"><span class="material-symbols-rounded text-[16px]">lock_open</span></button>
+                                </div>
+                                <div><label class="leezar-label">Num Licencia</label><input type="text" id="nota-licencia-num" class="leezar-input !text-left" placeholder="Ej. 1234/2026"></div>
+                                <div><label class="leezar-label">Fecha Expedición</label><input type="text" id="nota-licencia-fecha" class="leezar-input !text-left" placeholder="Ej. 10 ene 2026"></div>
+                                <div><label class="leezar-label">Vigencia</label><input type="text" id="nota-licencia-vigencia" class="leezar-input !text-left" placeholder="Ej. 12 Meses"></div>
+                                <div><label class="leezar-label">Tipo de Obra</label><input type="text" id="nota-licencia-tipo" class="leezar-input !text-left" placeholder="Ej. Obra Nueva"></div>
+                                <div><label class="leezar-label">Sup Autorizada</label><input type="text" id="nota-licencia-sup" class="leezar-input !text-left" placeholder="Ej. 120.50 M2"></div>
+                                <div><label class="leezar-label">Ayuntamiento</label><input type="text" id="nota-licencia-ayuntamiento" class="leezar-input !text-left" placeholder="Ej. Xalapa"></div>
                             </div>
                         </fieldset>
 
@@ -330,17 +368,7 @@
                                 </div>
                             </fieldset>
 
-                            <div class="col-span-full mb-6">
-                                <label class="leezar-label !text-indigo-500 flex items-center gap-1">
-                                    <span class="material-symbols-rounded text-sm">air</span> Estado de Ventilación
-                                </label>
-                                <select id="nota-ventilacion" class="leezar-input !text-left font-bold border-indigo-200 bg-indigo-50/30">
-                                    <option value="Natural y/o mecánica" selected>Natural y/o mecánica (Estándar)</option>
-                                    <option value="Natural">Únicamente Natural</option>
-                                    <option value="Mecánica">Únicamente Mecánica</option>
-                                </select>
-                            </div>
-
+                            
                             <fieldset class="p-4 border border-gray-100 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
                                 <legend class="leezar-label px-2">Superficies Levantamiento</legend>
                                 <div class="grid grid-cols-2 gap-4">
@@ -360,8 +388,18 @@
                         </div>
                         
                         <div>
-                            <label class="leezar-label text-indigo-600 dark:text-indigo-400">Resultado Final (Se guardará en Firebase)</label>
-                            <textarea id="texto-notas-tramite" class="notas-output"></textarea>
+                            <div class="flex justify-between items-center mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <label class="leezar-label text-indigo-600 dark:text-indigo-400 mb-0">Notas Finales (Editables)</label>
+                                    <button onclick="toggleLockNotas()" id="btn-lock-notas" class="text-slate-400 hover:text-amber-500 transition-colors" title="Desbloquear para edición manual"><span class="material-symbols-rounded text-[18px]">lock</span></button>
+                                </div>
+                                <div class="flex gap-2 text-[9px] font-black uppercase">
+                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Azul: Form</span>
+                                    <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Verde: IA Gemini</span>
+                                </div>
+                            </div>
+                            <div id="preview-notas" class="notas-output overflow-y-auto mb-2 transition-all outline-none" contenteditable="false"></div>
+                            <textarea id="texto-notas-tramite" class="hidden"></textarea>
                         </div>
                     </div>
                 </div>
@@ -979,10 +1017,98 @@
         };
 
         // --- 2. LÓGICA DEL GENERADOR DE NOTAS ---
+        window.toggleDynamicFields = () => {
+            ['escritura', 'cedula', 'predial', 'alineamiento', 'datos', 'agua', 'licencia'].forEach(id => {
+                const el = document.getElementById(`conditional-fields-${id}`);
+                if(el) el.style.display = 'none';
+            });
+            document.querySelectorAll('.doc-nota-chk:checked').forEach(chk => {
+                const target = chk.getAttribute('data-target');
+                if(target) {
+                    const el = document.getElementById(`conditional-fields-${target}`);
+                    if(el) el.style.display = 'grid';
+                }
+            });
+        };
+
+        // Mantenemos la función anterior por si algún checkbox viejo quedó flotando
         window.toggleConditionalFields = (type) => {
-            const div = document.getElementById(`conditional-fields-${type}`);
-            const chk = document.querySelector(`input[onchange="toggleConditionalFields('${type}')"]`);
-            div.style.display = chk.checked ? 'grid' : 'none';
+            window.toggleDynamicFields();
+        };
+
+        // 🔒 FUNCION NUEVA: Candado para bloquear Inputs de los documentos
+        window.toggleLockSection = (secId) => {
+            const btn = document.getElementById(`btn-lock-sec-${secId}`);
+            if(!btn) return;
+            const icon = btn.querySelector('span');
+            const isLocked = icon.textContent === 'lock'; // Si está cerrado, vamos a abrirlo
+            const inputs = document.querySelectorAll(`#conditional-fields-${secId} input`);
+            
+            inputs.forEach(inp => {
+                inp.disabled = !isLocked;
+                if(!isLocked) inp.classList.add('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+                else inp.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-slate-100', 'dark:bg-slate-800');
+            });
+            
+            if (isLocked) {
+                icon.textContent = 'lock_open';
+                btn.classList.replace('text-amber-500', 'text-slate-400');
+            } else {
+                icon.textContent = 'lock';
+                btn.classList.replace('text-slate-400', 'text-amber-500');
+            }
+        };
+
+        // 🔒 FUNCION NUEVA: Candado para el previsualizador de Notas
+        window.toggleLockNotas = () => {
+            const btn = document.getElementById('btn-lock-notas');
+            const preview = document.getElementById('preview-notas');
+            if(!btn || !preview) return;
+            const icon = btn.querySelector('span');
+            const isLocked = icon.textContent === 'lock';
+            
+            if (isLocked) {
+                icon.textContent = 'lock_open';
+                btn.classList.replace('text-slate-400', 'text-amber-500');
+                preview.contentEditable = "true";
+                preview.classList.add('ring-2', 'ring-amber-400', 'bg-white', 'dark:bg-slate-800');
+                showToast("Notas desbloqueadas para edición manual ✍️", "success");
+            } else {
+                icon.textContent = 'lock';
+                btn.classList.replace('text-amber-500', 'text-slate-400');
+                preview.contentEditable = "false";
+                preview.classList.remove('ring-2', 'ring-amber-400', 'bg-white', 'dark:bg-slate-800');
+                // Al cerrar el candado, respaldamos en texto plano
+                const textareaHidden = document.getElementById('texto-notas-tramite');
+                if(textareaHidden) textareaHidden.value = preview.innerText;
+                showToast("Notas bloqueadas y actualizadas 🔒", "success");
+            }
+        };
+
+        // 🔒 FUNCION NUEVA: Candado para el previsualizador de Notas
+        window.toggleLockNotas = () => {
+            const btn = document.getElementById('btn-lock-notas');
+            const preview = document.getElementById('preview-notas');
+            if(!btn || !preview) return;
+            const icon = btn.querySelector('span');
+            const isLocked = icon.textContent === 'lock';
+            
+            if (isLocked) {
+                icon.textContent = 'lock_open';
+                btn.classList.replace('text-slate-400', 'text-amber-500');
+                preview.contentEditable = "true";
+                preview.classList.add('ring-2', 'ring-amber-400', 'bg-white', 'dark:bg-slate-800');
+                showToast("Notas desbloqueadas para edición manual ✍️", "success");
+            } else {
+                icon.textContent = 'lock';
+                btn.classList.replace('text-amber-500', 'text-slate-400');
+                preview.contentEditable = "false";
+                preview.classList.remove('ring-2', 'ring-amber-400', 'bg-white', 'dark:bg-slate-800');
+                // Al cerrar el candado, respaldamos en texto plano
+                const textareaHidden = document.getElementById('texto-notas-tramite');
+                if(textareaHidden) textareaHidden.value = preview.innerText;
+                showToast("Notas bloqueadas y actualizadas 🔒", "success");
+            }
         };
 
         // ==========================================
@@ -1009,213 +1135,124 @@
             }
         };
 
-        // ==========================================
-        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON) - VERSIÓN BLINDADA
+// ==========================================
+        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON) - VERSIÓN COLOR Y DINÁMICA
         // ==========================================
         window.generarTextoNotas = async () => {
             if(!currentFolioId || !currentExpediente) return showToast("Error: Expediente no cargado", "error");
 
             const tramiteSeleccionado = document.getElementById('selector-plantilla-notas').value;
-            if(!tramiteSeleccionado) return showToast("Selecciona una plantilla del menú desplegable", "warning");
+            if(!tramiteSeleccionado) return showToast("Selecciona una plantilla del menú", "warning");
 
             const btn = document.querySelector('button[onclick="generarTextoNotas()"]');
             const originalText = btn ? btn.innerHTML : 'Generar Notas';
-            if(btn) {
-                btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Procesando IA...';
-                btn.disabled = true;
-            }
+            if(btn) { btn.innerHTML = '<span class="material-symbols-rounded animate-spin align-middle mr-2">sync</span> Procesando IA...'; btn.disabled = true; }
 
             try {
-                // 1. TRAER LA PLANTILLA SELECCIONADA
                 const notasSnapshot = await db.collection('plantillas_notas').doc(tramiteSeleccionado).get();
-                let plantilla = "";
+                let plantilla = notasSnapshot.exists ? notasSnapshot.data().contenido : "";
+                if (!plantilla) { showToast(`La plantilla está vacía`, "warning"); return; }
 
-                if (notasSnapshot.exists && notasSnapshot.data().contenido) {
-                    plantilla = notasSnapshot.data().contenido;
-                }
-
-                if (!plantilla) {
-                    showToast(`La plantilla está vacía en el Admin`, "warning");
-                    return;
-                }
-
-                // 2. 🧠 PARSEADOR IA BLINDADO (El Bisturí JSON)
                 const rawExtraidos = currentExpediente.datos_extraidos || {};
-                const extraidosProcesados = {};
-
-                for (const [key, value] of Object.entries(rawExtraidos)) {
+                const datosIA = {};
+                for (const [docName, value] of Object.entries(rawExtraidos)) {
                     let parsedVal = value;
                     if (typeof value === 'string') {
                         try {
                             const jsonMatch = value.match(/\{[\s\S]*\}/);
-                            if (jsonMatch) {
-                                parsedVal = JSON.parse(jsonMatch[0]);
-                            } else {
-                                const cleanStr = value.replace(/```json/gi, '').replace(/```/g, '').trim();
-                                parsedVal = JSON.parse(cleanStr);
-                            }
-                        } catch (e) {
-                            console.warn(`Fallo al parsear JSON de ${key}, se usará texto plano.`);
-                            parsedVal = value; 
-                        }
+                            if (jsonMatch) parsedVal = JSON.parse(jsonMatch[0]);
+                            else parsedVal = JSON.parse(value.replace(/```json/gi, '').replace(/```/g, '').trim());
+                        } catch (e) { parsedVal = {}; }
                     }
-                    
-                    if (typeof parsedVal === 'object' && parsedVal !== null) {
-                        const objMinusculas = {};
-                        for (const [k, v] of Object.entries(parsedVal)) {
-                            objMinusculas[k.toLowerCase().trim()] = v;
-                        }
-                        extraidosProcesados[key.toUpperCase().trim()] = objMinusculas;
-                    } else {
-                        extraidosProcesados[key.toUpperCase().trim()] = parsedVal;
-                    }
-                }
-
-                // 3. EXTRAER DATOS DEL FRONTEND (MAPEO COMPLETO)
-                let docsList = [];
-                document.querySelectorAll('input[name="nota-doc"]:checked').forEach(el => docsList.push(el.value.toUpperCase()));
-                let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
-
-                let servList = [];
-                document.querySelectorAll('input[name="nota-serv"]:checked').forEach(el => servList.push(el.value.toUpperCase()));
-                let servTexto = servList.length > 0 ? servList.join(', ') : '___';
-
-                const getValue = (id) => {
-                    const el = document.getElementById(id);
-                    return (el && el.value && el.value.trim() !== '') ? el.value.trim().toUpperCase() : "___";
-                };
-
-                let fVisita = getValue('nota-fecha-visita');
-                if (fVisita === "___" && currentExpediente.cita) fVisita = currentExpediente.cita.fecha || "___";
-
-                // Diccionario de reemplazos exactos del UI
-                const reemplazosUI = {
-                    '[FECHA_VISITA]': fVisita,
-                    '[LISTA_DOCUMENTOS]': docsTexto,
-                    '[LISTA_SERVICIOS]': servTexto,
-                    '[CP]': getValue('nota-cp'),
-                    '[COLONIA]': getValue('nota-cp-asentamiento'),
-                    '[SUPERFICIE_LEVANTAMIENTO]': getValue('nota-sup-total'),
-                    
-                    // Escritura
-                    '[NUM_ESCRITURA]': getValue('nota-esc-numero'),
-                    '[LIBRO_ESCRITURA]': getValue('nota-esc-libro'),
-                    '[FECHA_ESCRITURA]': getValue('nota-esc-fecha'),
-                    '[NOTARIO_ESCRITURA]': getValue('nota-esc-notario'),
-                    '[NUM_NOTARIA]': getValue('nota-esc-notaria-num'),
-                    '[CIUDAD_NOTARIA]': getValue('nota-esc-notaria-ciudad'),
-                    
-                    // Cédula
-                    '[FECHA_CEDULA]': getValue('nota-cedula-fecha'),
-                    '[FOLIO_CEDULA]': getValue('nota-cedula-folio'),
-                    '[MUNICIPIO_CEDULA]': getValue('nota-cedula-ayuntamiento'),
-                    '[EDAD_CEDULA]': getValue('nota-cedula-edad'),
-                    
-                    // Predial
-                    '[CLAVE_PREDIAL]': getValue('nota-predial-clave'),
-                    '[FOLIO_PREDIAL]': getValue('nota-predial-folio'),
-                    '[FECHA_PREDIAL]': getValue('nota-predial-fecha'),
-                    
-                    // Alineamiento
-                    '[NUM_ALINEAMIENTO]': getValue('nota-alin-oficio'),
-                    '[OFICIO_ALINEAMIENTO]': getValue('nota-alin-oficio'),
-                    '[FECHA_ALINEAMIENTO]': getValue('nota-alin-fecha'),
-                    
-                    // Datos Catastrales
-                    '[OFICIO_DATOS]': getValue('nota-datos-oficio'),
-                    '[FECHA_DATOS]': getValue('nota-datos-fecha'),
-                    
-                    // Agua
-                    '[CUENTA_AGUA]': getValue('nota-agua-cuenta'),
-                    '[FOLIO_AGUA]': getValue('nota-agua-folio'),
-                    '[FECHA_AGUA]': getValue('nota-agua-fecha'),
-                    '[EXPEDIDO_AGUA]': getValue('nota-agua-expedido')
-                };
-
-                // 4. REEMPLAZO PRIMARIO (DATOS DE LA INTERFAZ)
-                let textoFinal = plantilla;
-                for (const [tag, val] of Object.entries(reemplazosUI)) {
-                    // Usar split y join es más seguro que un replace global dinámico
-                    textoFinal = textoFinal.split(tag).join(val);
-                }
-
-                // 5. 🧠 MAGIA ABSOLUTA: MATCH PERFECTO IA (Para datos que no están en el UI)
-                textoFinal = textoFinal.replace(/\[([A-Za-z0-9_.]+)\]/g, function(match, tagInside) {
-                    // Si la etiqueta tiene punto, buscamos el nodo exacto: [ESCRITURA.superficie_terreno]
-                    if (tagInside.includes('.')) {
-                        const parts = tagInside.split('.');
-                        const reqKey = parts[0].toUpperCase().trim();
-                        const campoLower = parts.slice(1).join('.').toLowerCase().trim();
-                        
-                        if (extraidosProcesados[reqKey] && extraidosProcesados[reqKey][campoLower] !== undefined) {
-                            let extractedVal = extraidosProcesados[reqKey][campoLower];
-                            if (typeof extractedVal === 'object' && extractedVal !== null) {
-                                extractedVal = Object.values(extractedVal).filter(v => v).join(', ');
-                            }
-                            const valStr = String(extractedVal).trim();
-                            if (valStr.toUpperCase() !== 'NULL' && valStr !== '') return valStr.toUpperCase();
-                        }
-                    } 
-                    // Búsqueda difusa para etiquetas sin punto (Ej: [SUPERFICIE_CEDULA] o [MUNICIPIO_PREDIAL])
-                    else {
-                        const tagLower = tagInside.toLowerCase().trim();
-                        
-                        // Estrategia: Si la etiqueta menciona el documento, buscar ahí primero
-                        let docsABuscar = Object.keys(extraidosProcesados);
-                        if(tagLower.includes('cedula')) docsABuscar = docsABuscar.filter(k => k.includes('CEDULA'));
-                        else if(tagLower.includes('predial')) docsABuscar = docsABuscar.filter(k => k.includes('PREDIAL'));
-                        else if(tagLower.includes('escritura')) docsABuscar = docsABuscar.filter(k => k.includes('ESCRITURA'));
-
-                        for (const docKey of docsABuscar) {
-                            const docObj = extraidosProcesados[docKey];
-                            if(!docObj) continue;
-
-                            // Match exacto en las llaves del json
-                            if (docObj[tagLower] !== undefined) {
-                                let val = docObj[tagLower];
-                                if (typeof val === 'object' && val !== null) val = Object.values(val).filter(v=>v).join(', ');
-                                if (String(val).trim().toUpperCase() !== 'NULL' && String(val).trim() !== '') return String(val).toUpperCase();
-                            }
-                            
-                            // Match por coincidencia de palabras
-                            for (const [campoKey, campoVal] of Object.entries(docObj)) {
-                                if (campoKey.length > 3 && (tagLower.includes(campoKey) || campoKey.includes(tagLower))) {
-                                    let val = campoVal;
-                                    if (typeof val === 'object' && val !== null) val = Object.values(val).filter(v=>v).join(', ');
-                                    if (String(val).trim().toUpperCase() !== 'NULL' && String(val).trim() !== '') return String(val).toUpperCase();
+                    const flatten = (obj) => {
+                        for (const key in obj) {
+                            if (typeof obj[key] === 'object' && obj[key] !== null) flatten(obj[key]);
+                            else {
+                                const val = String(obj[key]).trim().toUpperCase();
+                                if (val && val !== 'NULL' && val !== 'N/A' && val !== '---') {
+                                    const cleanKey = key.toUpperCase().trim();
+                                    datosIA[`${docName.toUpperCase()}_${cleanKey}`] = val; 
+                                    datosIA[cleanKey] = val;                               
+                                    datosIA[cleanKey.replace(/_/g, '')] = val;             
                                 }
                             }
                         }
-                    }
-                    return match; // Dejar original si no hubo suerte
-                });
-
-                // 6. MOSTRAR Y GUARDAR
-                const textarea = document.getElementById('texto-notas-tramite');
-                if(textarea) {
-                    textarea.value = textoFinal;
-                    textarea.style.height = 'auto';
-                    textarea.style.height = (textarea.scrollHeight + 20) + 'px';
-                    
-                    await db.collection('expedientes_avaluos').doc(currentFolioId).update({
-                        notas_tramite: textoFinal, // <--- ACTUALIZADO: Nombre correcto de variable
-                        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    currentExpediente.notas_tramite = textoFinal; // <--- ACTUALIZADO: Sincronización local
+                    };
+                    if (typeof parsedVal === 'object' && parsedVal !== null) flatten(parsedVal);
                 }
 
-                showToast("Notas generadas y guardadas ✨", "success");
+                let docsList = []; document.querySelectorAll('.doc-nota-chk:checked').forEach(el => docsList.push(el.value.toUpperCase()));
+                let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
 
+                let servList = []; document.querySelectorAll('input[name="nota-serv"]:checked').forEach(el => servList.push(el.value.toUpperCase()));
+                let servTexto = servList.length > 0 ? servList.join(', ') : '___';
+
+                const getValue = (id) => { const el = document.getElementById(id); return (el && el.value && el.value.trim() !== '') ? el.value.trim().toUpperCase() : "___"; };
+
+                let fVisita = getValue('nota-fecha-visita');
+                if (fVisita === "___") {
+                    if (currentExpediente.cita?.fecha) fVisita = currentExpediente.cita.fecha.toUpperCase();
+                    else if (currentExpediente.visitaAgendada?.fecha) fVisita = currentExpediente.visitaAgendada.fecha.toUpperCase();
+                }
+
+                const reemplazosUI = {
+                    '[FECHA_VISITA]': fVisita, '[LISTA_DOCUMENTOS]': docsTexto, '[LISTA_SERVICIOS]': servTexto,
+                    '[CP]': getValue('nota-cp'), '[COLONIA]': getValue('nota-cp-asentamiento'), '[SUPERFICIE_LEVANTAMIENTO]': getValue('nota-sup-total')
+                };
+
+                // 🎨 INYECTA COLOR AZUL (FORMULARIO MANUAL)
+                let htmlFinal = plantilla;
+                for (const [tag, val] of Object.entries(reemplazosUI)) {
+                    if(val !== "___") {
+                        htmlFinal = htmlFinal.split(tag).join(`<span class="bg-indigo-100 text-indigo-700 px-1 rounded shadow-sm font-black">${val}</span>`);
+                    }
+                }
+
+                // 🎨 INYECTA COLOR VERDE (IA GEMINI) CON BÚSQUEDA SÚPER DIFUSA
+                htmlFinal = htmlFinal.replace(/\[([A-Za-z0-9_.]+)\]/g, function(match, tagInside) {
+                    const tagClean = tagInside.toUpperCase().trim();
+                    let valEncontrado = null;
+
+                    const tagSinPunto = tagClean.includes('.') ? tagClean.split('.')[1] : tagClean;
+                    const tagBase = tagSinPunto.replace(/_CEDULA|_PREDIAL|_ESCRITURA|_AGUA/g, '');
+
+                    // 1. Intentar match exacto o anidado (Ej: BOLETA_AGUA.CUENTA)
+                    if (tagClean.includes('.') && datosIA[`${tagClean.split('.')[0]}_${tagSinPunto}`]) valEncontrado = datosIA[`${tagClean.split('.')[0]}_${tagSinPunto}`];
+                    else if (datosIA[tagClean]) valEncontrado = datosIA[tagClean];
+                    else if (datosIA[tagSinPunto]) valEncontrado = datosIA[tagSinPunto];
+                    else if (datosIA[tagSinPunto.replace(/_/g, '')]) valEncontrado = datosIA[tagSinPunto.replace(/_/g, '')];
+                    
+                    // 2. Búsqueda profunda de emergencia
+                    if (!valEncontrado) {
+                        for (const [iaKey, iaVal] of Object.entries(datosIA)) {
+                            if (iaKey.includes(tagBase) || tagBase.includes(iaKey)) { 
+                                valEncontrado = iaVal; break; 
+                            }
+                        }
+                    }
+
+                    if(valEncontrado) return `<span class="bg-emerald-100 text-emerald-700 px-1 rounded shadow-sm font-black">${valEncontrado}</span>`;
+                    return match; 
+                });
+
+                const preview = document.getElementById('preview-notas');
+                const textareaHidden = document.getElementById('texto-notas-tramite');
+                
+                if(preview && textareaHidden) {
+                    preview.innerHTML = htmlFinal;
+                    const textoPlano = preview.innerText; 
+                    textareaHidden.value = textoPlano; 
+                    
+                    await db.collection('expedientes_avaluos').doc(currentFolioId).update({ notas_captura: textoPlano, fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp() });
+                    currentExpediente.notas_captura = textoPlano;
+                }
+                showToast("Notas generadas y guardadas ✨", "success");
             } catch (error) {
-                console.error("Error al redactar:", error);
-                showToast("Error al procesar la plantilla", "error");
+                console.error("Error al redactar:", error); showToast("Error al procesar la plantilla", "error");
             } finally {
                 if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
             }
         };
-
-        // --- 3. EXPORTAR A PDF ---
         window.exportToPDF = () => {
             const fGys = document.getElementById('folio-gys').value || 'Sin_Folio';
             const html = document.createElement('div');
@@ -1667,6 +1704,82 @@
                 }
             });
 
+            // --- NUEVO: AUTO-LLENADO DE FECHA DE VISITA ---
+            if (d.cita && d.cita.fecha) {
+                document.getElementById('nota-fecha-visita').value = d.cita.fecha;
+            } else if (d.visitaAgendada && d.visitaAgendada.fecha) {
+                document.getElementById('nota-fecha-visita').value = d.visitaAgendada.fecha;
+            }
+
+            // --- NUEVO: RENDERIZADOR DINÁMICO DE CHECKLIST Y ALERTA IA ---
+            const containerDocs = document.getElementById('dynamic-docs-notas');
+            if (containerDocs) {
+                let htmlDocs = '';
+                const extraidos = d.datos_extraidos || {};
+                const keysIA = Object.keys(extraidos).map(k => k.toUpperCase());
+
+                ['escritura', 'cedula', 'predial', 'alineamiento', 'datos', 'agua', 'licencia'].forEach(mid => {
+                    const el = document.getElementById(`conditional-fields-${mid}`);
+                    if(el) el.style.display = 'none';
+                });
+
+if (d.checklist && Object.keys(d.checklist).length > 0) {
+                    for (const [key, item] of Object.entries(d.checklist)) {
+                        const nombreItem = item.nombre || item.name || '';
+                        if (!nombreItem) continue; // 🛡️ Evita el error 'toUpperCase' si el dato viene vacío
+
+                        const nameUpper = nombreItem.toUpperCase();
+                        const nombreLimpio = nameUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                        // 🚫 ESCUDO DE TITANIO: Bloquea todo lo que el cliente sube como basura
+                        const bloqueados = ['FOTO', 'FACHADA', 'INTERIOR', 'UBICACION', 'INE', 'CORREO', 'RFC', 'CURP', 'NSS', 'SEGURIDAD SOCIAL', 'SOLICITUD', 'INFONAVIT', 'AVE'];
+                        if (bloqueados.some(b => nombreLimpio.includes(b))) continue; 
+
+                        let targetDiv = null;
+                        if(nombreLimpio.includes('ESCRITURA')) targetDiv = 'escritura';
+                        else if(nombreLimpio.includes('CEDULA')) targetDiv = 'cedula';
+                        else if(nombreLimpio.includes('PREDIAL')) targetDiv = 'predial';
+                        else if(nombreLimpio.includes('ALINEAMIENTO')) targetDiv = 'alineamiento';
+                        else if(nombreLimpio.includes('CATASTRAL') || nombreLimpio.includes('DATOS')) targetDiv = 'datos';
+                        else if(nombreLimpio.includes('AGUA') || nombreLimpio.includes('CONCESION')) targetDiv = 'agua';
+                        else if(nombreLimpio.includes('LICENCIA') || nombreLimpio.includes('CONSTRUCCION')) targetDiv = 'licencia';
+                        else if(nombreLimpio.includes('TERMINACION') || nombreLimpio.includes('OBRA')) targetDiv = null; // Se procesará pero sin cajón visual
+
+                        let keywordBusqueda = targetDiv ? targetDiv.toUpperCase() : nombreLimpio.split(' ')[0];
+                        const hasDataIA = keysIA.some(k => k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(keywordBusqueda));
+                        const hasFile = item.status === 'aprobado' || item.status === 'subido';
+                        
+                        let labelClass = "checkbox-label";
+                        let warningIcon = "";
+                        
+                        if (hasFile && !hasDataIA) {
+                            labelClass += " border-red-400 bg-red-50 text-red-700 dark:bg-red-900/30";
+                            warningIcon = `<span class="material-symbols-rounded text-red-500 text-[14px] ml-auto animate-pulse" title="Documento subido pero NO analizado por IA">warning</span>`;
+                        }
+
+                        htmlDocs += `<label class="${labelClass}">
+                            <input type="checkbox" name="nota-doc" value="${nombreItem}" class="mr-2 doc-nota-chk" data-target="${targetDiv || ''}" onchange="toggleDynamicFields()"> 
+                            ${nombreItem} ${warningIcon}
+                        </label>`;
+                    }
+                } else {
+                    htmlDocs = `
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Escritura" class="mr-2 doc-nota-chk" data-target="escritura" onchange="toggleDynamicFields()"> Escritura</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Cédula Catastral" class="mr-2 doc-nota-chk" data-target="cedula" onchange="toggleDynamicFields()"> Cédula Catastral</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Boleta Predial" class="mr-2 doc-nota-chk" data-target="predial" onchange="toggleDynamicFields()"> Boleta Predial</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Alineamiento" class="mr-2 doc-nota-chk" data-target="alineamiento" onchange="toggleDynamicFields()"> Alineamiento y Num Oficial</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Datos Catastrales" class="mr-2 doc-nota-chk" data-target="datos" onchange="toggleDynamicFields()"> Datos Catastrales</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Recibo de Agua" class="mr-2 doc-nota-chk" data-target="agua" onchange="toggleDynamicFields()"> Recibo de Agua</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Licencia" class="mr-2 doc-nota-chk" data-target="licencia" onchange="toggleDynamicFields()"> Licencia de Construcción</label>
+                        <label class="checkbox-label"><input type="checkbox" name="nota-doc" value="Luz" class="mr-2 doc-nota-chk" onchange="toggleDynamicFields()"> Recibo de Luz</label>
+                    `;
+                }
+                containerDocs.innerHTML = htmlDocs;
+            }
+
+            const previewDiv = document.getElementById('preview-notas');
+            if (previewDiv && d.notas_captura) previewDiv.innerText = d.notas_captura;
+
             // 3. 🤖 ¡EL GATILLO DE LA IA! (Vaciado automático de datos)
             autollenarConIA(d);
         } // <--- ¡ESTA ES LA LLAVE MÁGICA QUE FALTABA!
@@ -1682,7 +1795,8 @@
 
             const payload = {
                 fecha_actualizacion_captura: firebase.firestore.FieldValue.serverTimestamp(),
-                notas_captura: document.getElementById('texto-notas-tramite').value,
+                // 💡 Guardamos desde el previsualizador para atrapar ediciones manuales
+                notas_captura: document.getElementById('preview-notas') ? document.getElementById('preview-notas').innerText : document.getElementById('texto-notas-tramite').value,
                 docjust: {}
             };
 
@@ -1737,23 +1851,20 @@
             m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300);
         }
 
-        // ==========================================
-        // 🤖 AUTO-RELLENO CON IA (GEMINI)
+// ==========================================
+        // 🤖 AUTO-RELLENO CON IA (INYECTOR APLANADO INFALIBLE)
         // ==========================================
         function autollenarConIA(expediente) {
-            console.log("🕵️‍♂️ DIAGNÓSTICO IA - Sincronizando datos técnicos...");
-            const extraidos = expediente.datos_extraidos || {};
+            console.log("🕵️‍♂️ DIAGNÓSTICO IA - Sincronizando datos...");
             
-            // 🎨 FUNCIÓN INTERNA: Evalúa y Colorea Coincidencias en Verde
             const compararYColorear = () => {
-                const filas = ['sol-nombre', 'sol-rfc', 'sol-nss', 'sol-curp', 'ofe-nombre', 'ofe-rfc', 'ofe-curp', 'inm-dir', 'inm-cp'];
+                const filas = ['inm-dir', 'inm-cp'];
                 filas.forEach(f => {
                     const gys = document.getElementById(`comp-gys-${f}`);
                     const doc = document.getElementById(`comp-doc-${f}`);
                     if(gys && doc && gys.innerText !== '---' && doc.innerText !== '---') {
                         gys.classList.remove('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
                         doc.classList.remove('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
-                        
                         if(gys.innerText.trim() === doc.innerText.trim()) {
                             gys.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
                             doc.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'text-emerald-700', 'font-black');
@@ -1762,127 +1873,159 @@
                 });
             };
 
-            if (!expediente.datos_extraidos) {
-                console.warn("⚠️ No hay datos extraídos por la IA aún.");
-                return;
-            }
+            if (!expediente.datos_extraidos) return;
 
-            // 🛡️ PARSEADOR ROBUSTO: Extraemos el JSON puro si Gemini devolvió texto con formato Markdown
-            let datosIA = {};
-            for (const [k, v] of Object.entries(expediente.datos_extraidos)) {
-                if (typeof v === 'string') {
+            // 1. MOTOR DE APLANAMIENTO EXTREMO
+            const datosIA_Aplanados = {};
+            const datosIA_Puros = {}; 
+            
+            for (const [docName, value] of Object.entries(expediente.datos_extraidos)) {
+                let parsedVal = value;
+                if (typeof value === 'string') {
                     try {
-                        const cleanStr = v.replace(/```json/gi, '').replace(/```/g, '').trim();
-                        datosIA[k] = JSON.parse(cleanStr);
-                    } catch (e) {
-                        console.warn("No se pudo parsear el JSON de " + k);
-                        datosIA[k] = v; // Lo dejamos como texto por si es un resumen simple
-                    }
-                } else {
-                    datosIA[k] = v; // Ya es un objeto válido
+                        const jsonMatch = value.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) parsedVal = JSON.parse(jsonMatch[0]);
+                        else parsedVal = JSON.parse(value.replace(/```json/gi, '').replace(/```/g, '').trim());
+                    } catch (e) { parsedVal = {}; }
                 }
+                
+                datosIA_Puros[docName] = typeof parsedVal === 'object' ? parsedVal : value;
+
+                const flatten = (obj) => {
+                    for (const key in obj) {
+                        if (typeof obj[key] === 'object' && obj[key] !== null) flatten(obj[key]);
+                        else {
+                            const val = String(obj[key]).trim().toUpperCase();
+                            if (val && val !== 'NULL' && val !== 'N/A' && val !== '---') {
+                                const cleanKey = key.toUpperCase().trim();
+                                const docUpper = docName.toUpperCase().trim();
+                                datosIA_Aplanados[`${docUpper}_${cleanKey}`] = val; 
+                                datosIA_Aplanados[cleanKey] = val;                               
+                                datosIA_Aplanados[cleanKey.replace(/_/g, '')] = val;             
+                            }
+                        }
+                    }
+                };
+                if (typeof parsedVal === 'object' && parsedVal !== null) flatten(parsedVal);
             }
 
-            const formatGYS = (texto) => texto && texto !== "---" ? String(texto).toUpperCase().trim() : "";
+            const formatGYS = (texto) => texto ? String(texto).toUpperCase().trim() : "";
 
-            const activarCasilla = (valorCasilla, idDiv) => {
-                const chk = document.querySelector(`input[value="${valorCasilla}"]`);
-                if(chk && !chk.checked) { chk.checked = true; if(idDiv) toggleConditionalFields(idDiv); }
+            const activarCasilla = (palabraClave) => {
+                const chks = document.querySelectorAll('.doc-nota-chk');
+                let found = false;
+                for(let chk of chks) {
+                    const valorLimpio = chk.value.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const claveLimpia = palabraClave.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if(valorLimpio.includes(claveLimpia)) {
+                        chk.checked = true;
+                        found = true;
+                    }
+                }
+                if (found && typeof window.toggleDynamicFields === 'function') window.toggleDynamicFields();
             };
 
-            // 📜 ESCRITURA
-            const keyEscritura = Object.keys(datosIA).find(k => k.toUpperCase().includes('ESCRITURA'));
-            if (keyEscritura) {
-                const esc = datosIA[keyEscritura];
-                activarCasilla('Escritura', 'escritura'); 
+            const inyectarDatoUI = (prefijoDoc, idInput, posiblesLlaves) => {
+                let encontrado = "";
+                for (const key of posiblesLlaves) {
+                    const keyUpper = key.toUpperCase().trim();
+                    if (datosIA_Aplanados[`${prefijoDoc}_${keyUpper}`]) { encontrado = datosIA_Aplanados[`${prefijoDoc}_${keyUpper}`]; break; }
+                    if (datosIA_Aplanados[keyUpper]) { encontrado = datosIA_Aplanados[keyUpper]; break; }
+                    if (datosIA_Aplanados[keyUpper.replace(/_/g, '')]) { encontrado = datosIA_Aplanados[keyUpper.replace(/_/g, '')]; break; }
+                }
                 
-                if(esc.num_escritura) document.getElementById('nota-esc-numero').value = formatGYS(esc.num_escritura);
-                if(esc.libro && esc.libro !== 'S/N') document.getElementById('nota-esc-libro').value = formatGYS(esc.libro);
-                if(esc.fecha_escritura) document.getElementById('nota-esc-fecha').value = formatGYS(esc.fecha_escritura);
-                if(esc.notario_nombre) document.getElementById('nota-esc-notario').value = formatGYS(esc.notario_nombre);
-                if(esc.num_notaria) document.getElementById('nota-esc-notaria-num').value = formatGYS(esc.num_notaria);
-                if(esc.ciudad_notaria) document.getElementById('nota-esc-notaria-ciudad').value = formatGYS(esc.ciudad_notaria);
-                if(esc.superficie_terreno) document.getElementById('esc-sup-terreno').value = formatGYS(esc.superficie_terreno);
-                if(esc.superficie_construccion) document.getElementById('esc-sup-const').value = formatGYS(esc.superficie_construccion);
-                if(esc.medidas_colindancias) document.getElementById('esc-medidas').value = formatGYS(esc.medidas_colindancias);
-                if(esc.resumen_ejecutivo) document.getElementById('info-anotaciones').value = formatGYS(esc.resumen_ejecutivo);
+                if (!encontrado) {
+                    for (const [iaKey, iaVal] of Object.entries(datosIA_Aplanados)) {
+                        if (iaKey.includes(prefijoDoc)) {
+                            for(const pk of posiblesLlaves) {
+                                if (iaKey.replace(/_/g, '').includes(pk.toUpperCase().replace(/_/g, ''))) {
+                                    encontrado = iaVal; break;
+                                }
+                            }
+                        }
+                        if(encontrado) break;
+                    }
+                }
+
+                if (encontrado) {
+                    const el = document.getElementById(idInput);
+                    if (el) el.value = formatGYS(encontrado);
+                }
+            };
+
+            // 2. INYECTAR A CAJAS
+            const checkDoc = (pref) => Object.keys(datosIA_Aplanados).some(k => k.includes(pref));
+
+            if (checkDoc('ESCRITURA')) {
+                activarCasilla('ESCRITURA'); 
+                inyectarDatoUI('ESCRITURA', 'nota-esc-numero', ['num_escritura', 'numero_escritura', 'numero']);
+                inyectarDatoUI('ESCRITURA', 'nota-esc-libro', ['libro']);
+                inyectarDatoUI('ESCRITURA', 'nota-esc-fecha', ['fecha_escritura', 'fecha']);
+                inyectarDatoUI('ESCRITURA', 'nota-esc-notario', ['notario_nombre', 'nombre_notario', 'notario']);
+                inyectarDatoUI('ESCRITURA', 'nota-esc-notaria-num', ['num_notaria', 'numero_notaria']);
+                inyectarDatoUI('ESCRITURA', 'nota-esc-notaria-ciudad', ['ciudad_notaria', 'ciudad']);
+            }
+            if (checkDoc('AGUA') || checkDoc('CONCESION')) {
+                activarCasilla('AGUA'); activarCasilla('CONCESION');
+                inyectarDatoUI('AGUA', 'nota-agua-cuenta', ['cuenta', 'num_cuenta']);
+                inyectarDatoUI('AGUA', 'nota-agua-folio', ['folio']);
+                inyectarDatoUI('AGUA', 'nota-agua-fecha', ['fecha']);
+                inyectarDatoUI('AGUA', 'nota-agua-expedido', ['expedido_por', 'expedido']);
+            }
+            if (checkDoc('PREDIAL')) {
+                activarCasilla('PREDIAL'); 
+                inyectarDatoUI('PREDIAL', 'nota-predial-clave', ['clave_catastral', 'clave']);
+                inyectarDatoUI('PREDIAL', 'nota-predial-folio', ['folio']);
+                inyectarDatoUI('PREDIAL', 'nota-predial-fecha', ['fecha']);
+            }
+            if (checkDoc('CEDULA') && !checkDoc('CEDULA_GYS') && !checkDoc('MAI')) {
+                activarCasilla('CEDULA'); 
+                inyectarDatoUI('CEDULA', 'nota-cedula-fecha', ['fecha']);
+                inyectarDatoUI('CEDULA', 'nota-cedula-folio', ['folio']);
+                inyectarDatoUI('CEDULA', 'nota-cedula-ayuntamiento', ['ayuntamiento', 'municipio']);
+                inyectarDatoUI('CEDULA', 'nota-cedula-edad', ['edad']);
+            }
+            if (checkDoc('ALINEAMIENTO')) {
+                activarCasilla('ALINEAMIENTO'); 
+                inyectarDatoUI('ALINEAMIENTO', 'nota-alin-oficio', ['num_oficio', 'oficio']);
+                inyectarDatoUI('ALINEAMIENTO', 'nota-alin-fecha', ['fecha']);
+            }
+            if (checkDoc('CATASTRAL') || checkDoc('DATOS')) {
+                activarCasilla('CATASTRAL'); activarCasilla('DATOS');
+                inyectarDatoUI('CATASTRAL', 'nota-datos-oficio', ['num_oficio', 'oficio']);
+                inyectarDatoUI('CATASTRAL', 'nota-datos-fecha', ['fecha']);
+            }
+            if (checkDoc('LICENCIA') || checkDoc('CONSTRUCCION')) {
+                activarCasilla('LICENCIA'); 
+                inyectarDatoUI('LICENCIA', 'nota-licencia-num', ['num_licencia', 'folio', 'oficio']);
+                inyectarDatoUI('LICENCIA', 'nota-licencia-fecha', ['fecha_expedicion', 'fecha']);
+                inyectarDatoUI('LICENCIA', 'nota-licencia-vigencia', ['vigencia']);
+                inyectarDatoUI('LICENCIA', 'nota-licencia-tipo', ['tipo_obra', 'obra']);
+                inyectarDatoUI('LICENCIA', 'nota-licencia-sup', ['superficie_autorizada', 'superficie']);
+                inyectarDatoUI('LICENCIA', 'nota-licencia-ayuntamiento', ['ayuntamiento', 'municipio']);
+            }
+            if (checkDoc('TERMINACION') || checkDoc('OBRA')) {
+                activarCasilla('TERMINACION'); activarCasilla('OBRA');
+            }
+            if (checkDoc('LUZ') || checkDoc('CFE') || checkDoc('ENERGIA')) {
+                activarCasilla('LUZ'); activarCasilla('ENERGIA'); 
             }
 
-            // 💧 AGUA
-            const keyAgua = Object.keys(datosIA).find(k => k.toUpperCase().includes('AGUA'));
-            if (keyAgua) {
-                const agua = datosIA[keyAgua];
-                activarCasilla('Recibo de Agua', 'agua'); 
-                if(agua.cuenta) document.getElementById('nota-agua-cuenta').value = formatGYS(agua.cuenta);
-                if(agua.folio) document.getElementById('nota-agua-folio').value = formatGYS(agua.folio);
-                if(agua.fecha) document.getElementById('nota-agua-fecha').value = formatGYS(agua.fecha);
-                if(agua.expedido_por) document.getElementById('nota-agua-expedido').value = formatGYS(agua.expedido_por);
-            }
-            
-            // 🏡 PREDIAL
-            const keyPredial = Object.keys(datosIA).find(k => k.toUpperCase().includes('PREDIAL'));
-            if (keyPredial) {
-                const pred = datosIA[keyPredial];
-                activarCasilla('Boleta Predial', 'predial'); 
-                if(pred.clave_catastral) document.getElementById('nota-predial-clave').value = formatGYS(pred.clave_catastral);
-                if(pred.folio) document.getElementById('nota-predial-folio').value = formatGYS(pred.folio);
-                if(pred.fecha) document.getElementById('nota-predial-fecha').value = formatGYS(pred.fecha);
-            }
-
-            // 🗺️ CÉDULA CATASTRAL
-            const keyCedula = Object.keys(datosIA).find(k => k.toUpperCase().includes('CEDULA') && !k.toUpperCase().includes('GYS') && !k.toUpperCase().includes('MAI'));
-            if (keyCedula) {
-                const ced = datosIA[keyCedula];
-                activarCasilla('Cédula Catastral', 'cedula'); 
-                if(ced.fecha) document.getElementById('nota-cedula-fecha').value = formatGYS(ced.fecha);
-                if(ced.folio) document.getElementById('nota-cedula-folio').value = formatGYS(ced.folio);
-                if(ced.ayuntamiento) document.getElementById('nota-cedula-ayuntamiento').value = formatGYS(ced.ayuntamiento);
-                if(ced.edad) document.getElementById('nota-cedula-edad').value = formatGYS(ced.edad);
-            }
-
-            // 📏 ALINEAMIENTO
-            const keyAlin = Object.keys(datosIA).find(k => k.toUpperCase().includes('ALINEAMIENTO'));
-            if (keyAlin) {
-                const alin = datosIA[keyAlin];
-                activarCasilla('Constancia de Alineamiento y Número Oficial', 'alineamiento'); 
-                if(alin.num_oficio) document.getElementById('nota-alin-oficio').value = formatGYS(alin.num_oficio);
-                if(alin.fecha) document.getElementById('nota-alin-fecha').value = formatGYS(alin.fecha);
-            }
-
-            // 🏢 DATOS CATASTRALES
-            const keyDatosCat = Object.keys(datosIA).find(k => k.toUpperCase().includes('DATOS CATASTRALES') || k.toUpperCase().includes('CONSTANCIA DE DATOS'));
-            if (keyDatosCat) {
-                const dcat = datosIA[keyDatosCat];
-                activarCasilla('Constancia de Datos Catastrales', 'datos'); 
-                if(dcat.num_oficio) document.getElementById('nota-datos-oficio').value = formatGYS(dcat.num_oficio);
-                if(dcat.fecha) document.getElementById('nota-datos-fecha').value = formatGYS(dcat.fecha);
-            }
-
-            // ⚡ LUZ
-            if (Object.keys(datosIA).find(k => k.toUpperCase().includes('LUZ') || k.toUpperCase().includes('CFE') || k.toUpperCase().includes('ENERGIA'))) {
-                activarCasilla('Recibo de Servicio de Energía Eléctrica', null); 
-            }
-
-            // 📝 CÉDULA GYS (Mapeo a la Tabla Izquierda)
-            const keyCedulaUnidad = Object.keys(datosIA).find(k => k.toUpperCase().includes('CEDULA_GYS') || k.toUpperCase().includes('CEDULA 3') || k.toUpperCase().includes('MAI'));
+            // 3. INYECCIÓN EN TABLA COMPARADOR GYS (Mantenemos Info Original)
+            const keyCedulaUnidad = Object.keys(datosIA_Puros).find(k => k.toUpperCase().includes('CEDULA_GYS') || k.toUpperCase().includes('CEDULA 3') || k.toUpperCase().includes('MAI'));
             if (keyCedulaUnidad) {
-                const cVal = datosIA[keyCedulaUnidad];
+                const cVal = datosIA_Puros[keyCedulaUnidad];
                 const badgeGYS = document.getElementById('badge-cedula-gys');
                 if(badgeGYS) {
                     badgeGYS.className = "bg-emerald-500/20 text-emerald-100 border border-emerald-400/50 px-2 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 shadow-sm";
                     badgeGYS.innerHTML = '<span class="material-symbols-rounded text-[12px]">check_circle</span> Cédula GYS Detectada';
                 }
-
+                
                 if(cVal.solicitante) {
                     let c_nom = cVal.solicitante.nombre_completo || cVal.solicitante.nombre;
-                    let c_rfc = cVal.solicitante.rfc;
-                    let c_curp = cVal.solicitante.curp;
-                    let c_nss = cVal.solicitante.nss;
-
-                    // 🛡️ Filtro Inteligente: Si el CURP trae un RFC (13 letras), lo intercambiamos
+                    let c_rfc = cVal.solicitante.rfc; let c_curp = cVal.solicitante.curp; let c_nss = cVal.solicitante.nss;
                     if (c_curp && String(c_curp).trim().length < 18 && (!c_rfc || c_rfc === '---')) { c_rfc = c_curp; c_curp = '---'; }
                     if (c_rfc && String(c_rfc).trim().length === 18 && (!c_curp || c_curp === '---')) { c_curp = c_rfc; c_rfc = '---'; }
-
                     if(c_nom) document.getElementById('comp-gys-sol-nombre').innerText = formatGYS(c_nom);
                     if(c_rfc) document.getElementById('comp-gys-sol-rfc').innerText = formatGYS(c_rfc);
                     if(c_nss) document.getElementById('comp-gys-sol-nss').innerText = formatGYS(c_nss);
@@ -1891,37 +2034,30 @@
                 if(cVal.oferente || cVal.propietario) {
                     const ofe = cVal.oferente || cVal.propietario;
                     let o_nom = ofe.nombre_completo || ofe.nombre;
-                    let o_rfc = ofe.rfc;
-                    let o_curp = ofe.curp;
-
-                    // 🛡️ Filtro Inteligente Oferente
+                    let o_rfc = ofe.rfc; let o_curp = ofe.curp;
                     if (o_curp && String(o_curp).trim().length < 18 && (!o_rfc || o_rfc === '---')) { o_rfc = o_curp; o_curp = '---'; }
                     if (o_rfc && String(o_rfc).trim().length === 18 && (!o_curp || o_curp === '---')) { o_curp = o_rfc; o_rfc = '---'; }
-
                     if(o_nom) document.getElementById('comp-gys-ofe-nombre').innerText = formatGYS(o_nom);
                     if(o_rfc) document.getElementById('comp-gys-ofe-rfc').innerText = formatGYS(o_rfc);
                     if(o_curp) document.getElementById('comp-gys-ofe-curp').innerText = formatGYS(o_curp);
                 }
-                if(cVal.inmueble) {
-                    if(cVal.inmueble.direccion_completa || cVal.inmueble.direccion) document.getElementById('comp-gys-inm-dir').innerText = formatGYS(cVal.inmueble.direccion_completa || cVal.inmueble.direccion);
-                    if(cVal.inmueble.cp || cVal.inmueble.codigo_postal) document.getElementById('comp-gys-inm-cp').innerText = formatGYS(cVal.inmueble.cp || cVal.inmueble.codigo_postal);
-                }
+
+                let dir="", cp="";
+                if(cVal.inmueble) { dir = cVal.inmueble.direccion_completa || cVal.inmueble.direccion; cp = cVal.inmueble.cp || cVal.inmueble.codigo_postal; }
+                else { dir = cVal.direccion_completa || cVal.direccion; cp = cVal.cp || cVal.codigo_postal; }
+
+                if(dir) document.getElementById('comp-gys-inm-dir').innerText = formatGYS(dir);
+                if(cp) document.getElementById('comp-gys-inm-cp').innerText = formatGYS(cp);
             }
 
-            // ✍️ DOCUMENTOS CLIENTE (Mapeo a la Tabla Derecha)
-            Object.keys(datosIA).forEach(k => {
+            Object.keys(datosIA_Puros).forEach(k => {
                 if (k.toUpperCase().includes('CEDULA_GYS') || k.toUpperCase().includes('MAI')) return; 
+                const sVal = datosIA_Puros[k];
                 
-                const sVal = datosIA[k];
                 if(sVal.solicitante) {
                     let s_nom = sVal.solicitante.nombre_completo || sVal.solicitante.nombre;
-                    let s_rfc = sVal.solicitante.rfc;
-                    let s_curp = sVal.solicitante.curp;
-                    let s_nss = sVal.solicitante.nss;
-
-                    // 🛡️ AUTO-CORRECCIÓN: Si el RFC es de 18 caracteres, es una CURP
+                    let s_rfc = sVal.solicitante.rfc; let s_curp = sVal.solicitante.curp; let s_nss = sVal.solicitante.nss;
                     if (s_rfc && String(s_rfc).length === 18 && (!s_curp || s_curp === '---')) { s_curp = s_rfc; s_rfc = '---'; }
-
                     if(s_nom && document.getElementById('comp-doc-sol-nombre').innerText === '---') document.getElementById('comp-doc-sol-nombre').innerText = formatGYS(s_nom);
                     if(s_curp && document.getElementById('comp-doc-sol-curp').innerText === '---') document.getElementById('comp-doc-sol-curp').innerText = formatGYS(s_curp);
                     if(s_rfc && document.getElementById('comp-doc-sol-rfc').innerText === '---') document.getElementById('comp-doc-sol-rfc').innerText = formatGYS(s_rfc);
@@ -1929,28 +2065,23 @@
                 }
                 if(sVal.oferente || sVal.propietario) {
                     const ofe = sVal.oferente || sVal.propietario;
-                    let o_rfc = ofe.rfc;
-                    let o_curp = ofe.curp;
-                    
+                    let o_rfc = ofe.rfc; let o_curp = ofe.curp;
                     if (o_rfc && String(o_rfc).length === 18 && (!o_curp || o_curp === '---')) { o_curp = o_rfc; o_rfc = '---'; }
-
                     if(ofe.nombre && document.getElementById('comp-doc-ofe-nombre').innerText === '---') document.getElementById('comp-doc-ofe-nombre').innerText = formatGYS(ofe.nombre);
                     if(o_rfc && document.getElementById('comp-doc-ofe-rfc').innerText === '---') document.getElementById('comp-doc-ofe-rfc').innerText = formatGYS(o_rfc);
                     if(o_curp && document.getElementById('comp-doc-ofe-curp').innerText === '---') document.getElementById('comp-doc-ofe-curp').innerText = formatGYS(o_curp);
                 }
-                if (sVal.inmueble || sVal.direccion || sVal.cp) {
-                    const dir = sVal.inmueble?.direccion || sVal.direccion;
-                    const cp = sVal.inmueble?.cp || sVal.inmueble?.codigo_postal || sVal.cp;
-                    if(dir && document.getElementById('comp-doc-inm-dir').innerText === '---') document.getElementById('comp-doc-inm-dir').innerText = formatGYS(dir);
-                    if(cp && document.getElementById('comp-doc-inm-cp').innerText === '---') document.getElementById('comp-doc-inm-cp').innerText = formatGYS(cp);
-                }
+
+                let dir="", cp="";
+                if (sVal.inmueble) { dir = sVal.inmueble.direccion; cp = sVal.inmueble.cp || sVal.inmueble.codigo_postal; }
+                else { dir = sVal.direccion_completa || sVal.direccion; cp = sVal.cp || sVal.codigo_postal; }
+
+                if(dir && document.getElementById('comp-doc-inm-dir').innerText === '---') document.getElementById('comp-doc-inm-dir').innerText = formatGYS(dir);
+                if(cp && document.getElementById('comp-doc-inm-cp').innerText === '---') document.getElementById('comp-doc-inm-cp').innerText = formatGYS(cp);
             });
 
-            // 🖌️ EJECUTAMOS EL MARCADOR VISUAL
             compararYColorear();
         }
-
-        // 📋 UTILIDAD: Clic para copiar valor a GYS (Forzando Mayúsculas al portapapeles)
         window.copiarAlPortapapeles = function(elemento) {
             const texto = elemento.innerText;
             if (texto === "---" || texto === "") return;

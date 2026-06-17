@@ -3,261 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Modular</title>
+    <title>Ecosistema Leezar - Infraestructura Digital</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } /* Fondo ligeramante más oscuro para que el blanco brille */
         
-        /* Animación para la etiqueta flotante */
-        .stage-badge {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease-out;
-            pointer-events: none;
+        /* Animaciones Sutiles */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .stage-badge.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .fade-in-up { 
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            opacity: 0; 
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        
+        /* Efecto Cristal Premium (Bordes iluminados y profundidad) */
+        .glass-card-premium {
+            background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 
+                0 20px 40px -10px rgba(0, 0, 0, 0.05),
+                0 1px 3px rgba(0,0,0,0.02),
+                inset 0 1px 0 rgba(255,255,255,1);
+        }
+
+        /* DISEÑO DEFENSIVO */
+        .material-symbols-rounded {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+            max-width: 100%;
         }
     </style>
 </head>
-<body class="bg-gray-100 h-screen w-full flex items-center justify-center p-4">
+<body class="min-h-screen w-full flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    
+    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] bg-gradient-to-br from-indigo-200/40 to-purple-200/20 rounded-full blur-3xl opacity-70"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-rose-200/40 to-orange-100/20 rounded-full blur-3xl opacity-70"></div>
+    </div>
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[600px] flex overflow-hidden relative">
+    <div class="z-10 w-full max-w-4xl flex flex-col items-center">
         
-        <div class="w-5/12 flex-shrink-0 bg-gradient-to-br from-sky-600 to-blue-900 text-white p-10 flex flex-col justify-between relative">
-            
-            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
-
-            <div class="relative z-10">
-                <div class="flex items-center gap-3 mb-8">
-                    <i class="fa-solid fa-building text-2xl"></i>
-                    <h2 class="text-xs font-bold tracking-widest uppercase opacity-80">Ingeniería Leezar</h2>
-                </div>
-                
-                <h1 class="text-4xl lg:text-5xl font-bold leading-tight mb-6">
-                    Sistema<br>Modular<br>Integrado
-                </h1>
-                
-                <p class="text-sky-100 text-base lg:text-lg font-light leading-relaxed">
-                    Infraestructura digital unificada para la gestión de expedientes.
-                </p>
+        <div class="text-center mb-14 fade-in-up relative">
+            <div class="w-24 h-24 bg-white rounded-3xl shadow-[0_15px_30px_-10px_rgba(0,0,0,0.1)] border border-white flex items-center justify-center mx-auto mb-6 relative transform transition-transform hover:scale-105 duration-500">
+                <img src="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png" alt="Logo EME" class="h-12 w-auto object-contain drop-shadow-md">
+                <div class="absolute -right-2 -bottom-2 bg-gradient-to-br from-emerald-400 to-emerald-600 w-5 h-5 rounded-full border-2 border-white shadow-md animate-pulse"></div>
             </div>
-
-            <div class="relative z-10">
-                <p class="text-[10px] text-sky-200 font-mono tracking-wide">
-                    &copy; 2026 SISTEMA LEEZAR V1.0
-                </p>
-            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-3 drop-shadow-sm">Ecosistema Leezar</h1>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest bg-white/50 inline-block px-4 py-1.5 rounded-full border border-white shadow-sm">Selecciona un módulo para autenticar</p>
         </div>
 
-        <div class="w-7/12 p-12 flex flex-col justify-center items-center bg-gray-50 relative">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
             
-            <div class="mb-8 text-center">
-                <div class="bg-white p-4 rounded-full shadow-sm inline-block mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32px" height="32px">
-                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.221,0-9.652-3.342-11.303-8l-6.571,4.827C9.655,39.663,16.318,44,24,44z"/>
-                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                    </svg>
+            <button onclick="iniciarSesion()" class="group glass-card-premium rounded-2xl p-5 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(225,29,72,0.15)] transition-all duration-300 fade-in-up delay-100 relative overflow-hidden flex flex-col w-full">
+                <div class="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-rose-50 border border-white shadow-[0_2px_8px_rgba(225,29,72,0.15)] text-rose-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-300 shrink-0 relative z-10">
+                    <span class="material-symbols-rounded text-xl drop-shadow-sm">real_estate_agent</span>
                 </div>
-                <h3 class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-1">Identidad Corporativa</h3>
-                <p class="text-gray-400 text-sm">Seleccione módulo para autenticar</p>
-            </div>
+                
+                <div class="w-full relative z-10 flex-1">
+                    <h2 class="text-lg font-black text-slate-800 mb-0.5 leading-tight group-hover:text-rose-600 transition-colors">EME</h2>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-snug">Centro Integral Inmobiliario</p>
+                </div>
+                
+                <div class="mt-3 flex items-center text-[10px] font-bold text-rose-600 gap-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                    Acceder <span class="material-symbols-rounded text-[12px]">arrow_forward</span>
+                </div>
+            </button>
 
-            <div class="w-full max-w-md space-y-4">
+            <button onclick="window.location.href='estimaciones.html'" class="group glass-card-premium rounded-2xl p-5 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(79,70,229,0.15)] transition-all duration-300 fade-in-up delay-200 relative overflow-hidden flex flex-col w-full">
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-indigo-50 border border-white shadow-[0_2px_8px_rgba(79,70,229,0.15)] text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-300 shrink-0 relative z-10">
+                    <span class="material-symbols-rounded text-xl drop-shadow-sm">query_stats</span>
+                </div>
+                
+                <div class="w-full relative z-10 flex-1">
+                    <h2 class="text-lg font-black text-slate-800 mb-0.5 leading-tight group-hover:text-indigo-600 transition-colors">AvEME</h2>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-snug">Reporte Automatizado</p>
+                </div>
+                
+                <div class="mt-3 flex items-center text-[10px] font-bold text-indigo-600 gap-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                    Generar Reporte <span class="material-symbols-rounded text-[12px]">arrow_forward</span>
+                </div>
+            </button>
 
-                <button onclick="iniciarSesion()" 
-                        class="group w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg hover:border-red-500 transition-all duration-300 relative overflow-hidden cursor-pointer">
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-600 transition-all group-hover:h-full"></div>
+            <button id="btn-hipoteca" onclick="iniciarSesionHipotecas()" class="group glass-card-premium rounded-2xl p-5 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 fade-in-up delay-300 relative overflow-hidden flex flex-col w-full">
+                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-emerald-50 border border-white shadow-[0_2px_8px_rgba(16,185,129,0.15)] text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-300 shrink-0 relative z-10">
+                    <span class="material-symbols-rounded text-xl drop-shadow-sm">account_balance</span>
+                </div>
+                
+                <div class="w-full relative z-10 flex-1">
+                    <h2 class="text-lg font-black text-slate-800 mb-0.5 leading-tight group-hover:text-emerald-600 transition-colors">Hipoteca Fácil</h2>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-snug">Gestión Crediticia</p>
+                </div>
+                
+                <div class="mt-3 flex items-center text-[10px] font-bold text-emerald-600 gap-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                    Acceder <span class="material-symbols-rounded text-[12px]">arrow_forward</span>
+                </div>
+            </button>
+
+            <div class="relative w-full fade-in-up delay-400">
+                <div class="absolute -top-2 -right-2 bg-gradient-to-r from-slate-700 to-slate-900 text-white text-[7px] font-black px-2.5 py-1 rounded-full shadow-lg z-20 tracking-widest uppercase border border-slate-600">
+                    Próximamente
+                </div>
+                <button class="w-full glass-card-premium rounded-2xl p-5 text-left opacity-60 cursor-not-allowed relative overflow-hidden group flex flex-col w-full">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-100 border border-white shadow-sm text-slate-400 flex items-center justify-center mb-3 shrink-0">
+                        <span class="material-symbols-rounded text-xl">architecture</span>
+                    </div>
                     
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-file-contract"></i>
+                    <div class="w-full relative z-10 flex-1">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <h2 class="text-lg font-black text-slate-500 leading-tight">HS Arq</h2>
+                            <span class="material-symbols-rounded text-lg text-slate-300">lock</span>
                         </div>
-                        <div class="text-left">
-                            <h4 class="text-gray-900 font-bold text-base group-hover:text-red-700 transition-colors">EME</h4>
-                            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Centro Integral Inmobiliario</p>
-                        </div>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-snug">Arquitectura y Diseño</p>
                     </div>
-                    <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-red-500 transition-colors"></i>
                 </button>
-
-                <div class="relative w-full">
-                    <button onclick="window.location.href='estimaciones.html'" 
-                            class="group w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg hover:border-indigo-500 transition-all duration-300 relative overflow-hidden cursor-pointer">
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 transition-all group-hover:h-full"></div>
-                        
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </div>
-                            <div class="text-left">
-                                <h4 class="text-gray-900 font-bold text-base group-hover:text-indigo-700 transition-colors">Estimaciones de Valor</h4>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">SaaS Automatizado</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-indigo-500 transition-colors"></i>
-                    </button>
-                </div>
-
-                <div class="relative w-full">
-                <button id="btn-hipoteca" onclick="iniciarSesionHipotecas()" 
-                class="group w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg hover:border-emerald-500 transition-all duration-300 relative overflow-hidden cursor-pointer">
-        
-                <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                <i class="fa-solid fa-house-chimney-medical"></i>
-                </div>
-                <div class="text-left">
-                <h4 class="text-gray-900 font-bold text-base group-hover:text-emerald-700 transition-colors">Hipoteca Fácil</h4>
-                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Gestión Crediticia</p>
-                </div>
-                </div>
-                <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-emerald-500 transition-colors"></i>
-                </button>
-                </div>
-
-                <div class="relative w-full">
-                    <button onclick="mostrarAlerta('arq-badge')" 
-                            class="w-full bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:bg-gray-50 transition-all opacity-70 hover:opacity-100 cursor-not-allowed">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-pen-ruler"></i>
-                            </div>
-                            <div class="text-left">
-                                <h4 class="text-gray-800 font-bold text-base">HS Arq</h4>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Arquitectura y Diseño</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-lock text-gray-300"></i>
-                    </button>
-                    <div id="arq-badge" class="stage-badge absolute top-[-8px] right-2 bg-rose-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md z-20">
-                        DISPONIBLE EN ETAPA 2
-                    </div>
-                </div>
-
             </div>
 
-            <div class="mt-8 flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
-                <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-green-700 text-[10px] font-bold tracking-wide">CONEXIÓN ENCRIPTADA TLS 1.3</span>
-            </div>
+        </div>
 
-            <div id="error-msg" class="hidden absolute bottom-4 text-red-500 text-xs bg-red-50 px-3 py-1 rounded border border-red-100 flex items-center shadow-sm">
-                <i class="fa-solid fa-circle-exclamation mr-2"></i> 
+        <div class="mt-16 fade-in-up delay-400 flex flex-col items-center">
+            <div class="flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-xl rounded-full border border-white shadow-sm hover:shadow-md transition-shadow">
+                <span class="material-symbols-rounded text-emerald-500 text-sm drop-shadow-sm">shield</span>
+                <span class="text-slate-500 text-[10px] font-black tracking-widest uppercase">Plataforma Encriptada TLS 1.3</span>
+            </div>
+            
+            <div id="error-msg" class="hidden mt-4 text-rose-500 text-xs bg-rose-50 px-4 py-2 rounded-xl border border-rose-100 flex items-center shadow-sm font-bold tracking-wide">
+                <span class="material-symbols-rounded text-sm mr-2">error</span>
                 <span id="error-text">Error de conexión</span>
             </div>
-
         </div>
+
     </div>
 
     <script>
-        // --- 1. Lógica de Etapa 2 (Badges) ---
-        function mostrarAlerta(badgeId) {
-            const badge = document.getElementById(badgeId);
-            badge.classList.add('visible');
-            
-            // Ocultar automáticamente tras 2 segundos
-            setTimeout(() => {
-                badge.classList.remove('visible');
-            }, 2000);
-        }
-
-        // --- 2. Lógica de Autenticación (EME) ---
+        // --- Lógica de Autenticación EME ---
         async function iniciarSesion() {
             const errorDiv = document.getElementById('error-msg');
             const errorText = document.getElementById('error-text');
-            const btn = document.querySelector('button[onclick="iniciarSesion()"]');
+            const btn = event.currentTarget;
             const originalContent = btn.innerHTML;
             
-            // Estado de carga UI
-            btn.innerHTML = '<div class="flex items-center justify-center w-full text-red-600 font-medium text-sm"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Conectando...</div>';
+            btn.innerHTML = '<div class="flex items-center justify-center h-full w-full text-rose-600"><span class="material-symbols-rounded animate-spin text-4xl drop-shadow-md">sync</span></div>';
             btn.disabled = true;
 
             try {
-                // NOTA: Esta ruta solo funciona si el servidor (Netlify Functions) está corriendo.
                 const response = await fetch('/.netlify/functions/auth-start');
-                
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const data = await response.json();
-
-                if (data.authUrl) {
-                    window.location.href = data.authUrl;
-                } else {
-                    throw new Error('Sin URL de autorización');
-                }
-
+                if (data.authUrl) window.location.href = data.authUrl;
+                else throw new Error('Sin URL de autorización');
             } catch (error) {
-                console.error("Debug Auth:", error);
-                
-                // Restaurar botón
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
-
-                // Mostrar error amigable
                 errorText.innerText = "Error: Sistema de autenticación no disponible.";
                 errorDiv.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    errorDiv.classList.add('hidden');
-                }, 4000);
+                setTimeout(() => errorDiv.classList.add('hidden'), 4000);
             }
         }
 
-        // --- 2.1 Lógica de Autenticación (Hipotecas) ---
+        // --- Lógica de Autenticación Hipotecas ---
         async function iniciarSesionHipotecas() {
             const errorDiv = document.getElementById('error-msg');
             const errorText = document.getElementById('error-text');
-            const btn = document.getElementById('btn-hipoteca'); // Buscamos el ID exacto
+            const btn = document.getElementById('btn-hipoteca');
+            const originalContent = btn.innerHTML;
             
-            const originalContent = btn ? btn.innerHTML : '';
-            
-            if (btn) {
-                btn.innerHTML = '<div class="flex items-center justify-center w-full text-emerald-600 font-medium text-sm"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Conectando...</div>';
-                btn.disabled = true;
-            }
+            btn.innerHTML = '<div class="flex items-center justify-center h-full w-full text-emerald-600"><span class="material-symbols-rounded animate-spin text-4xl drop-shadow-md">sync</span></div>';
+            btn.disabled = true;
 
             try {
                 const response = await fetch('/.netlify/functions/auth-start');
-                
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const data = await response.json();
-
                 if (data.authUrl) {
                     sessionStorage.setItem('modulo_destino', 'hipotecas');
                     window.location.href = data.authUrl;
-                } else {
-                    throw new Error('Sin URL de autorización');
-                }
-
+                } else throw new Error('Sin URL de autorización');
             } catch (error) {
-                console.error("Debug Auth Hipotecas:", error);
-                
-                if (btn) {
-                    btn.innerHTML = originalContent;
-                    btn.disabled = false;
-                }
-
-                if (errorText && errorDiv) {
-                    errorText.innerText = "Error: Sistema de autenticación no disponible.";
-                    errorDiv.classList.remove('hidden');
-                    setTimeout(() => errorDiv.classList.add('hidden'), 4000);
-                }
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                errorText.innerText = "Error: Sistema de autenticación no disponible.";
+                errorDiv.classList.remove('hidden');
+                setTimeout(() => errorDiv.classList.add('hidden'), 4000);
             }
         }
 
-        // --- 3. Manejo de Errores desde URL (Regreso de Google) ---
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('error')) {
