@@ -215,6 +215,20 @@ exports.handler = async (event, context) => {
         const coleccionDestino = tramiteBusqueda.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
         const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
 
+        // ========================================================
+        // 🚀 AVISAR A TELEGRAM LA CREACIÓN MANUAL
+        // ========================================================
+        try {
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkOxixZXOLp4mfNOA7Vg_OPLmdRJpSBO6FHW8R-ARVFVZfCjUnlhro17PIQSsldKuW/exec";
+            const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
+            
+            // Disparamos la notificación
+            await fetch(finalUrl, { method: 'POST' });
+            console.log("✅ [NOTIFICACIÓN] Aviso de nuevo expediente manual enviado a Jack.");
+        } catch (e) {
+            console.error("❌ [NOTIFICACIÓN] Error al avisar a Jack:", e.message);
+        }
+
         return { 
             statusCode: 200, 
             headers: { "Access-Control-Allow-Origin": "*" },

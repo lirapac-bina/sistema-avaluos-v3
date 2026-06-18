@@ -142,22 +142,20 @@ exports.handler = async (event) => {
 
         await docRef.update(updateData);
         // ========================================================
-        // 🚀 BLOQUE DE NOTIFICACIÓN (VERSIÓN ANTI-SPAM)
+        // 🚀 BLOQUE DE NOTIFICACIÓN (VERSIÓN ESTRICTA - SIN SPAM)
         // ========================================================
         // Solo avisamos si el expediente era "Huérfano" de Jack y le acabas de asignar Unidad.
+        // Las ediciones manuales posteriores no generarán notificaciones.
         const eraHuerfano = !dataAnterior.driveFolderId || dataAnterior.unidad === 'POR ASIGNAR';
         const yaTieneUnidad = unidad && unidad !== 'POR ASIGNAR';
 
         if (eraHuerfano && yaTieneUnidad) {
             const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkOxixZXOLp4mfNOA7Vg_OPLmdRJpSBO6FHW8R-ARVFVZfCjUnlhro17PIQSsldKuW/exec"; 
-            
-            // Construimos la URL con los parámetros pegados de forma simple
             const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad) + "&main=" + encodeURIComponent(id);
 
             console.log("📡 [NOTIFICACIÓN] Enviando señal de Asignación de Jack a:", finalUrl);
 
             try {
-                // Usamos fetch de la forma más básica posible, que es la que mejor le va a Google
                 await fetch(finalUrl, { method: 'POST' });
                 console.log("✅ [NOTIFICACIÓN] Señal enviada con éxito");
             } catch (e) {

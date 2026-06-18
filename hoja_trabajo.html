@@ -1135,8 +1135,8 @@
             }
         };
 
-// ==========================================
-        // ✍️ GENERADOR DE NOTAS (BISTURÍ JSON) - VERSIÓN COLOR Y DINÁMICA
+        // ==========================================
+        // ✍️ GENERADOR DE NOTAS (VERSIÓN COLOR Y S/D)
         // ==========================================
         window.generarTextoNotas = async () => {
             if(!currentFolioId || !currentExpediente) return showToast("Error: Expediente no cargado", "error");
@@ -1195,20 +1195,28 @@
                     else if (currentExpediente.visitaAgendada?.fecha) fVisita = currentExpediente.visitaAgendada.fecha.toUpperCase();
                 }
 
+                // 🛡️ MÚLTIPLES SINÓNIMOS PARA NO FALLAR
                 const reemplazosUI = {
-                    '[FECHA_VISITA]': fVisita, '[LISTA_DOCUMENTOS]': docsTexto, '[LISTA_SERVICIOS]': servTexto,
+                    '[FECHA_VISITA]': fVisita, 
+                    '[LISTA_DOCUMENTOS]': docsTexto, '[DOCUMENTOS]': docsTexto, 
+                    '[LISTA_SERVICIOS]': servTexto, '[SERVICIOS]': servTexto, '[SERVICIOS_INMUEBLE]': servTexto,
                     '[CP]': getValue('nota-cp'), '[COLONIA]': getValue('nota-cp-asentamiento'), '[SUPERFICIE_LEVANTAMIENTO]': getValue('nota-sup-total')
                 };
 
-                // 🎨 INYECTA COLOR AZUL (FORMULARIO MANUAL)
+                // 🎨 INYECTA COLOR AZUL (FORMULARIO MANUAL - A PRUEBA DE ERRORES)
                 let htmlFinal = plantilla;
                 for (const [tag, val] of Object.entries(reemplazosUI)) {
                     if(val !== "___") {
                         htmlFinal = htmlFinal.split(tag).join(`<span class="bg-indigo-100 text-indigo-700 px-1 rounded shadow-sm font-black">${val}</span>`);
+                    } else {
+                        // Si no hay datos, pero la etiqueta existe en la plantilla, ponemos el S/D rojo
+                        if (htmlFinal.includes(tag)) {
+                            htmlFinal = htmlFinal.split(tag).join(`<span class="bg-rose-100 text-rose-700 px-1 rounded shadow-sm font-black" title="Campo vacío">S/D</span>`);
+                        }
                     }
                 }
 
-                // 🎨 INYECTA COLOR VERDE (IA GEMINI) CON BÚSQUEDA SÚPER DIFUSA
+                // 🎨 INYECTA COLOR VERDE Y ESCUDO ROJO S/D (IA GEMINI)
                 htmlFinal = htmlFinal.replace(/\[([A-Za-z0-9_.]+)\]/g, function(match, tagInside) {
                     const tagClean = tagInside.toUpperCase().trim();
                     let valEncontrado = null;
@@ -1216,7 +1224,7 @@
                     const tagSinPunto = tagClean.includes('.') ? tagClean.split('.')[1] : tagClean;
                     const tagBase = tagSinPunto.replace(/_CEDULA|_PREDIAL|_ESCRITURA|_AGUA/g, '');
 
-                    // 1. Intentar match exacto o anidado (Ej: BOLETA_AGUA.CUENTA)
+                    // 1. Intentar match exacto o anidado
                     if (tagClean.includes('.') && datosIA[`${tagClean.split('.')[0]}_${tagSinPunto}`]) valEncontrado = datosIA[`${tagClean.split('.')[0]}_${tagSinPunto}`];
                     else if (datosIA[tagClean]) valEncontrado = datosIA[tagClean];
                     else if (datosIA[tagSinPunto]) valEncontrado = datosIA[tagSinPunto];
@@ -1232,7 +1240,9 @@
                     }
 
                     if(valEncontrado) return `<span class="bg-emerald-100 text-emerald-700 px-1 rounded shadow-sm font-black">${valEncontrado}</span>`;
-                    return match; 
+                    
+                    // 🛡️ AQUÍ ESTÁ LA MAGIA: Si no encuentra el dato, pone S/D en rojo
+                    return `<span class="bg-rose-100 text-rose-700 px-1 rounded shadow-sm font-black">S/D</span>`; 
                 });
 
                 const preview = document.getElementById('preview-notas');
@@ -1253,6 +1263,7 @@
                 if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
             }
         };
+
         window.exportToPDF = () => {
             const fGys = document.getElementById('folio-gys').value || 'Sin_Folio';
             const html = document.createElement('div');
