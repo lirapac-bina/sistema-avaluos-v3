@@ -38,6 +38,23 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
+
+    <script>
+        window.leezarMapReady = false;
+        window.initGoogleMap = function() { 
+            window.leezarMapReady = true; 
+        };
+        (function() {
+            var script = document.createElement('script');
+            // Llave ofuscada en Base64 para seguridad frontend
+            var key = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initGoogleMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    </script>
+
 </head>
 
 <body class="text-slate-800 dark:text-slate-200 transition-colors duration-300">
@@ -129,90 +146,167 @@
                 <span id="status-message">El servicio de estimaciones está temporalmente en mantenimiento.</span>
             </div>
 
-            <div id="estimador-form" class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-eme-600"></div>
-                <div class="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100 dark:border-slate-700">
-                    <span class="material-symbols-rounded text-3xl text-slate-400 dark:text-slate-500">real_estate_agent</span>
-                    <div>
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Características del Inmueble</h2>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Complete los datos para generar el reporte</p>
+            <div id="estimador-form" class="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-eme-500 to-rose-600"></div>
+                
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight" id="step-title">Paso 1: Ubicación</h2>
+                        <span class="text-xs font-bold text-eme-600 bg-eme-50 dark:bg-eme-900/30 px-3 py-1 rounded-full" id="step-counter">1 de 3</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                        <div id="progress-bar" class="bg-eme-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: 33%;"></div>
                     </div>
                 </div>
-                
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Código Postal / Ubicación <span class="text-eme-600">*</span></label>
+
+                <div id="step-1" class="wizard-step animate-fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Tipo de Reporte (Perfil) <span class="text-eme-600">*</span></label>
+                            <select id="est-perfil" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50 cursor-pointer">
+                                <option value="1">Perfil 1: Automatizado (Básico)</option>
+                                <option value="2">Perfil 2: Híbrido Inmobiliario</option>
+                                <option value="3">Perfil 3: Valuador Independiente</option>
+                                <option value="4">Perfil 4: Valuador Certificado EME</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Tipo de Inmueble <span class="text-eme-600">*</span></label>
+                            <select id="est-tipo" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50 cursor-pointer">
+                                <option value="Casa">Casa Habitación</option>
+                                <option value="Departamento">Departamento</option>
+                                <option value="Terreno">Terreno</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Código Postal <span class="text-eme-600">*</span></label>
                         <div class="relative">
-                            <span class="material-symbols-rounded absolute left-4 top-3.5 text-slate-400">location_on</span>
-                            <input type="text" id="est-ubicacion" placeholder="Ej. 91000, Xalapa" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-medium bg-slate-50">
+                            <span class="material-symbols-rounded absolute left-4 top-3.5 text-slate-400">markunread_mailbox</span>
+                            <input type="text" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="buscarCPFirebase(this.value)" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-black tracking-widest bg-slate-50">
                         </div>
+                        <p id="cp-status" class="text-[9px] text-slate-400 mt-1 font-bold uppercase hidden">Buscando...</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">M² Terreno <span class="text-eme-600">*</span></label>
-                            <div class="relative">
-                                <span class="material-symbols-rounded absolute left-4 top-3.5 text-slate-400">landscape</span>
-                                <input type="number" id="est-terreno" placeholder="0.00" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50">
+                    <div class="mb-2">
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest flex items-center gap-1">
+                            <span class="material-symbols-rounded text-sm">map</span> Ubicación Exacta (Mueve el mapa) <span class="text-eme-600">*</span>
+                        </label>
+                        <div class="relative h-48 w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 overflow-hidden z-10">
+                            <div id="map" class="w-full h-full bg-slate-100"></div>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
+                                <span class="material-symbols-rounded text-[40px] text-eme-600 drop-shadow-lg z-20">location_on</span>
+                                <div class="w-3 h-1 bg-black/30 rounded-[100%] blur-[1px] -mt-1 z-10"></div>
                             </div>
                         </div>
+                        <input type="hidden" id="est-coords" value="19.432600,-99.133200">
+                        <input type="hidden" id="est-colonia" value="">
+                        <input type="hidden" id="est-municipio" value="">
+                        <p id="txt-coordenadas" class="text-center text-[10px] text-slate-400 mt-2 font-mono font-bold tracking-widest">19.432600, -99.133200</p>
+                    </div>
+                </div>
+
+                <div id="step-2" class="wizard-step hidden animate-fade-in">
+                    <div class="grid grid-cols-2 gap-5 mb-5">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">M² Construcción <span class="text-eme-600">*</span></label>
-                            <div class="relative">
-                                <span class="material-symbols-rounded absolute left-4 top-3.5 text-slate-400">architecture</span>
-                                <input type="number" id="est-construccion" placeholder="0.00" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50">
-                            </div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">M² Terreno <span class="text-eme-600">*</span></label>
+                            <input type="number" id="est-terreno" placeholder="0" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">M² Construcción <span class="text-eme-600">*</span></label>
+                            <input type="number" id="est-construccion" placeholder="0" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 text-center">
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Clase Social / Nivel <span class="text-eme-600">*</span></label>
-                            <select id="est-clase" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-medium bg-slate-50 cursor-pointer appearance-none">
-                                <option value="" disabled selected>Seleccione...</option>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Clase de Inmueble <span class="text-eme-600">*</span></label>
+                            <select id="est-clase" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
                                 <option value="INTERES_SOCIAL">Interés Social</option>
-                                <option value="MEDIO">Medio</option>
+                                <option value="MEDIO" selected>Medio</option>
                                 <option value="RESIDENCIAL">Residencial</option>
                                 <option value="RESIDENCIAL_PLUS">Residencial Plus</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Estado de Conservación <span class="text-eme-600">*</span></label>
-                            <select id="est-conservacion" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-medium bg-slate-50 cursor-pointer appearance-none">
-                                <option value="" disabled selected>Seleccione...</option>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Conservación <span class="text-eme-600">*</span></label>
+                            <select id="est-conservacion" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
                                 <option value="NUEVO">Nuevo / Recién Remodelado</option>
-                                <option value="BUENO">Bueno</option>
+                                <option value="BUENO" selected>Bueno</option>
                                 <option value="REGULAR">Regular (Req. mantenimiento)</option>
                                 <option value="MALO">Malo</option>
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase text-center tracking-widest">Habitaciones</label>
-                            <input type="number" id="est-habitaciones" value="0" min="0" class="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-center text-sm bg-slate-50 dark:bg-slate-900/50 outline-none focus:ring-2 focus:ring-eme-500 font-bold dark:text-white">
+                <div id="step-3" class="wizard-step hidden animate-fade-in">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium text-center">Indique la distribución de espacios del inmueble</p>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
+                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">bed</span>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Recámaras</label>
+                            <input type="number" id="est-habitaciones" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase text-center tracking-widest">Baños</label>
-                            <input type="number" id="est-banos" value="0" min="0" class="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-center text-sm bg-slate-50 dark:bg-slate-900/50 outline-none focus:ring-2 focus:ring-eme-500 font-bold dark:text-white">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
+                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">shower</span>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Baños</label>
+                            <input type="number" id="est-banos" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase text-center tracking-widest">1/2 Baños</label>
-                            <input type="number" id="est-medios-banos" value="0" min="0" class="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-center text-sm bg-slate-50 dark:bg-slate-900/50 outline-none focus:ring-2 focus:ring-eme-500 font-bold dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase text-center tracking-widest">Estacionamiento</label>
-                            <input type="number" id="est-estacionamiento" value="0" min="0" class="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-center text-sm bg-slate-50 dark:bg-slate-900/50 outline-none focus:ring-2 focus:ring-eme-500 font-bold dark:text-white">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
+                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">directions_car</span>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Cocheras</label>
+                            <input type="number" id="est-estacionamiento" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
                         </div>
                     </div>
                 </div>
-                <div class="pt-6 mt-4 border-t border-slate-100 dark:border-slate-700">
-                    <button id="btn-calcular-estimacion" class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-eme-600 dark:hover:bg-eme-700 text-white font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
-                        <span class="material-symbols-rounded">query_stats</span> Generar Estimación
-                    </button>
-                    <p class="text-center text-[10px] text-slate-400 font-bold uppercase mt-3 tracking-widest" id="costo-texto">Costo por consulta: Cargando...</p>
+
+                <div class="pt-6 mt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-4">
+                    <div class="flex justify-between gap-4">
+                        <button id="btn-prev" onclick="changeStep(-1)" class="hidden px-6 py-3.5 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors flex items-center gap-2">
+                            <span class="material-symbols-rounded text-sm">arrow_back</span> Atrás
+                        </button>
+                        
+                        <button id="btn-next" onclick="changeStep(1)" class="w-full md:w-auto ml-auto px-8 py-3.5 rounded-xl font-black text-sm bg-slate-800 hover:bg-slate-900 dark:bg-eme-600 dark:hover:bg-eme-700 text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 tracking-widest uppercase">
+                            Siguiente <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                        </button>
+
+                        <button id="btn-calcular-estimacion" class="hidden w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
+                            <span class="material-symbols-rounded animate-pulse">memory</span> Procesar Algoritmo EME
+                        </button>
+                    </div>
+                    <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" id="costo-texto">Costo por consulta: Cargando...</p>
                 </div>
+            </div>
+
+            <div id="panel_conclusion_interactivo" class="hidden animate-fade-in mt-8 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+                
+                <h3 class="text-xl font-black mb-2 flex items-center gap-2 drop-shadow-md"><span class="material-symbols-rounded text-3xl">my_location</span> Conclusión de Valor</h3>
+                <p class="text-[11px] font-medium text-emerald-100 mb-6 leading-relaxed">Seleccione el valor de cierre deseado dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-black/20 p-4 rounded-xl border border-white/10 backdrop-blur-sm text-center">
+                        <p class="text-[9px] font-bold text-emerald-200 uppercase tracking-widest mb-1">Rango Mínimo Estimado</p>
+                        <p class="text-xl font-black text-white" id="lbl_limite_inf">Cargando...</p>
+                    </div>
+                    <div class="bg-black/20 p-4 rounded-xl border border-white/10 backdrop-blur-sm text-center">
+                        <p class="text-[9px] font-bold text-emerald-200 uppercase tracking-widest mb-1">Rango Máximo Estimado</p>
+                        <p class="text-xl font-black text-white" id="lbl_limite_sup">Cargando...</p>
+                    </div>
+                </div>
+
+                <div class="bg-white/10 p-5 rounded-xl border border-white/20 backdrop-blur-md mb-8">
+                    <div class="flex justify-between items-end mb-3">
+                        <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado:</p>
+                        <p class="text-2xl font-black text-amber-300 drop-shadow-md" id="val_conclusion_seleccionado">$0.00</p>
+                    </div>
+                    <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="actualizarValorConcluidoLabel(this.value)" class="w-full accent-amber-400 h-2 bg-emerald-900/50 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <button onclick="enviarGenerarReporteFinal()" id="btn-generar-pdf" class="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
+                    <span class="material-symbols-rounded text-lg">download</span> Consumir Crédito y Generar PDF
+                </button>
             </div>
 
         </div>
@@ -440,28 +534,234 @@
             }
         }
 
-        // 7. INTERCEPTAR EL CLIC EN EL BOTÓN "GENERAR" (ÚNICO EVENTO)
-        document.getElementById('btn-calcular-estimacion').onclick = () => {
-            if (!authUser) {
-                alert("Por seguridad, inicia sesión para continuar.");
-                return;
+        // ==========================================
+        // 🚀 LÓGICA DEL WIZARD, MAPA Y CEREBRO AVM
+        // ==========================================
+        let currentStep = 1;
+        const totalSteps = 3;
+        let map; 
+        let mapLoaded = false;
+
+        // 1. INICIALIZAR GOOGLE MAPS (Estilo Uber)
+        window.initGoogleMap = function() {
+            if (mapLoaded) return;
+            const defaultCoords = { lat: 19.5332, lng: -96.9271 }; // Default Centro de Veracruz/Xalapa
+            
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: defaultCoords,
+                zoom: 16,
+                disableDefaultUI: true, // Quitamos botones de Google para estilo App
+                zoomControl: true,
+                mapTypeId: "roadmap"
+            });
+
+            // Magia Uber: Detectar coordenadas al detener el arrastre del mapa
+            map.addListener("idle", () => {
+                const center = map.getCenter();
+                const lat = center.lat().toFixed(6);
+                const lng = center.lng().toFixed(6);
+                
+                document.getElementById('est-coords').value = `${lat},${lng}`;
+                document.getElementById('txt-coordenadas').innerText = `${lat}, ${lng}`;
+            });
+
+            // Pedir ubicación al cliente (Geolocalización del celular o PC)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    map.setCenter(pos);
+                });
+            }
+            mapLoaded = true;
+        };
+
+        // 2. BUSCADOR DE CÓDIGO POSTAL EN FIREBASE
+        window.buscarCPFirebase = async function(cp) {
+            if (cp.length !== 5) return;
+            
+            const statusLabel = document.getElementById('cp-status');
+            statusLabel.innerText = "Buscando coordenadas...";
+            statusLabel.classList.remove('hidden', 'text-eme-500', 'text-emerald-500', 'text-rose-500');
+            statusLabel.classList.add('text-amber-500');
+
+            try {
+                const doc = await db.collection('codigos_postales').doc(cp).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Extraemos los datos exactos y limpios
+                    const coloniaStr = Array.isArray(data.colonias) && data.colonias.length > 0 ? data.colonias[0] : (data.colonia || "");
+                    const municipioStr = data.municipio || "Xalapa";
+                    const ubicacionReal = `${coloniaStr}, ${municipioStr}`;
+                    
+                    if(data.latitud && data.longitud) {
+                        map.panTo({ lat: parseFloat(data.latitud), lng: parseFloat(data.longitud) });
+                        map.setZoom(17);
+                    }
+
+                    // Guardamos por separado en los inputs ocultos
+                    document.getElementById('est-colonia').value = coloniaStr;
+                    document.getElementById('est-municipio').value = municipioStr;
+                    
+                    statusLabel.innerText = `Encontrado: ${ubicacionReal}`;
+                    statusLabel.classList.replace('text-amber-500', 'text-emerald-500');
+                } else {
+                    statusLabel.innerText = "CP no encontrado. Mueve el mapa manualmente.";
+                    statusLabel.classList.replace('text-amber-500', 'text-rose-500');
+                }
+            } catch (error) {
+                console.error("Error consultando CP:", error);
+                statusLabel.innerText = "Error al buscar el CP.";
+                statusLabel.classList.replace('text-amber-500', 'text-rose-500');
+            }
+        };
+
+        // 3. CONTROLADOR DE PASOS DEL WIZARD (Anti Capa 8)
+        window.changeStep = function(direction) {
+            // Validaciones antes de avanzar
+            if (direction === 1 && currentStep === 1) {
+                if (!document.getElementById('est-cp').value && !document.getElementById('est-colonia').value) {
+                    alert("Por favor ingresa un Código Postal o busca una colonia válida.");
+                    return;
+                }
+            }
+            if (direction === 1 && currentStep === 2) {
+                if (!document.getElementById('est-terreno').value || !document.getElementById('est-construccion').value) {
+                    alert("Los metros de terreno y construcción son obligatorios.");
+                    return;
+                }
             }
 
-            // Validamos si tiene créditos
-            if (authUser.creditos <= 0) {
-                // No tiene créditos, mostramos el Paywall
-                const paywall = document.getElementById('paywallModal');
-                if(paywall) {
-                    paywall.classList.remove('hidden');
-                    paywall.classList.add('flex');
-                } else {
-                    alert("No cuentas con créditos suficientes. Por favor adquiere un paquete.");
-                }
+            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            currentStep += direction;
+            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+            
+            // Actualizar Interfaz (Titulos y Barra de progreso)
+            document.getElementById('step-title').innerText = `Paso ${currentStep}: ${currentStep === 1 ? 'Ubicación' : currentStep === 2 ? 'Dimensiones' : 'Distribución'}`;
+            document.getElementById('step-counter').innerText = `${currentStep} de ${totalSteps}`;
+            document.getElementById('progress-bar').style.width = `${(currentStep / totalSteps) * 100}%`;
+
+            // Ocultar/Mostrar botón "Atrás"
+            document.getElementById('btn-prev').classList.toggle('hidden', currentStep === 1);
+            
+            // Ocultar/Mostrar botón Final vs "Siguiente"
+            if (currentStep === totalSteps) {
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-calcular-estimacion').classList.remove('hidden');
             } else {
-                // SÍ TIENE CRÉDITOS
-                alert(`¡Tienes ${authUser.creditos} créditos listos! Conectando con API de Leezar...`);
-                // AQUÍ INTEGRAREMOS LA LLAMADA A LA API CUANDO NOS DEN EL JSON
+                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-calcular-estimacion').classList.add('hidden');
             }
+        };
+
+        // INICIALIZACIÓN POR SI ACASO EL SCRIPT DE GOOGLE CARGA LENTO
+        document.addEventListener('DOMContentLoaded', () => {
+            if(window.leezarMapReady && !mapLoaded) window.initGoogleMap();
+        });
+
+        let minValorCalculado = 0;
+        let maxValorCalculado = 0;
+        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // 4. TIEMPO 1: EJECUTAR MOTOR EME
+        document.getElementById('btn-calcular-estimacion').onclick = async () => {
+            if (!authUser) { alert("Inicia sesión para generar el reporte."); return; }
+            if (authUser.creditos <= 0) { document.getElementById('paywallModal').classList.replace('hidden', 'flex'); return; }
+
+            const btn = document.getElementById('btn-calcular-estimacion');
+            const btnTextoOriginal = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Procesando AVM...';
+            btn.disabled = true;
+
+            // Extraemos todos los datos blindados contra nulos y con ENUMS correctos para la BD
+            const parametros_motor = {
+                "perfil_solicitante": parseInt(document.getElementById('est-perfil').value) || 1,
+                "Tipo_Inmueble": document.getElementById('est-tipo').value || "Casa",
+                "Ciudad_Municipio": document.getElementById('est-municipio').value || "Xalapa",
+                "Colonia": document.getElementById('est-colonia').value || "Centro",
+                "Geolocalizacion_Google": document.getElementById('est-coords').value || "19.5332,-96.9271",
+                "Superficie_Terreno": parseFloat(document.getElementById('est-terreno').value) || 0,
+                "Superficie_Construccion": parseFloat(document.getElementById('est-construccion').value) || 0,
+                "Clase_Inmueble": document.getElementById('est-clase').value || "MEDIO",
+                "Estado_Conservacion": document.getElementById('est-conservacion').value || "BUENO",
+                "No_Recamaras": parseInt(document.getElementById('est-habitaciones').value) || 0,
+                "No_Banos": parseInt(document.getElementById('est-banos').value) || 0,
+                "No_Estacionamientos": parseInt(document.getElementById('est-estacionamiento').value) || 0,
+                
+                // Defaults paramétricos para la base de datos y la API
+                "Uso_de_Suelo": "Habitacional",
+                "Ubicacion_en_Manzana": "Intermedio",
+                "Frente_a": "Calle",
+                "Topografia": "Plano",
+                "Calidad_Acabados": "Estándar",
+                "Edad_Anos": 5
+            };
+
+            try {
+                // Sacamos el gafete (JWT) del usuario
+                const idToken = await authUser.getIdToken(true);
+
+                // Llamamos a nuestro puente de seguridad en Netlify
+                const response = await fetch('/.netlify/functions/calcular-estimacion', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, 
+                    body: JSON.stringify({ parametros_motor }) 
+                });
+                
+                // Leemos primero como texto para evitar que el navegador explote si Netlify devuelve un error de texto
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error("Fallo de infraestructura en la nube. Detalle: " + responseText.substring(0, 50));
+                }
+
+                if (!response.ok || data.error) throw new Error(data.error || "Fallo en el motor matemático.");
+
+                // Guardamos los límites
+                const valorBase = data.data.valor_final;
+                minValorCalculado = data.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
+                maxValorCalculado = data.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
+
+                // Escribimos en la interfaz
+                document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
+                document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
+                document.getElementById('slider_conclusion_valor').value = 50;
+                actualizarValorConcluidoLabel(50);
+
+                // Ocultamos el Wizard entero y mostramos solo el panel verde final
+                document.getElementById('estimador-form').classList.add('hidden');
+                document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error AVM:", error);
+                alert("Error de Conexión: " + error.message);
+                btn.innerHTML = btnTextoOriginal;
+                btn.disabled = false;
+            }
+        };
+
+        // Función del Slider
+        window.actualizarValorConcluidoLabel = function(porcentaje) {
+            const valorConcluido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentaje / 100));
+            document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(valorConcluido);
+        };
+
+        // TIEMPO 2: CONSUMIR CRÉDITO Y GENERAR PDF FINAL
+        window.enviarGenerarReporteFinal = async function() {
+            const porcentajeSlider = document.getElementById('slider_conclusion_valor').value;
+            const valorElegido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentajeSlider / 100));
+
+            const btn = document.getElementById('btn-generar-pdf');
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Fabricando PDF en Google Slides...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                alert(`¡PDF LISTO! (Simulación). Valor final: ${formatoMoneda.format(valorElegido)}.`);
+                btn.innerHTML = '<span class="material-symbols-rounded text-lg">download</span> Consumir Crédito y Generar PDF';
+                btn.disabled = false;
+            }, 2500);
         };
 
 
