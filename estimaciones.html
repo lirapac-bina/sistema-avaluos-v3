@@ -719,17 +719,16 @@
         let ultimaBusqueda = null; // <- ESTA ES NUEVA
         const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        // 4. TIEMPO 1: EJECUTAR MOTOR EME
+        // 4. TIEMPO 1: EJECUTAR MOTOR EME (ARQUITECTURA ASÍNCRONA)
         document.getElementById('btn-calcular-estimacion').onclick = async () => {
             if (!authUser) { alert("Inicia sesión para generar el reporte."); return; }
             if (authUser.creditos <= 0) { document.getElementById('paywallModal').classList.replace('hidden', 'flex'); return; }
 
             const btn = document.getElementById('btn-calcular-estimacion');
             const btnTextoOriginal = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Procesando AVM...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Invocando Nube...';
             btn.disabled = true;
 
-            // Extraemos todos los datos blindados contra nulos y con ENUMS correctos para la BD
             const parametros_motor = {
                 "perfil_solicitante": parseInt(document.getElementById('est-perfil').value) || 1,
                 "Tipo_Inmueble": document.getElementById('est-tipo').value || "Casa",
@@ -743,8 +742,6 @@
                 "No_Recamaras": parseInt(document.getElementById('est-habitaciones').value) || 0,
                 "No_Banos": parseInt(document.getElementById('est-banos').value) || 0,
                 "No_Estacionamientos": parseInt(document.getElementById('est-estacionamiento').value) || 0,
-                
-                // NUEVOS DATOS DEL PASO 4 (MODO DIOS)
                 "Edad_Anos": parseInt(document.getElementById('est-edad').value) || 5,
                 "Uso_de_Suelo": document.getElementById('est-uso-suelo').value || "Habitacional",
                 "Calidad_Acabados": document.getElementById('est-acabados').value || "Estándar",
@@ -753,58 +750,65 @@
                 "Frente_a": document.getElementById('est-frente-a').value || "Calle"
             };
 
-            // PASO B: Guardamos copia en memoria global para cuando le dé clic a Guardar/PDF
             ultimaBusqueda = parametros_motor;
-            // Mostramos la pantalla de carga elegante
             document.getElementById('loadingOverlay').classList.replace('hidden', 'flex');
 
             try {
-  
-                // Sacamos el gafete (JWT) del usuario
-                const idToken = await authUser.getIdToken(true);
+                // 1. GENERAMOS UN TICKET ÚNICO DE TURNO PARA EL USUARIO
+                const expedienteId = authUser.uid + '_' + Date.now();
 
-                // Llamamos a nuestro puente de seguridad en Netlify
-                const response = await fetch('/.netlify/functions/calcular-estimacion', { 
+                // 2. NOS SENTAMOS A ESCUCHAR A FIREBASE EN TIEMPO REAL (onSnapshot)
+                const unsubscribe = db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const dataDoc = doc.data();
+                        
+                        if (dataDoc.estatus_motor === 'COMPLETADO' && dataDoc.resultados_motor) {
+                            // MAGIA: El motor terminó de calcular en el fondo y avisó a la BD
+                            const dataAVM = dataDoc.resultados_motor;
+                            const valorBase = dataAVM.data.valor_final;
+                            
+                            minValorCalculado = dataAVM.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
+                            maxValorCalculado = dataAVM.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
+
+                            document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
+                            document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
+                            document.getElementById('slider_conclusion_valor').value = 50;
+                            actualizarValorConcluidoLabel(50);
+
+                            document.getElementById('estimador-form').classList.add('hidden');
+                            document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
+                            document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
+
+                            unsubscribe(); // Dejamos de escuchar
+                        } 
+                        else if (dataDoc.estatus_motor === 'ERROR') {
+                            document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
+                            alert("Atención del Motor: " + (dataDoc.error_motor || "Error en el cálculo."));
+                            btn.innerHTML = btnTextoOriginal;
+                            btn.disabled = false;
+                            unsubscribe(); // Dejamos de escuchar
+                        }
+                    }
+                });
+
+                // 3. MANDAMOS LA ORDEN AL SERVIDOR EN SEGUNDO PLANO (Fire and Forget)
+                const idToken = await authUser.getIdToken(true);
+                const response = await fetch('/.netlify/functions/calcular-estimacion-background', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, 
-                    body: JSON.stringify({ parametros_motor }) 
+                    body: JSON.stringify({ parametros_motor: parametros_motor, expedienteId: expedienteId }) 
                 });
-                
-                // Leemos primero como texto para evitar que el navegador explote si Netlify devuelve un error de texto
-                const responseText = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    throw new Error("Fallo de infraestructura en la nube. Detalle: " + responseText.substring(0, 50));
+
+                if (!response.ok && response.status !== 202) {
+                    unsubscribe();
+                    throw new Error("No se pudo contactar al servidor en la nube.");
                 }
-
-                if (!response.ok || data.error) throw new Error(data.error || "Fallo en el motor matemático.");
-
-                // Guardamos los límites
-                const valorBase = data.data.valor_final;
-                minValorCalculado = data.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
-                maxValorCalculado = data.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
-
-                // Escribimos en la interfaz
-                document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
-                document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
-                document.getElementById('slider_conclusion_valor').value = 50;
-                actualizarValorConcluidoLabel(50);
-
-                // Ocultamos el Wizard entero y mostramos solo el panel verde final
-                document.getElementById('estimador-form').classList.add('hidden');
-                document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
                 
-                // Apagamos la pantalla de carga elegante
-                document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
+                // Aquí el código termina al instante, pero la pantalla sigue girando hasta que Firebase avise.
 
             } catch (error) {
-                console.error("Error AVM:", error);
-                
-                // Apagamos la pantalla de carga si hubo un error
+                console.error("Error lanzando AVM:", error);
                 document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
-                
                 alert("Error de Conexión: " + error.message);
                 btn.innerHTML = btnTextoOriginal;
                 btn.disabled = false;

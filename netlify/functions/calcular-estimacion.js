@@ -50,8 +50,8 @@ exports.handler = async (event, context) => {
 
         // 5. HACEMOS LA PETICIÓN A LA BÓVEDA (Evadiendo la guillotina de Netlify)
         const controller = new AbortController();
-        // Cortamos a los 29 segundos EXACTOS para ganar de mano al error del servidor
-        const timeoutId = setTimeout(() => controller.abort(), 29000); 
+        // Cortamos a los 24 segundos EXACTOS para ganarle a la guillotina física de Netlify (25s)
+        const timeoutId = setTimeout(() => controller.abort(), 24000); 
 
         let response;
         try {
