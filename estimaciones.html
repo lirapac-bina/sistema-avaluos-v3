@@ -732,6 +732,13 @@
             const parametros_motor = {
                 "perfil_solicitante": parseInt(document.getElementById('est-perfil').value) || 1,
                 "Tipo_Inmueble": document.getElementById('est-tipo').value || "Casa",
+                
+                // --- DATOS CRÍTICOS FALTANTES PARA EL MOTOR BETA 188 ---
+                "Estado": "Veracruz", 
+                "CP": document.getElementById('est-cp').value || "91000",
+                "Calle_Sujeto": "Conocida",
+                // -------------------------------------------------------
+
                 "Ciudad_Municipio": document.getElementById('est-municipio').value || "Xalapa",
                 "Colonia": document.getElementById('est-colonia').value || "Centro",
                 "Geolocalizacion_Google": document.getElementById('est-coords').value || "19.5332,-96.9271",
