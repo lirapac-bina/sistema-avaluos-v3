@@ -21,10 +21,10 @@ exports.handler = async (event, context) => {
             return;
         }
 
-        // 1. Avisamos a Firebase que el motor arrancó
-        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).update({
+        // 1. Avisamos a Firebase que el motor arrancó (CREANDO el documento si no existe)
+        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({
             estatus_motor: 'PROCESANDO'
-        });
+        }, { merge: true });
 
         console.log(`🔍 [${expedienteId}] MOTOR INICIADO. DATOS:`, JSON.stringify(parametros_motor));
 
@@ -42,19 +42,19 @@ exports.handler = async (event, context) => {
 
         // 3. Manejo de Errores de la IA
         if (!response.ok || data.error) {
-            await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).update({
+            await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({
                 estatus_motor: 'ERROR',
                 error_motor: data.error || "Fallo en el motor matemático."
-            });
+            }, { merge: true });
             return;
         }
 
         // 4. ¡ÉXITO! Guardamos la data completa en Firestore
-        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).update({
+        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({
             estatus_motor: 'COMPLETADO',
             resultados_motor: data, // El JSON completo de EME
             parametros_historico: parametros_motor // Guardamos qué parámetros se usaron
-        });
+        }, { merge: true });
 
         console.log(`✅ [${expedienteId}] MOTOR FINALIZADO Y GUARDADO EN BD.`);
 
@@ -63,10 +63,10 @@ exports.handler = async (event, context) => {
         try {
             const { expedienteId } = JSON.parse(event.body);
             if(expedienteId) {
-                await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).update({
+                await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({
                     estatus_motor: 'ERROR',
                     error_motor: "Fallo de infraestructura en la nube: " + error.message
-                });
+                }, { merge: true });
             }
         } catch(e) {}
     }
