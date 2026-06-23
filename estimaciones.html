@@ -152,10 +152,10 @@
                 <div class="mb-8">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight" id="step-title">Paso 1: Ubicación</h2>
-                        <span class="text-xs font-bold text-eme-600 bg-eme-50 dark:bg-eme-900/30 px-3 py-1 rounded-full" id="step-counter">1 de 3</span>
+                        <span class="text-xs font-bold text-eme-600 bg-eme-50 dark:bg-eme-900/30 px-3 py-1 rounded-full" id="step-counter">1 de 4</span>
                     </div>
                     <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                        <div id="progress-bar" class="bg-eme-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: 33%;"></div>
+                        <div id="progress-bar" class="bg-eme-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: 25%;"></div>
                     </div>
                 </div>
 
@@ -493,7 +493,6 @@
             cargarConfiguracion();
         });
 
-
         function cerrarPaywall() {
             document.getElementById('paywallModal').classList.add('hidden');
         }
@@ -756,8 +755,11 @@
 
             // PASO B: Guardamos copia en memoria global para cuando le dé clic a Guardar/PDF
             ultimaBusqueda = parametros_motor;
+            // Mostramos la pantalla de carga elegante
+            document.getElementById('loadingOverlay').classList.replace('hidden', 'flex');
 
             try {
+  
                 // Sacamos el gafete (JWT) del usuario
                 const idToken = await authUser.getIdToken(true);
 
@@ -793,9 +795,16 @@
                 // Ocultamos el Wizard entero y mostramos solo el panel verde final
                 document.getElementById('estimador-form').classList.add('hidden');
                 document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
+                
+                // Apagamos la pantalla de carga elegante
+                document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
 
             } catch (error) {
                 console.error("Error AVM:", error);
+                
+                // Apagamos la pantalla de carga si hubo un error
+                document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
+                
                 alert("Error de Conexión: " + error.message);
                 btn.innerHTML = btnTextoOriginal;
                 btn.disabled = false;
@@ -860,6 +869,29 @@
 
 
     </script>
+
+    <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-slate-900/80 backdrop-blur-md flex-col items-center justify-center transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-[90%] text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-eme-500 to-amber-500"></div>
+            
+            <div class="relative w-20 h-20 mb-6">
+                <div class="absolute inset-0 border-4 border-slate-100 dark:border-slate-700 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-eme-500 border-t-transparent rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-eme-600 dark:text-eme-400">
+                    <span class="material-symbols-rounded text-3xl animate-pulse">memory</span>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Analizando Mercado</h3>
+            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 animate-pulse">Motor de IA EME en curso...</p>
+            
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-eme-500 to-amber-500 h-1.5 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style="width: 100%;"></div>
+            </div>
+            
+            <p class="text-[10px] text-slate-400 mt-4 leading-relaxed font-medium">Buscando testigos comparables, evaluando la zona y calculando la depreciación algorítmica.</p>
+        </div>
+    </div>
 
     <div id="paywallModal" class="fixed inset-0 z-[6000] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden relative animate-fade-in border border-slate-200 dark:border-slate-700">
