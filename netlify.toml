@@ -4,3 +4,6 @@
 
 [dev]
   publish = "."
+
+[functions]
+  node_bundler = "esbuild"

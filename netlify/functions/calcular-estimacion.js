@@ -48,10 +48,10 @@ exports.handler = async (event, context) => {
         // 🔍 DEBUG: Imprimimos en tu terminal los datos exactos que vamos a enviar
         console.log("🔍 DATOS ENVIADOS A EME:", JSON.stringify(payload, null, 2));
 
-        // 5. HACEMOS LA PETICIÓN A LA BÓVEDA (Con MUCHA paciencia)
+        // 5. HACEMOS LA PETICIÓN A LA BÓVEDA (Evadiendo la guillotina de Netlify)
         const controller = new AbortController();
-        // Le damos casi el minuto completo para evitar cortes de Netlify
-        const timeoutId = setTimeout(() => controller.abort(), 55000); 
+        // Cortamos a los 28 segundos EXACTOS para ganar de mano al error del servidor
+        const timeoutId = setTimeout(() => controller.abort(), 28000); 
 
         let response;
         try {
@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
             });
         } catch (fetchError) {
             if (fetchError.name === 'AbortError') {
-                return { statusCode: 504, body: JSON.stringify({ error: "El motor matemático tomó más de 50 segundos. Por favor, intenta de nuevo." }) };
+                return { statusCode: 504, body: JSON.stringify({ error: "El Motor de IA estaba en reposo y tardó en despertar. Por favor, haz clic en Procesar nuevamente." }) };
             }
             throw fetchError;
         } finally {
