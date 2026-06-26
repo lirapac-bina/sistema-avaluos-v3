@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevTools | Acid Test API EME</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['Fira Code', 'monospace'] }
+                } 
+            } 
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <style>body { background-color: #0f172a; color: #f8fafc; }</style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="flex items-center justify-between mb-8 border-b border-slate-700 pb-4">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-rounded text-emerald-500 text-4xl">terminal</span>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight">Leezar DevTools <span class="text-xs font-mono text-emerald-500 bg-emerald-900/30 px-2 py-1 rounded ml-2">STRESS_TEST_V2</span></h1>
+                    <p class="text-xs text-slate-400 font-mono mt-1">Diagnosticando endpoint: /.netlify/functions/calcular-estimacion-background</p>
+                </div>
+            </div>
+            <button id="btn-iniciar" onclick="iniciarPruebasDeDolor()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-900/50 transition-all active:scale-95 flex items-center gap-2">
+                <span class="material-symbols-rounded">rocket_launch</span> Ejecutar Acid Test (10 Nodos)
+            </button>
+        </header>
+
+        <div id="auth-warning" class="hidden mb-6 bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-xl flex items-center gap-3">
+            <span class="material-symbols-rounded">gpp_bad</span>
+            <p class="text-sm font-bold">Autenticación requerida. Inicia sesión en el portal principal primero para obtener un token JWT válido.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4" id="log-container">
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 text-center text-slate-500 font-mono text-sm shadow-inner" id="empty-state">
+                Esperando instrucción de ejecución concurrente...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let authUser = null;
+
+        // Batería de 10 Casos de Prueba (Nacional)
+        const testPayloads = [
+            {
+                nombre: "Caso 1: CDMX, Polanco (Depto Lujo)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Departamento", "Estado": "Ciudad de México", "CP": "11560", "Calle_Sujeto": "Avenida Presidente Masaryk", "Ciudad_Municipio": "Miguel Hidalgo", "Colonia": "Polanco", "Geolocalizacion_Google": "19.4319,-99.1983", "Superficie_Terreno": 0, "Superficie_Construccion": 250, "Clase_Inmueble": "RESIDENCIAL_PLUS", "Estado_Conservacion": "NUEVO", "No_Recamaras": 3, "No_Banos": 3, "No_Estacionamientos": 3, "Edad_Anos": 2, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Lujo", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Avenida" }
+            },
+            {
+                nombre: "Caso 2: Monterrey, San Pedro (Mansión)",
+                payload: { "perfil_solicitante": 2, "Tipo_Inmueble": "Casa", "Estado": "Nuevo León", "CP": "66220", "Calle_Sujeto": "Calzada San Pedro", "Ciudad_Municipio": "San Pedro Garza García", "Colonia": "Del Valle", "Geolocalizacion_Google": "25.6487,-100.3582", "Superficie_Terreno": 800, "Superficie_Construccion": 650, "Clase_Inmueble": "RESIDENCIAL_PLUS", "Estado_Conservacion": "BUENO", "No_Recamaras": 5, "No_Banos": 6, "No_Estacionamientos": 4, "Edad_Anos": 8, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Lujo", "Topografia": "Plano", "Ubicacion_en_Manzana": "Esquina", "Frente_a": "Avenida" }
+            },
+            {
+                nombre: "Caso 3: Mérida, Altabrisa (Casa Media)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Casa", "Estado": "Yucatán", "CP": "97130", "Calle_Sujeto": "Calle 15", "Ciudad_Municipio": "Mérida", "Colonia": "Altabrisa", "Geolocalizacion_Google": "21.0185,-89.5823", "Superficie_Terreno": 300, "Superficie_Construccion": 220, "Clase_Inmueble": "RESIDENCIAL", "Estado_Conservacion": "BUENO", "No_Recamaras": 3, "No_Banos": 3, "No_Estacionamientos": 2, "Edad_Anos": 5, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Estándar", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Calle" }
+            },
+            {
+                nombre: "Caso 4: Jalisco, Zapopan (Casa Interés Social)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Casa", "Estado": "Jalisco", "CP": "45200", "Calle_Sujeto": "Valle de los Molinos", "Ciudad_Municipio": "Zapopan", "Colonia": "Valle de los Molinos", "Geolocalizacion_Google": "20.8123,-103.4532", "Superficie_Terreno": 90, "Superficie_Construccion": 65, "Clase_Inmueble": "INTERES_SOCIAL", "Estado_Conservacion": "REGULAR", "No_Recamaras": 2, "No_Banos": 1, "No_Estacionamientos": 1, "Edad_Anos": 12, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Económico", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Calle" }
+            },
+            {
+                nombre: "Caso 5: Quintana Roo, Cancún (Depto Vacacional)",
+                payload: { "perfil_solicitante": 2, "Tipo_Inmueble": "Departamento", "Estado": "Quintana Roo", "CP": "77500", "Calle_Sujeto": "Bulevar Kukulcán", "Ciudad_Municipio": "Cancún", "Colonia": "Zona Hotelera", "Geolocalizacion_Google": "21.1353,-86.7461", "Superficie_Terreno": 0, "Superficie_Construccion": 120, "Clase_Inmueble": "RESIDENCIAL", "Estado_Conservacion": "BUENO", "No_Recamaras": 2, "No_Banos": 2, "No_Estacionamientos": 1, "Edad_Anos": 10, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Estándar", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Avenida" }
+            },
+            {
+                nombre: "Caso 6: Puebla, Cholula (Terreno Comercial)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Terreno", "Estado": "Puebla", "CP": "72810", "Calle_Sujeto": "Recta a Cholula", "Ciudad_Municipio": "San Andrés Cholula", "Colonia": "Ex Hacienda Santa Teresa", "Geolocalizacion_Google": "19.0436,-98.2831", "Superficie_Terreno": 1200, "Superficie_Construccion": 0, "Clase_Inmueble": "MEDIO", "Estado_Conservacion": "NUEVO", "No_Recamaras": 0, "No_Banos": 0, "No_Estacionamientos": 0, "Edad_Anos": 0, "Uso_de_Suelo": "Comercial", "Calidad_Acabados": "Económico", "Topografia": "Plano", "Ubicacion_en_Manzana": "Esquina", "Frente_a": "Avenida" }
+            },
+            {
+                nombre: "Caso 7: Tijuana, Playas (Casa Frontera)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Casa", "Estado": "Baja California", "CP": "22500", "Calle_Sujeto": "Paseo Ensenada", "Ciudad_Municipio": "Tijuana", "Colonia": "Playas de Tijuana", "Geolocalizacion_Google": "32.5255,-117.1182", "Superficie_Terreno": 200, "Superficie_Construccion": 180, "Clase_Inmueble": "MEDIO", "Estado_Conservacion": "BUENO", "No_Recamaras": 3, "No_Banos": 2, "No_Estacionamientos": 2, "Edad_Anos": 15, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Estándar", "Topografia": "Irregular", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Calle" }
+            },
+            {
+                nombre: "Caso 8: Querétaro, Juriquilla (Casa Nueva)",
+                payload: { "perfil_solicitante": 2, "Tipo_Inmueble": "Casa", "Estado": "Querétaro", "CP": "76226", "Calle_Sujeto": "Paseo de la República", "Ciudad_Municipio": "Querétaro", "Colonia": "Juriquilla", "Geolocalizacion_Google": "20.6973,-100.4491", "Superficie_Terreno": 250, "Superficie_Construccion": 300, "Clase_Inmueble": "RESIDENCIAL", "Estado_Conservacion": "NUEVO", "No_Recamaras": 4, "No_Banos": 4, "No_Estacionamientos": 3, "Edad_Anos": 1, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Lujo", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Calle" }
+            },
+            {
+                nombre: "Caso 9: Guanajuato, León (Casa Vieja/Mala)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Casa", "Estado": "Guanajuato", "CP": "37000", "Calle_Sujeto": "Calle Madero", "Ciudad_Municipio": "León", "Colonia": "León Centro", "Geolocalizacion_Google": "21.1215,-101.6823", "Superficie_Terreno": 150, "Superficie_Construccion": 120, "Clase_Inmueble": "MEDIO", "Estado_Conservacion": "MALO", "No_Recamaras": 2, "No_Banos": 1, "No_Estacionamientos": 0, "Edad_Anos": 45, "Uso_de_Suelo": "Habitacional", "Calidad_Acabados": "Económico", "Topografia": "Plano", "Ubicacion_en_Manzana": "Intermedio", "Frente_a": "Calle" }
+            },
+            {
+                nombre: "Caso 10: Veracruz, Xalapa (Local / Unicornio)",
+                payload: { "perfil_solicitante": 1, "Tipo_Inmueble": "Casa", "Estado": "Veracruz", "CP": "91000", "Calle_Sujeto": "Enríquez", "Ciudad_Municipio": "Xalapa", "Colonia": "Centro", "Geolocalizacion_Google": "19.5277,-96.9203", "Superficie_Terreno": 500, "Superficie_Construccion": 900, "Clase_Inmueble": "RESIDENCIAL", "Estado_Conservacion": "REGULAR", "No_Recamaras": 11, "No_Banos": 6, "No_Estacionamientos": 2, "Edad_Anos": 35, "Uso_de_Suelo": "Comercial", "Calidad_Acabados": "Estándar", "Topografia": "Ascendente", "Ubicacion_en_Manzana": "Esquina", "Frente_a": "Avenida" }
+            }
+        ];
+
+        // Verificar sesión activa
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                authUser = user;
+                document.getElementById('auth-warning').classList.add('hidden');
+                document.getElementById('btn-iniciar').disabled = false;
+                document.getElementById('btn-iniciar').classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                authUser = null;
+                document.getElementById('auth-warning').classList.remove('hidden');
+                document.getElementById('btn-iniciar').disabled = true;
+                document.getElementById('btn-iniciar').classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        // Generador de Tarjetas de Log (Ahora con Detalles)
+        function crearTarjetaLog(id, titulo, detalles) {
+            const container = document.getElementById('log-container');
+            document.getElementById('empty-state')?.remove();
+
+            const html = `
+            <div id="card-${id}" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg flex flex-col gap-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-sm">${titulo}</h3>
+                        <p class="text-[10px] text-emerald-500/70 font-mono mt-1 uppercase tracking-widest">${detalles}</p>
+                    </div>
+                    <span id="badge-${id}" class="bg-slate-700 text-slate-400 text-[10px] font-mono px-2 py-1 rounded-full animate-pulse border border-slate-600 h-fit whitespace-nowrap ml-2">EN COLA...</span>
+                </div>
+                <div class="bg-slate-900 rounded-lg p-4 font-mono text-[11px] text-slate-400 relative overflow-hidden">
+                    <div id="loader-${id}" class="absolute top-0 left-0 w-1 bg-leezar-500 h-full hidden"></div>
+                    <p id="status-${id}">> Esperando inicio de test...</p>
+                    <p id="timer-${id}" class="text-teal-400 mt-2 font-bold hidden"></p>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function actualizarTarjetaLog(id, estatus, mensaje, tiempoMs = null, esError = false) {
+            const badge = document.getElementById(`badge-${id}`);
+            const statusTxt = document.getElementById(`status-${id}`);
+            const loader = document.getElementById(`loader-${id}`);
+            const timer = document.getElementById(`timer-${id}`);
+
+            statusTxt.innerHTML += `<br>> ${mensaje}`;
+
+            if (estatus === 'PROCESANDO') {
+                badge.className = "bg-leezar-900 text-leezar-400 text-[10px] font-mono px-2 py-1 rounded-full animate-pulse border border-leezar-500";
+                badge.innerText = "PROCESANDO";
+                loader.classList.remove('hidden');
+            } else if (estatus === 'COMPLETADO') {
+                badge.className = "bg-emerald-900 text-emerald-400 text-[10px] font-mono px-2 py-1 rounded-full border border-emerald-500";
+                badge.innerText = "ÉXITO";
+                loader.classList.replace('bg-leezar-500', 'bg-emerald-500');
+                if (tiempoMs) {
+                    timer.classList.remove('hidden');
+                    timer.innerText = `⏱️ Tiempo de respuesta de IA: ${(tiempoMs / 1000).toFixed(2)} segundos`;
+                }
+            } else if (estatus === 'ERROR') {
+                badge.className = "bg-red-900 text-red-400 text-[10px] font-mono px-2 py-1 rounded-full border border-red-500";
+                badge.innerText = "FALLÓ";
+                loader.classList.replace('bg-leezar-500', 'bg-red-500');
+                if (esError) statusTxt.classList.add('text-red-400');
+            }
+        }
+
+        async function iniciarPruebasDeDolor() {
+            if (!authUser) return;
+            document.getElementById('log-container').innerHTML = ''; // Limpiar logs anteriores
+            
+            const btn = document.getElementById('btn-iniciar');
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Ejecutando Peticiones...';
+            btn.disabled = true;
+
+            const idToken = await authUser.getIdToken(true);
+
+            // Disparar todos los tests en paralelo para medir el estrés real del servidor
+            const promesas = testPayloads.map(async (test, index) => {
+                const expedienteTestId = `TEST_${authUser.uid}_${Date.now()}_${index}`;
+                
+                // EXTRAEMOS LA RADIOGRAFÍA DE LA CASA PARA MOSTRARLA EN PANTALLA
+                const p = test.payload;
+                const detallesCasa = `Terr: ${p.Superficie_Terreno}m² | Const: ${p.Superficie_Construccion}m² | 🛏️ ${p.No_Recamaras} | 🛁 ${p.No_Banos} | 🚗 ${p.No_Estacionamientos} | Edad: ${p.Edad_Anos}a | ${p.Clase_Inmueble}`;
+                
+                // Le pasamos el tercer parámetro a la tarjeta
+                crearTarjetaLog(expedienteTestId, test.nombre, detallesCasa);
+                
+                const tiempoInicio = Date.now();
+                actualizarTarjetaLog(expedienteTestId, 'PROCESANDO', 'Petición asíncrona enviada a Netlify (Fire and Forget)...');
+
+                // Listener en tiempo real de Firebase
+                return new Promise((resolve) => {
+                    const unsubscribe = db.collection('expedientes_avaluos').doc(expedienteTestId).onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const dataDoc = doc.data();
+                            
+                            if (dataDoc.estatus_motor === 'PROCESANDO') {
+                                // Evitar duplicar logs
+                            } else if (dataDoc.estatus_motor === 'COMPLETADO') {
+                                const tiempoFin = Date.now();
+                                const duracionMs = tiempoFin - tiempoInicio;
+                                const valorDevuelto = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(dataDoc.resultados_motor.data.valor_final);
+                                
+                                actualizarTarjetaLog(expedienteTestId, 'COMPLETADO', `Motor Beta 188 Finalizado. Valor dictaminado: ${valorDevuelto}`, duracionMs);
+                                unsubscribe();
+                                resolve();
+                            } else if (dataDoc.estatus_motor === 'ERROR') {
+                                actualizarTarjetaLog(expedienteTestId, 'ERROR', `Error del motor: ${dataDoc.error_motor}`, null, true);
+                                unsubscribe();
+                                resolve();
+                            }
+                        }
+                    });
+
+                    // Lanzar la petición asíncrona (Arquitectura Empresarial)
+                    fetch('/.netlify/functions/calcular-estimacion-background', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, 
+                        body: JSON.stringify({ parametros_motor: test.payload, expedienteId: expedienteTestId }) 
+                    }).catch(err => {
+                        actualizarTarjetaLog(expedienteTestId, 'ERROR', `Fallo de red al intentar conectar con Netlify: ${err.message}`, null, true);
+                        unsubscribe();
+                        resolve();
+                    });
+                });
+            });
+
+            // Esperamos a que TODAS las promesas (los 10 nodos) terminen de calcularse en el fondo
+            await Promise.all(promesas);
+
+            btn.innerHTML = '<span class="material-symbols-rounded">rocket_launch</span> Ejecutar Acid Test (10 Nodos)';
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>

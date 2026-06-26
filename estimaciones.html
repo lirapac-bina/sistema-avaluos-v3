@@ -203,6 +203,10 @@
                         <input type="hidden" id="est-coords" value="19.432600,-99.133200">
                         <input type="hidden" id="est-colonia" value="">
                         <input type="hidden" id="est-municipio" value="">
+                        <!-- CAMPOS DINÁMICOS GEOCODER -->
+                        <input type="hidden" id="est-estado" value="Veracruz">
+                        <input type="hidden" id="est-calle" value="Conocida">
+                        
                         <p id="txt-coordenadas" class="text-center text-[10px] text-slate-400 mt-2 font-mono font-bold tracking-widest">19.432600, -99.133200</p>
                     </div>
                 </div>
@@ -594,12 +598,15 @@
         let currentStep = 1;
         const totalSteps = 4;
         let map; 
+        let geocoder; // CEREBRO DE DIRECCIONES
         let mapLoaded = false;
 
         // 1. INICIALIZAR GOOGLE MAPS (Estilo Uber)
         window.initGoogleMap = function() {
             if (mapLoaded) return;
             const defaultCoords = { lat: 19.5332, lng: -96.9271 }; // Default Centro de Veracruz/Xalapa
+            
+            geocoder = new google.maps.Geocoder(); // Encendemos el Geocoder
             
             map = new google.maps.Map(document.getElementById("map"), {
                 center: defaultCoords,
@@ -612,11 +619,39 @@
             // Magia Uber: Detectar coordenadas al detener el arrastre del mapa
             map.addListener("idle", () => {
                 const center = map.getCenter();
-                const lat = center.lat().toFixed(6);
-                const lng = center.lng().toFixed(6);
+                const lat = center.lat();
+                const lng = center.lng();
                 
-                document.getElementById('est-coords').value = `${lat},${lng}`;
-                document.getElementById('txt-coordenadas').innerText = `${lat}, ${lng}`;
+                document.getElementById('est-coords').value = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+                document.getElementById('txt-coordenadas').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+                // 🌟 REVERSE GEOCODING: Traducir GPS a Dirección Real
+                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        let estado = "";
+                        let calle = "";
+                        let numero = "";
+                        let cp = "";
+                        
+                        results[0].address_components.forEach(comp => {
+                            if (comp.types.includes("administrative_area_level_1")) estado = comp.long_name;
+                            if (comp.types.includes("route")) calle = comp.long_name;
+                            if (comp.types.includes("street_number")) numero = comp.long_name;
+                            if (comp.types.includes("postal_code")) cp = comp.long_name;
+                        });
+
+                        // Inyectamos los datos en la memoria
+                        if(estado) document.getElementById('est-estado').value = estado;
+                        const direccionArmada = (calle + " " + numero).trim();
+                        if(direccionArmada) document.getElementById('est-calle').value = direccionArmada;
+                        
+                        // Autocompletar el input visual del CP si el usuario no lo ha escrito
+                        const inputCp = document.getElementById('est-cp');
+                        if(cp && inputCp.value === "") {
+                            inputCp.value = cp;
+                        }
+                    }
+                });
             });
 
             // Pedir ubicación al cliente (Geolocalización del celular o PC)

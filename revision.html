@@ -608,10 +608,87 @@
             });
         });
         
+        // 🛠️ FUNCIÓN MAESTRA DE AUTO-REPARACIÓN SILENCIOSA
+        async function autoRepararExpediente(expedienteId, data) {
+            try {
+                const configRef = db.collection('configuracion').doc('plantilla_maestra');
+                const docSnap = await configRef.get();
+                if (!docSnap.exists) return;
+
+                const dbData = docSnap.data();
+                const diccionarioGlobal = dbData.diccionario || {};
+                const matriz = dbData.matriz || {};
+
+                const norm = (txt) => (txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+                const entNorm = norm(data.entidad || data.estado || 'GLOBAL');
+                const tramNorm = norm(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
+
+                const entidadKey = Object.keys(matriz).find(k => norm(k) === entNorm) || Object.keys(matriz).find(k => norm(k).includes('NACIONAL')) || Object.keys(matriz).find(k => norm(k).includes('GLOBAL'));
+                if (!entidadKey || !matriz[entidadKey]) return;
+                
+                const entidadData = matriz[entidadKey];
+                const tramiteKey = Object.keys(entidadData).find(k => norm(k) === tramNorm) || Object.keys(entidadData).find(k => norm(k) === 'GLOBAL') || Object.keys(entidadData).find(k => norm(k) === 'INFONAVIT');
+                if (!tramiteKey || !entidadData[tramiteKey]) return;
+
+                const plantilla = entidadData[tramiteKey];
+                const checklistActual = data.checklist || {};
+                let actualizaciones = {};
+                let hayCambios = false;
+
+                const numSol = parseInt(data.numSolicitantes) || 1;
+                const numProp = parseInt(data.numPropietarios) || 1;
+
+                const procesarCategoria = (items, categoria, cantidad) => {
+                    if (!items) return;
+                    items.forEach(item => {
+                        const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
+                        const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
+                        
+                        for (let i = 0; i < loop; i++) {
+                            let suffix = loop > 1 ? `_${i + 1}` : '';
+                            let key = `${norm(item.id)}${suffix}`;
+                            
+                            // Si NO existe el requisito en el expediente, se inyecta con todo su ADN
+                            if (!checklistActual[key]) {
+                                let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                                actualizaciones[`checklist.${key}`] = {
+                                    nombre: nombre,
+                                    categoria: infoDic.categoria || categoria,
+                                    estatus: 'PENDIENTE',
+                                    obligatorio: item.obligatorio !== false,
+                                    tipo: infoDic.tipo || 'MIXTO',
+                                    originalId: item.id,
+                                    usaIA: infoDic.usaIA || false,
+                                    promptIA: infoDic.promptIA || infoDic.prompt || null,
+                                    plantilla: infoDic.plantilla || null
+                                };
+                                hayCambios = true;
+                            }
+                        }
+                    });
+                };
+
+                procesarCategoria(plantilla.solicitante || plantilla.SOLICITANTE, 'solicitante', numSol);
+                procesarCategoria(plantilla.propietario || plantilla.PROPIETARIO, 'propietario', numProp);
+                procesarCategoria(plantilla.inmueble || plantilla.INMUEBLE, 'inmueble', 1);
+
+                if (!checklistActual['UBICACION_MAPS']) {
+                    actualizaciones['checklist.UBICACION_MAPS'] = { nombre: 'Ubicación GPS', categoria: 'inmueble', estatus: 'PENDIENTE', obligatorio: true, tipo: 'MAPA', id: 'UBICACION_MAPS' };
+                    hayCambios = true;
+                }
+
+                if (hayCambios) {
+                    console.log("🛠️ Inyectando requisitos faltantes al expediente...");
+                    await db.collection('expedientes_avaluos').doc(expedienteId).update(actualizaciones);
+                }
+
+            } catch (e) { console.error("Error en auto-reparación:", e); }
+        }
+
         function fetchDetalles(id) {
             try {
                 // 🌟 FIX: Cambiamos a onSnapshot para tener Tiempo Real absoluto sin recargar
-                db.collection('expedientes_avaluos').doc(id).onSnapshot((docRef) => {
+                db.collection('expedientes_avaluos').doc(id).onSnapshot(async (docRef) => {
                     if (!docRef.exists) {
                         console.error("Expediente no encontrado en la BD.");
                         return;
@@ -619,6 +696,12 @@
 
                     const data = docRef.data();
                     data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
+
+                    // 🛡️ MOTOR DE AUTO-REPARACIÓN (Se ejecuta solo la 1ra vez que abres el expediente)
+                    if (!window.reparacionHecha) {
+                        window.reparacionHecha = true;
+                        await autoRepararExpediente(id, data);
+                    }
 
                     transformarDatos(id, data);
                     renderCurrentGroup();

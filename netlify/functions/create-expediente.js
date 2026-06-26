@@ -92,11 +92,7 @@ async function crearCarpetaDrive(nombreCarpeta, parentFolderId) {
     }
 }
 
-const PLANTILLA_RESPALDO = {
-    solicitante: [{ id: 'INE', nombre: 'Identificación Oficial', obligatorio: true }],
-    propietario: [{ id: 'ESCRITURA', nombre: 'Escritura Pública', obligatorio: true }],
-    inmueble: [{ id: 'PREDIAL', nombre: 'Boleta Predial', obligatorio: true }]
-};
+
 
 exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
@@ -113,6 +109,7 @@ exports.handler = async (event, context) => {
         let plantilla = null;
         let diccionarioGlobal = {};
         
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (BLINDADO) ---
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
             const docSnap = await configRef.get();
@@ -120,14 +117,30 @@ exports.handler = async (event, context) => {
                 const dbData = docSnap.data();
                 diccionarioGlobal = dbData.diccionario || {};
                 const matriz = dbData.matriz || {};
-                let plantillaEntidad = matriz[entidadBusqueda] || matriz[Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda)];
-                if (plantillaEntidad) {
-                    plantilla = plantillaEntidad[tramiteBusqueda] || plantillaEntidad[Object.keys(plantillaEntidad).find(k => normalizar(k) === tramiteBusqueda)];
+
+                // 1. Buscamos la Entidad Exacta. Si no existe, buscamos la que contenga "NACIONAL" o "GLOBAL"
+                const entidadKey = Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda) || 
+                                   Object.keys(matriz).find(k => normalizar(k).includes('NACIONAL')) ||
+                                   Object.keys(matriz).find(k => normalizar(k).includes('GLOBAL'));
+                
+                if (entidadKey && matriz[entidadKey]) {
+                    const entidadData = matriz[entidadKey];
+                    // 2. Buscamos el Trámite. Si no existe, buscamos "GLOBAL", si tampoco, "INFONAVIT"
+                    const tramiteKey = Object.keys(entidadData).find(k => normalizar(k) === tramiteBusqueda) || 
+                                       Object.keys(entidadData).find(k => normalizar(k) === 'GLOBAL') || 
+                                       Object.keys(entidadData).find(k => normalizar(k) === 'INFONAVIT');
+                    
+                    if (tramiteKey) {
+                        plantilla = entidadData[tramiteKey];
+                    }
                 }
             }
         } catch (e) { console.error("Error leyendo plantilla:", e); }
 
-        if (!plantilla) plantilla = PLANTILLA_RESPALDO;
+        // Si por un desastre en la BD no hay plantilla, detenemos la creación y lanzamos un error limpio
+        if (!plantilla) {
+            throw new Error(`No existe configuración de requisitos para la entidad y trámite solicitados.`);
+        }
 
         let checklistFinal = {};
         
