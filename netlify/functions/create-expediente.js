@@ -147,23 +147,30 @@ exports.handler = async (event, context) => {
         const procesarItems = (items, categoria, cantidad = 1) => {
             if (!items) return;
             items.forEach(item => {
+                // Normalizamos el ID para evitar duplicados por nombres similares
+                const itemKey = normalizar(item.id);
                 const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
                 const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
                 
                 for (let i = 0; i < loop; i++) {
                     let suffix = loop > 1 ? `_${i + 1}` : '';
-                    let key = `${normalizar(item.id)}${suffix}`;
-                    let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                    let key = `${itemKey}${suffix}`;
                     
-                    checklistFinal[key] = {
-                        nombre: nombre, 
-                        categoria: infoDic.categoria || categoria, 
-                        estatus: 'PENDIENTE',
-                        obligatorio: item.obligatorio !== false, 
-                        tipo: infoDic.tipo || 'MIXTO', 
-                        originalId: item.id
-                    };
-                    if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
+                    // 🛡️ BLINDAJE ANTI-DUPLICADOS: Solo agregamos si no existe ya en el checklistFinal
+                    if (!checklistFinal[key]) {
+                        let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                        checklistFinal[key] = {
+                            nombre: nombre, 
+                            categoria: infoDic.categoria || categoria, 
+                            estatus: 'PENDIENTE',
+                            obligatorio: item.obligatorio !== false, 
+                            tipo: infoDic.tipo || 'MIXTO', 
+                            originalId: item.id
+                        };
+                        if (infoDic.plantilla) checklistFinal[key].plantilla = infoDic.plantilla;
+                    } else {
+                        console.warn(`⚠️ Requisito duplicado detectado y bloqueado: ${key}`);
+                    }
                 }
             });
         };
