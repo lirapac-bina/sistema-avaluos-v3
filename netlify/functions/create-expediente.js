@@ -239,7 +239,7 @@ exports.handler = async (event, context) => {
         // 🚀 AVISAR A TELEGRAM LA CREACIÓN MANUAL
         // ========================================================
         try {
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkOxixZXOLp4mfNOA7Vg_OPLmdRJpSBO6FHW8R-ARVFVZfCjUnlhro17PIQSsldKuW/exec";
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwtosKxFAJQ-89f06nl0mage6KQFXUBivNp1rRthEPfuIBR55i4SgibYGC0f5MbgaC/exec";
             const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
             
             // Disparamos la notificación
