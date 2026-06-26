@@ -639,34 +639,39 @@
                 const numProp = parseInt(data.numPropietarios) || 1;
 
                 const procesarCategoria = (items, categoria, cantidad) => {
-                    if (!items) return;
-                    items.forEach(item => {
-                        const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
-                        const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
-                        
-                        for (let i = 0; i < loop; i++) {
-                            let suffix = loop > 1 ? `_${i + 1}` : '';
-                            let key = `${norm(item.id)}${suffix}`;
-                            
-                            // Si NO existe el requisito en el expediente, se inyecta con todo su ADN
-                            if (!checklistActual[key]) {
-                                let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
-                                actualizaciones[`checklist.${key}`] = {
-                                    nombre: nombre,
-                                    categoria: infoDic.categoria || categoria,
-                                    estatus: 'PENDIENTE',
-                                    obligatorio: item.obligatorio !== false,
-                                    tipo: infoDic.tipo || 'MIXTO',
-                                    originalId: item.id,
-                                    usaIA: infoDic.usaIA || false,
-                                    promptIA: infoDic.promptIA || infoDic.prompt || null,
-                                    plantilla: infoDic.plantilla || null
-                                };
-                                hayCambios = true;
-                            }
-                        }
-                    });
+    if (!items) return;
+    items.forEach(item => {
+        const infoDic = diccionarioGlobal[item.id] || { nombre: item.nombre || item.id, tipo: 'MIXTO', categoria: categoria };
+        const loop = (categoria === 'solicitante' || categoria === 'propietario') ? cantidad : 1;
+        
+        for (let i = 0; i < loop; i++) {
+            let suffix = loop > 1 ? `_${i + 1}` : '';
+            let key = `${norm(item.id)}${suffix}`;
+            
+            // 🛡️ BLINDAJE ANTI-DUPLICADO
+            // Buscamos si existe alguna llave en el checklistActual que al normalizarse sea igual a nuestra llave
+            const existeDuplicado = Object.keys(checklistActual).some(k => norm(k) === norm(key));
+
+            if (!checklistActual[key] && !existeDuplicado) {
+                let nombre = `${infoDic.nombre}${loop > 1 ? ' (' + (i + 1) + ')' : ''}`;
+                actualizaciones[`checklist.${key}`] = {
+                    nombre: nombre,
+                    categoria: infoDic.categoria || categoria,
+                    estatus: 'PENDIENTE',
+                    obligatorio: item.obligatorio !== false,
+                    tipo: infoDic.tipo || 'MIXTO',
+                    originalId: item.id,
+                    usaIA: infoDic.usaIA || false,
+                    promptIA: infoDic.promptIA || infoDic.prompt || null,
+                    plantilla: infoDic.plantilla || null
                 };
+                hayCambios = true;
+            } else {
+                console.log(`🚫 Duplicado detectado para ${key}, bloqueado.`);
+            }
+        }
+    });
+};
 
                 procesarCategoria(plantilla.solicitante || plantilla.SOLICITANTE, 'solicitante', numSol);
                 procesarCategoria(plantilla.propietario || plantilla.PROPIETARIO, 'propietario', numProp);
