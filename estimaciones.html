@@ -204,8 +204,8 @@
                         <input type="hidden" id="est-colonia" value="">
                         <input type="hidden" id="est-municipio" value="">
                         <!-- CAMPOS DINÁMICOS GEOCODER -->
-                        <input type="hidden" id="est-estado" value="Veracruz">
-                        <input type="hidden" id="est-calle" value="Conocida">
+                        <input type="hidden" id="est-estado" value="">
+                        <input type="hidden" id="est-calle" value="">
                         
                         <p id="txt-coordenadas" class="text-center text-[10px] text-slate-400 mt-2 font-mono font-bold tracking-widest">19.432600, -99.133200</p>
                     </div>
@@ -643,12 +643,13 @@
                         // Inyectamos los datos en la memoria
                         if(estado) document.getElementById('est-estado').value = estado;
                         const direccionArmada = (calle + " " + numero).trim();
-                        if(direccionArmada) document.getElementById('est-calle').value = direccionArmada;
+                        document.getElementById('est-calle').value = direccionArmada || "Conocida";
                         
                         // Autocompletar el input visual del CP si el usuario no lo ha escrito
                         const inputCp = document.getElementById('est-cp');
                         if(cp && inputCp.value === "") {
                             inputCp.value = cp;
+                            buscarCPFirebase(cp); // Activamos tu búsqueda de colonia
                         }
                     }
                 });
@@ -769,9 +770,9 @@
                 "Tipo_Inmueble": document.getElementById('est-tipo').value || "Casa",
                 
                 // --- DATOS CRÍTICOS FALTANTES PARA EL MOTOR BETA 188 ---
-                "Estado": "Veracruz", 
+                "Estado": document.getElementById('est-estado').value || "Veracruz", 
                 "CP": document.getElementById('est-cp').value || "91000",
-                "Calle_Sujeto": "Conocida",
+                "Calle_Sujeto": document.getElementById('est-calle').value || "Conocida",
                 // -------------------------------------------------------
 
                 "Ciudad_Municipio": document.getElementById('est-municipio').value || "Xalapa",
