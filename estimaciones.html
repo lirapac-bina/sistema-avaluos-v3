@@ -5,23 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Estimador de Valor - EME</title>
     
-    <!-- LIBRERÍAS BASE -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- CONFIGURACIÓN TAILWIND (IDENTIDAD EME) -->
     <script>
         tailwind.config = { 
-            darkMode: 'class', 
             theme: { 
                 extend: { 
                     colors: { 
-                        eme: { 500: '#e11d48', 600: '#be123c', 700: '#9f1239', 900: '#4c0519' }, // Paleta Roja EME
-                        slate: { 850: '#151e2e' }
+                        eme: { 500: '#e11d48', 600: '#be123c', 700: '#9f1239' }, 
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' } // Acentos esmeralda/teal limpios
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] }
                 } 
@@ -32,994 +28,644 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .dark body { background-color: #0f172a; }
-        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
+        .card-bloque { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+        .card-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 20px; }
+        .card-header h2 { font-size: 1.1rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card-header span.icon { color: #0d9488; background: #f0fdfa; padding: 6px; border-radius: 8px; }
+        
+        label { font-size: 0.70rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.85rem; font-weight: 600; color: #1e293b; transition: all 0.2s; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
+        input:disabled, select:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .checkbox-item input { width: 16px; height: 16px; cursor: pointer; accent-color: #0d9488; }
+        .checkbox-item label { margin: 0; font-size: 0.75rem; text-transform: none; color: #334155; cursor: pointer; }
+        
+        /* Dropzone V18 */
+        .drop-zone { border: 2px dashed #94a3b8; border-radius: 12px; padding: 30px; text-align: center; background: #f8fafc; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .drop-zone:hover { border-color: #0d9488; background: #f0fdfa; color: #0d9488; }
     </style>
 
     <script>
         window.leezarMapReady = false;
-        window.initGoogleMap = function() { 
-            window.leezarMapReady = true; 
-        };
+        window.initGoogleMap = function() { window.leezarMapReady = true; };
         (function() {
             var script = document.createElement('script');
-            // Llave ofuscada en Base64 para seguridad frontend
             var key = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
             script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initGoogleMap`;
-            script.async = true;
-            script.defer = true;
+            script.async = true; script.defer = true;
             document.head.appendChild(script);
         })();
     </script>
-
 </head>
 
-<body class="text-slate-800 dark:text-slate-200 transition-colors duration-300">
-
-    <!-- HEADER EME -->
-    <header class="fixed top-0 left-0 w-full bg-eme-700 text-white shadow-lg z-40 h-20 flex items-center">
-        <div class="max-w-4xl w-full mx-auto px-4 flex justify-between items-center">
+<body>
+    <header class="fixed top-0 left-0 w-full bg-white border-b border-slate-200 shadow-sm z-40 h-16 flex items-center">
+        <div class="max-w-5xl w-full mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="h-12 w-auto bg-white p-1 rounded-lg shadow-sm flex items-center justify-center">
-                    <img src="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png" alt="Logo EME" class="h-full w-auto object-contain">
-                </div>
-                <div class="flex flex-col justify-center">
-                    <span class="font-black text-lg tracking-tight leading-none">Estimaciones de Valor Automatizadas</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-white/80">Centro Integral Inmobiliario</span>
+                <img src="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png" alt="EME" class="h-8 w-auto">
+                <div class="flex flex-col border-l border-slate-200 pl-3">
+                    <span class="font-black text-sm text-slate-800 leading-none">Motor Pericial V18</span>
+                    <span class="text-[9px] font-bold uppercase tracking-widest text-brand-600">Centro Integral Inmobiliario</span>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <a href="admin-estimaciones.html" id="btn-link-admin" class="hidden items-center gap-1 text-xs font-bold bg-slate-900 hover:bg-black px-3 py-1.5 rounded-lg transition-colors border border-slate-700 shadow-md">
-                    <span class="material-symbols-rounded text-sm">admin_panel_settings</span> Panel Admin
-                </a>
-                <button onclick="toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
-                    <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
+            <div id="auth-mini" class="flex items-center gap-4 hidden">
+                <div class="text-right hidden sm:block">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Saldo</p>
+                    <p class="text-sm font-black text-brand-600"><span id="user-credits">0</span> Créditos</p>
+                </div>
+                <button onclick="cerrarSesion()" class="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-lg transition-colors">
+                    <span class="material-symbols-rounded text-sm">logout</span>
                 </button>
             </div>
-                <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
-            </button>
         </div>
     </header>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <main class="max-w-3xl mx-auto px-4 pt-28 pb-12">
-
-        <div id="promo-banner" class="hidden mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-3 rounded-xl shadow-md flex items-center justify-center gap-2 animate-pulse">
-            <span class="material-symbols-rounded text-xl">local_fire_department</span>
-            <span class="font-black tracking-widest uppercase text-sm" id="promo-text">¡PROMOCIÓN ACTIVA!</span>
+    <div id="auth-screen" class="flex flex-col items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl p-8 shadow-xl border border-slate-200 text-center max-w-sm w-full">
+            <span class="material-symbols-rounded text-5xl text-brand-500 mb-4">vpn_key</span>
+            <h2 class="text-xl font-black text-slate-800 mb-2">Acceso a Valuadores</h2>
+            <p class="text-xs text-slate-500 mb-8">Inicia sesión para generar tus dictámenes.</p>
+            <button onclick="iniciarSesionGoogle()" class="w-full bg-white border-2 border-slate-200 hover:border-brand-500 text-slate-700 font-bold py-3 rounded-xl shadow-sm flex items-center justify-center gap-3 transition-all">
+                Continuar con Google
+            </button>
         </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (PERFIL OPERATIVO 4 - 80 CAMPOS V18) -->
+    <main id="app-dashboard" class="max-w-5xl mx-auto px-4 pt-24 pb-20 hidden">
         
-        <div id="auth-screen" class="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in hidden">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 text-center w-full max-w-md relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-2 bg-eme-600"></div>
-                <div class="w-20 h-20 bg-eme-50 dark:bg-eme-900/30 text-eme-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <span class="material-symbols-rounded text-4xl">vpn_key</span>
-                </div>
-                <h2 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Acceso a Clientes</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Inicia sesión de forma segura para generar, guardar y administrar tus estimaciones de valor.</p>
-                
-                <button onclick="iniciarSesionGoogle()" class="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-eme-500 dark:hover:border-eme-500 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-3 group">
-                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continuar con Google
-                </button>
-                <p class="text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-bold">Sin contraseñas que recordar</p>
-            </div>
-        </div>
-
-        <div id="app-dashboard" class="hidden animate-fade-in">
+        <form id="form-eme" onsubmit="event.preventDefault();">
             
-            <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 mb-6 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 hidden sm:block">
-                    <div>
-                        <p id="user-name" class="text-sm font-black text-slate-800 dark:text-white uppercase">Cargando...</p>
-                        <p id="user-email" class="text-[10px] text-slate-500 font-bold">...</p>
-                    </div>
+            <!-- CONTROLES GLOBALES -->
+            <div class="bg-slate-800 rounded-xl p-4 mb-6 shadow-md flex flex-wrap gap-4 items-center justify-between">
+                <div>
+                    <label class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-1 block">Perfil Operativo</label>
+                    <select id="perfil_usuario" name="perfil_solicitante" class="bg-slate-700 border border-slate-600 text-white w-auto min-w-[250px] p-2 rounded-lg text-sm outline-none" onchange="aplicarVisibilidadPerfiles()">
+                        <option value="4" selected>Perfil 4: Valuador Certificado EME (Completo)</option>
+                        <option value="3">Perfil 3: Valuador Independiente</option>
+                        <option value="2">Perfil 2: Híbrido Inmobiliario</option>
+                        <option value="1">Perfil 1: Automatizado (Básico)</option>
+                    </select>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right flex items-center gap-3">
-                        <div>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saldo Disponible</p>
-                            <p class="text-lg font-black text-eme-600 dark:text-eme-400"><span id="user-credits">0</span> Créditos</p>
-                        </div>
-                        <button onclick="document.getElementById('paywallModal').classList.replace('hidden', 'flex')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-1 transition-colors dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800">
-                            <span class="material-symbols-rounded text-sm">add_circle</span> Recargar
-                        </button>
-                    </div>
-                    <button onclick="cerrarSesion()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors" title="Cerrar Sesión">
-                        <span class="material-symbols-rounded text-[18px]">logout</span>
-                    </button>
-                </div>
-            </div>
-
-            <div id="status-banner" class="hidden mb-6 bg-eme-50 border border-eme-200 text-eme-800 p-4 rounded-xl text-sm font-bold items-center gap-2">
-                <span class="material-symbols-rounded">info</span>
-                <span id="status-message">El servicio de estimaciones está temporalmente en mantenimiento.</span>
-            </div>
-
-            <div id="estimador-form" class="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-eme-500 to-rose-600"></div>
-                
-                <div class="mb-8">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight" id="step-title">Paso 1: Ubicación</h2>
-                        <span class="text-xs font-bold text-eme-600 bg-eme-50 dark:bg-eme-900/30 px-3 py-1 rounded-full" id="step-counter">1 de 4</span>
-                    </div>
-                    <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                        <div id="progress-bar" class="bg-eme-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: 25%;"></div>
-                    </div>
-                </div>
-
-                <div id="step-1" class="wizard-step animate-fade-in">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Tipo de Reporte (Perfil) <span class="text-eme-600">*</span></label>
-                            <select id="est-perfil" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50 cursor-pointer">
-                                <option value="1">Perfil 1: Automatizado (Básico)</option>
-                                <option value="2">Perfil 2: Híbrido Inmobiliario</option>
-                                <option value="3">Perfil 3: Valuador Independiente</option>
-                                <option value="4">Perfil 4: Valuador Certificado EME</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Tipo de Inmueble <span class="text-eme-600">*</span></label>
-                            <select id="est-tipo" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-bold bg-slate-50 cursor-pointer">
-                                <option value="Casa">Casa Habitación</option>
-                                <option value="Departamento">Departamento</option>
-                                <option value="Terreno">Terreno</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-5">
-                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Código Postal <span class="text-eme-600">*</span></label>
-                        <div class="relative">
-                            <span class="material-symbols-rounded absolute left-4 top-3.5 text-slate-400">markunread_mailbox</span>
-                            <input type="text" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="buscarCPFirebase(this.value)" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 transition-all text-sm font-black tracking-widest bg-slate-50">
-                        </div>
-                        <p id="cp-status" class="text-[9px] text-slate-400 mt-1 font-bold uppercase hidden">Buscando...</p>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest flex items-center gap-1">
-                            <span class="material-symbols-rounded text-sm">map</span> Ubicación Exacta (Mueve el mapa) <span class="text-eme-600">*</span>
-                        </label>
-                        <div class="relative h-48 w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 overflow-hidden z-10">
-                            <div id="map" class="w-full h-full bg-slate-100"></div>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
-                                <span class="material-symbols-rounded text-[40px] text-eme-600 drop-shadow-lg z-20">location_on</span>
-                                <div class="w-3 h-1 bg-black/30 rounded-[100%] blur-[1px] -mt-1 z-10"></div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="est-coords" value="19.432600,-99.133200">
-                        <input type="hidden" id="est-colonia" value="">
-                        <input type="hidden" id="est-municipio" value="">
-                        <!-- CAMPOS DINÁMICOS GEOCODER -->
-                        <input type="hidden" id="est-estado" value="">
-                        <input type="hidden" id="est-calle" value="">
-                        
-                        <p id="txt-coordenadas" class="text-center text-[10px] text-slate-400 mt-2 font-mono font-bold tracking-widest">19.432600, -99.133200</p>
-                    </div>
-                </div>
-
-                <div id="step-2" class="wizard-step hidden animate-fade-in">
-                    <div class="grid grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">M² Terreno <span class="text-eme-600">*</span></label>
-                            <input type="number" id="est-terreno" placeholder="0" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 text-center">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">M² Construcción <span class="text-eme-600">*</span></label>
-                            <input type="number" id="est-construccion" placeholder="0" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 text-center">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Clase de Inmueble <span class="text-eme-600">*</span></label>
-                            <select id="est-clase" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="INTERES_SOCIAL">Interés Social</option>
-                                <option value="MEDIO" selected>Medio</option>
-                                <option value="RESIDENCIAL">Residencial</option>
-                                <option value="RESIDENCIAL_PLUS">Residencial Plus</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Conservación <span class="text-eme-600">*</span></label>
-                            <select id="est-conservacion" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="NUEVO">Nuevo / Recién Remodelado</option>
-                                <option value="BUENO" selected>Bueno</option>
-                                <option value="REGULAR">Regular (Req. mantenimiento)</option>
-                                <option value="MALO">Malo</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="step-3" class="wizard-step hidden animate-fade-in">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium text-center">Indique la distribución de espacios del inmueble</p>
-                    <div class="grid grid-cols-3 gap-4 mb-6">
-                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
-                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">bed</span>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Recámaras</label>
-                            <input type="number" id="est-habitaciones" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
-                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">shower</span>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Baños</label>
-                            <input type="number" id="est-banos" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 text-center">
-                            <span class="material-symbols-rounded text-2xl text-slate-400 mb-2">directions_car</span>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Cocheras</label>
-                            <input type="number" id="est-estacionamiento" value="0" min="0" class="w-full text-center bg-transparent font-black text-xl outline-none text-slate-800 dark:text-white">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="step-4" class="wizard-step hidden animate-fade-in">
-                    <div class="grid grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Edad (Años) <span class="text-eme-600">*</span></label>
-                            <input type="number" id="est-edad" value="5" min="0" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-black bg-slate-50 text-center">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Uso de Suelo <span class="text-eme-600">*</span></label>
-                            <select id="est-uso-suelo" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="Habitacional" selected>Habitacional</option>
-                                <option value="Comercial">Comercial</option>
-                                <option value="Mixto">Mixto</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Calidad de Acabados</label>
-                            <select id="est-acabados" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="Económico">Económico</option>
-                                <option value="Estándar" selected>Estándar</option>
-                                <option value="Lujo">Lujo</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Topografía</label>
-                            <select id="est-topografia" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="Plano" selected>Plano</option>
-                                <option value="Ascendente">Ascendente</option>
-                                <option value="Descendente">Descendente</option>
-                                <option value="Irregular">Irregular</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Ubicación en Manzana</label>
-                            <select id="est-ubicacion-manzana" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="Intermedio" selected>Intermedio</option>
-                                <option value="Esquina">Esquina</option>
-                                <option value="Cabecero">Cabecero</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Frente a</label>
-                            <select id="est-frente-a" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white outline-none focus:ring-2 focus:ring-eme-500 font-bold bg-slate-50 cursor-pointer">
-                                <option value="Calle" selected>Calle</option>
-                                <option value="Avenida">Avenida</option>
-                                <option value="Parque">Parque</option>
-                                <option value="Carretera">Carretera</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-6 mt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-4">
-                    <div class="flex justify-between gap-4">
-                        <button id="btn-prev" onclick="changeStep(-1)" class="hidden px-6 py-3.5 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors flex items-center gap-2">
-                            <span class="material-symbols-rounded text-sm">arrow_back</span> Atrás
-                        </button>
-                        
-                        <button id="btn-next" onclick="changeStep(1)" class="w-full md:w-auto ml-auto px-8 py-3.5 rounded-xl font-black text-sm bg-slate-800 hover:bg-slate-900 dark:bg-eme-600 dark:hover:bg-eme-700 text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 tracking-widest uppercase">
-                            Siguiente <span class="material-symbols-rounded text-sm">arrow_forward</span>
-                        </button>
-
-                        <button id="btn-calcular-estimacion" class="hidden w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
-                            <span class="material-symbols-rounded animate-pulse">memory</span> Procesar Algoritmo EME
-                        </button>
-                    </div>
-                    <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" id="costo-texto">Costo por consulta: Cargando...</p>
-                </div>
-            </div>
-
-            <div id="panel_conclusion_interactivo" class="hidden animate-fade-in mt-8 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                
-                <h3 class="text-xl font-black mb-2 flex items-center gap-2 drop-shadow-md"><span class="material-symbols-rounded text-3xl">my_location</span> Conclusión de Valor</h3>
-                <p class="text-[11px] font-medium text-emerald-100 mb-6 leading-relaxed">Seleccione el valor de cierre deseado dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
-
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-black/20 p-4 rounded-xl border border-white/10 backdrop-blur-sm text-center">
-                        <p class="text-[9px] font-bold text-emerald-200 uppercase tracking-widest mb-1">Rango Mínimo Estimado</p>
-                        <p class="text-xl font-black text-white" id="lbl_limite_inf">Cargando...</p>
-                    </div>
-                    <div class="bg-black/20 p-4 rounded-xl border border-white/10 backdrop-blur-sm text-center">
-                        <p class="text-[9px] font-bold text-emerald-200 uppercase tracking-widest mb-1">Rango Máximo Estimado</p>
-                        <p class="text-xl font-black text-white" id="lbl_limite_sup">Cargando...</p>
-                    </div>
-                </div>
-
-                <div class="bg-white/10 p-5 rounded-xl border border-white/20 backdrop-blur-md mb-8">
-                    <div class="flex justify-between items-end mb-3">
-                        <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado:</p>
-                        <p class="text-2xl font-black text-amber-300 drop-shadow-md" id="val_conclusion_seleccionado">$0.00</p>
-                    </div>
-                    <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="actualizarValorConcluidoLabel(this.value)" class="w-full accent-amber-400 h-2 bg-emerald-900/50 rounded-lg appearance-none cursor-pointer">
-                </div>
-
-                <button onclick="enviarGenerarReporteFinal()" id="btn-generar-pdf" class="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
-                    <span class="material-symbols-rounded text-lg">download</span> Consumir Crédito y Generar PDF
+                <button type="button" onclick="window.enviarDictamenPrevio()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 px-6 rounded-xl shadow-lg flex items-center gap-2 transition-transform active:scale-95 ml-auto uppercase tracking-widest text-sm">
+                    <span class="material-symbols-rounded">rocket_launch</span> Calcular Valor
                 </button>
             </div>
 
+            <!-- BLOQUE 1: UBICACIÓN -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">map</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">1. Identificación y Ubicación</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Inmueble</label>
+                        <select name="Tipo_Inmueble" id="est-tipo" onchange="aplicarLogicaInteligente()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Casa">Casa</option><option value="Departamento">Departamento</option><option value="Terreno">Terreno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Uso de Suelo</label>
+                        <select name="Uso_de_Suelo" id="est-uso-suelo" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Habitacional">Habitacional</option><option value="Comercial">Comercial</option><option value="Industrial">Industrial</option><option value="Mixto">Mixto</option><option value="Equipamiento">Equipamiento</option><option value="Campestre">Campestre</option><option value="En Breña">En Breña</option><option value="Rústico/Sin Servicios">Rústico/Sin Servicios</option><option value="Agrario/Agropecuario">Agrario/Agropecuario</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Estado</label>
+                        <input type="text" name="Estado" id="est-estado" readonly class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-100 text-sm font-semibold outline-none text-slate-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Ciudad / Municipio</label>
+                        <input type="text" name="Ciudad_Municipio" id="est-municipio" readonly class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-100 text-sm font-semibold outline-none text-slate-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Código Postal</label>
+                        <input type="text" name="CP" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="if(this.value.length === 5) buscarCPFirebase(this.value)" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold tracking-widest outline-none focus:border-emerald-500">
+                        <p id="cp-status" class="text-[9px] text-emerald-600 mt-1 font-bold hidden">Buscando...</p>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Colonia / Condominio</label>
+                        <input type="text" name="Colonia" id="est-colonia" placeholder="Ej: Playas del Conchal" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Calle y Número</label>
+                        <input type="text" name="Calle_Sujeto" id="est-calle" placeholder="Ej: Avenida Camarones Cuarenta" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-sm">my_location</span> Microlote Interactivo (Arrastre el pin)</label>
+                    <div class="relative h-64 w-full rounded-xl border border-slate-300 overflow-hidden shadow-inner">
+                        <div id="map" class="w-full h-full bg-slate-100"></div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
+                            <span class="material-symbols-rounded text-4xl text-red-600 drop-shadow-md">location_on</span>
+                        </div>
+                    </div>
+                    <input type="hidden" name="Geolocalizacion_Google" id="est-coords">
+                    <p id="txt-coordenadas" class="text-[10px] text-slate-400 mt-2 text-center font-mono font-bold tracking-widest">19.432600, -99.133200</p>
+                </div>
+            </div>
+
+            <!-- BLOQUE 2: TERRENO -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">landscape</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">2. Características del Terreno</h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Superficie Terreno (m²)</label><input type="number" name="Superficie_Terreno" id="num_superficie_terreno" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Frente (m)</label><input type="number" name="Frente_m" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Fondo (m)</label><input type="number" name="Fondo_m" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Topografía</label>
+                        <select name="Topografia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Plano" selected>Plano</option><option value="Pendiente Ligera">Pendiente Ligera</option><option value="Accidentado/Barranco">Accidentado/Barranco</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Ubicación en Manzana</label>
+                        <select name="Ubicacion_en_Manzana" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Un frente">Un frente</option><option value="Intermedio" selected>Intermedio</option><option value="Esquina">Esquina</option><option value="Dos frentes no contiguos">Dos frentes no contiguos</option><option value="Cabecera de manzana">Cabecera de manzana</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Frente a</label>
+                        <select name="Frente_a" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Calle" selected>Calle</option><option value="Carretera">Carretera</option><option value="Avenida">Avenida</option><option value="Cerrada">Cerrada</option><option value="Andador">Andador</option><option value="Servidumbre de paso">Servidumbre de paso</option><option value="Sin acceso">Sin acceso</option><option value="Privada">Privada</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 3: CONSTRUCCIÓN -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">foundation</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">3. Características de Construcción</h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" id="num_sup_const" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Edad (Años)</label><input type="number" name="Edad_Anos" id="num_edad" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Conservación</label>
+                        <select name="Estado_Conservacion" id="est-conservacion" onchange="aplicarLogicaInteligente()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option>
+                        </select>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Elevador</label><select name="Elevador" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 4: EQUIPAMIENTO -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">chair</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">4. Equipamiento y Categoría</h2>
+                </div>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-4 text-center">
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">bed</span>Recámaras</label><input type="number" name="No_Recamaras" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">shower</span>Baños</label><input type="number" name="No_Banos" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">directions_car</span>Autos</label><input type="number" name="No_Estacionamientos" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block mt-2 md:mt-0">Clase de Inmueble</label>
+                        <select name="Clase_Inmueble" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Clase Media" selected>Clase Media</option><option value="Interés Social">Interés Social</option><option value="Semilujo">Semilujo</option><option value="Residencial">Residencial</option><option value="Lujo">Lujo</option>
+                        </select>
+                    </div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block mt-2 md:mt-0">Calidad Acabados</label>
+                        <select name="Calidad_Acabados" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                            <option value="Ninguna">Ninguna</option><option value="Estándar" selected>Estándar</option><option value="Económicos">Económicos</option><option value="Semilujo">Semilujo</option><option value="Lujo">Lujo</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 5: ADN E INFRAESTRUCTURA -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">architecture</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">5. Capa ADN e Infraestructura</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Calle</label><select name="Tipo_de_Calle" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Asfalto" selected>Asfalto</option><option value="Terraceria">Terraceria</option><option value="Adoquin">Adoquin</option><option value="Concreto Hidraulico">Concreto Hidraulico</option><option value="Calle de Piedra">Calle de Piedra</option><option value="Piedra">Piedra</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo Acceso Complejo</label><select name="Tipo_de_Acceso_Complejo" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Pluma TAG">Pluma TAG</option><option value="Abierto" selected>Abierto</option><option value="Porton Electrico">Porton Electrico</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Red de Agua</label><select name="Red_de_Agua" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Conexion al Inmueble" selected>Conexion al Inmueble</option><option value="Pozo de Agua">Pozo de Agua</option><option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Drenaje</label><select name="Tipo_de_Drenaje" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Conexion a Red" selected>Conexion a Red</option><option value="Fosa Septica">Fosa Septica</option><option value="Resumidero">Resumidero</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Señalización / Nom.</label><select name="Senalizacion_Nomenclatura" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Completa" selected>Completa</option><option value="Inexistente">Inexistente</option><option value="Solo Nomenclatura">Solo Nomenclatura</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Suministro Servicios</label><select name="Suministro_Servicios" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Subterraneos">Subterraneos</option><option value="Aereos" selected>Aereos</option><option value="Mixtos">Mixtos</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Urbanas</label><select name="Amenidades_Urbanas" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Parque Privado">Parque Privado</option><option value="Parque Publico">Parque Publico</option><option value="Casa Club">Casa Club</option><option value="Canchas Deportivas">Canchas Deportivas</option><option value="Acceso a Playa">Acceso a Playa</option><option value="Muelle">Muelle</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Techos</label><select name="Tipo_de_Techos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Losa de concreto" selected>Losa de concreto</option><option value="Losacero">Losacero</option><option value="Provisional">Provisional</option><option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option><option value="Vigueta y bovedilla">Vigueta y bovedilla</option><option value="Estructura metalica">Estructura metalica</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Material de Muros</label><select name="Material_de_Muros" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="De block" selected>De block</option><option value="Tablaroca">Tablaroca</option><option value="Provisionales">Provisionales</option><option value="Tablacemento">Tablacemento</option><option value="De tabique">De tabique</option><option value="Prefabricados">Prefabricados</option><option value="De concreto">De concreto</option><option value="De piedra">De piedra</option><option value="De adobe">De adobe</option><option value="De madera">De madera</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Acabado de Pisos</label><select name="Acabado_de_Pisos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Ceramicos" selected>Ceramicos</option><option value="Porcelanatos">Porcelanatos</option><option value="Tierra">Tierra</option><option value="Cemento">Cemento</option><option value="Maderas">Maderas</option><option value="Marmol / Gama Alta">Marmol / Gama Alta</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Calidad Madera</label><select name="Calidad_Madera" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="MDF/Pino" selected>MDF/Pino</option><option value="Cedro/Caoba">Cedro/Caoba</option><option value="Encino/Roble">Encino/Roble</option><option value="Sin Madera">Sin Madera</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Acabados Cocina</label><select name="Acabados_Cocina" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Barra de Concreto" selected>Barra de Concreto</option><option value="Granito">Granito</option><option value="Nula">Nula</option><option value="MDF">MDF</option><option value="Cuarzo">Cuarzo</option><option value="Tarja">Tarja</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Portón Propiedad</label><select name="Tipo_de_Porton_Propiedad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Sin Porton" selected>Sin Porton</option><option value="Electrico">Electrico</option><option value="Herreria">Herreria</option><option value="Manual">Manual</option><option value="Madera">Madera</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo Estacionamiento</label><select name="Tipo_de_Estacionamiento" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Abierto" selected>Abierto</option><option value="Subterraneo">Subterraneo</option><option value="En Bateria">En Bateria</option><option value="Techado">Techado</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Aire Acondicionado</label><select name="Tipo_Aire_Acondicionado" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguno" selected>Ninguno</option><option value="Minisplit">Minisplit</option><option value="Minisplit Inverter">Minisplit Inverter</option><option value="Cassette">Cassette</option><option value="Fan and Coil">Fan and Coil</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Num Equipos Aire</label><input type="number" name="Num_Equipos_Aire" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500 text-center"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Interiores</label><select name="Amenidades_Interiores" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Bodega">Bodega</option><option value="Cuarto de Servicio">Cuarto de Servicio</option><option value="Estudio">Estudio</option><option value="Gimnasio Privado">Gimnasio Privado</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Protección Térmica</label><select name="Proteccion_Termica" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option><option value="Vidrio Sencillo">Vidrio Sencillo</option><option value="Muros Aislados">Muros Aislados</option></select></div>
+                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Lista Espacios Exteriores</label><input type="text" name="Espacios_Exteriores_Lista" value="" placeholder="Ej: Jardín, terraza..." class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Plusvalía Atípica</label><select name="Caso_Atipico_Plusvalia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguno" selected>Ninguno</option><option value="Vista al Mar">Vista al Mar</option><option value="Primera Fila al Mar">Primera Fila al Mar</option><option value="Frente a Laguna">Frente a Laguna</option><option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option><option value="Vista a la Laguna">Vista a la Laguna</option><option value="Vista a la Marina">Vista a la Marina</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Conectividad</label><select name="Conectividad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Fibra Optica">Fibra Optica</option><option value="Satelital">Satelital</option><option value="Cobre">Cobre</option></select></div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 6: CRÍTICOS Y MEJORAS -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-amber-500 bg-amber-50 p-2 rounded-lg">warning</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">6. Parámetros Críticos y Mejoras</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Certeza Jurídica</label><select name="Certeza_Juridica" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Escritura Publica" selected>Escritura Pública</option><option value="Ejidal">Ejidal</option><option value="Certificado Parcelario">Certificado Parcelario</option><option value="Posesion">Posesión</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Régimen Propiedad</label><select name="Regimen_Propiedad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Individual" selected>Individual</option><option value="Privada Condominal">Privada Condominal</option><option value="Privada Normal (Asociacion)">Privada Normal (Asociacion)</option><option value="Privada Copropiedad">Privada Copropiedad</option><option value="Sin Regimen">Sin Regimen</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Vigilancia</label><select name="Tipo_de_Vigilancia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Nula" selected>Nula</option><option value="Privada (Caseta)">Privada (Caseta)</option><option value="Publica">Pública</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Cuota Mantenimiento ($)</label><input type="number" name="Cuota_Mantenimiento" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Colindancia</label><select name="Colindancia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Habitacional">Habitacional</option><option value="Comercial Ruidosa">Comercial Ruidosa</option><option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option></select></div>
+                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto" value="" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
+                    
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Mantenimiento Reciente</label><input type="text" name="Mantenimiento_Reciente_Lista" value="" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Humedades</label><select name="Estado_de_Humedades" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Alcance Remodelación</label><select name="Alcance_Remodelacion" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                    <label class="text-xs font-black text-slate-800 uppercase tracking-widest mb-3 block border-b border-slate-200 pb-2">🛡️ Selección de Mejoras</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="cambio_pisos" class="w-4 h-4 accent-emerald-600"> Cambio Pisos</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="cambio_pisos_instalaciones" class="w-4 h-4 accent-emerald-600"> Pisos + Instal.</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="techado_cochera" class="w-4 h-4 accent-emerald-600"> Techado Cochera</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_cocina" class="w-4 h-4 accent-emerald-600"> Remodeló Cocina</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="ampliacion_habitaciones" class="w-4 h-4 accent-emerald-600"> Amp. Habitaciones</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="ampliacion_piso" class="w-4 h-4 accent-emerald-600"> Ampliación Piso</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_parcial" class="w-4 h-4 accent-emerald-600"> Remodelación Parcial</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_completa" class="w-4 h-4 accent-emerald-600"> Remodelación Total</label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Años desde Remodelación</label><input type="number" name="Anos_desde_Remodelacion" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Porcentaje Avance: <span id="val_avance" class="text-emerald-600">0</span>%</label><input type="range" name="Porcentaje_Avance" min="0" max="100" value="0" oninput="document.getElementById('val_avance').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Altura Techos</label><select name="Altura_Techos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Estandar (<2.50m)">Estándar (<2.50m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseño</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Negociación Final: <span id="val_negociacion" class="text-emerald-600">2</span>%</label><input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" oninput="document.getElementById('val_negociacion').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div class="md:col-span-4 mt-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Notas Particulares (PDF - Pag. 4 u 8)</label>
+                        <textarea name="Notas_Particulares" rows="3" placeholder="Observaciones de campo, advertencias técnicas..." class="w-full p-3 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 7: VERTICALIDAD -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">apartment</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">7. Especificaciones de Verticalidad</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Verticalidad Premium (Torres Lujo)</label>
+                        <select name="Verticalidad_Premium" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>No Aplica</option><option value="Si">Sí</option><option value="No">No</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 8: DOCUMENTOS DIGITALES (FOTOS / DROPZONE) -->
+            <div id="seccion-archivos" class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm hidden">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-brand-500 bg-brand-50 p-2 rounded-lg">cloud_upload</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">8. Carga Digital (Fotos y Anexos PDF)</h2>
+                </div>
+                <!-- Fachada -->
+                <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <label class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2 block flex items-center gap-1"><span class="material-symbols-rounded text-sm">photo_camera</span> Foto de Fachada (Portada PDF)</label>
+                    <input type="file" id="foto_fachada" accept="image/*" onchange="window.procesarFotoBase()" class="text-sm">
+                    <div id="vista_previa" class="hidden mt-3">
+                        <img id="img_preview" src="" class="h-24 w-auto rounded border-2 border-emerald-500 object-cover shadow-sm">
+                    </div>
+                </div>
+                <!-- Interiores (Dropzone) -->
+                <div class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-colors" id="drop_zone_unificada" onclick="document.getElementById('file_input_unificado').click()">
+                    <span class="material-symbols-rounded text-4xl mb-2 text-slate-400">add_photo_alternate</span><br>
+                    <span class="text-sm font-bold text-slate-600">Arrastre aquí fotos interiores o planos (o haga clic)</span>
+                    <input type="file" id="file_input_unificado" multiple accept="image/*,application/pdf" class="hidden" onchange="window.procesarArchivosDropzone(this.files)">
+                </div>
+                <div id="contenedor_thumbnails" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4"></div>
+            </div>
+
+            <!-- BLOQUE 9: DATOS DEL VALUADOR -->
+            <div id="seccion-valuador" class="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm hidden">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
+                    <span class="material-symbols-rounded text-brand-500 bg-brand-50 p-2 rounded-lg">badge</span>
+                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">Datos del Valuador (Para el PDF Oficial)</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Nombre Completo</label><input type="text" name="Nombre_Valuador" placeholder="Arq. Juan Pérez" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></div>
+                    <div id="grupo_cedula"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Cédula Profesional</label><input type="text" name="Cedula_Valuador" placeholder="Ej: 12345678" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></div>
+                    <div id="grupo_id_eme" class="hidden"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Código EME</label><input type="text" name="EME_ID" placeholder="Ej: EME-092" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Correo de Contacto</label><input type="text" name="Correo_Valuador" placeholder="ejemplo@correo.com" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Teléfono</label><input type="text" name="Telefono_Valuador" placeholder="55 5555 5555" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></div>
+                </div>
+            </div>
+
+        </form>
+
+        <!-- PANEL DE CONCLUSIÓN VERDE (OCULTO INICIALMENTE) -->
+        <div id="panel_conclusion_interactivo" class="hidden mt-8 bg-emerald-600 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+            <h3 class="text-2xl font-black mb-4 flex items-center gap-2 drop-shadow-md"><span class="material-symbols-rounded text-3xl">task_alt</span> Conclusión de Valor</h3>
+            <p class="text-xs font-medium text-emerald-100 mb-8 leading-relaxed max-w-2xl">Mueva el selector para definir el valor comercial de cierre dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
+
+            <div class="grid grid-cols-2 gap-6 mb-8 text-center">
+                <div class="bg-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
+                    <p class="text-[10px] uppercase font-bold text-emerald-200 tracking-widest mb-2">Mínimo Estimado</p>
+                    <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_inf">$0</p>
+                </div>
+                <div class="bg-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
+                    <p class="text-[10px] uppercase font-bold text-emerald-200 tracking-widest mb-2">Máximo Estimado</p>
+                    <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_sup">$0</p>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 p-6 rounded-xl border border-white/20 backdrop-blur-md mb-8 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-2">
+                    <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado:</p>
+                    <p class="text-3xl font-black text-amber-300 drop-shadow-md font-mono" id="val_conclusion_seleccionado">$0.00</p>
+                </div>
+                <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="window.actualizarValorConcluidoLabel(this.value)" class="w-full mt-2 accent-amber-400 h-2 bg-emerald-900/50 rounded-lg appearance-none cursor-pointer">
+            </div>
+            
+            <button onclick="window.enviarGenerarReporteFinal()" id="btn-generar-pdf" class="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm tracking-widest uppercase">
+                <span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial
+            </button>
         </div>
+
     </main>
+
+    <div id="loadingOverlay" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex-col items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-[90%] text-center">
+            <span class="material-symbols-rounded text-4xl animate-spin text-brand-500 mb-4">memory</span>
+            <h3 class="text-lg font-black text-slate-800">Procesando Motor EME</h3>
+            <p class="text-xs text-slate-500 mt-2">Buscando comparables y calculando depreciaciones...</p>
+        </div>
+    </div>
 
     <script>
         const db = firebase.firestore();
-        let authUser = null;
-        let configuracionEstimador = {};
-
-        // 1. CARGA PARAMÉTRICA DESDE FIREBASE
-        async function cargarConfiguracion() {
-            try {
-                const docSnap = await db.collection('configuracion').doc('estimador_eme').get();
-                if (docSnap.exists) {
-                    configuracionEstimador = docSnap.data();
-                    
-                    if (!configuracionEstimador.activo) {
-                        document.getElementById('status-banner').classList.replace('hidden', 'flex');
-                        document.getElementById('btn-calcular-estimacion').disabled = true;
-                        document.getElementById('btn-calcular-estimacion').classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-
-                    // REVISAR CAMPAÑA DE MARKETING
-                    if(configuracionEstimador.promo && configuracionEstimador.promo.activa) {
-                        const banner = document.getElementById('promo-banner');
-                        banner.classList.remove('hidden');
-                        document.getElementById('promo-text').innerText = `¡${configuracionEstimador.promo.nombre} ACTIVO! ${configuracionEstimador.promo.descuento}% OFF`;
-                    }
-
-                    const costo = configuracionEstimador.paquetes && configuracionEstimador.paquetes.length > 0 
-                        ? configuracionEstimador.paquetes[0].precio
-                        : 1000;
-                    
-                    document.getElementById('costo-texto').innerText = costo > 0 ? `Costo base desde: $${costo} MXN` : 'Consulta Gratuita';
-
-                    // MANDAMOS A RENDERIZAR LOS PAQUETES
-                    if (configuracionEstimador.paquetes) {
-                        renderizarPaywall(configuracionEstimador.paquetes, configuracionEstimador.promo);
-                    }
-                }
-            } catch (error) {
-                console.error("Error al cargar configuración:", error);
-                document.getElementById('costo-texto').innerText = "Sistema en modo local";
-            }
-        }
-
-        // 1.5 DIBUJAR LOS PAQUETES CON DESCUENTOS MATEMÁTICOS
-        function renderizarPaywall(paquetes, promo) {
-            const container = document.getElementById('paquetes-container');
-            container.innerHTML = '';
-
-            if (!paquetes || paquetes.length === 0) {
-                container.innerHTML = '<p class="col-span-full text-center text-slate-500 text-sm font-bold">No hay paquetes disponibles en este momento.</p>';
-                return;
-            }
-
-            const paquetesOrdenados = [...paquetes].sort((a, b) => a.precio - b.precio);
-            const formatoDinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-
-            paquetesOrdenados.forEach((paq, index) => {
-                const esDestacado = index === paquetesOrdenados.length - 1 && paquetesOrdenados.length > 1;
-                const textoBoton = paq.creditos === 1 ? 'Adquirir 1 Crédito' : `Adquirir ${paq.creditos} Créditos`;
-                
-                // MAGIA: Aplicar el descuento si la campaña está encendida
-                let precioHTML = `${formatoDinero.format(paq.precio)}`;
-                if(promo && promo.activa && promo.descuento > 0) {
-                    const precioConDescuento = paq.precio * (1 - (promo.descuento / 100));
-                    precioHTML = `<span class="text-sm line-through text-slate-400 mr-2">${formatoDinero.format(paq.precio)}</span> <span class="text-eme-600 dark:text-eme-400">${formatoDinero.format(precioConDescuento)}</span>`;
-                }
-
-                let cardHTML = '';
-                if (esDestacado) {
-                    cardHTML = `
-                    <div class="bg-white dark:bg-slate-800 border-2 border-eme-500 rounded-2xl p-6 text-center shadow-lg relative flex flex-col justify-between overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-eme-500 text-white text-[9px] font-bold uppercase px-3 py-1 tracking-widest rounded-bl-lg">Más Popular</div>
-                        <div>
-                            <h4 class="text-sm font-bold text-eme-600 dark:text-eme-400 uppercase tracking-wider mb-2">Paquete Volumen</h4>
-                            <p class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">${precioHTML} <span class="text-sm font-semibold text-slate-400">MXN</span></p>
-                            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-6 py-1 px-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-full inline-block">Incluye ${paq.creditos} Créditos</p>
-                        </div>
-                        <button onclick="comprarPaquete(${paq.creditos}, this)" class="w-full py-3 rounded-xl font-bold text-sm bg-eme-600 hover:bg-eme-700 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
-                            <span class="material-symbols-rounded text-base">lock</span> ${textoBoton}
-                        </button>
-                    </div>`;
-                } else {
-                    cardHTML = `
-                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center shadow-sm hover:border-eme-400 dark:hover:border-eme-500 transition-all flex flex-col justify-between group">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">Consulta Única</h4>
-                            <p class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">${precioHTML} <span class="text-sm font-semibold text-slate-400">MXN</span></p>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 py-1 px-3 bg-slate-100 dark:bg-slate-700 rounded-full inline-block">${paq.creditos} Crédito${paq.creditos > 1 ? 's' : ''}</p>
-                        </div>
-                        <button onclick="comprarPaquete(${paq.creditos}, this)" class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-eme-50 group-hover:text-eme-700 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-600">
-                            <span class="material-symbols-rounded text-base text-slate-400 group-hover:text-eme-600 transition-colors">lock</span> ${textoBoton}
-                        </button>
-                    </div>`;
-                }
-                container.innerHTML += cardHTML;
-            });
-        }
-
-        // 1.6 STUB: Nueva función de compra (preparando para el nuevo backend)
-        async function comprarPaqueteEspecial(creditosElegidos, btnElement) {
-            alert(`Has elegido comprar ${creditosElegidos} créditos. Próximamente se conectará al nuevo motor de Stripe paramétrico.`);
-            // Aquí irá el Fetch a nuestra Netlify Function renovada
-        }
-
-        // 2. MODO OSCURO (UI LIMPIA)
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const icon = document.getElementById('dark-mode-icon');
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                icon.innerText = 'dark_mode';
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                icon.innerText = 'light_mode';
-                localStorage.theme = 'dark';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('dark-mode-icon').innerText = 'light_mode';
-            }
-            cargarConfiguracion();
-        });
-
-        function cerrarPaywall() {
-            document.getElementById('paywallModal').classList.add('hidden');
-        }
-
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
+        let authUser = null;
+        let map, marker, geocoder;
+        let mapLoaded = false;
+        let archivosCargados = [];
+        let minValorCalculado = 0;
+        let maxValorCalculado = 0;
+        let ultimaBusqueda = null;
+        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
 
-        // 3. OBSERVADOR DE ESTADO DE SESIÓN (MAGIA EN TIEMPO REAL)
+        // INICIALIZACIÓN AUTH
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // El usuario está logueado
                 authUser = user;
-                
-                // Cambiar UI
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('app-dashboard').classList.remove('hidden');
+                document.getElementById('auth-mini').classList.remove('hidden');
                 
-                // Actualizar mini perfil
-                document.getElementById('user-name').innerText = user.displayName || "Usuario";
-                document.getElementById('user-email').innerText = user.email;
-                if(user.photoURL) {
-                    const avatar = document.getElementById('user-avatar');
-                    avatar.src = user.photoURL;
-                    avatar.classList.remove('hidden');
-                }
+                // Firestore sync
+                const userRef = db.collection('usuarios_estimador').doc(user.uid);
+                userRef.onSnapshot((doc) => {
+                    if (!doc.exists) {
+                        userRef.set({ email: user.email, creditos: 0 });
+                    } else {
+                        const data = doc.data();
+                        authUser.creditos = data.creditos || 0;
+                        document.getElementById('user-credits').innerText = data.creditos || 0;
+                    }
+                });
 
-                // Sincronizar con la Base de Datos (Firestore)
-                await inicializarUsuarioDB(user);
-                
+                if(window.leezarMapReady && !mapLoaded) inicializarMapa();
             } else {
-                // Nadie está logueado
                 authUser = null;
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('app-dashboard').classList.add('hidden');
             }
         });
 
-        // 4. FUNCIÓN PARA LLAMAR A GOOGLE
-        async function iniciarSesionGoogle() {
-            try {
-                // Esto abre la ventanita segura de Google
-                await auth.signInWithPopup(provider);
-            } catch (error) {
-                console.error("Error iniciando sesión:", error);
-                alert("Hubo un error al conectar con Google.");
-            }
-        }
+        function iniciarSesionGoogle() { auth.signInWithPopup(provider); }
+        function cerrarSesion() { auth.signOut(); }
 
-        // 5. REGISTRAR O CARGAR AL CLIENTE EN LA BASE DE DATOS
-        async function inicializarUsuarioDB(user) {
-            try {
-                const userRef = db.collection('usuarios_estimador').doc(user.uid);
-                
-                // Encendemos el Tiempo Real de Firestore para este cliente
-                userRef.onSnapshot((doc) => {
-                    if (!doc.exists) {
-                        // ¡ES SU PRIMERA VEZ! Lo damos de alta
-                        userRef.set({
-                            email: user.email,
-                            nombre: user.displayName,
-                            creditos: 0, // Inicia con 0, listo para comprar
-                            rol: 'cliente',
-                            fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        document.getElementById('user-credits').innerText = "0";
-                    } else {
-                        // YA EXISTE. Actualizamos su pantalla con sus créditos actuales
-                        const data = doc.data();
-                        document.getElementById('user-credits').innerText = data.creditos || 0;
-                        
-                        // Guardamos localmente para poder validar antes de calcular
-                        authUser.creditos = data.creditos || 0; 
-                        
-                        // SI ES ADMIN, MOSTRAR BOTÓN DE NAVEGACIÓN DIRECTA
-                        if(data.rol === 'admin') {
-                            const btnAdmin = document.getElementById('btn-link-admin');
-                            if(btnAdmin) {
-                                btnAdmin.classList.remove('hidden');
-                                btnAdmin.classList.add('flex');
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Error sincronizando base de datos:", error);
-            }
-        }
-
-        // 6. CERRAR SESIÓN
-        function cerrarSesion() {
-            if(confirm("¿Estás seguro de que deseas salir?")) {
-                auth.signOut();
-            }
-        }
-
-        // ==========================================
-        // 🚀 LÓGICA DEL WIZARD, MAPA Y CEREBRO AVM
-        // ==========================================
-        let currentStep = 1;
-        const totalSteps = 4;
-        let map; 
-        let geocoder; // CEREBRO DE DIRECCIONES
-        let mapLoaded = false;
-
-        // 1. INICIALIZAR GOOGLE MAPS (Estilo Uber)
-        window.initGoogleMap = function() {
-            if (mapLoaded) return;
-            const defaultCoords = { lat: 19.5332, lng: -96.9271 }; // Default Centro de Veracruz/Xalapa
+        // MAPA Y REVERSE GEOCODING
+        function inicializarMapa() {
+            if(mapLoaded) return;
+            geocoder = new google.maps.Geocoder();
+            const center = { lat: 19.4326, lng: -99.1332 };
+            map = new google.maps.Map(document.getElementById("map"), { center, zoom: 15, disableDefaultUI: true, zoomControl: true });
             
-            geocoder = new google.maps.Geocoder(); // Encendemos el Geocoder
-            
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: defaultCoords,
-                zoom: 16,
-                disableDefaultUI: true, // Quitamos botones de Google para estilo App
-                zoomControl: true,
-                mapTypeId: "roadmap"
-            });
-
-            // Magia Uber: Detectar coordenadas al detener el arrastre del mapa
             map.addListener("idle", () => {
-                const center = map.getCenter();
-                const lat = center.lat();
-                const lng = center.lng();
-                
-                document.getElementById('est-coords').value = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-                document.getElementById('txt-coordenadas').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                const c = map.getCenter();
+                document.getElementById('est-coords').value = `${c.lat().toFixed(6)},${c.lng().toFixed(6)}`;
+                document.getElementById('txt-coordenadas').innerText = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`;
 
-                // 🌟 REVERSE GEOCODING: Traducir GPS a Dirección Real
-                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                // Traducir GPS a Dirección
+                geocoder.geocode({ location: { lat: c.lat(), lng: c.lng() } }, (results, status) => {
                     if (status === "OK" && results[0]) {
-                        let estado = "";
-                        let calle = "";
-                        let numero = "";
-                        let cp = "";
-                        
+                        let est = "", calle = "", num = "", cp = "", neighborhood = "";
                         results[0].address_components.forEach(comp => {
-                            if (comp.types.includes("administrative_area_level_1")) estado = comp.long_name;
+                            if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
                             if (comp.types.includes("route")) calle = comp.long_name;
-                            if (comp.types.includes("street_number")) numero = comp.long_name;
+                            if (comp.types.includes("street_number")) num = comp.long_name;
                             if (comp.types.includes("postal_code")) cp = comp.long_name;
+                            if (comp.types.includes("neighborhood") || comp.types.includes("sublocality")) neighborhood = comp.long_name;
                         });
 
-                        // Inyectamos los datos en la memoria
-                        if(estado) document.getElementById('est-estado').value = estado;
-                        const direccionArmada = (calle + " " + numero).trim();
-                        document.getElementById('est-calle').value = direccionArmada || "Conocida";
+                        if(est) document.getElementById('est-estado').value = est;
+                        const dir = (calle + " " + num).trim();
+                        if(dir) document.getElementById('est-calle').value = dir;
                         
-                        // Autocompletar el input visual del CP si el usuario no lo ha escrito
                         const inputCp = document.getElementById('est-cp');
-                        if(cp && inputCp.value === "") {
+                        if(cp && inputCp.value !== cp) {
                             inputCp.value = cp;
-                            buscarCPFirebase(cp); // Activamos tu búsqueda de colonia
+                            buscarCPFirebase(cp, neighborhood);
                         }
                     }
                 });
             });
 
-            // Pedir ubicación al cliente (Geolocalización del celular o PC)
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    map.setCenter(pos);
+                navigator.geolocation.getCurrentPosition(pos => {
+                    map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
                 });
             }
             mapLoaded = true;
-        };
+        }
 
-        // 2. BUSCADOR DE CÓDIGO POSTAL EN FIREBASE
-        window.buscarCPFirebase = async function(cp) {
-            if (cp.length !== 5) return;
-            
-            const statusLabel = document.getElementById('cp-status');
-            statusLabel.innerText = "Buscando coordenadas...";
-            statusLabel.classList.remove('hidden', 'text-eme-500', 'text-emerald-500', 'text-rose-500');
-            statusLabel.classList.add('text-amber-500');
+        // BUSCAR CP EN FIREBASE Y LLENAR SELECT DE COLONIAS
+        async function buscarCPFirebase(cp, suggestedColonia = null) {
+            const status = document.getElementById('cp-status');
+            status.innerText = "Cargando colonias...";
+            status.classList.remove('hidden');
+            const selectColonia = document.getElementById('est-colonia');
 
             try {
                 const doc = await db.collection('codigos_postales').doc(cp).get();
+                selectColonia.innerHTML = '';
+                
                 if (doc.exists) {
                     const data = doc.data();
+                    document.getElementById('est-municipio').value = data.municipio || "";
                     
-                    // Extraemos los datos exactos y limpios
-                    const coloniaStr = Array.isArray(data.colonias) && data.colonias.length > 0 ? data.colonias[0] : (data.colonia || "");
-                    const municipioStr = data.municipio || "Xalapa";
-                    const ubicacionReal = `${coloniaStr}, ${municipioStr}`;
-                    
-                    if(data.latitud && data.longitud) {
-                        map.panTo({ lat: parseFloat(data.latitud), lng: parseFloat(data.longitud) });
-                        map.setZoom(17);
+                    if(data.latitud && data.longitud) map.setCenter({ lat: parseFloat(data.latitud), lng: parseFloat(data.longitud) });
+
+                    if (data.colonias && data.colonias.length > 0) {
+                        data.colonias.forEach(col => {
+                            selectColonia.innerHTML += `<option value="${col}">${col}</option>`;
+                        });
+                        
+                        // Si el mapa detectó una colonia, intentar seleccionarla
+                        if (suggestedColonia) {
+                            const found = data.colonias.find(c => c.toLowerCase().includes(suggestedColonia.toLowerCase()));
+                            if (found) selectColonia.value = found;
+                        }
                     }
-
-                    // Guardamos por separado en los inputs ocultos
-                    document.getElementById('est-colonia').value = coloniaStr;
-                    document.getElementById('est-municipio').value = municipioStr;
-                    
-                    statusLabel.innerText = `Encontrado: ${ubicacionReal}`;
-                    statusLabel.classList.replace('text-amber-500', 'text-emerald-500');
+                    status.classList.add('hidden');
                 } else {
-                    statusLabel.innerText = "CP no encontrado. Mueve el mapa manualmente.";
-                    statusLabel.classList.replace('text-amber-500', 'text-rose-500');
+                    selectColonia.innerHTML = '<option value="">Escriba la colonia manualmente...</option>';
+                    status.innerText = "CP no registrado. Capture manualmente.";
                 }
-            } catch (error) {
-                console.error("Error consultando CP:", error);
-                statusLabel.innerText = "Error al buscar el CP.";
-                statusLabel.classList.replace('text-amber-500', 'text-rose-500');
+            } catch (e) {
+                console.error(e);
             }
-        };
+        }
 
-        // 3. CONTROLADOR DE PASOS DEL WIZARD (Anti Capa 8)
-        window.changeStep = function(direction) {
-            // Validaciones antes de avanzar
-            if (direction === 1 && currentStep === 1) {
-                if (!document.getElementById('est-cp').value && !document.getElementById('est-colonia').value) {
-                    alert("Por favor ingresa un Código Postal o busca una colonia válida.");
-                    return;
-                }
-            }
-            if (direction === 1 && currentStep === 2) {
-                if (!document.getElementById('est-terreno').value || !document.getElementById('est-construccion').value) {
-                    alert("Los metros de terreno y construcción son obligatorios.");
-                    return;
-                }
-            }
-
-            document.getElementById(`step-${currentStep}`).classList.add('hidden');
-            currentStep += direction;
-            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+        // LÓGICA INTELIGENTE (SCENARIOS)
+        function aplicarLogicaInteligente() {
+            const tipo = document.getElementById('est-tipo').value;
+            const uso = document.getElementById('est-uso-suelo');
             
-            // Actualizar Interfaz (Titulos y Barra de progreso)
-            const titulosPasos = ['Ubicación', 'Dimensiones', 'Distribución', 'Detalles Técnicos'];
-            document.getElementById('step-title').innerText = `Paso ${currentStep}: ${titulosPasos[currentStep - 1]}`;
-            document.getElementById('step-counter').innerText = `${currentStep} de ${totalSteps}`;
-            document.getElementById('progress-bar').style.width = `${(currentStep / totalSteps) * 100}%`;
+            // Si es Casa o Depto, por defecto Habitacional
+            if (tipo === 'Casa' || tipo === 'Departamento') uso.value = 'Habitacional';
 
-            // Ocultar/Mostrar botón "Atrás"
-            document.getElementById('btn-prev').classList.toggle('hidden', currentStep === 1);
-            
-            // Ocultar/Mostrar botón Final vs "Siguiente"
-            if (currentStep === totalSteps) {
-                document.getElementById('btn-next').classList.add('hidden');
-                document.getElementById('btn-calcular-estimacion').classList.remove('hidden');
+            // Si es Nuevo, la edad es 0 y se bloquea
+            const cons = document.getElementById('est-conservacion').value;
+            const edad = document.getElementById('est-edad');
+            if (cons === 'Nuevo') {
+                edad.value = 0;
+                edad.disabled = true;
             } else {
-                document.getElementById('btn-next').classList.remove('hidden');
-                document.getElementById('btn-calcular-estimacion').classList.add('hidden');
+                edad.disabled = false;
             }
-        };
+        }
 
-        // INICIALIZACIÓN POR SI ACASO EL SCRIPT DE GOOGLE CARGA LENTO
-        document.addEventListener('DOMContentLoaded', () => {
-            if(window.leezarMapReady && !mapLoaded) window.initGoogleMap();
-        });
+        // VISIBILIDAD DE BLOQUES SEGÚN PERFIL
+        function aplicarVisibilidadPerfiles() {
+            const p = document.getElementById('perfil_usuario').value;
+            const secDocs = document.getElementById('seccion-archivos');
+            const secVal = document.getElementById('seccion-valuador');
+            
+            if(p === "1") { secDocs.classList.add('hidden'); secVal.classList.add('hidden'); }
+            if(p === "2") { secDocs.classList.add('hidden'); secVal.classList.remove('hidden'); }
+            if(p === "3" || p === "4") { secDocs.classList.remove('hidden'); secVal.classList.remove('hidden'); }
+        }
 
-        let minValorCalculado = 0;
-        let maxValorCalculado = 0;
-        let ultimaBusqueda = null; // <- ESTA ES NUEVA
-        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // DRAP & DROP DE ARCHIVOS
+        function procesarArchivosLocales(files) {
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const id = 'arc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                    archivosCargados.push({ id, base64: e.target.result.split(',')[1], src: e.target.result });
+                    renderizarThumbnails();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
-        // 4. TIEMPO 1: EJECUTAR MOTOR EME (ARQUITECTURA ASÍNCRONA)
-        document.getElementById('btn-calcular-estimacion').onclick = async () => {
-            if (!authUser) { alert("Inicia sesión para generar el reporte."); return; }
-            if (authUser.creditos <= 0) { document.getElementById('paywallModal').classList.replace('hidden', 'flex'); return; }
+        function renderizarThumbnails() {
+            const cont = document.getElementById('contenedor_thumbnails');
+            cont.innerHTML = archivosCargados.map(arc => `
+                <div class="relative bg-white border border-slate-200 rounded-lg p-2 flex flex-col items-center">
+                    <img src="${arc.src}" class="w-full h-20 object-cover rounded mb-2">
+                    <button type="button" onclick="archivosCargados = archivosCargados.filter(a=>a.id!=='${arc.id}');renderizarThumbnails()" class="text-[10px] text-red-500 font-bold">❌ Eliminar</button>
+                </div>
+            `).join('');
+        }
 
-            const btn = document.getElementById('btn-calcular-estimacion');
-            const btnTextoOriginal = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Invocando Nube...';
-            btn.disabled = true;
+        // RECOLECCIÓN DINÁMICA DEL FORMULARIO Y ENVÍO ASÍNCRONO
+        window.enviarDictamenPrevio = async function() {
+            if (!authUser) return alert("Inicia sesión primero.");
+            
+            // Validaciones Capa 8
+            const m2Terr = document.querySelector('input[name="Superficie_Terreno"]').value;
+            const tipo = document.getElementById('est-tipo').value;
+            if (tipo === 'Casa' && (!m2Terr || m2Terr <= 0)) {
+                return alert("Para una Casa, la Superficie de Terreno no puede ser cero.");
+            }
 
-            const parametros_motor = {
-                "perfil_solicitante": parseInt(document.getElementById('est-perfil').value) || 1,
-                "Tipo_Inmueble": document.getElementById('est-tipo').value || "Casa",
-                
-                // --- DATOS CRÍTICOS FALTANTES PARA EL MOTOR BETA 188 ---
-                "Estado": document.getElementById('est-estado').value || "Veracruz", 
-                "CP": document.getElementById('est-cp').value || "91000",
-                "Calle_Sujeto": document.getElementById('est-calle').value || "Conocida",
-                // -------------------------------------------------------
-
-                "Ciudad_Municipio": document.getElementById('est-municipio').value || "Xalapa",
-                "Colonia": document.getElementById('est-colonia').value || "Centro",
-                "Geolocalizacion_Google": document.getElementById('est-coords').value || "19.5332,-96.9271",
-                "Superficie_Terreno": parseFloat(document.getElementById('est-terreno').value) || 0,
-                "Superficie_Construccion": parseFloat(document.getElementById('est-construccion').value) || 0,
-                "Clase_Inmueble": document.getElementById('est-clase').value || "MEDIO",
-                "Estado_Conservacion": document.getElementById('est-conservacion').value || "BUENO",
-                "No_Recamaras": parseInt(document.getElementById('est-habitaciones').value) || 0,
-                "No_Banos": parseInt(document.getElementById('est-banos').value) || 0,
-                "No_Estacionamientos": parseInt(document.getElementById('est-estacionamiento').value) || 0,
-                "Edad_Anos": parseInt(document.getElementById('est-edad').value) || 5,
-                "Uso_de_Suelo": document.getElementById('est-uso-suelo').value || "Habitacional",
-                "Calidad_Acabados": document.getElementById('est-acabados').value || "Estándar",
-                "Topografia": document.getElementById('est-topografia').value || "Plano",
-                "Ubicacion_en_Manzana": document.getElementById('est-ubicacion-manzana').value || "Intermedio",
-                "Frente_a": document.getElementById('est-frente-a').value || "Calle"
-            };
-
-            ultimaBusqueda = parametros_motor;
             document.getElementById('loadingOverlay').classList.replace('hidden', 'flex');
 
+            // Recolección Inteligente: Barremos todos los inputs/selects del form
+            const parametros = {};
+            const elementos = document.getElementById('form-eme').elements;
+            for(let el of elementos) {
+                if(el.name) {
+                    parametros[el.name] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? parseFloat(el.value)||0 : el.value);
+                }
+            }
+            ultimaBusqueda = parametros;
+
             try {
-                // 1. GENERAMOS UN TICKET ÚNICO DE TURNO PARA EL USUARIO
+                const idToken = await authUser.getIdToken(true);
                 const expedienteId = authUser.uid + '_' + Date.now();
 
-                // 2. NOS SENTAMOS A ESCUCHAR A FIREBASE EN TIEMPO REAL (onSnapshot)
+                // OnSnapshot Listener (Arquitectura Background)
                 const unsubscribe = db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
                     if (doc.exists) {
-                        const dataDoc = doc.data();
-                        
-                        if (dataDoc.estatus_motor === 'COMPLETADO' && dataDoc.resultados_motor) {
-                            // MAGIA: El motor terminó de calcular en el fondo y avisó a la BD
-                            const dataAVM = dataDoc.resultados_motor;
-                            const valorBase = dataAVM.data.valor_final;
+                        const data = doc.data();
+                        if (data.estatus_motor === 'COMPLETADO') {
+                            const valorBase = data.resultados_motor.data.valor_final;
+                            minValorCalculado = data.resultados_motor.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
+                            maxValorCalculado = data.resultados_motor.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
                             
-                            minValorCalculado = dataAVM.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
-                            maxValorCalculado = dataAVM.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
-
                             document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
                             document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
                             document.getElementById('slider_conclusion_valor').value = 50;
                             actualizarValorConcluidoLabel(50);
-
-                            document.getElementById('estimador-form').classList.add('hidden');
+                            
                             document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
                             document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
-
-                            unsubscribe(); // Dejamos de escuchar
-                        } 
-                        else if (dataDoc.estatus_motor === 'ERROR') {
+                            unsubscribe();
+                        } else if (data.estatus_motor === 'ERROR') {
+                            alert("Motor EME: " + data.error_motor);
                             document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
-                            alert("Atención del Motor: " + (dataDoc.error_motor || "Error en el cálculo."));
-                            btn.innerHTML = btnTextoOriginal;
-                            btn.disabled = false;
-                            unsubscribe(); // Dejamos de escuchar
+                            unsubscribe();
                         }
                     }
                 });
 
-                // 3. MANDAMOS LA ORDEN AL SERVIDOR EN SEGUNDO PLANO (Fire and Forget)
-                const idToken = await authUser.getIdToken(true);
-                const response = await fetch('/.netlify/functions/calcular-estimacion-background', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, 
-                    body: JSON.stringify({ parametros_motor: parametros_motor, expedienteId: expedienteId }) 
-                });
-
-                if (!response.ok && response.status !== 202) {
-                    unsubscribe();
-                    throw new Error("No se pudo contactar al servidor en la nube.");
-                }
-                
-                // Aquí el código termina al instante, pero la pantalla sigue girando hasta que Firebase avise.
-
-            } catch (error) {
-                console.error("Error lanzando AVM:", error);
-                document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
-                alert("Error de Conexión: " + error.message);
-                btn.innerHTML = btnTextoOriginal;
-                btn.disabled = false;
-            }
-        };
-
-        // Función del Slider
-        window.actualizarValorConcluidoLabel = function(porcentaje) {
-            const valorConcluido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentaje / 100));
-            document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(valorConcluido);
-        };
-
-        // TIEMPO 2: CONSUMIR CRÉDITO Y GENERAR PDF FINAL
-        window.enviarGenerarReporteFinal = async function() {
-            if (!authUser || !ultimaBusqueda) return;
-
-            const porcentajeSlider = document.getElementById('slider_conclusion_valor').value;
-            const valorElegido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentajeSlider / 100));
-
-            const btn = document.getElementById('btn-generar-pdf');
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Registrando y Descontando Crédito...';
-            btn.disabled = true;
-
-            try {
-                const idToken = await authUser.getIdToken(true);
-
-                // Llamamos a nuestro nuevo puente de cobro
-                const response = await fetch('/.netlify/functions/consumir-credito', {
+                // Lanzar Background Function
+                await fetch('/.netlify/functions/calcular-estimacion-background', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                    body: JSON.stringify({
-                        parametros_motor: ultimaBusqueda,
-                        valor_elegido: valorElegido,
-                        rango_min: minValorCalculado,
-                        rango_max: maxValorCalculado
-                    })
+                    body: JSON.stringify({ parametros_motor: parametros, expedienteId })
                 });
 
-                const data = await response.json();
-
-                if (!response.ok) throw new Error(data.error || "Error al procesar el cobro.");
-
-                // ÉXITO TOTAL
-                alert(`¡Transacción Exitosa! \nTu historial de la propiedad ha sido guardado.\nID: ${data.id_transaccion}`);
-                
-                // Reiniciamos la interfaz
-                document.getElementById('panel_conclusion_interactivo').classList.add('hidden');
-                document.getElementById('estimador-form').classList.remove('hidden');
-                
-                // Regresamos el botón a su estado normal (por si hace otra)
-                btn.innerHTML = '<span class="material-symbols-rounded text-lg">download</span> Consumir Crédito y Generar PDF';
-                btn.disabled = false;
-                currentStep = 1; changeStep(0); // Lo regresamos al Paso 1 del Wizard
-
-            } catch (error) {
-                console.error("Error en Cobro:", error);
-                alert("Atención: " + error.message);
-                btn.innerHTML = '<span class="material-symbols-rounded text-lg">download</span> Consumir Crédito y Generar PDF';
-                btn.disabled = false;
+            } catch (e) {
+                alert("Fallo de red: " + e.message);
+                document.getElementById('loadingOverlay').classList.replace('flex', 'hidden');
             }
         };
 
-
-    </script>
-
-    <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-slate-900/80 backdrop-blur-md flex-col items-center justify-center transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-[90%] text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-eme-500 to-amber-500"></div>
-            
-            <div class="relative w-20 h-20 mb-6">
-                <div class="absolute inset-0 border-4 border-slate-100 dark:border-slate-700 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-eme-500 border-t-transparent rounded-full animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center text-eme-600 dark:text-eme-400">
-                    <span class="material-symbols-rounded text-3xl animate-pulse">memory</span>
-                </div>
-            </div>
-
-            <h3 class="text-xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Analizando Mercado</h3>
-            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 animate-pulse">Motor de IA EME en curso...</p>
-            
-            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-eme-500 to-amber-500 h-1.5 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style="width: 100%;"></div>
-            </div>
-            
-            <p class="text-[10px] text-slate-400 mt-4 leading-relaxed font-medium">Buscando testigos comparables, evaluando la zona y calculando la depreciación algorítmica.</p>
-        </div>
-    </div>
-
-    <div id="paywallModal" class="fixed inset-0 z-[6000] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden relative animate-fade-in border border-slate-200 dark:border-slate-700">
-            
-            <div class="p-6 text-center border-b border-slate-100 dark:border-slate-700 relative">
-                <button onclick="cerrarPaywall()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-eme-600 transition-colors">
-                    <span class="material-symbols-rounded text-sm">close</span>
-                </button>
-                <div class="w-16 h-16 bg-eme-50 dark:bg-eme-900/30 text-eme-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
-                    <span class="material-symbols-rounded text-3xl">account_balance_wallet</span>
-                </div>
-                <h3 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Tienda de Créditos</h3>
-                <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Adquiere créditos para operar en el ecosistema</p>
-            </div>
-
-            <div id="paquetes-container" class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900/50">
-                <div class="col-span-full text-center text-slate-400 py-8 flex flex-col items-center justify-center">
-                    <span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span>
-                    <p class="text-xs font-bold uppercase tracking-widest">Cargando paquetes disponibles...</p>
-                </div>
-            </div>
-            
-            <div class="p-5 bg-slate-50 dark:bg-slate-900/50 text-center border-t border-slate-100 dark:border-slate-700">
-                <div class="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1.5">
-                    <span class="material-symbols-rounded text-lg">verified_user</span>
-                    <p class="text-xs font-bold uppercase tracking-widest">Pago 100% Seguro</p>
-                </div>
-                <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                    No almacenamos datos de tarjetas, direcciones ni cuentas bancarias. Las transacciones son encriptadas y procesadas de extremo a extremo por <span class="font-bold">Stripe Inc</span>.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ==========================================
-        // 💳 INTEGRACIÓN CON STRIPE (SAAS)
-        // ==========================================
-        async function comprarPaquete(tipoPaquete, botonHtml) {
-            // Validar que el usuario esté logueado
-            const user = firebase.auth().currentUser;
-            if (!user) {
-                alert("Por seguridad, necesitas iniciar sesión para adquirir créditos.");
-                return;
-            }
-            
-            // Efecto visual de carga en el botón
-            const textoOriginal = botonHtml.innerHTML;
-            botonHtml.innerHTML = '<span class="material-symbols-rounded animate-spin text-base">sync</span> Conectando al banco...';
-            botonHtml.disabled = true;
-
-            try {
-                // Llamamos a Netlify Functions
-                const response = await fetch('/.netlify/functions/crear-pago-stripe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paquete: tipoPaquete, userId: user.uid, userEmail: user.email })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || "Error en el servidor de pagos");
-                }
-
-                const data = await response.json();
-                
-                // REDIRECCIÓN MÁGICA A STRIPE
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    throw new Error("No se recibió una URL válida desde Stripe.");
-                }
-
-            } catch (error) {
-                console.error("Error al generar pago:", error);
-                alert("⚠️ Hubo un problema al contactar la pasarela de pagos: " + error.message);
-                // Restauramos el botón si falla
-                botonHtml.innerHTML = textoOriginal;
-                botonHtml.disabled = false;
-            }
-        }
+        window.actualizarValorConcluidoLabel = function(porc) {
+            const val = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porc / 100));
+            document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(val);
+        };
     </script>
 </body>
 </html>
