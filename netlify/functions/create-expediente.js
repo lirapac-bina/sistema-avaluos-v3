@@ -248,13 +248,13 @@ const nuevoExpediente = {
         const coleccionDestino = tramiteBusqueda.includes('HIPOTECA') ? 'expedientes_hipotecas' : 'expedientes_avaluos';
         const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
 
-        // ========================================================
+// ========================================================
         // 🚀 AVISAR A TELEGRAM LA ASIGNACIÓN DE UNIDAD
         // ========================================================
         try {
-            // 🔥 ESCUDO ANTI-DUPLICADOS: Solo notifica "Asignado" si NO está en "POR ASIGNAR"
+            // 🔥 ESCUDO ANTI-DUPLICADOS: Solo notifica "Asignado" si NO está en "POR ASIGNAR" en
             if (unidadDestino !== "POR ASIGNAR") {
-                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR_fAeaoeNsaT8JLgCSsLwS9qpATWhXnhmdspWkKmkLk_AL_Y7s4nLTFR8Ho9JaYpb/exec";
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSuvjlu9v6tcu5ZOL7BpPIWe0bd64Qd5ADKVhfHS82_DczoskB7uNS4eJs8QY84lOA/exec";
                 const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
                 
                 // Disparamos la notificación a Telegram
