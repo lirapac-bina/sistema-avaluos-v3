@@ -702,10 +702,17 @@
                     const data = docRef.data();
                     data.nombreCliente = data.nombreCliente || data.cliente || "Sin Nombre";
 
-                    // 🛡️ MOTOR DE AUTO-REPARACIÓN (Se ejecuta solo la 1ra vez que abres el expediente)
-                    if (!window.reparacionHecha) {
+                    // 🛡️ BLINDAJE ANTI-RESURRECCIÓN:
+                    // Desactivamos la ejecución ciega de autoRepararExpediente.
+                    // Solo se ejecutará si el expediente está críticamente vacío (< 5 requisitos, ej. creaciones antiguas de Jack),
+                    // protegiendo así tus eliminaciones manuales en Firebase.
+                    const conteoActual = Object.keys(data.checklist || {}).length;
+                    if (!window.reparacionHecha && conteoActual < 5) {
                         window.reparacionHecha = true;
+                        console.log("⚠️ Expediente con estructura mínima. Ejecutando reparación inicial...");
                         await autoRepararExpediente(id, data);
+                    } else {
+                        window.reparacionHecha = true; // Marcamos como hecho para no interferir
                     }
 
                     transformarDatos(id, data);
@@ -719,7 +726,7 @@
                         if (req) refrescarSoloDecisionBar(req);
                     }
 
-                    // 🌟 NUEVO: Contador de documentos pendientes en vivo
+                    // 🌟 Contador de documentos pendientes en vivo
                     actualizarBurbujasPendientes();
                 }, (error) => {
                     console.error("Error en tiempo real:", error);
@@ -728,7 +735,6 @@
                 console.error("Error inicializando listener:", e);
             }
         }
-
         // Funciones de apoyo para el Tiempo Real
         function refrescarSoloDecisionBar(req) {
             const bar = document.getElementById('decision-bar');
