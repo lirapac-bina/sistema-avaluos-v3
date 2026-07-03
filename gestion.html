@@ -262,25 +262,41 @@
                         class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500 dark:text-white font-mono font-bold tracking-widest text-lg transition-all"
                         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
-                    <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
-                        <option value="POR ASIGNAR">POR ASIGNAR</option>
-                        <option value="APN">APN</option>
-                        <option value="AVE">AVE</option>
-                        <option value="EME">EME</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Entidad Federativa</label>
+                        <select id="edit-entidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Servicio / Trámite</label>
+                        <select id="edit-tramite" disabled class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer disabled:opacity-50">
+                            <option value="">Selecciona Entidad Primero</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Tipo de Inmueble</label>
-                    <select id="edit-inmueble" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
-                        <option value="POR DEFINIR">POR DEFINIR</option>
-                        <option value="CASA">CASA HABITACIÓN</option>
-                        <option value="CASA EN CONDOMINIO">CASA EN CONDOMINIO</option>
-                        <option value="DEPARTAMENTO">DEPARTAMENTO</option>
-                        <option value="TERRENO">TERRENO</option>
-                        <option value="LOCAL">LOCAL COMERCIAL</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Unidad de Valuación</label>
+                        <select id="edit-unidad" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                            <option value="POR ASIGNAR">POR ASIGNAR</option>
+                            <option value="APN">APN</option>
+                            <option value="AVE">AVE</option>
+                            <option value="EME">EME</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Tipo de Inmueble</label>
+                        <select id="edit-inmueble" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                            <option value="POR DEFINIR">POR DEFINIR</option>
+                            <option value="CASA">CASA HABITACIÓN</option>
+                            <option value="CASA EN CONDOMINIO">CASA EN CONDOMINIO</option>
+                            <option value="DEPARTAMENTO">DEPARTAMENTO</option>
+                            <option value="TERRENO">TERRENO</option>
+                            <option value="LOCAL">LOCAL COMERCIAL</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-[10px] font-extrabold text-slate-400 mb-1 uppercase tracking-wide">Anotación Interna (Máx 140 caracteres)</label>
@@ -440,6 +456,7 @@
                             folioOperativo: data.folioOperativo || 'SIN FOLIO', // 🔥 Lo leemos
                             cliente: (data.cliente || data.nombreCliente || 'Sin Nombre').toUpperCase(),
                             telefono: data.telefono || data.celular || '', 
+                            entidad: data.entidad || data.estado || 'GLOBAL', // 🌟 NUEVA LÍNEA AÑADIDA
                             tramite: (data.tramite || data.tipoTramite || 'General').toUpperCase(),
                             status: (data.status || data.estatus || data.estado || 'PENDIENTE').toUpperCase(),
                             fechaDisplay: fechaDisplay,
@@ -1085,7 +1102,44 @@
             });
         }
 
-            function abrirModalEditar(id) {
+        let catalogoMaestroGlobal = null;
+
+        // 🔥 FUNCIÓN PARA CARGAR LA MATRIZ DE FIREBASE
+        async function precargarCatalogo() {
+            try {
+                const db = window.db || firebase.firestore();
+                const doc = await db.collection('configuracion').doc('plantilla_maestra').get();
+                if (doc.exists) {
+                    catalogoMaestroGlobal = doc.data().matriz || {};
+                }
+            } catch (e) {
+                console.error("Error cargando catálogo maestro", e);
+            }
+        }
+        precargarCatalogo();
+
+        // 🔥 LÓGICA DE CASCADA PARA LOS SELECTORES
+        document.getElementById('edit-entidad').addEventListener('change', function(e) {
+            const entidadSeleccionada = e.target.value;
+            const selectTramite = document.getElementById('edit-tramite');
+            
+            selectTramite.innerHTML = '<option value="">-- Elige Trámite --</option>';
+            
+            if (entidadSeleccionada && catalogoMaestroGlobal && catalogoMaestroGlobal[entidadSeleccionada]) {
+                Object.keys(catalogoMaestroGlobal[entidadSeleccionada]).forEach(tramite => {
+                    if (tramite === 'diccionario') return;
+                    const opt = document.createElement('option');
+                    opt.value = tramite;
+                    opt.textContent = tramite.replace(/_/g, ' ');
+                    selectTramite.appendChild(opt);
+                });
+                selectTramite.disabled = false;
+            } else {
+                selectTramite.disabled = true;
+            }
+        });
+
+        function abrirModalEditar(id) {
             const exp = dbExpedientes.find(e => e.id === id);
             if (!exp) return;
 
@@ -1098,11 +1152,38 @@
                 return;
             }
 
+            // 1. Poblamos el selector de entidades desde el catálogo en memoria
+            const selEntidad = document.getElementById('edit-entidad');
+            const selTramite = document.getElementById('edit-tramite');
+            
+            selEntidad.innerHTML = '<option value="">-- Elige Entidad --</option>';
+            if (catalogoMaestroGlobal) {
+                Object.keys(catalogoMaestroGlobal).forEach(entidad => {
+                    if (entidad === 'diccionario') return;
+                    const opt = document.createElement('option');
+                    opt.value = entidad;
+                    opt.textContent = entidad.replace(/_/g, ' ');
+                    selEntidad.appendChild(opt);
+                });
+            }
+
+            // 2. Setear valores del expediente
             document.getElementById('edit-id').value = exp.id;
             document.getElementById('edit-folio').value = (exp.folioOperativo && exp.folioOperativo !== 'SIN FOLIO') ? exp.folioOperativo : '';
             document.getElementById('edit-nombre').value = exp.cliente;
             document.getElementById('edit-telefono').value = exp.telefono || '';
             
+            // 3. Auto-selección en cascada
+            const entidadExp = exp.entidad || 'GLOBAL';
+            selEntidad.value = entidadExp;
+            
+            // Disparamos manualmente el evento change para llenar los trámites
+            selEntidad.dispatchEvent(new Event('change'));
+            
+            setTimeout(() => {
+                selTramite.value = exp.tramite || 'GLOBAL';
+            }, 50);
+
             let siglaUnidadModal = 'POR ASIGNAR';
             const uniStrModal = (exp.unidad || '').toUpperCase();
             if (uniStrModal.includes('APN') || uniStrModal.includes('PNA') || uniStrModal.includes('PAMELA')) siglaUnidadModal = 'APN';
@@ -1134,6 +1215,8 @@
             const folio = document.getElementById('edit-folio').value.toUpperCase().trim();
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
+            const entidad = document.getElementById('edit-entidad').value.trim().toUpperCase(); // 🌟 Nuevo
+            const tramite = document.getElementById('edit-tramite').value.trim().toUpperCase(); // 🌟 Nuevo
             const unidad = document.getElementById('edit-unidad').value;
             const tipoInmueble = document.getElementById('edit-inmueble').value;
             const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase();
@@ -1155,7 +1238,10 @@
                     telefono: telefono,
                     unidad: unidad,
                     tipoInmueble: tipoInmueble,
-                    anotacion: anotacion 
+                    anotacion: anotacion,
+                    entidad: entidad, // 🌟 Se envía a Firebase
+                    tramite: tramite, // 🌟 Se envía a Firebase
+                    tipoTramite: tramite // Redundancia para mantener BD limpia
                 };
 
                 // 🌟 LLAMADA ÚNICA A NETLIFY: Él se encarga de crear, renombrar y mandar la señal a Telegram
@@ -1195,12 +1281,14 @@
                     exp.folioOperativo = folio;
                     exp.tipoInmueble = tipoInmueble;
                     exp.anotacion = anotacion;
+                    exp.entidad = entidad; // 🌟 Memoria
+                    exp.tramite = tramite; // 🌟 Memoria
                     if (updateData.carpeta_drive) exp.carpeta_drive = updateData.carpeta_drive;
                 }
                 
-                registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Unidad: ${unidad} (ID: ${id})`);
+                registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Entidad: ${entidad} - Trámite: ${tramite}`);
 
-                alert("✅ Datos y carpeta de Google Drive configurados correctamente.");
+                alert("✅ Datos actualizados correctamente.");
                 cerrarModalEditar();
                 filtrarTabla(true);
 

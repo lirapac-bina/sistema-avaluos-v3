@@ -102,14 +102,14 @@ exports.handler = async (event, context) => {
         
         // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO ---
         const entidadBusqueda = normalizar(data.entidad || data.estado || 'GLOBAL'); 
-        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'AVALUO');
+        const tramiteBusqueda = normalizar(data.tipoTramite || data.tramite || data.servicio || 'GLOBAL');
         const numSol = parseInt(data.numSolicitantes) || 1;
         const numProp = parseInt(data.numPropietarios) || 1;
 
         let plantilla = null;
         let diccionarioGlobal = {};
         
-        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (BLINDADO) ---
+        // 🧠 --- MAGIA: LÓGICA DE CHECKLIST DINÁMICO (BLINDADO GLOBAL MASTER) ---
         try {
             const configRef = db.collection('configuracion').doc('plantilla_maestra');
             const docSnap = await configRef.get();
@@ -118,28 +118,40 @@ exports.handler = async (event, context) => {
                 diccionarioGlobal = dbData.diccionario || {};
                 const matriz = dbData.matriz || {};
 
-                // 1. Buscamos la Entidad Exacta. Si no existe, buscamos la que contenga "NACIONAL" o "GLOBAL"
-                const entidadKey = Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda) || 
-                                   Object.keys(matriz).find(k => normalizar(k).includes('NACIONAL')) ||
-                                   Object.keys(matriz).find(k => normalizar(k).includes('GLOBAL'));
+                // 1. Buscamos la Entidad Exacta. Si no existe, buscamos GLOBAL
+                let entidadKey = Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda);
+                if (!entidadKey || !matriz[entidadKey]) {
+                    console.log(`⚠️ Entidad no encontrada: ${entidadBusqueda}. Usando GLOBAL.`);
+                    entidadKey = Object.keys(matriz).find(k => normalizar(k).includes('GLOBAL'));
+                }
                 
                 if (entidadKey && matriz[entidadKey]) {
                     const entidadData = matriz[entidadKey];
-                    // 2. Buscamos el Trámite. Si no existe, buscamos "GLOBAL", si tampoco, "INFONAVIT"
-                    const tramiteKey = Object.keys(entidadData).find(k => normalizar(k) === tramiteBusqueda) || 
-                                       Object.keys(entidadData).find(k => normalizar(k) === 'GLOBAL') || 
-                                       Object.keys(entidadData).find(k => normalizar(k) === 'INFONAVIT');
+                    
+                    // 2. Buscamos el Trámite. Si no existe, forzamos a GLOBAL
+                    let tramiteKey = Object.keys(entidadData).find(k => normalizar(k) === tramiteBusqueda);
+                    if (!tramiteKey || !entidadData[tramiteKey]) {
+                        console.log(`⚠️ Trámite no encontrado: ${tramiteBusqueda}. Usando GLOBAL.`);
+                        tramiteKey = Object.keys(entidadData).find(k => normalizar(k).includes('GLOBAL'));
+                    }
                     
                     if (tramiteKey) {
                         plantilla = entidadData[tramiteKey];
                     }
                 }
+                
+                // 3. 🛟 SALVAVIDAS ABSOLUTO: Si por alguna razón todo falló, obligamos a leer matriz['GLOBAL']['GLOBAL']
+                if (!plantilla && matriz['GLOBAL'] && matriz['GLOBAL']['GLOBAL']) {
+                    console.log("🛟 Activando salvavidas absoluto GLOBAL -> GLOBAL");
+                    plantilla = matriz['GLOBAL']['GLOBAL'];
+                }
             }
-        } catch (e) { console.error("Error leyendo plantilla:", e); }
+        } catch (e) { 
+            console.error("Error crítico leyendo plantilla:", e); 
+        }
 
-        // Si por un desastre en la BD no hay plantilla, detenemos la creación y lanzamos un error limpio
         if (!plantilla) {
-            throw new Error(`No existe configuración de requisitos para la entidad y trámite solicitados.`);
+            throw new Error(`Error Catastrófico: No existe la configuración maestra GLOBAL. Comunícate con Soporte Técnico.`);
         }
 
         let checklistFinal = {};
@@ -239,7 +251,7 @@ exports.handler = async (event, context) => {
         // 🚀 AVISAR A TELEGRAM LA CREACIÓN MANUAL
         // ========================================================
         try {
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwtosKxFAJQ-89f06nl0mage6KQFXUBivNp1rRthEPfuIBR55i4SgibYGC0f5MbgaC/exec";
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR_fAeaoeNsaT8JLgCSsLwS9qpATWhXnhmdspWkKmkLk_AL_Y7s4nLTFR8Ho9JaYpb/exec";
             const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
             
             // Disparamos la notificación

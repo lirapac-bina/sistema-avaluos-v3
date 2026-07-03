@@ -1183,34 +1183,189 @@
             });
         }
 
+        // ========================================================
+        // ➕ CLONADOR DE REQUISITOS (CATÁLOGO GLOBAL Y MANUAL)
+        // ========================================================
         async function solicitarDocumentoExtra() {
-            const nombreDoc = prompt("¿Qué documento adicional necesitas pedirle al cliente? (Ej. Constancia Ejidal)");
-            if (!nombreDoc) return;
+            // 1. Mostrar loader y traer el catálogo más reciente
+            if (typeof showLoader === 'function') showLoader('Cargando catálogo maestro...');
+            let diccionario = {};
+            try {
+                const configRef = await db.collection('configuracion').doc('plantilla_maestra').get();
+                if (configRef.exists) {
+                    diccionario = configRef.data().diccionario || {};
+                }
+            } catch (error) {
+                console.error("Error cargando diccionario:", error);
+                if (typeof hideLoader === 'function') hideLoader();
+                alert("No se pudo conectar con el catálogo global.");
+                return;
+            }
+            if (typeof hideLoader === 'function') hideLoader();
 
+            // Función de limpieza para comparaciones
+            const normLocal = (txt) => (txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+
+            // 2. Crear el modal dinámicamente si no existe en el DOM
+            let modal = document.getElementById('modal-catalogo-extra');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'modal-catalogo-extra';
+                modal.className = 'fixed inset-0 z-[150] bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity';
+                document.body.appendChild(modal);
+            }
+
+            // Identificar en qué pestaña estamos parados (para inyectarlo ahí)
             const currentKey = groupKeys[activeGroupIndex]; 
-            const idDoc = 'EXTRA_' + Date.now();
 
+            // 3. Generar la lista de botones de catálogo
+            let opcionesHtml = '';
+            Object.entries(diccionario)
+                .sort((a, b) => a[1].nombre.localeCompare(b[1].nombre)) // Orden alfabético
+                .forEach(([idKey, info]) => {
+                    // Evitamos mostrar requisitos que ya tiene el expediente (protección anti-duplicados extra)
+                    const reqYaExiste = Object.keys(expediente.checklist || {}).find(k => normLocal(k) === normLocal(idKey));
+                    if (reqYaExiste) return;
+
+                    // 🛡️ FIX VISUAL: Separamos el icono del texto para evitar que se deforme
+                    const usaIA = info.usaIA ? '<div class="text-[10px] text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-700 font-bold flex items-center gap-1 shrink-0" title="Configurado para IA"><span class="material-symbols-rounded text-sm">auto_awesome</span> <span class="font-sans tracking-widest">IA</span></div>' : '';                    const etiquetaTipo = info.tipo === 'PDF' ? 'PDF' : (info.tipo === 'TXT' ? 'Texto' : (info.tipo === 'GALERIA' ? 'Fotos' : 'Mixto'));
+
+                    opcionesHtml += `
+                        <button onclick="inyectarRequisitoDesdeCatalogo('${idKey}')" class="w-full flex items-center justify-between p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-teal-50 dark:hover:bg-slate-700/50 text-left transition-colors group">
+                            <div class="overflow-hidden pr-2">
+                                <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 truncate">${info.nombre || idKey}</p>
+                                <p class="text-[9px] text-slate-400 font-mono mt-0.5 uppercase tracking-wider">${etiquetaTipo} | ID: ${idKey}</p>
+                            </div>
+                            <div class="shrink-0">${usaIA}</div>
+                        </button>
+                    `;
+                });
+
+            // 4. Inyectar HTML del Modal
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-[popIn_0.3s_ease-out] border border-slate-200 dark:border-slate-700">
+                    <div class="flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 shrink-0">
+                        <h3 class="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                            <span class="material-symbols-rounded text-teal-600">library_add</span> Agregar Requisito
+                        </h3>
+                        <button onclick="document.getElementById('modal-catalogo-extra').classList.add('hidden'); document.getElementById('modal-catalogo-extra').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition-colors bg-white dark:bg-slate-700 p-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600 active:scale-95"><span class="material-symbols-rounded text-sm">close</span></button>
+                    </div>
+                    
+                    <div class="p-3 shrink-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                        <div class="relative">
+                            <span class="material-symbols-rounded absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
+                            <input type="text" id="buscador-catalogo" placeholder="Buscar en catálogo..." onkeyup="filtrarCatalogo()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl pl-10 pr-3 py-2.5 text-xs font-bold outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:text-white transition-all shadow-inner">
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto custom-scroll p-0 bg-slate-50/30 dark:bg-slate-900/30" id="lista-catalogo-items">
+                        ${opcionesHtml || '<div class="p-8 text-center text-xs font-bold text-slate-400 flex flex-col items-center"><span class="material-symbols-rounded text-4xl mb-2 opacity-50">inventory_2</span>Todos los requisitos de la base de datos ya están en este expediente.</div>'}
+                    </div>
+                    
+                    <div class="p-4 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0">
+                        <p class="text-[9px] text-slate-400 mb-2 font-black uppercase tracking-widest text-center">¿No encuentras lo que buscas?</p>
+                        <button onclick="inyectarRequisitoManual()" class="w-full py-3 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors shadow-sm active:scale-95 flex items-center justify-center gap-2">
+                            <span class="material-symbols-rounded text-base">edit_document</span> Requisito Extraordinario (Manual)
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Guardamos temporalmente en el objeto global para que las funciones de inyección puedan leerlo
+            window.tempDiccionario = diccionario;
+            window.tempTargetCategoria = currentKey;
+
+            // Mostramos el modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('buscador-catalogo').focus(), 150);
+        }
+
+        // 🔍 Filtro en vivo del buscador del catálogo
+        window.filtrarCatalogo = function() {
+            const input = document.getElementById('buscador-catalogo').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const items = document.querySelectorAll('#lista-catalogo-items button');
+            items.forEach(btn => {
+                const texto = btn.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                btn.style.display = texto.includes(input) ? 'flex' : 'none';
+            });
+        };
+
+        // 🚀 INYECCIÓN CLONADA DESDE EL CATÁLOGO
+        window.inyectarRequisitoDesdeCatalogo = async function(idKey) {
+            const info = window.tempDiccionario[idKey];
+            if (!confirm(`¿Estás seguro de agregar [${info.nombre}] al expediente?`)) return;
+
+            const idFinal = `${idKey}_EXTRA_${Date.now()}`; 
+
+            if (typeof showLoader === 'function') showLoader(`Inyectando ${info.nombre}...`);
             try {
                 await db.collection('expedientes_avaluos').doc(expediente.id).set({
                     checklist: {
-                        [idDoc]: {
-                            nombre: nombreDoc.toUpperCase(),
-                            estatus: 'pendiente',
-                            categoria: currentKey, 
+                        [idFinal]: {
+                            nombre: info.nombre || idKey,
+                            categoria: window.tempTargetCategoria,
+                            estatus: 'PENDIENTE',
                             obligatorio: true,
-                            tipo: 'MIXTO', 
+                            tipo: info.tipo || 'MIXTO',
+                            originalId: idKey,
+                            usaIA: info.usaIA || false,
+                            promptIA: info.promptIA || info.prompt || null,
+                            plantilla: info.plantilla || null,
                             fechaAgregado: new Date().toISOString()
                         }
                     }
                 }, { merge: true });
                 
-                alert("¡Documento inyectado con éxito! Si el cliente actualiza su portal, ya le aparecerá.");
-                location.reload(); 
+                if(typeof registrarLog === 'function') registrarLog('DOCUMENTO SOLICITADO', `Se inyectó el requisito: ${info.nombre} desde el Catálogo Global.`);
+
+                document.getElementById('modal-catalogo-extra').classList.add('hidden');
+                document.getElementById('modal-catalogo-extra').classList.remove('flex');
+                
+                if (typeof hideLoader === 'function') hideLoader();
             } catch (e) {
                 console.error(e);
-                alert("Error al solicitar documento: " + e.message);
+                if (typeof hideLoader === 'function') hideLoader();
+                alert("Error al inyectar el requisito: " + e.message);
             }
-        }
+        };
+
+        // ✍️ INYECCIÓN MANUAL (PARA CASOS EXTREMOS FUERA DE CATÁLOGO)
+        window.inyectarRequisitoManual = async function() {
+            const nombreDoc = prompt("Escribe el nombre del documento extraordinario (Ej. Recibo de Agua 2022):");
+            if (!nombreDoc || nombreDoc.trim() === '') return;
+
+            const idFinal = `EXTRA_MANUAL_${Date.now()}`;
+
+            if (typeof showLoader === 'function') showLoader(`Creando requisito manual...`);
+            try {
+                await db.collection('expedientes_avaluos').doc(expediente.id).set({
+                    checklist: {
+                        [idFinal]: {
+                            nombre: nombreDoc.toUpperCase().trim(),
+                            categoria: window.tempTargetCategoria,
+                            estatus: 'PENDIENTE',
+                            obligatorio: true,
+                            tipo: 'MIXTO',
+                            originalId: 'MANUAL',
+                            usaIA: false,
+                            fechaAgregado: new Date().toISOString()
+                        }
+                    }
+                }, { merge: true });
+
+                if(typeof registrarLog === 'function') registrarLog('DOCUMENTO SOLICITADO', `Se solicitó documento manual: ${nombreDoc.toUpperCase()}.`);
+
+                document.getElementById('modal-catalogo-extra').classList.add('hidden');
+                document.getElementById('modal-catalogo-extra').classList.remove('flex');
+                
+                if (typeof hideLoader === 'function') hideLoader();
+            } catch (e) {
+                console.error(e);
+                if (typeof hideLoader === 'function') hideLoader();
+                alert("Error al crear requisito: " + e.message);
+            }
+        };
 
         function nextGroup() { activeGroupIndex = (activeGroupIndex < groupKeys.length - 1) ? activeGroupIndex + 1 : 0; renderCurrentGroup(); }
         function prevGroup() { activeGroupIndex = (activeGroupIndex > 0) ? activeGroupIndex - 1 : groupKeys.length - 1; renderCurrentGroup(); }
