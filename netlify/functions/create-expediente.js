@@ -223,23 +223,24 @@ exports.handler = async (event, context) => {
             }
         }
 
-        const nuevoExpediente = {
+const nuevoExpediente = {
             folioOperativo: folioOperativo,
             tipoServicio: data.tipoServicio || data.servicio || 'Servicio General',
             cliente: nombreClienteFinal, 
             nombreCliente: nombreClienteFinal,
-            telefono: data.telefono || "", 
+            telefono: data.telefono || data.celular || "", // 🔥 FIX: Acepta teléfono o celular sin perderlo
             entidad: data.entidad || data.estado || 'GLOBAL', 
             tipoTramite: data.tipoTramite || data.tramite || 'Trámite', 
             tramite: data.tipoTramite || data.tramite || 'Trámite', 
             numSolicitantes: numSol, 
             numPropietarios: numProp,
-            tipoInmueble: data.tipoInmueble || 'CASA', 
+            tipoInmueble: data.tipoInmueble || 'POR DEFINIR', // 🔥 FIX: Nace como "POR DEFINIR"
+            anotacion: data.anotacion || '', // 🔥 FIX: Aquí atrapamos la nota de Jack (Yucatán / Comercial)
             unidad: unidadDestino,
             driveFolderId: driveFolderId,
             driveSubfolders: driveSubfolders, 
             checklist: checklistFinal, 
-            estatus: 'PENDIENTE',
+            estatus: unidadDestino === 'POR ASIGNAR' ? 'NUEVO' : 'PENDIENTE', // 🔥 FIX: Nace como NUEVO para Gestión
             fechaCreacion: new Date().toISOString(),
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
@@ -248,15 +249,20 @@ exports.handler = async (event, context) => {
         const ref = await db.collection(coleccionDestino).add(nuevoExpediente);
 
         // ========================================================
-        // 🚀 AVISAR A TELEGRAM LA CREACIÓN MANUAL
+        // 🚀 AVISAR A TELEGRAM LA ASIGNACIÓN DE UNIDAD
         // ========================================================
         try {
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR_fAeaoeNsaT8JLgCSsLwS9qpATWhXnhmdspWkKmkLk_AL_Y7s4nLTFR8Ho9JaYpb/exec";
-            const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
-            
-            // Disparamos la notificación
-            await fetch(finalUrl, { method: 'POST' });
-            console.log("✅ [NOTIFICACIÓN] Aviso de nuevo expediente manual enviado a Jack.");
+            // 🔥 ESCUDO ANTI-DUPLICADOS: Solo notifica "Asignado" si NO está en "POR ASIGNAR"
+            if (unidadDestino !== "POR ASIGNAR") {
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR_fAeaoeNsaT8JLgCSsLwS9qpATWhXnhmdspWkKmkLk_AL_Y7s4nLTFR8Ho9JaYpb/exec";
+                const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
+                
+                // Disparamos la notificación a Telegram
+                await fetch(finalUrl, { method: 'POST' });
+                console.log("✅ [NOTIFICACIÓN] Aviso de asignación enviado a Telegram.");
+            } else {
+                console.log("⚠️ [NOTIFICACIÓN] Expediente en POR ASIGNAR. Se omite webhook de auto-asignación.");
+            }
         } catch (e) {
             console.error("❌ [NOTIFICACIÓN] Error al avisar a Jack:", e.message);
         }
