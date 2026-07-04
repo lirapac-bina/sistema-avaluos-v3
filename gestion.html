@@ -1079,6 +1079,13 @@
                                 <a href="portal.html?id=${exp.id}" target="_blank" class="text-slate-400 hover:text-teal-600 p-1.5 rounded transition-all hover:bg-teal-50 dark:hover:bg-teal-900/20" title="Ver Portal">
                                     <span class="material-symbols-rounded text-lg">visibility</span>
                                 </a>
+
+                                <!-- 🔔 NUEVO: BOTÓN DE CAMPANITA -->
+                                <button onclick="abrirModalAlertas('${exp.id}')" 
+                                    class="text-sky-500 hover:text-sky-700 p-1.5 rounded transition-all hover:bg-sky-50 dark:hover:bg-sky-900/20 ml-1" 
+                                    title="Configurar Alerta de Avance">
+                                    <span class="material-symbols-rounded text-lg">${exp.alertaAvance && exp.alertaAvance.correo ? 'notifications_active' : 'notifications'}</span>
+                                </button>
                                 
                                 <button onclick="irARevision('${exp.id}')" class="text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1 group">
                                     <span class="material-symbols-rounded text-sm">fact_check</span>
@@ -1282,7 +1289,8 @@
                     console.log("🚀 Regla de Oro cumplida: Enviando alerta a Telegram...");
                     btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Notificando a Telegram...`;
                     
-                    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSuvjlu9v6tcu5ZOL7BpPIWe0bd64Qd5ADKVhfHS82_DczoskB7uNS4eJs8QY84lOA/exec";
+                    // 🔥 PEGA AQUÍ TU NUEVA URL DE APPS SCRIPT (REEMPLAZA EL TEXTO ENTRE COMILLAS)
+                    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKstgpJXXRNZrXzPAs4gxGP2ImQ1j9xJ7uSVffZNptBFLoBmVbnC07tXHDgme6NteE/exec";
                     const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad) + "&main=" + encodeURIComponent(id);
                     
                     try {
@@ -1421,6 +1429,96 @@
             setTimeout(() => tbody.classList.remove('opacity-50'), 300);
         }
 
+    </script>
+
+    <!-- MODAL DE ALERTAS -->
+    <div id="modal-alertas" class="fixed inset-0 z-[110] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700 relative modal-anim">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-sky-500">notifications_active</span> Alertas de Avance
+                </h3>
+                <button onclick="document.getElementById('modal-alertas').classList.add('hidden'); document.getElementById('modal-alertas').classList.remove('flex');" class="text-slate-400 hover:text-red-500 transition"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 border-l-4 border-sky-500 pl-3">Recibe un correo automático cuando el cliente alcance el porcentaje indicado.</p>
+            <input type="hidden" id="alerta-exp-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">Correo del Revisor</label>
+                    <input type="email" id="alerta-correo" placeholder="ejemplo@leezar.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500 dark:text-white font-bold transition-all shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wide">¿Cuándo avisar?</label>
+                    <select id="alerta-frecuencia" class="w-full bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-sm">
+                        <option value="">No enviar alertas (Apagado)</option>
+                        <option value="25">Cada 25% (25, 50, 75, 100)</option>
+                        <option value="50">Cada 50% (50 y 100)</option>
+                        <option value="100">Solo al 100% (Terminado)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="guardarAlertaConfig()" id="btn-save-alertas" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3.5 rounded-xl shadow-[0_4px_15px_rgba(14,165,233,0.3)] dark:shadow-none transition-all active:scale-95 text-xs uppercase flex items-center justify-center gap-2 mt-6">
+                <span class="material-symbols-rounded text-sm">save</span> Guardar Alerta
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalAlertas(id) {
+            const exp = dbExpedientes.find(e => e.id === id);
+            if (!exp) return;
+            document.getElementById('alerta-exp-id').value = id;
+            document.getElementById('alerta-correo').value = exp.alertaAvance ? exp.alertaAvance.correo : '';
+            document.getElementById('alerta-frecuencia').value = exp.alertaAvance ? exp.alertaAvance.frecuencia : '';
+            
+            const modal = document.getElementById('modal-alertas');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        async function guardarAlertaConfig() {
+            const id = document.getElementById('alerta-exp-id').value;
+            const correo = document.getElementById('alerta-correo').value.trim();
+            const frecuencia = document.getElementById('alerta-frecuencia').value;
+            const btn = document.getElementById('btn-save-alertas');
+
+            if (frecuencia !== "" && (!correo || !correo.includes('@'))) { 
+                alert("⚠️ Ingresa un correo válido para poder enviarte las alertas."); 
+                return; 
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando...`;
+
+            try {
+                const db = window.db || firebase.firestore();
+                let alertaConfig = null;
+                
+                if (frecuencia !== "") {
+                    // Limpiamos los notificados si cambian la regla, para que vuelva a avisar
+                    alertaConfig = { correo: correo, frecuencia: frecuencia, notificados: [] };
+                }
+
+                await db.collection('expedientes_avaluos').doc(id).update({ alertaAvance: alertaConfig });
+                
+                const exp = dbExpedientes.find(e => e.id === id);
+                if (exp) exp.alertaAvance = alertaConfig;
+                
+                document.getElementById('modal-alertas').classList.add('hidden');
+                document.getElementById('modal-alertas').classList.remove('flex');
+                filtrarTabla(true); // Refresca la tabla para pintar la campanita
+                
+                setTimeout(() => alert("🔔 Configuración de alertas guardada exitosamente."), 100);
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-rounded text-sm">save</span> Guardar Alerta`;
+            }
+        }
     </script>
 </body>
 </html>

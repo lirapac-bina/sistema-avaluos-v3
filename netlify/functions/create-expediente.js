@@ -262,9 +262,10 @@ const nuevoExpediente = {
         // 🚀 AVISAR A TELEGRAM LA ASIGNACIÓN DE UNIDAD
         // ========================================================
         try {
-            // 🔥 ESCUDO ANTI-DUPLICADOS: Solo notifica "Asignado" si NO está en "POR ASIGNAR" en
+            // 🔥 ESCUDO ANTI-DUPLICADOS: Solo notifica "Asignado" si NO está en "POR ASIGNAR"
             if (unidadDestino !== "POR ASIGNAR") {
-                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby38WfU4kICrnFyoL1fcXPRPgmd5P1oWFkdU4eaPDKFdozXLcZZLI_m0swbRTlvwEnN/exec";
+                // 🔥 PEGA AQUÍ TU NUEVA URL DE APPS SCRIPT (REEMPLAZA EL TEXTO ENTRE COMILLAS)
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKstgpJXXRNZrXzPAs4gxGP2ImQ1j9xJ7uSVffZNptBFLoBmVbnC07tXHDgme6NteE/exec";
                 const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(data.nombre) + "&unidad=" + encodeURIComponent(unidadDestino) + "&main=" + encodeURIComponent(ref.id);
                 
                 // Disparamos la notificación a Telegram
