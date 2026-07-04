@@ -1215,8 +1215,8 @@
             const folio = document.getElementById('edit-folio').value.toUpperCase().trim();
             const nombre = document.getElementById('edit-nombre').value.trim().toUpperCase();
             const telefono = document.getElementById('edit-telefono').value.trim();
-            const entidad = document.getElementById('edit-entidad').value.trim().toUpperCase(); // 🌟 Nuevo
-            const tramite = document.getElementById('edit-tramite').value.trim().toUpperCase(); // 🌟 Nuevo
+            const entidad = document.getElementById('edit-entidad').value.trim().toUpperCase(); 
+            const tramite = document.getElementById('edit-tramite').value.trim().toUpperCase(); 
             const unidad = document.getElementById('edit-unidad').value;
             const tipoInmueble = document.getElementById('edit-inmueble').value;
             const anotacion = document.getElementById('edit-anotacion').value.trim().toUpperCase();
@@ -1226,7 +1226,7 @@
             if (telefono.length > 0 && telefono.length !== 10) { alert("El teléfono debe tener 10 dígitos exactos."); return; }
 
             btn.disabled = true; 
-            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Procesando en Nube...`;
+            btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Procesando...`;
 
             try {
                 const db = window.db || firebase.firestore();
@@ -1239,41 +1239,61 @@
                     unidad: unidad,
                     tipoInmueble: tipoInmueble,
                     anotacion: anotacion,
-                    entidad: entidad, // 🌟 Se envía a Firebase
-                    tramite: tramite, // 🌟 Se envía a Firebase
-                    tipoTramite: tramite // Redundancia para mantener BD limpia
+                    entidad: entidad, 
+                    tramite: tramite, 
+                    tipoTramite: tramite 
                 };
 
-                // 🌟 LLAMADA ÚNICA A NETLIFY: Él se encarga de crear, renombrar y mandar la señal a Telegram
+                // 🚀 REGLA DE ORO: Validaciones estrictas
+                const esUnidadValida = (unidad && unidad !== 'POR ASIGNAR');
+                const esEntidadValida = (entidad && !entidad.includes('MASTER') && !entidad.includes('GLOBAL'));
+                const esTramiteValido = (tramite && !tramite.includes('GLOBAL'));
+                
+                // ¿Estaba incompleto antes de abrir el modal?
+                const estabaPendiente = (exp.unidad === 'POR ASIGNAR' || (exp.entidad || '').includes('MASTER') || (exp.entidad || '').includes('GLOBAL'));
+
+                // 🔥 FIX ESTATUS: Si cumple la Regla de Oro, forzamos a que abandone la bandeja de "NUEVO"
+                if (esUnidadValida && esEntidadValida && esTramiteValido) {
+                    updateData.estatus = 'PENDIENTE';
+                }
+
+                // Llamada al backend para renombrar carpetas si aplica
                 try {
                     const peticionBackend = await fetch('/.netlify/functions/update-client-data', {
                         method: 'POST',
                         body: JSON.stringify({ 
-                            id: id, 
-                            nombre: nombre, 
-                            telefono: telefono, 
-                            folioOperativo: folio, 
-                            anotacion: anotacion, 
-                            unidad: unidad, 
-                            tipoInmueble: tipoInmueble,
+                            id: id, nombre: nombre, telefono: telefono, folioOperativo: folio, 
+                            anotacion: anotacion, unidad: unidad, tipoInmueble: tipoInmueble,
                             driveFolderId: exp.driveFolderId || null
                         })
                     });
-                    
                     const respuestaBackend = await peticionBackend.json();
-                    
                     if (respuestaBackend.updateData && respuestaBackend.updateData.carpeta_drive) {
                         updateData.carpeta_drive = respuestaBackend.updateData.carpeta_drive;
                     }
-                } catch(e) { 
-                    console.warn("Aviso conectando con backend:", e); 
-                }
+                } catch(e) { console.warn("Aviso conectando con backend:", e); }
 
-                // Guardamos en Firebase localmente por redundancia
-                btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Actualizando base...`;
+                // Actualizamos la base de datos localmente
+                btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Guardando en BD...`;
                 await db.collection('expedientes_avaluos').doc(id).update(updateData);
 
-                // Actualizamos la tabla visual localmente
+                // 🚀 DISPARADOR DE TELEGRAM BLINDADO
+                if (estabaPendiente && esUnidadValida && esEntidadValida && esTramiteValido) {
+                    console.log("🚀 Regla de Oro cumplida: Enviando alerta a Telegram...");
+                    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Notificando a Telegram...`;
+                    
+                    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSuvjlu9v6tcu5ZOL7BpPIWe0bd64Qd5ADKVhfHS82_DczoskB7uNS4eJs8QY84lOA/exec";
+                    const finalUrl = APPS_SCRIPT_URL + "?cliente=" + encodeURIComponent(nombre) + "&unidad=" + encodeURIComponent(unidad) + "&main=" + encodeURIComponent(id);
+                    
+                    try {
+                        // El await impide que la ventana se cierre antes de que Telegram reciba el golpe
+                        await fetch(finalUrl, { method: 'POST', mode: 'no-cors' });
+                    } catch(e) {
+                        console.error("Fallo silencioso de Telegram", e);
+                    }
+                }
+
+                // Sincronizar memoria visual local
                 if (exp) { 
                     exp.cliente = nombre; 
                     exp.telefono = telefono; 
@@ -1281,14 +1301,17 @@
                     exp.folioOperativo = folio;
                     exp.tipoInmueble = tipoInmueble;
                     exp.anotacion = anotacion;
-                    exp.entidad = entidad; // 🌟 Memoria
-                    exp.tramite = tramite; // 🌟 Memoria
+                    exp.entidad = entidad; 
+                    exp.tramite = tramite; 
+                    if (updateData.estatus) {
+                        exp.estatus = updateData.estatus;
+                        exp.status = updateData.estatus; // Actualiza el badge visual de la tabla
+                    }
                     if (updateData.carpeta_drive) exp.carpeta_drive = updateData.carpeta_drive;
                 }
                 
-                registrarLogEnBitacora("EDICIÓN CLIENTE", `Se modificó: ${nombre} - Entidad: ${entidad} - Trámite: ${tramite}`);
-
-                alert("✅ Datos actualizados correctamente.");
+                registrarLogEnBitacora("EDICIÓN CLIENTE", `Asignado a: ${unidad} | Entidad: ${entidad} | Trámite: ${tramite}`);
+                alert("✅ Datos actualizados y expediente clasificado correctamente.");
                 cerrarModalEditar();
                 filtrarTabla(true);
 
