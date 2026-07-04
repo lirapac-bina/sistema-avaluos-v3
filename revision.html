@@ -222,9 +222,29 @@
                                                         <span class="material-symbols-rounded text-2xl">location_on</span>
                                                     </div>
                                                     <div class="overflow-hidden w-full">
-                                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dirección y Coordenadas:</p>
+                                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Coordenadas del Cliente:</p>
                                                         <p id="map-address-text" class="text-sm font-bold text-slate-800 dark:text-white leading-tight mb-1 break-words">...</p>
-                                                        <p id="map-coords-text" class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 select-all">...</p>
+                                                        <p id="map-coords-text" class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 select-all mb-4">...</p>
+                                                        
+                                                        <!-- 📍 INYECCIÓN: Tarjeta de Validación de Visita en Sitio (Auditoría) -->
+                                                        <div id="card-validacion-visita" class="hidden bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                                                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                                <div class="flex items-center gap-3">
+                                                                    <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-800/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-700">
+                                                                        <span class="material-symbols-rounded text-2xl">where_to_vote</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 class="font-black text-xs text-emerald-900 dark:text-emerald-100 uppercase tracking-tight">GPS Real del Visitador</h4>
+                                                                        <p id="fecha-visita-real" class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mt-0.5 animate-pulse">...</p>
+                                                                    </div>
+                                                                </div>
+                                                                <a id="link-mapa-visita" href="#" target="_blank" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-md shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 shrink-0">
+                                                                    <span class="material-symbols-rounded text-base">map</span> Auditar en Mapa
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <!-- FIN INYECCIÓN -->
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -300,7 +320,10 @@
                                 <p class="text-[9px] text-slate-400 uppercase font-bold" id="staff-visitador-name">Cargando...</p>
                             </div>
                         </div>
-                        <span id="staff-visitador-status" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">...</span>
+                        <!-- 🔥 FIX UX: Agrupamos el estatus para poder inyectar el botón GPS a un lado -->
+                        <div id="staff-visitador-actions" class="flex items-center gap-2">
+                            <span id="staff-visitador-status" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">...</span>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50">
@@ -816,10 +839,31 @@
             const visStatus = document.getElementById('staff-visitador-status');
             const dibStatus = document.getElementById('staff-dibujante-status');
 
+            // 🔥 LIMPIEZA: Removemos botón previo para que no se duplique al recargar en tiempo real
+            const oldGpsBtn = document.getElementById('btn-gps-staff');
+            if(oldGpsBtn) oldGpsBtn.remove();
+
             if (data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado') {
                 visStatus.className = 'text-[10px] font-bold text-white bg-emerald-600 px-3 py-1.5 rounded shadow-md cursor-pointer hover:bg-emerald-700 transition-colors flex items-center gap-1 active:scale-95';
                 visStatus.innerHTML = '<span class="material-symbols-rounded text-sm">visibility</span> Ver Fotos';
                 visStatus.onclick = () => verEntregablesStaff(data.entregables.visita.archivos, 'GALERIA');
+
+                // 📍 INYECCIÓN UX: Ponemos el botón GPS justo a un lado de las fotos del visitador
+                const coordsGPS = data.coordenadas || data.coordenadas_visita_en_vivo;
+                if (coordsGPS) {
+                    const coordsLimpias = coordsGPS.replace(/\s/g, '');
+                    const linkMapa = `https://www.google.com/maps/search/?api=1&query=${coordsLimpias}`;
+                    
+                    const gpsBtn = document.createElement('a');
+                    gpsBtn.id = 'btn-gps-staff';
+                    gpsBtn.href = linkMapa;
+                    gpsBtn.target = '_blank';
+                    gpsBtn.className = 'text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded shadow-sm hover:bg-emerald-200 transition-colors flex items-center gap-1 active:scale-95';
+                    gpsBtn.innerHTML = '<span class="material-symbols-rounded text-sm">location_on</span> Auditar GPS';
+                    
+                    document.getElementById('staff-visitador-actions').appendChild(gpsBtn);
+                }
+
             } else if (!data.visitador) {
                 visStatus.className = 'text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:border-slate-600';
                 visStatus.innerHTML = 'Falta Asignar';
@@ -846,7 +890,8 @@
             const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
             if (match && match[1]) {
                 const fileId = match[1];
-                return `https://lh3.googleusercontent.com/d/${fileId}=s0`;
+                // 🔥 FIX ARQUITECTURA: La forma definitiva y segura para mostrar imágenes de Drive en <img>
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return url; 
         };
@@ -871,9 +916,10 @@
                 
                 galleryImages.forEach((foto, index) => {
                     const safeNombre = escapeHTML(foto.nombre);
+                    // 🔥 FIX: Escudo onerror. Si falla el thumbnail, salta al enlace directo de Drive.
                     grid.innerHTML += `
                         <div class="group relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-zoom-in" onclick="abrirGaleriaIndex(${index})">
-                            <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
+                            <img src="${foto.url}" onerror="this.onerror=null; this.src='${foto.url.replace('thumbnail?id=', 'uc?id=').replace('&sz=w1000', '')}';" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
                             <div class="absolute bottom-0 left-0 w-full bg-black/60 p-1 text-[9px] text-white truncate text-center">${safeNombre}</div>
                         </div>`;
                 });
@@ -1089,6 +1135,10 @@
                 document.getElementById('header-anotacion-container').classList.add('hidden');
             }
 
+            // 🔥 Lógica de Auditoría GPS movida al panel de Staff (Abajo)
+            const cardVisita = document.getElementById('card-validacion-visita');
+            if (cardVisita) cardVisita.remove(); // Limpieza del DOM
+            
             const btnCedula = document.getElementById('btn-subir-cedula-gys');
             if (btnCedula) {
                 const cedulaData = checklist['CEDULA_GYS'];
