@@ -118,18 +118,18 @@ exports.handler = async (event, context) => {
                 diccionarioGlobal = dbData.diccionario || {};
                 const matriz = dbData.matriz || {};
 
-                // 1. Buscamos la Entidad Exacta. Si no existe, buscamos GLOBAL
-                let entidadKey = Object.keys(matriz).find(k => normalizar(k) === entidadBusqueda);
+                // 1. Buscamos la Entidad Exacta. Si no existe, buscamos el MASTER (NACIONAL)
+                let entidadKey = Object.keys(matriz).find(k => normalizar(k) === normalizar(entidadBusqueda));
                 if (!entidadKey || !matriz[entidadKey]) {
-                    console.log(`⚠️ Entidad no encontrada: ${entidadBusqueda}. Usando GLOBAL.`);
-                    entidadKey = Object.keys(matriz).find(k => normalizar(k).includes('GLOBAL'));
+                    console.log(`⚠️ Entidad no encontrada: ${entidadBusqueda}. Usando MASTER.`);
+                    entidadKey = Object.keys(matriz).find(k => normalizar(k).includes('NACIONAL') || normalizar(k).includes('MASTER'));
                 }
                 
                 if (entidadKey && matriz[entidadKey]) {
                     const entidadData = matriz[entidadKey];
                     
                     // 2. Buscamos el Trámite. Si no existe, forzamos a GLOBAL
-                    let tramiteKey = Object.keys(entidadData).find(k => normalizar(k) === tramiteBusqueda);
+                    let tramiteKey = Object.keys(entidadData).find(k => normalizar(k) === normalizar(tramiteBusqueda));
                     if (!tramiteKey || !entidadData[tramiteKey]) {
                         console.log(`⚠️ Trámite no encontrado: ${tramiteBusqueda}. Usando GLOBAL.`);
                         tramiteKey = Object.keys(entidadData).find(k => normalizar(k).includes('GLOBAL'));
@@ -140,18 +140,28 @@ exports.handler = async (event, context) => {
                     }
                 }
                 
-                // 3. 🛟 SALVAVIDAS ABSOLUTO: Si por alguna razón todo falló, obligamos a leer matriz['GLOBAL']['GLOBAL']
-                if (!plantilla && matriz['GLOBAL'] && matriz['GLOBAL']['GLOBAL']) {
-                    console.log("🛟 Activando salvavidas absoluto GLOBAL -> GLOBAL");
-                    plantilla = matriz['GLOBAL']['GLOBAL'];
+                // 3. 🛟 SALVAVIDAS ABSOLUTO NIVEL DIOS
+                if (!plantilla) {
+                    console.log("🛟 Activando salvavidas absoluto NIVEL DIOS...");
+                    // Busca automáticamente tu carpeta "NACIONAL_(MASTER)"
+                    const masterKey = Object.keys(matriz).find(k => k.toUpperCase().includes('NACIONAL') || k.toUpperCase().includes('MASTER'));
+                    if (masterKey && matriz[masterKey]) {
+                        // Busca automáticamente la subcarpeta "GLOBAL"
+                        const globalKey = Object.keys(matriz[masterKey]).find(k => k.toUpperCase().includes('GLOBAL'));
+                        if (globalKey) {
+                            plantilla = matriz[masterKey][globalKey];
+                        }
+                    }
                 }
             }
         } catch (e) { 
             console.error("Error crítico leyendo plantilla:", e); 
         }
 
+        // 🛡️ ESCUDO ANTI-ERROR 500: Si falla todo, salva el expediente con requisitos en blanco para no perder al cliente.
         if (!plantilla) {
-            throw new Error(`Error Catastrófico: No existe la configuración maestra GLOBAL. Comunícate con Soporte Técnico.`);
+            console.error("⚠️ No hay matriz válida. Salvando expediente en blanco.");
+            plantilla = { solicitante: [], propietario: [], inmueble: [] };
         }
 
         let checklistFinal = {};
