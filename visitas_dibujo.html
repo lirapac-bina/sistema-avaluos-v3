@@ -143,7 +143,66 @@
             filtrarTareas();
         }
 
-        iniciarMotorBusqueda()
+        async function iniciarMotorBusqueda() {
+            const userJson = localStorage.getItem('leezar_user_active');
+            if(!userJson) return;
+            const user = JSON.parse(userJson);
+
+            // 🔥 FIX ARQUITECTÓNICO: Quitamos el '.where("estatus")' estricto. 
+            // Firebase nos mandará todo lo activo, y nuestro Súper Filtro asignará a quién le toca.
+            db.collection('expedientes_avaluos')
+                .onSnapshot(snapshot => {
+                    let contVisitas = 0;
+                    let contDibujos = 0;
+                    
+                    const docsFiltrados = [];
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        
+                        // 🛡️ Filtramos los expedientes eliminados (Soft Delete de Gestión)
+                        if (data.eliminado === true) return;
+
+                        let coords = data.coordenadas || null;
+                        if (!coords && data.checklist && data.checklist.UBICACION_MAPS) coords = data.checklist.UBICACION_MAPS.coordenadas || null;
+                        let dir = data.ubicacion || data.direccion || data.municipio;
+                        if ((!dir || dir === 'Sin dirección') && data.checklist && data.checklist.UBICACION_MAPS) dir = data.checklist.UBICACION_MAPS.direccion || data.checklist.UBICACION_MAPS.ubicacion || data.checklist.UBICACION_MAPS.address;
+                        if (!dir || dir === 'Sin dirección' || dir === 'Dirección no registrada') dir = coords ? `📍 Ubicación por GPS guardada` : 'Dirección no registrada';
+
+                        // 🔥 Aplicamos el Súper Filtro para saber si este usuario está asignado
+                        const esParaVisita = expVisitador(data, user);
+                        const esParaDibujo = expDibujante(data, user);
+                        
+                        const entregadoVisita = data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado';
+                        const entregadoDibujo = data.entregables && data.entregables.dibujo && data.entregables.dibujo.estatus === 'completado';
+
+                        if(esParaVisita && !entregadoVisita) contVisitas++;
+                        if(esParaDibujo && !entregadoDibujo) contDibujos++;
+
+                        // Solo guardamos en memoria los que le tocan a ESTE usuario
+                        if (esParaVisita || esParaDibujo) {
+                            docsFiltrados.push({ 
+                                id: doc.id, ...data, direccion_limpia: dir, coordenadas_limpias: coords,
+                                esParaVisita, esParaDibujo, 
+                                estadoVisita: entregadoVisita ? 'completados' : 'pendientes',
+                                estadoDibujo: entregadoDibujo ? 'completados' : 'pendientes'
+                            });
+                        }
+                    });
+
+                    misExpedientes = docsFiltrados;
+
+                    const bVisitas = document.getElementById('badge-visitas');
+                    const bDibujos = document.getElementById('badge-dibujos');
+                    if(contVisitas > 0) { bVisitas.innerText = contVisitas; bVisitas.classList.remove('hidden'); } else { bVisitas.classList.add('hidden'); }
+                    if(contDibujos > 0) { bDibujos.innerText = contDibujos; bDibujos.classList.remove('hidden'); } else { bDibujos.classList.add('hidden'); }
+
+                    renderizarTareas();
+                    document.getElementById('main-content').style.visibility = 'visible';
+                    const secLoader = document.getElementById('security-loader');
+                    if (secLoader) secLoader.remove();
+                });
+        }
 
         // 🛡️ SÚPER FILTRO BLINDADO ANTI-ERRORES
         function coincideConUsuario(asignacionBD, userObj) {
@@ -209,11 +268,19 @@
                 return false;
             });
 
-            // 🔥 ORDENAR: Más antiguos primero (Los que llevan más tiempo esperando)
+            // 🔥 ORDENAR: Más antiguos primero (Blindado contra Timestamps de Firebase)
             expsAMostrar.sort((a, b) => {
-                let dateA = vistaActual === 'visitas' ? (a.fecha_asignacion_visita || a.fechaCreacion || 0) : (a.fecha_asignacion_dibujo || a.fechaCreacion || 0);
-                let dateB = vistaActual === 'visitas' ? (b.fecha_asignacion_visita || b.fechaCreacion || 0) : (b.fecha_asignacion_dibujo || b.fechaCreacion || 0);
-                return new Date(dateA).getTime() - new Date(dateB).getTime();
+                let dateA = vistaActual === 'visitas' ? (a.fechaAsignacionVisitador || a.fechaCreacion || 0) : (a.fechaAsignacionDibujante || a.fechaCreacion || 0);
+                let dateB = vistaActual === 'visitas' ? (b.fechaAsignacionVisitador || b.fechaCreacion || 0) : (b.fechaAsignacionDibujante || b.fechaCreacion || 0);
+                
+                const parseDate = (d) => {
+                    if (!d) return 0;
+                    if (typeof d.toDate === 'function') return d.toDate().getTime(); // Si es Timestamp de Firebase
+                    if (d._seconds) return d._seconds * 1000;
+                    return new Date(d).getTime() || 0; // Si es ISO String
+                };
+                
+                return parseDate(dateA) - parseDate(dateB);
             });
 
             if(expsAMostrar.length === 0) {
@@ -226,7 +293,9 @@
                 const icon = vistaActual === 'visitas' ? 'photo_camera' : 'architecture';
                 let coordsFinales = exp.coordenadas_limpias;
                 let direccionFinal = exp.direccion_limpia;
-                let linkGoogleMaps = coordsFinales ? `https://www.google.com/maps/search/?api=1&query=$${coordsFinales.replace(/\s/g, '')}` : '#'; 
+                
+                // 🔥 FIX: Se eliminó el '$' extra antes de la interpolación de la variable
+                let linkGoogleMaps = coordsFinales ? `https://www.google.com/maps/search/?api=1&query=${coordsFinales.replace(/\s/g, '')}` : '#'; 
 
                 let prevFiles = vistaActual === 'visitas' 
                     ? (exp.entregables?.visita?.archivos?.length || 0) 
@@ -683,9 +752,10 @@
                 const fechaEntregaISO = new Date().toISOString();
                 let tiempoResolucionHrs = null;
 
+                // 🔥 FIX KPI: Sincronización exacta con las llaves que guarda assign-colaborador.js
                 let fechaAsignacion = null;
-                if(tipo === 'VISITA' && dataDb.fecha_asignacion_visita) fechaAsignacion = new Date(dataDb.fecha_asignacion_visita);
-                if(tipo === 'DIBUJO' && dataDb.fecha_asignacion_dibujo) fechaAsignacion = new Date(dataDb.fecha_asignacion_dibujo);
+                if(tipo === 'VISITA' && dataDb.fechaAsignacionVisitador) fechaAsignacion = new Date(dataDb.fechaAsignacionVisitador);
+                if(tipo === 'DIBUJO' && dataDb.fechaAsignacionDibujante) fechaAsignacion = new Date(dataDb.fechaAsignacionDibujante);
 
                 if(fechaAsignacion) {
                     const diffMs = new Date() - fechaAsignacion;
