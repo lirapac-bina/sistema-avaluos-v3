@@ -33,7 +33,19 @@ const db = admin.firestore();
 // ----------------------------------------------------------------------------
 
 exports.handler = async (event, context) => {
-    const { code } = event.queryStringParameters;
+    const { code, state } = event.queryStringParameters;
+
+    // 🛡️ 1. VALIDACIÓN ANTI-CSRF (STATE)
+    const cookies = cookie.parse(event.headers.cookie || '');
+    const storedState = cookies.oauth_state;
+
+    if (!state || !storedState || state !== storedState) {
+        console.error("🚨 Alerta de Seguridad: State Mismatch (Posible ataque CSRF)");
+        return { 
+            statusCode: 403, 
+            body: `<h1>Acceso Denegado</h1><p>Error de seguridad (CSRF). Por favor, intenta iniciar sesión nuevamente.</p><a href="/">Volver al inicio</a>` 
+        };
+    }
 
     // Validación básica
     if (!code) {

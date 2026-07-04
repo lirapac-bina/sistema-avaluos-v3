@@ -155,6 +155,15 @@
     </div>
 
     <script>
+        // 🛡️ MOTOR DE SEGURIDAD: Generador de State Anti-CSRF
+        function generarStateSeguro() {
+            const array = new Uint8Array(16);
+            window.crypto.getRandomValues(array);
+            const state = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+            document.cookie = `oauth_state=${state}; path=/; max-age=600; SameSite=None; Secure`;
+            return state;
+        }
+
         // --- Lógica de Autenticación EME ---
         async function iniciarSesion() {
             const errorDiv = document.getElementById('error-msg');
@@ -166,11 +175,14 @@
             btn.disabled = true;
 
             try {
+                const state = generarStateSeguro(); // Generamos el candado único
                 const response = await fetch('/.netlify/functions/auth-start');
                 if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const data = await response.json();
-                if (data.authUrl) window.location.href = data.authUrl;
-                else throw new Error('Sin URL de autorización');
+                
+                if (data.authUrl) {
+                    window.location.href = data.authUrl + `&state=${state}`; // Inyectamos el candado a la URL
+                } else throw new Error('Sin URL de autorización');
             } catch (error) {
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
@@ -191,12 +203,14 @@
             btn.disabled = true;
 
             try {
+                const state = generarStateSeguro(); // Generamos el candado único
                 const response = await fetch('/.netlify/functions/auth-start');
                 if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const data = await response.json();
+                
                 if (data.authUrl) {
                     sessionStorage.setItem('modulo_destino', 'hipotecas');
-                    window.location.href = data.authUrl;
+                    window.location.href = data.authUrl + `&state=${state}`; // Inyectamos el candado a la URL
                 } else throw new Error('Sin URL de autorización');
             } catch (error) {
                 btn.innerHTML = originalContent;
@@ -216,5 +230,7 @@
             }
         };
     </script>
+</body>
+</html>
 </body>
 </html>

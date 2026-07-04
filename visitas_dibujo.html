@@ -143,52 +143,7 @@
             filtrarTareas();
         }
 
-        async function iniciarMotorBusqueda() {
-            const userJson = localStorage.getItem('leezar_user_active');
-            if(!userJson) return;
-            const user = JSON.parse(userJson);
-
-            db.collection('expedientes_avaluos')
-                .where('estatus', 'in', ['VISITA PROGRAMADA', 'EN DIBUJO', 'PENDIENTE', 'EN REVISIÓN'])
-                .onSnapshot(snapshot => {
-                    let contVisitas = 0;
-                    let contDibujos = 0;
-
-                    misExpedientes = snapshot.docs.map(doc => {
-                        const data = doc.data();
-                        let coords = data.coordenadas || null;
-                        if (!coords && data.checklist && data.checklist.UBICACION_MAPS) coords = data.checklist.UBICACION_MAPS.coordenadas || null;
-                        let dir = data.ubicacion || data.direccion || data.municipio;
-                        if ((!dir || dir === 'Sin dirección') && data.checklist && data.checklist.UBICACION_MAPS) dir = data.checklist.UBICACION_MAPS.direccion || data.checklist.UBICACION_MAPS.ubicacion || data.checklist.UBICACION_MAPS.address;
-                        if (!dir || dir === 'Sin dirección' || dir === 'Dirección no registrada') dir = coords ? `📍 Ubicación por GPS guardada` : 'Dirección no registrada';
-
-                        const esParaVisita = expVisitador(data, user);
-                        const esParaDibujo = expDibujante(data, user);
-                        const entregadoVisita = data.entregables && data.entregables.visita && data.entregables.visita.estatus === 'completado';
-                        const entregadoDibujo = data.entregables && data.entregables.dibujo && data.entregables.dibujo.estatus === 'completado';
-
-                        if(esParaVisita && !entregadoVisita) contVisitas++;
-                        if(esParaDibujo && !entregadoDibujo) contDibujos++;
-
-                        return { 
-                            id: doc.id, ...data, direccion_limpia: dir, coordenadas_limpias: coords,
-                            esParaVisita, esParaDibujo, 
-                            estadoVisita: entregadoVisita ? 'completados' : 'pendientes',
-                            estadoDibujo: entregadoDibujo ? 'completados' : 'pendientes'
-                        };
-                    }).filter(exp => exp.esParaVisita || exp.esParaDibujo);
-
-                    const bVisitas = document.getElementById('badge-visitas');
-                    const bDibujos = document.getElementById('badge-dibujos');
-                    if(contVisitas > 0) { bVisitas.innerText = contVisitas; bVisitas.classList.remove('hidden'); } else { bVisitas.classList.add('hidden'); }
-                    if(contDibujos > 0) { bDibujos.innerText = contDibujos; bDibujos.classList.remove('hidden'); } else { bDibujos.classList.add('hidden'); }
-
-                    renderizarTareas();
-                    document.getElementById('main-content').style.visibility = 'visible';
-                    const secLoader = document.getElementById('security-loader');
-                    if (secLoader) secLoader.remove();
-                });
-        }
+        iniciarMotorBusqueda()
 
         // 🛡️ SÚPER FILTRO BLINDADO ANTI-ERRORES
         function coincideConUsuario(asignacionBD, userObj) {
