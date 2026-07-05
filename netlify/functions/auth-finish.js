@@ -4,15 +4,13 @@ const cookie = require('cookie');
 const fs = require('fs');
 const path = require('path');
 
-// --- 1. INICIALIZACIÓN BLINDADA DE FIREBASE (Igual que en tus otros archivos) ---
+// --- 1. INICIALIZACIÓN BLINDADA DE FIREBASE ---
 if (admin.apps.length === 0) {
     let serviceAccount;
-    // Intentamos cargar desde Variable de Entorno (Nube)
     if (process.env.GOOGLE_SERVICE_ACCOUNT) {
         try { serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); } 
         catch (e) { console.error("Error ENV:", e); }
     }
-    // Intentamos cargar archivo local (PC)
     if (!serviceAccount) {
         try {
             const keyPath = path.resolve(__dirname, 'serviceaccountkey.json');
@@ -25,7 +23,7 @@ if (admin.apps.length === 0) {
     if (serviceAccount) {
         admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } else {
-        console.error("ADVERTENCIA: No se pudo conectar a Firebase. La verificación de usuarios fallará.");
+        console.error("ADVERTENCIA: No se pudo conectar a Firebase.");
     }
 }
 const db = admin.firestore();
@@ -35,40 +33,46 @@ const db = admin.firestore();
 exports.handler = async (event, context) => {
     const { code, state } = event.queryStringParameters;
 
-    // 🛡️ 1. VALIDACIÓN ANTI-CSRF (STATE)
+    // 🛡️ 1. VALIDACIÓN ANTI-CSRF (STATE) - ¡Corregido, declarada solo UNA vez!
     const cookies = cookie.parse(event.headers.cookie || '');
     const storedState = cookies.oauth_state;
 
     if (!state || !storedState || state !== storedState) {
-        console.error("🚨 Alerta de Seguridad: State Mismatch (Posible ataque CSRF)");
+        console.error("🚨 Alerta de Seguridad: State Mismatch");
         return { 
             statusCode: 403, 
-            body: `<h1>Acceso Denegado</h1><p>Error de seguridad (CSRF). Por favor, intenta iniciar sesión nuevamente.</p><a href="/">Volver al inicio</a>` 
+            headers: { 'Content-Type': 'text/html; charset=utf-8' },
+            body: `
+            <div style="font-family: system-ui, sans-serif; text-align: center; margin-top: 10vh; padding: 20px;">
+                <h1 style="color: #e11d48; margin-bottom: 10px;">Acceso Interrumpido</h1>
+                <p style="color: #475569; max-width: 400px; margin: 0 auto 20px auto; line-height: 1.5;">
+                    No pudimos validar tu sesión de forma segura. Esto suele ocurrir si pasaron más de 10 minutos o si tu navegador tiene <b>bloqueadas las cookies</b>.
+                </p>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; max-width: 400px; margin: 0 auto 30px auto; font-size: 14px; color: #334155;">
+                    <b>💡 Solución:</b> Asegúrate de permitir cookies para este sitio web o intenta usar una ventana normal (no incógnito estricto).
+                </div>
+                <a href="/" style="background: #0f4c81; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Volver al Inicio</a>
+            </div>
+            ` 
         };
     }
 
-    // Validación básica
-    if (!code) {
-        return { statusCode: 400, body: 'Error: Falta el código de autorización.' };
-    }
+    if (!code) return { statusCode: 400, body: 'Error: Falta el código.' };
 
     try {
         const host = event.headers.host;
         const protocol = host.includes('localhost') ? 'http' : 'https';
         const redirectUri = `${protocol}://${host}/.netlify/functions/auth-finish`;
 
-        // Configuración del Cliente OAuth
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID || "880781885603-dra7ci2h2787ot0fncqs1q9vrnrq9k8a.apps.googleusercontent.com",
             process.env.GOOGLE_CLIENT_SECRET || "GOCSPX-u6ddX_qX_S7yX_S7yX_S7yX_S7y",
             redirectUri
         );
 
-        // 2. INTERCAMBIO DE TOKEN REAL (Seguridad Google)
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
 
-        // 3. OBTENER DATOS DE IDENTIDAD
         const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
         const userInfo = await oauth2.userinfo.get();
         
@@ -76,85 +80,48 @@ exports.handler = async (event, context) => {
         const userName = userInfo.data.name;
         const userPhoto = userInfo.data.picture;
 
-        console.log(`Intento de acceso: ${userEmail}`);
-
-        // 4. VERIFICACIÓN DE PERMISOS (EL CADENERO - FIREBASE)
         let rolUsuario = null;
         let accesoPermitido = false;
 
-        // A) Buscamos en la colección 'usuarios' de Firebase
         try {
             const userDoc = await db.collection('usuarios').doc(userEmail).get();
-            
-            if (userDoc.exists) {
-                const datos = userDoc.data();
-                if (datos.activo !== false) { // Solo si no está desactivado
-                    rolUsuario = datos.rol || 'invitado';
-                    accesoPermitido = true;
-                    console.log("Usuario encontrado en DB:", rolUsuario);
-                }
+            if (userDoc.exists && userDoc.data().activo !== false) {
+                rolUsuario = userDoc.data().rol || 'invitado';
+                accesoPermitido = true;
             }
-        } catch (dbError) {
-            console.warn("Error consultando DB:", dbError.message);
-        }
+        } catch (dbError) { console.warn("Error consultando DB:", dbError.message); }
 
-        // B) PUERTA TRASERA (BACKDOOR) PARA EL ARQUITECTO
-        // Esto asegura que tú SIEMPRE puedas entrar para configurar a los demás
         const WHITELIST_ADMINS = ['lirapac@gmail.com']; 
-        
         if (!accesoPermitido && WHITELIST_ADMINS.includes(userEmail)) {
-            console.log("Activando acceso de emergencia para Admin.");
             rolUsuario = 'admin';
             accesoPermitido = true;
-            
-            // Opcional: Crear el usuario en DB automáticamente si no existe
             await db.collection('usuarios').doc(userEmail).set({
-                nombre: userName,
-                email: userEmail,
-                rol: 'admin',
-                activo: true,
-                fechaRegistro: new Date().toISOString()
+                nombre: userName, email: userEmail, rol: 'admin', activo: true, fechaRegistro: new Date().toISOString()
             }, { merge: true });
         }
 
-        // 5. DECISIÓN FINAL
         if (!accesoPermitido) {
-            return {
-                statusCode: 403,
-                body: `<h1>Acceso Denegado</h1><p>El usuario <strong>${userEmail}</strong> no tiene permisos registrados en el Sistema Leezar.</p><a href="/">Volver</a>`
-            };
+            return { statusCode: 403, body: `<h1>Acceso Denegado</h1><p>El usuario <strong>${userEmail}</strong> no tiene permisos.</p><a href="/">Volver</a>` };
         }
 
-        // 6. GENERAR SESIÓN FIREBASE
-        // Creamos un token oficial de Firebase Auth usando el correo como Identificador (UID)
         const firebaseToken = await admin.auth().createCustomToken(userEmail);
-
-        // Guardamos el token de Firebase en la cookie en lugar del de Google
         const authCookie = cookie.serialize('leezar_token', firebaseToken, {
             secure: process.env.NODE_ENV === 'production',
-            httpOnly: false, // Mantenemos false para que layout.js pueda leerlo
+            httpOnly: false, 
             path: '/',
-            maxAge: 60 * 60 * 24 * 7 // 1 semana
+            maxAge: 60 * 60 * 24 * 7 
         });
 
-        // Redirigir al Dashboard
         const targetUrl = `/dashboard.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
 
         return {
             statusCode: 302,
-            headers: {
-                'Set-Cookie': authCookie,
-                'Location': targetUrl,
-                'Cache-Control': 'no-cache'
-            },
+            headers: { 'Set-Cookie': authCookie, 'Location': targetUrl, 'Cache-Control': 'no-cache' },
             body: 'Entrando al sistema...'
         };
 
     } catch (error) {
         console.error("Error Crítico Auth-Finish:", error);
-        return { 
-            statusCode: 500, 
-            body: JSON.stringify({ error: "Fallo en autenticación", details: error.message }) 
-        };
+        return { statusCode: 500, body: JSON.stringify({ error: "Fallo en autenticación", details: error.message }) };
     }
 };

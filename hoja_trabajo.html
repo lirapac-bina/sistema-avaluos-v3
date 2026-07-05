@@ -1164,22 +1164,31 @@
                             else parsedVal = JSON.parse(value.replace(/```json/gi, '').replace(/```/g, '').trim());
                         } catch (e) { parsedVal = {}; }
                     }
-                    const flatten = (obj) => {
+                    
+                    const docBase = docName.toUpperCase().replace(/BOLETA_|_BOLETA|RECIBO_|_RECIBO/g, '').trim();
+
+                    const flatten = (obj, prefix = '') => {
                         for (const key in obj) {
-                            if (typeof obj[key] === 'object' && obj[key] !== null) flatten(obj[key]);
-                            else {
+                            // Si es objeto, pasamos el prefijo (Ej: solicitante_rfc)
+                            if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                                flatten(obj[key], `${prefix}${key}_`);
+                            } else {
                                 const val = String(obj[key]).trim().toUpperCase();
                                 if (val && val !== 'NULL' && val !== 'N/A' && val !== '---') {
                                     const cleanKey = key.toUpperCase().trim();
-                                    datosIA[`${docName.toUpperCase()}_${cleanKey}`] = val; 
-                                    datosIA[cleanKey] = val;                               
-                                    datosIA[cleanKey.replace(/_/g, '')] = val;             
+                                    const fullKey = `${prefix}${cleanKey}`;
+                                    
+                                    datosIA[`${docName.toUpperCase()}_${fullKey}`] = val; 
+                                    datosIA[`${docBase}_${fullKey}`] = val; // Ej: PREDIAL_FOLIO
+                                    datosIA[fullKey] = val;                               
+                                    datosIA[fullKey.replace(/_/g, '')] = val;             
                                 }
                             }
                         }
                     };
                     if (typeof parsedVal === 'object' && parsedVal !== null) flatten(parsedVal);
                 }
+                console.log("🕵️‍♂️ DICCIONARIO IA LISTO:", datosIA);
 
                 let docsList = []; document.querySelectorAll('.doc-nota-chk:checked').forEach(el => docsList.push(el.value.toUpperCase()));
                 let docsTexto = docsList.length > 0 ? docsList.join(', ') : '___';
@@ -1230,9 +1239,16 @@
                     else if (datosIA[tagSinPunto]) valEncontrado = datosIA[tagSinPunto];
                     else if (datosIA[tagSinPunto.replace(/_/g, '')]) valEncontrado = datosIA[tagSinPunto.replace(/_/g, '')];
                     
-                    // 2. Búsqueda profunda de emergencia
+                    // 2. Búsqueda profunda de emergencia (CERO CRUCES)
                     if (!valEncontrado) {
+                        // Detectamos a qué documento pertenece la etiqueta (Ej. Si dice [FOLIO_PREDIAL], el contexto es PREDIAL)
+                        const contextos = ['PREDIAL', 'AGUA', 'ESCRITURA', 'CEDULA', 'ALINEAMIENTO', 'LICENCIA', 'CATASTRAL'];
+                        const contextoRequerido = contextos.find(c => tagClean.includes(c));
+
                         for (const [iaKey, iaVal] of Object.entries(datosIA)) {
+                            // Si la etiqueta exige un contexto, saltamos cualquier llave que NO sea de ese documento
+                            if (contextoRequerido && !iaKey.includes(contextoRequerido)) continue;
+
                             if (iaKey.includes(tagBase) || tagBase.includes(iaKey)) { 
                                 valEncontrado = iaVal; break; 
                             }
@@ -1242,7 +1258,7 @@
                     if(valEncontrado) return `<span class="bg-emerald-100 text-emerald-700 px-1 rounded shadow-sm font-black">${valEncontrado}</span>`;
                     
                     // 🛡️ AQUÍ ESTÁ LA MAGIA: Si no encuentra el dato, pone S/D en rojo
-                    return `<span class="bg-rose-100 text-rose-700 px-1 rounded shadow-sm font-black">S/D</span>`; 
+                    return `<span class="bg-rose-100 text-rose-700 px-1 rounded shadow-sm font-black" title="Dato no encontrado: ${tagClean}">S/D</span>`; 
                 });
 
                 const preview = document.getElementById('preview-notas');
