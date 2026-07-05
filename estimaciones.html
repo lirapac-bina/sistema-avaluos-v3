@@ -14,13 +14,14 @@
 
     <script>
         tailwind.config = { 
-            darkMode: 'class', // ¡Esto es clave para controlar el dark mode!
+            darkMode: 'class', 
             theme: { 
                 extend: { 
                     colors: { 
-                        eme: { 500: '#e11d48', 600: '#be123c', 700: '#9f1239' }, 
+                        /* Paleta maestra: Cambias el HEX aquí y cambia en todo el sistema */
+                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' },
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
-                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' } 
+                        eme: { 500: '#e11d48', 600: '#be123c', 700: '#9f1239' }
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] }
                 } 
@@ -46,7 +47,7 @@
         .dark .card-header span.icon { color: #38bdf8; background: #0f172a; }
         
         /* FIX: Quitando mayúsculas en las etiquetas (labels) */
-        label { font-size: 0.70rem !important; font-weight: 700; color: #64748b; text-transform: none !important; letter-spacing: normal !important; margin-bottom: 6px; display: block; }
+        label { font-size: 0.70rem !important; font-weight: 700; color: #64748b; text-transform: none !important; letter-spacing: normal !important; margin-bottom: 6px; display: block; transition: all 0.3s;}
         .dark label { color: #94a3b8; }
         
         /* FIX: Selects sin desbordamiento */
@@ -56,8 +57,12 @@
         .dark input[type="text"], .dark input[type="number"], .dark select, .dark textarea { background: #0f172a; border-color: #475569; color: #f8fafc; }
         input:focus, select:focus, textarea:focus { border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
         .dark input:focus, .dark select:focus, .dark textarea:focus { background: #1e293b; border-color: #14b8a6; }
-        input:disabled, select:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
-        .dark input:disabled, .dark select:disabled { background: #334155; color: #64748b; }
+        
+        /* Estado Disabled Inteligente */
+        input:disabled, select:disabled, textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; opacity: 0.7; border-color: #e2e8f0; }
+        .dark input:disabled, .dark select:disabled { background: #334155; color: #475569; border-color: #334155; }
+        .disabled-label { color: #cbd5e1 !important; text-decoration: line-through; }
+        .dark .disabled-label { color: #475569 !important; }
         
         .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .checkbox-item { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; }
@@ -90,30 +95,34 @@
 
 <body class="transition-colors duration-300">
 
-    <!-- HEADER LEEZAR -->
-    <header class="fixed top-0 left-0 w-full bg-slate-900 text-white shadow-lg z-40 h-20 flex items-center">
+    <!-- HEADER LEEZAR (IDENTIDAD DINÁMICA) -->
+    <header class="fixed top-0 left-0 w-full bg-slate-900 text-white shadow-lg z-40 h-20 flex items-center transition-colors duration-300">
         <div class="max-w-5xl w-full mx-auto px-4 flex justify-between items-center">
+            <!-- 🌟 Perfil del Usuario -->
             <div class="flex items-center gap-3">
-                <div class="h-12 w-auto bg-white p-1 rounded-lg shadow-sm flex items-center justify-center">
-                    <img src="https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/logo-eme-HZjebNvrO2hDhZOM.png" alt="Logo" class="h-full w-auto object-contain">
+                <div class="h-11 w-11 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center overflow-hidden shadow-inner relative">
+                    <img id="header-user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar" class="h-full w-full object-cover z-10 relative" onerror="this.style.display='none'">                    <span class="material-symbols-rounded absolute text-slate-500 z-0">person</span>
                 </div>
                 <div class="flex flex-col justify-center">
-                    <span class="font-black text-lg tracking-tight leading-none text-white">Motor Pericial V18</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Ingeniería Leezar</span>
+                    <span id="header-user-name" class="font-black text-lg tracking-tight leading-none text-white truncate max-w-[180px] sm:max-w-xs">Cargando perfil...</span>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                        <span id="header-user-role" class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Conectando...</span>
+                    </div>
                 </div>
             </div>
             
             <div class="flex items-center gap-2 sm:gap-4">
-                <!-- 🌙 DARK MODE SIEMPRE VISIBLE -->
+                <!-- 🌙 DARK MODE -->
                 <button onclick="window.toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
                     <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
                 </button>
 
-                <!-- AUTENTICACIÓN -->
-                <div class="flex items-center gap-2 sm:gap-4 hidden" id="auth-mini">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-[9px] font-bold uppercase tracking-widest text-slate-300">Saldo Disponible</p>
-                        <p class="text-sm font-black text-emerald-400"><span id="user-credits">0</span> Créditos</p>
+                <!-- AUTENTICACIÓN Y SALDO -->
+                <div class="flex items-center gap-2 sm:gap-4 hidden animate-fade-in" id="auth-mini">
+                    <div class="text-right hidden sm:block bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
+                        <p class="text-[8px] font-bold uppercase tracking-widest text-slate-400">Saldo Operativo</p>
+                        <p class="text-sm font-black text-white"><span id="user-credits" class="text-emerald-400">0</span> Créditos</p>
                     </div>
                     <button onclick="window.cerrarSesion()" class="p-2 bg-rose-500 hover:bg-rose-600 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cerrar Sesión">
                         <span class="material-symbols-rounded text-xl">logout</span>
@@ -157,8 +166,11 @@
                 </div>
             </div>
 
-            <!-- 🚀 STICKY FOOTER PARA EJECUTAR EL ALGORITMO (Siempre a la vista) -->
-            <div class="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] p-4 z-30 flex justify-center pb-safe">
+            <!-- 🚀 STICKY FOOTER PARA EJECUTAR EL ALGORITMO Y LIMPIAR -->
+            <div class="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] p-4 z-30 flex justify-center gap-3 pb-safe">
+                <button type="button" onclick="window.limpiarBorrador()" class="px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center" title="Limpiar Formulario (Reset)">
+                    <span class="material-symbols-rounded">delete_sweep</span>
+                </button>
                 <button type="button" onclick="window.enviarDictamenPrevio()" class="max-w-2xl w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-xl shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-3 transition-transform active:scale-95 uppercase tracking-widest text-sm border border-emerald-400">
                     <span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM
                 </button>
@@ -229,155 +241,130 @@
             </div>
 
             <!-- BLOQUE 2: TERRENO -->
-            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
-                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">landscape</span>
-                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">2. Características del Terreno</h2>
+            <div class="card-bloque">
+                <div class="card-header">
+                    <span class="material-symbols-rounded icon">landscape</span>
+                    <h2>2. Características del Terreno</h2>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Superficie Terreno (m²)</label><input type="number" name="Superficie_Terreno" id="num_superficie_terreno" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Frente (m)</label><input type="number" name="Frente_m" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Fondo (m)</label><input type="number" name="Fondo_m" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Topografía</label>
-                        <select name="Topografia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Plano" selected>Plano</option><option value="Pendiente Ligera">Pendiente Ligera</option><option value="Accidentado/Barranco">Accidentado/Barranco</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Ubicación en Manzana</label>
-                        <select name="Ubicacion_en_Manzana" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Un frente">Un frente</option><option value="Intermedio" selected>Intermedio</option><option value="Esquina">Esquina</option><option value="Dos frentes no contiguos">Dos frentes no contiguos</option><option value="Cabecera de manzana">Cabecera de manzana</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Frente a</label>
-                        <select name="Frente_a" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Calle" selected>Calle</option><option value="Carretera">Carretera</option><option value="Avenida">Avenida</option><option value="Cerrada">Cerrada</option><option value="Andador">Andador</option><option value="Servidumbre de paso">Servidumbre de paso</option><option value="Sin acceso">Sin acceso</option><option value="Privada">Privada</option>
-                        </select>
-                    </div>
+                    <div class="md:col-span-2"><label>Superficie Terreno (m²)</label><input type="number" name="Superficie_Terreno" id="num_superficie_terreno" value="0"></div>
+                    <div><label>Frente (m)</label><input type="number" name="Frente_m" value="0"></div>
+                    <div><label>Fondo (m)</label><input type="number" name="Fondo_m" value="0"></div>
+                    <div class="md:col-span-2"><label>Topografía</label><select name="Topografia"><option value="Ninguna">Ninguna</option><option value="Plano" selected>Plano</option><option value="Pendiente Ligera">Pendiente Ligera</option><option value="Accidentado/Barranco">Accidentado/Barranco</option></select></div>
+                    <div class="md:col-span-3"><label>Ubicación en Manzana</label><select name="Ubicacion_en_Manzana"><option value="Ninguna">Ninguna</option><option value="Un frente">Un frente</option><option value="Intermedio" selected>Intermedio</option><option value="Esquina">Esquina</option><option value="Dos frentes no contiguos">Dos frentes no contiguos</option><option value="Cabecera de manzana">Cabecera de manzana</option></select></div>
+                    <div class="md:col-span-3"><label>Frente a</label><select name="Frente_a"><option value="Ninguna">Ninguna</option><option value="Calle" selected>Calle</option><option value="Carretera">Carretera</option><option value="Avenida">Avenida</option><option value="Cerrada">Cerrada</option><option value="Andador">Andador</option><option value="Servidumbre de paso">Servidumbre de paso</option><option value="Sin acceso">Sin acceso</option><option value="Privada">Privada</option></select></div>
                 </div>
             </div>
 
             <!-- BLOQUE 3: CONSTRUCCIÓN -->
-            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
-                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">foundation</span>
-                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">3. Características de Construcción</h2>
+            <div class="card-bloque">
+                <div class="card-header">
+                    <span class="material-symbols-rounded icon">foundation</span>
+                    <h2>3. Características de Construcción</h2>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" id="num_sup_const" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Edad (Años)</label><input type="number" name="Edad_Anos" id="num_edad" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Conservación</label>
-                        <select name="Estado_Conservacion" id="est-conservacion" onchange="aplicarLogicaInteligente()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option>
-                        </select>
-                    </div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Elevador</label><select name="Elevador" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                    <div class="md:col-span-2"><label>Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" id="num_sup_const" value="0"></div>
+                    <div><label>Edad (Años)</label><input type="number" name="Edad_Anos" id="num_edad" value="0"></div>
+                    <div><label>Conservación</label><select name="Estado_Conservacion" id="est-conservacion" onchange="window.aplicarLogicaInteligente()"><option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
+                    <div><label>Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0"></div>
+                    <div><label>Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0"></div>
+                    <div><label>Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                    <div><label>Elevador</label><select name="Elevador"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
                 </div>
             </div>
 
             <!-- BLOQUE 4: EQUIPAMIENTO -->
-            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
-                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">chair</span>
-                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">4. Equipamiento y Categoría</h2>
+            <div class="card-bloque">
+                <div class="card-header">
+                    <span class="material-symbols-rounded icon">chair</span>
+                    <h2>4. Equipamiento y Categoría</h2>
                 </div>
                 <div class="grid grid-cols-3 md:grid-cols-5 gap-4 text-center">
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">bed</span>Recámaras</label><input type="number" name="No_Recamaras" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">shower</span>Baños</label><input type="number" name="No_Banos" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block"><span class="material-symbols-rounded text-xl block mb-1">directions_car</span>Autos</label><input type="number" name="No_Estacionamientos" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-black text-center outline-none focus:border-emerald-500"></div>
-                    <div class="col-span-3 md:col-span-1 text-left"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block mt-2 md:mt-0">Clase de Inmueble</label>
-                        <select name="Clase_Inmueble" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Clase Media" selected>Clase Media</option><option value="Interés Social">Interés Social</option><option value="Semilujo">Semilujo</option><option value="Residencial">Residencial</option><option value="Lujo">Lujo</option>
-                        </select>
-                    </div>
-                    <div class="col-span-3 md:col-span-1 text-left"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block mt-2 md:mt-0">Calidad Acabados</label>
-                        <select name="Calidad_Acabados" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500">
-                            <option value="Ninguna">Ninguna</option><option value="Estándar" selected>Estándar</option><option value="Económicos">Económicos</option><option value="Semilujo">Semilujo</option><option value="Lujo">Lujo</option>
-                        </select>
-                    </div>
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">bed</span>Recámaras</label><input type="number" name="No_Recamaras" value="0"></div>
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">shower</span>Baños</label><input type="number" name="No_Banos" value="0"></div>
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">directions_car</span>Autos</label><input type="number" name="No_Estacionamientos" value="0"></div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="mt-2 md:mt-0">Clase de Inmueble</label><select name="Clase_Inmueble"><option value="Ninguna">Ninguna</option><option value="Clase Media" selected>Clase Media</option><option value="Interés Social">Interés Social</option><option value="Semilujo">Semilujo</option><option value="Residencial">Residencial</option><option value="Lujo">Lujo</option></select></div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="mt-2 md:mt-0">Calidad Acabados</label><select name="Calidad_Acabados"><option value="Ninguna">Ninguna</option><option value="Estándar" selected>Estándar</option><option value="Económicos">Económicos</option><option value="Semilujo">Semilujo</option><option value="Lujo">Lujo</option></select></div>
                 </div>
             </div>
 
             <!-- BLOQUE 5: ADN E INFRAESTRUCTURA -->
-            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
-                    <span class="material-symbols-rounded text-emerald-600 bg-emerald-50 p-2 rounded-lg">architecture</span>
-                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">5. Capa ADN e Infraestructura</h2>
+            <div class="card-bloque">
+                <div class="card-header">
+                    <span class="material-symbols-rounded icon">architecture</span>
+                    <h2>5. Capa ADN e Infraestructura</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Calle</label><select name="Tipo_de_Calle" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Asfalto" selected>Asfalto</option><option value="Terraceria">Terraceria</option><option value="Adoquin">Adoquin</option><option value="Concreto Hidraulico">Concreto Hidraulico</option><option value="Calle de Piedra">Calle de Piedra</option><option value="Piedra">Piedra</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo Acceso Complejo</label><select name="Tipo_de_Acceso_Complejo" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Pluma TAG">Pluma TAG</option><option value="Abierto" selected>Abierto</option><option value="Porton Electrico">Porton Electrico</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Red de Agua</label><select name="Red_de_Agua" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Conexion al Inmueble" selected>Conexion al Inmueble</option><option value="Pozo de Agua">Pozo de Agua</option><option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Drenaje</label><select name="Tipo_de_Drenaje" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Conexion a Red" selected>Conexion a Red</option><option value="Fosa Septica">Fosa Septica</option><option value="Resumidero">Resumidero</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Señalización / Nom.</label><select name="Senalizacion_Nomenclatura" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Completa" selected>Completa</option><option value="Inexistente">Inexistente</option><option value="Solo Nomenclatura">Solo Nomenclatura</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Suministro Servicios</label><select name="Suministro_Servicios" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Subterraneos">Subterraneos</option><option value="Aereos" selected>Aereos</option><option value="Mixtos">Mixtos</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Urbanas</label><select name="Amenidades_Urbanas" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Parque Privado">Parque Privado</option><option value="Parque Publico">Parque Publico</option><option value="Casa Club">Casa Club</option><option value="Canchas Deportivas">Canchas Deportivas</option><option value="Acceso a Playa">Acceso a Playa</option><option value="Muelle">Muelle</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo de Techos</label><select name="Tipo_de_Techos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Losa de concreto" selected>Losa de concreto</option><option value="Losacero">Losacero</option><option value="Provisional">Provisional</option><option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option><option value="Vigueta y bovedilla">Vigueta y bovedilla</option><option value="Estructura metalica">Estructura metalica</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Material de Muros</label><select name="Material_de_Muros" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="De block" selected>De block</option><option value="Tablaroca">Tablaroca</option><option value="Provisionales">Provisionales</option><option value="Tablacemento">Tablacemento</option><option value="De tabique">De tabique</option><option value="Prefabricados">Prefabricados</option><option value="De concreto">De concreto</option><option value="De piedra">De piedra</option><option value="De adobe">De adobe</option><option value="De madera">De madera</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Acabado de Pisos</label><select name="Acabado_de_Pisos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Ceramicos" selected>Ceramicos</option><option value="Porcelanatos">Porcelanatos</option><option value="Tierra">Tierra</option><option value="Cemento">Cemento</option><option value="Maderas">Maderas</option><option value="Marmol / Gama Alta">Marmol / Gama Alta</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Calidad Madera</label><select name="Calidad_Madera" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="MDF/Pino" selected>MDF/Pino</option><option value="Cedro/Caoba">Cedro/Caoba</option><option value="Encino/Roble">Encino/Roble</option><option value="Sin Madera">Sin Madera</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Acabados Cocina</label><select name="Acabados_Cocina" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Barra de Concreto" selected>Barra de Concreto</option><option value="Granito">Granito</option><option value="Nula">Nula</option><option value="MDF">MDF</option><option value="Cuarzo">Cuarzo</option><option value="Tarja">Tarja</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Portón Propiedad</label><select name="Tipo_de_Porton_Propiedad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Sin Porton" selected>Sin Porton</option><option value="Electrico">Electrico</option><option value="Herreria">Herreria</option><option value="Manual">Manual</option><option value="Madera">Madera</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tipo Estacionamiento</label><select name="Tipo_de_Estacionamiento" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Abierto" selected>Abierto</option><option value="Subterraneo">Subterraneo</option><option value="En Bateria">En Bateria</option><option value="Techado">Techado</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Aire Acondicionado</label><select name="Tipo_Aire_Acondicionado" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguno" selected>Ninguno</option><option value="Minisplit">Minisplit</option><option value="Minisplit Inverter">Minisplit Inverter</option><option value="Cassette">Cassette</option><option value="Fan and Coil">Fan and Coil</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Num Equipos Aire</label><input type="number" name="Num_Equipos_Aire" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500 text-center"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Interiores</label><select name="Amenidades_Interiores" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Bodega">Bodega</option><option value="Cuarto de Servicio">Cuarto de Servicio</option><option value="Estudio">Estudio</option><option value="Gimnasio Privado">Gimnasio Privado</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Protección Térmica</label><select name="Proteccion_Termica" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option><option value="Vidrio Sencillo">Vidrio Sencillo</option><option value="Muros Aislados">Muros Aislados</option></select></div>
-                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Lista Espacios Exteriores</label><input type="text" name="Espacios_Exteriores_Lista" value="" placeholder="Ej: Jardín, terraza..." class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Plusvalía Atípica</label><select name="Caso_Atipico_Plusvalia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguno" selected>Ninguno</option><option value="Vista al Mar">Vista al Mar</option><option value="Primera Fila al Mar">Primera Fila al Mar</option><option value="Frente a Laguna">Frente a Laguna</option><option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option><option value="Vista a la Laguna">Vista a la Laguna</option><option value="Vista a la Marina">Vista a la Marina</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Conectividad</label><select name="Conectividad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Fibra Optica">Fibra Optica</option><option value="Satelital">Satelital</option><option value="Cobre">Cobre</option></select></div>
+                    <div><label>Tipo de Calle</label><select name="Tipo_de_Calle"><option value="Ninguna">Ninguna</option><option value="Asfalto" selected>Asfalto</option><option value="Terraceria">Terraceria</option><option value="Adoquin">Adoquin</option><option value="Concreto Hidraulico">Concreto Hidraulico</option><option value="Calle de Piedra">Calle de Piedra</option><option value="Piedra">Piedra</option></select></div>
+                    <div><label>Tipo Acceso Complejo</label><select name="Tipo_de_Acceso_Complejo"><option value="Ninguna">Ninguna</option><option value="Pluma TAG">Pluma TAG</option><option value="Abierto" selected>Abierto</option><option value="Porton Electrico">Porton Electrico</option></select></div>
+                    <div><label>Red de Agua</label><select name="Red_de_Agua"><option value="Ninguna">Ninguna</option><option value="Conexion al Inmueble" selected>Conexion al Inmueble</option><option value="Pozo de Agua">Pozo de Agua</option><option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option></select></div>
+                    <div><label>Tipo de Drenaje</label><select name="Tipo_de_Drenaje"><option value="Ninguna">Ninguna</option><option value="Conexion a Red" selected>Conexion a Red</option><option value="Fosa Septica">Fosa Septica</option><option value="Resumidero">Resumidero</option></select></div>
+                    <div><label>Señalización / Nom.</label><select name="Senalizacion_Nomenclatura"><option value="Ninguna">Ninguna</option><option value="Completa" selected>Completa</option><option value="Inexistente">Inexistente</option><option value="Solo Nomenclatura">Solo Nomenclatura</option></select></div>
+                    <div><label>Suministro Servicios</label><select name="Suministro_Servicios"><option value="Ninguna">Ninguna</option><option value="Subterraneos">Subterraneos</option><option value="Aereos" selected>Aereos</option><option value="Mixtos">Mixtos</option></select></div>
+                    <div><label>Amenidades Urbanas</label><select name="Amenidades_Urbanas"><option value="Ninguna" selected>Ninguna</option><option value="Parque Privado">Parque Privado</option><option value="Parque Publico">Parque Publico</option><option value="Casa Club">Casa Club</option><option value="Canchas Deportivas">Canchas Deportivas</option><option value="Acceso a Playa">Acceso a Playa</option><option value="Muelle">Muelle</option></select></div>
+                    <div><label>Tipo de Techos</label><select name="Tipo_de_Techos"><option value="Ninguna">Ninguna</option><option value="Losa de concreto" selected>Losa de concreto</option><option value="Losacero">Losacero</option><option value="Provisional">Provisional</option><option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option><option value="Vigueta y bovedilla">Vigueta y bovedilla</option><option value="Estructura metalica">Estructura metalica</option></select></div>
+                    <div><label>Material de Muros</label><select name="Material_de_Muros"><option value="Ninguna">Ninguna</option><option value="De block" selected>De block</option><option value="Tablaroca">Tablaroca</option><option value="Provisionales">Provisionales</option><option value="Tablacemento">Tablacemento</option><option value="De tabique">De tabique</option><option value="Prefabricados">Prefabricados</option><option value="De concreto">De concreto</option><option value="De piedra">De piedra</option><option value="De adobe">De adobe</option><option value="De madera">De madera</option></select></div>
+                    <div><label>Acabado de Pisos</label><select name="Acabado_de_Pisos"><option value="Ninguna">Ninguna</option><option value="Ceramicos" selected>Ceramicos</option><option value="Porcelanatos">Porcelanatos</option><option value="Tierra">Tierra</option><option value="Cemento">Cemento</option><option value="Maderas">Maderas</option><option value="Marmol / Gama Alta">Marmol / Gama Alta</option></select></div>
+                    <div><label>Calidad Madera</label><select name="Calidad_Madera"><option value="Ninguna">Ninguna</option><option value="MDF/Pino" selected>MDF/Pino</option><option value="Cedro/Caoba">Cedro/Caoba</option><option value="Encino/Roble">Encino/Roble</option><option value="Sin Madera">Sin Madera</option></select></div>
+                    <div><label>Acabados Cocina</label><select name="Acabados_Cocina"><option value="Ninguna">Ninguna</option><option value="Barra de Concreto" selected>Barra de Concreto</option><option value="Granito">Granito</option><option value="Nula">Nula</option><option value="MDF">MDF</option><option value="Cuarzo">Cuarzo</option><option value="Tarja">Tarja</option></select></div>
+                    <div><label>Portón Propiedad</label><select name="Tipo_de_Porton_Propiedad"><option value="Ninguna">Ninguna</option><option value="Sin Porton" selected>Sin Porton</option><option value="Electrico">Electrico</option><option value="Herreria">Herreria</option><option value="Manual">Manual</option><option value="Madera">Madera</option></select></div>
+                    <div><label>Tipo Estacionamiento</label><select name="Tipo_de_Estacionamiento"><option value="Ninguna">Ninguna</option><option value="Abierto" selected>Abierto</option><option value="Subterraneo">Subterraneo</option><option value="En Bateria">En Bateria</option><option value="Techado">Techado</option></select></div>
+                    <div><label>Aire Acondicionado</label><select name="Tipo_Aire_Acondicionado"><option value="Ninguno" selected>Ninguno</option><option value="Minisplit">Minisplit</option><option value="Minisplit Inverter">Minisplit Inverter</option><option value="Cassette">Cassette</option><option value="Fan and Coil">Fan and Coil</option></select></div>
+                    <div><label>Num Equipos Aire</label><input type="number" name="Num_Equipos_Aire" value="0"></div>
+                    <div><label>Amenidades Interiores</label><select name="Amenidades_Interiores"><option value="Ninguna" selected>Ninguna</option><option value="Bodega">Bodega</option><option value="Cuarto de Servicio">Cuarto de Servicio</option><option value="Estudio">Estudio</option><option value="Gimnasio Privado">Gimnasio Privado</option></select></div>
+                    <div><label>Protección Térmica</label><select name="Proteccion_Termica"><option value="Ninguna" selected>Ninguna</option><option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option><option value="Vidrio Sencillo">Vidrio Sencillo</option><option value="Muros Aislados">Muros Aislados</option></select></div>
+                    <div class="md:col-span-3"><label>Lista Espacios Exteriores</label><input type="text" name="Espacios_Exteriores_Lista" value="" placeholder="Ej: Jardín, terraza..."></div>
+                    <div><label>Plusvalía Atípica</label><select name="Caso_Atipico_Plusvalia"><option value="Ninguno" selected>Ninguno</option><option value="Vista al Mar">Vista al Mar</option><option value="Primera Fila al Mar">Primera Fila al Mar</option><option value="Frente a Laguna">Frente a Laguna</option><option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option><option value="Vista a la Laguna">Vista a la Laguna</option><option value="Vista a la Marina">Vista a la Marina</option></select></div>
+                    <div><label>Conectividad</label><select name="Conectividad"><option value="Ninguna" selected>Ninguna</option><option value="Fibra Optica">Fibra Optica</option><option value="Satelital">Satelital</option><option value="Cobre">Cobre</option></select></div>
                 </div>
             </div>
 
             <!-- BLOQUE 6: CRÍTICOS Y MEJORAS -->
-            <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-5">
-                    <span class="material-symbols-rounded text-amber-500 bg-amber-50 p-2 rounded-lg">warning</span>
-                    <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">6. Parámetros Críticos y Mejoras</h2>
+            <div class="card-bloque">
+                <div class="card-header">
+                    <span class="material-symbols-rounded icon">warning</span>
+                    <h2>6. Parámetros Críticos y Mejoras</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Certeza Jurídica</label><select name="Certeza_Juridica" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Escritura Publica" selected>Escritura Pública</option><option value="Ejidal">Ejidal</option><option value="Certificado Parcelario">Certificado Parcelario</option><option value="Posesion">Posesión</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Régimen Propiedad</label><select name="Regimen_Propiedad" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna">Ninguna</option><option value="Individual" selected>Individual</option><option value="Privada Condominal">Privada Condominal</option><option value="Privada Normal (Asociacion)">Privada Normal (Asociacion)</option><option value="Privada Copropiedad">Privada Copropiedad</option><option value="Sin Regimen">Sin Regimen</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Vigilancia</label><select name="Tipo_de_Vigilancia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Nula" selected>Nula</option><option value="Privada (Caseta)">Privada (Caseta)</option><option value="Publica">Pública</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Cuota Mantenimiento ($)</label><input type="number" name="Cuota_Mantenimiento" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Colindancia</label><select name="Colindancia" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Habitacional">Habitacional</option><option value="Comercial Ruidosa">Comercial Ruidosa</option><option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option></select></div>
-                    <div class="md:col-span-3"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto" value="" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
-                    
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Mantenimiento Reciente</label><input type="text" name="Mantenimiento_Reciente_Lista" value="" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Humedades</label><select name="Estado_de_Humedades" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Alcance Remodelación</label><select name="Alcance_Remodelacion" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
+                    <div><label>Certeza Jurídica</label><select name="Certeza_Juridica"><option value="Escritura Publica" selected>Escritura Pública</option><option value="Ejidal">Ejidal</option><option value="Certificado Parcelario">Certificado Parcelario</option><option value="Posesion">Posesión</option></select></div>
+                    <div><label>Régimen Propiedad</label><select name="Regimen_Propiedad"><option value="Ninguna">Ninguna</option><option value="Individual" selected>Individual</option><option value="Privada Condominal">Privada Condominal</option><option value="Privada Normal (Asociacion)">Privada Normal (Asociacion)</option><option value="Privada Copropiedad">Privada Copropiedad</option><option value="Sin Regimen">Sin Regimen</option></select></div>
+                    <div><label>Vigilancia</label><select name="Tipo_de_Vigilancia"><option value="Nula" selected>Nula</option><option value="Privada (Caseta)">Privada (Caseta)</option><option value="Publica">Pública</option></select></div>
+                    <div><label>Cuota Mantenimiento ($)</label><input type="number" name="Cuota_Mantenimiento" value="0"></div>
+                    <div><label>Colindancia</label><select name="Colindancia"><option value="Ninguna" selected>Ninguna</option><option value="Habitacional">Habitacional</option><option value="Comercial Ruidosa">Comercial Ruidosa</option><option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option></select></div>
+                    <div class="md:col-span-3"><label>Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto" value=""></div>
+                    <div class="md:col-span-2"><label>Mantenimiento Reciente</label><input type="text" name="Mantenimiento_Reciente_Lista" value=""></div>
+                    <div><label>Humedades</label><select name="Estado_de_Humedades"><option value="Ninguna" selected>Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
+                    <div><label>Alcance Remodelación</label><select name="Alcance_Remodelacion"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-                    <label class="text-xs font-black text-slate-800 uppercase tracking-widest mb-3 block border-b border-slate-200 pb-2">🛡️ Selección de Mejoras</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="cambio_pisos" class="w-4 h-4 accent-emerald-600"> Cambio Pisos</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="cambio_pisos_instalaciones" class="w-4 h-4 accent-emerald-600"> Pisos + Instal.</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="techado_cochera" class="w-4 h-4 accent-emerald-600"> Techado Cochera</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_cocina" class="w-4 h-4 accent-emerald-600"> Remodeló Cocina</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="ampliacion_habitaciones" class="w-4 h-4 accent-emerald-600"> Amp. Habitaciones</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="ampliacion_piso" class="w-4 h-4 accent-emerald-600"> Ampliación Piso</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_parcial" class="w-4 h-4 accent-emerald-600"> Remodelación Parcial</label>
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" name="remodelacion_completa" class="w-4 h-4 accent-emerald-600"> Remodelación Total</label>
+                <div id="panel_mejoras" class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
+                    <label class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-3 block border-b border-slate-200 dark:border-slate-700 pb-2">🛡️ Selección de Mejoras</label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item"><input type="checkbox" name="cambio_pisos"><label>Cambio Pisos</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="cambio_pisos_instalaciones"><label>Pisos + Instal.</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="techado_cochera"><label>Techado Cochera</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_cocina"><label>Remodeló Cocina</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="ampliacion_habitaciones"><label>Amp. Habitaciones</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="ampliacion_piso"><label>Ampliación Piso</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_parcial"><label>Remodelación Parcial</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_completa"><label>Remodelación Total</label></div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Años desde Remodelación</label><input type="number" name="Anos_desde_Remodelacion" value="0" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-center outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Porcentaje Avance: <span id="val_avance" class="text-emerald-600">0</span>%</label><input type="range" name="Porcentaje_Avance" min="0" max="100" value="0" oninput="document.getElementById('val_avance').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Altura Techos</label><select name="Altura_Techos" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"><option value="Ninguna" selected>Ninguna</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Estandar (<2.50m)">Estándar (<2.50m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseño</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Negociación Final: <span id="val_negociacion" class="text-emerald-600">2</span>%</label><input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" oninput="document.getElementById('val_negociacion').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div><label>Años desde Remodelación</label><input type="number" name="Anos_desde_Remodelacion" value="0"></div>
+                    <div><label>Porcentaje Avance: <span id="val_avance" class="text-emerald-600 dark:text-emerald-400">0</span>%</label><input type="range" name="Porcentaje_Avance" min="0" max="100" value="0" oninput="document.getElementById('val_avance').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div><label>Altura Techos</label><select name="Altura_Techos"><option value="Ninguna" selected>Ninguna</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Estandar (<2.50m)">Estándar (<2.50m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseño</option></select></div>
+                    <div><label>Negociación Final: <span id="val_negociacion" class="text-emerald-600 dark:text-emerald-400">2</span>%</label><input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" oninput="document.getElementById('val_negociacion').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
                     <div class="md:col-span-4 mt-2">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Notas Particulares (PDF - Pag. 4 u 8)</label>
-                        <textarea name="Notas_Particulares" rows="3" placeholder="Observaciones de campo, advertencias técnicas..." class="w-full p-3 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:border-emerald-500"></textarea>
+                        <label>Notas Particulares (PDF - Pag. 4 u 8)</label>
+                        <textarea name="Notas_Particulares" rows="3" placeholder="Observaciones de campo, advertencias técnicas..."></textarea>
                     </div>
                 </div>
             </div>
 
             <!-- BLOQUE 7: VERTICALIDAD -->
-            <div class="card-bloque">
+            <div id="seccion_verticalidad" class="card-bloque hidden">
                 <div class="card-header">
                     <span class="material-symbols-rounded icon">domain</span>
                     <h2>7. Especificaciones de Verticalidad</h2>
@@ -396,7 +383,6 @@
                     <span class="material-symbols-rounded icon">cloud_upload</span>
                     <h2>8. Carga Digital (Fotos y Anexos PDF)</h2>
                 </div>
-                <!-- Fachada -->
                 <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl">
                     <label class="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><span class="material-symbols-rounded text-sm">photo_camera</span> Foto de Fachada (Portada PDF)</label>
                     <input type="file" id="foto_fachada" accept="image/*" onchange="window.procesarFotoBase()" class="mt-2 text-sm bg-transparent border-none p-0 cursor-pointer">
@@ -404,8 +390,13 @@
                         <img id="img_preview" src="" class="h-24 w-auto rounded border-2 border-emerald-500 object-cover shadow-sm">
                     </div>
                 </div>
-                <!-- Interiores (Dropzone) -->
-                <div class="drop-zone" id="drop_zone_unificada" onclick="document.getElementById('file_input_unificado').click()">
+                <!-- 🌟 FIX: Eventos completos de arrastrar y soltar integrados aquí -->
+                <div class="drop-zone" id="drop_zone_unificada" 
+                     ondragover="event.preventDefault(); event.stopPropagation(); this.classList.add('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');" 
+                     ondragenter="event.preventDefault(); event.stopPropagation();"
+                     ondragleave="event.preventDefault(); event.stopPropagation(); this.classList.remove('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');" 
+                     ondrop="event.preventDefault(); event.stopPropagation(); this.classList.remove('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30'); window.procesarArchivosDropzone(event.dataTransfer.files);" 
+                     onclick="document.getElementById('file_input_unificado').click()">
                     <span class="material-symbols-rounded text-4xl mb-2">add_photo_alternate</span><br>
                     <span>Arrastre aquí fotos interiores o planos (o haga clic)</span>
                     <input type="file" id="file_input_unificado" multiple accept="image/*,application/pdf" class="hidden" onchange="window.procesarArchivosDropzone(this.files)">
@@ -417,7 +408,7 @@
             <div id="seccion-valuador" class="card-bloque hidden">
                 <div class="card-header">
                     <span class="material-symbols-rounded icon">badge</span>
-                    <h2>Datos del Valuador (Para el PDF Oficial)</h2>
+                    <h2>9. Datos del Valuador (Para el PDF Oficial)</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div><label>Nombre Completo</label><input type="text" name="Nombre_Valuador" placeholder="Arq. Juan Pérez"></div>
@@ -428,15 +419,38 @@
                 </div>
             </div>
 
+            <!-- BLOQUE 10: PANEL DE CONTROL PERICIAL (MUESTREO MANUAL) -->
+            <div id="seccion_muestreo_manual" class="card-bloque hidden" style="border-color: #f59e0b; padding: 24px 0 24px 24px;">
+                <div class="pr-6">
+                    <div class="card-header">
+                        <span class="material-symbols-rounded icon" style="color: #d97706; background: #fef3c7;">analytics</span>
+                        <h2>10. Panel de Control Pericial (Mercado Manual)</h2>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border-l-4 border-amber-500 mb-6 shadow-sm">
+                        <p class="text-[11px] sm:text-xs text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+                            ⚠️ <strong>NOTA TÉCNICA:</strong> Registre un mínimo de <strong>3 testigos activos</strong>. Toque una tarjeta para abrir el formulario de captura.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 🚀 Grid Minimalista (Slots de Testigos) -->
+                <div id="testigos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-6 pb-2">
+                    <!-- JS inyectará aquí las 6 tarjetas resumen -->
+                </div>
+
+                <!-- 🕵️ Contenedor Oculto (Mantiene la compatibilidad con tu motor en Python) -->
+                <div id="testigos-hidden-data" class="hidden"></div>
+            </div>
+
         </form>
 
         <!-- PANEL DE CONCLUSIÓN VERDE -->
         <div id="panel_conclusion_interactivo" class="hidden bg-emerald-600 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden mb-12">
             <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
             <h3 class="text-2xl font-black mb-4 flex items-center gap-2 drop-shadow-md"><span class="material-symbols-rounded text-3xl">task_alt</span> Conclusión de Valor</h3>
-            <p class="text-xs font-medium text-emerald-100 mb-8 leading-relaxed max-w-2xl">Mueva el selector para definir el valor comercial de cierre dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
+            <p class="text-xs font-medium text-emerald-100 mb-6 leading-relaxed max-w-2xl">Mueva el selector para definir el valor comercial de cierre dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
 
-            <div class="grid grid-cols-2 gap-6 mb-8 text-center">
+            <div class="grid grid-cols-2 gap-6 mb-4 text-center">
                 <div class="bg-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
                     <p class="text-[10px] uppercase font-bold text-emerald-200 tracking-widest mb-2">Mínimo Estimado</p>
                     <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_inf">$0</p>
@@ -446,6 +460,8 @@
                     <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_sup">$0</p>
                 </div>
             </div>
+            
+            <p id="lbl_aviso_manual" class="text-xs text-amber-300 text-center mb-6 hidden animate-pulse font-bold tracking-widest uppercase">⭐ Incluye análisis de su Mercado Manual</p>
             
             <div class="bg-white/10 p-6 rounded-xl border border-white/20 backdrop-blur-md mb-8 shadow-sm">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-2">
@@ -459,10 +475,53 @@
                 <span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial
             </button>
         </div>
+
     </main>
 
+    <!-- 🌟 FIX MAESTRO: MODAL FUERA DE <main> PARA EVITAR PROBLEMAS DE Z-INDEX CON LA ANIMACIÓN FADE-IN -->
+    <!-- 🌟 MODAL HERMOSO PARA TESTIGOS -->
+    <div id="modal-testigo" class="fixed inset-0 z-[9999] hidden bg-slate-900/90 backdrop-blur-sm flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700 animate-fade-in">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-rounded">real_estate_agent</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-slate-800 dark:text-white" id="modal-testigo-titulo">Testigo 1</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Captura de Mercado</p>
+                    </div>
+                </div>
+                <button type="button" onclick="window.cerrarModalTestigo()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-red-100 hover:text-red-600 transition-colors"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto thin-scroll flex-1 space-y-4">
+                <input type="hidden" id="mt_id">
+                <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Precio Oferta ($)</label><input type="number" id="mt_precio" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-lg font-black text-emerald-600 dark:text-emerald-400 outline-none focus:border-amber-500 transition-colors"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">M² Terreno</label><input type="number" id="mt_terr" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">M² Const.</label><input type="number" id="mt_const" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Niveles</label><input type="number" id="mt_niveles" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Edad (Años)</label><input type="number" id="mt_edad" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Conservación</label><select id="mt_estado" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Bueno">Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo">Malo/Ruina</option></select></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Ubicación</label><select id="mt_ubicacion" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option><option value="Cabecera">Cabecera</option><option value="Dos frentes">Dos frentes</option></select></div>
+                    <div class="sm:col-span-2"><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Zona</label><select id="mt_zona" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Igual">Igual al sujeto</option><option value="Mejor que el sujeto">Mejor que el sujeto</option><option value="Peor que el sujeto">Peor que el sujeto</option></select></div>
+                </div>
+                <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Enlace Web (URL)</label><input type="text" id="mt_link" placeholder="https://..." class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"></div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 w-full max-w-2xl rounded-b-3xl">
+                <button type="button" onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
+                    <span class="material-symbols-rounded">save</span> Guardar Testigo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- OVERLAY DE CARGA MEJORADO -->
-    <div id="loadingOverlay" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex-col items-center justify-center">
+    <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-slate-900/80 backdrop-blur-sm flex-col items-center justify-center">
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-[90%] text-center border border-slate-200 dark:border-slate-700">
             <span class="material-symbols-rounded text-5xl animate-spin text-emerald-500 mb-4 drop-shadow-md">memory</span>
             <h3 id="loader-title" class="text-xl font-black text-slate-800 dark:text-white mb-2">Procesando Motor EME</h3>
@@ -530,27 +589,55 @@
             window.appAuth.onAuthStateChanged(async (user) => {
                 if (user) {
                     authUser = user;
+                    
+                    // 1. Mostrar/Ocultar Pantallas
                     document.getElementById('auth-screen').classList.add('hidden');
                     document.getElementById('app-dashboard').classList.remove('hidden');
                     const authMini = document.getElementById('auth-mini');
                     if (authMini) authMini.classList.remove('hidden');
                     
+                    // 2. 🌟 INYECTAR IDENTIDAD (Mega Sistema Leezar)
+                    const headerName = document.getElementById('header-user-name');
+                    const headerAvatar = document.getElementById('header-user-avatar');
+                    const headerRole = document.getElementById('header-user-role');
+                    
+                    if(headerName) headerName.innerText = user.displayName || user.email.split('@')[0];
+                    if(headerAvatar && user.photoURL) headerAvatar.src = user.photoURL;
+
+                    // 3. Suscripción a la Base de Datos en Tiempo Real
                     window.appDb.collection('usuarios_estimador').doc(user.uid).onSnapshot((doc) => {
                         if (!doc.exists) {
-                            window.appDb.collection('usuarios_estimador').doc(user.uid).set({ email: user.email, creditos: 0 });
+                            // Creación de usuario nuevo
+                            window.appDb.collection('usuarios_estimador').doc(user.uid).set({ 
+                                email: user.email, 
+                                nombre: user.displayName || '',
+                                foto: user.photoURL || '',
+                                creditos: 0,
+                                rol: 'Valuador Base'
+                            });
+                            if(headerRole) headerRole.innerText = 'Valuador Base';
                         } else {
-                            authUser.creditos = doc.data().creditos || 0;
+                            // Lectura de usuario existente
+                            const userData = doc.data();
+                            authUser.creditos = userData.creditos || 0;
                             const cr = document.getElementById('user-credits');
                             if (cr) cr.innerText = authUser.creditos;
+                            
+                            // Imprimimos el rol oficial
+                            if(headerRole) headerRole.innerText = userData.rol || 'Valuador';
                         }
                     });
 
+                    // 4. Inicializaciones secundarias
                     if(window.leezarMapReady && !mapLoaded) window.inicializarMapa();
                     window.aplicarVisibilidadPerfiles();
                 } else {
+                    // Logout / Limpieza
                     authUser = null;
                     document.getElementById('auth-screen').classList.remove('hidden');
                     document.getElementById('app-dashboard').classList.add('hidden');
+                    const authMini = document.getElementById('auth-mini');
+                    if (authMini) authMini.classList.add('hidden');
                 }
             });
         } catch (error) { console.warn("Firebase warning:", error); }
@@ -655,25 +742,319 @@
             } catch (e) { console.error(e); }
         };
 
-        window.aplicarLogicaInteligente = function() {
-            const tipo = document.getElementById('est-tipo');
-            const uso = document.getElementById('est-uso-suelo');
-            if (tipo && uso && (tipo.value === 'Casa' || tipo.value === 'Departamento')) uso.value = 'Habitacional';
-            const cons = document.getElementById('est-conservacion');
-            const edad = document.getElementById('est-edad');
-            if (cons && edad) {
-                if (cons.value === 'Nuevo') { edad.value = 0; edad.disabled = true; } 
-                else { edad.disabled = false; }
+        // --- 4.5. SISTEMA ANTI-PÉRDIDA (AUTO-GUARDADO) ---
+        window.guardarProgresoLocal = function() {
+            const formElements = document.getElementById('form-eme').elements;
+            const data = {};
+            for(let el of formElements) {
+                if(el.name) {
+                    if (el.type === 'checkbox') data[el.name] = el.checked;
+                    else data[el.name] = el.value;
+                }
+            }
+            localStorage.setItem('avm_leezar_draft', JSON.stringify(data));
+        };
+
+        window.cargarProgresoLocal = function() {
+            const draft = localStorage.getItem('avm_leezar_draft');
+            if(draft) {
+                try {
+                    const data = JSON.parse(draft);
+                    const formElements = document.getElementById('form-eme').elements;
+                    for(let el of formElements) {
+                        if(el.name && data[el.name] !== undefined) {
+                            if (el.type === 'checkbox') el.checked = data[el.name];
+                            else el.value = data[el.name];
+                        }
+                    }
+                    // Restaurar UI visual de las tarjetas resumen de testigos
+                    for(let i=1; i<=6; i++) {
+                        const precioEl = document.getElementById('h_t'+i+'_precio');
+                        if(precioEl && parseFloat(precioEl.value) > 0) {
+                            const resumen = document.getElementById('resumen-t'+i);
+                            const indicador = document.getElementById('indicador-t'+i);
+                            const card = document.getElementById('card-testigo-'+i);
+                            if(resumen) {
+                                resumen.innerText = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precioEl.value);
+                                resumen.classList.replace('text-slate-400', 'text-emerald-500');
+                                if(indicador) indicador.classList.replace('bg-slate-300', 'bg-emerald-500');
+                                if(card) {
+                                    card.classList.add('border-emerald-500');
+                                    card.classList.replace('dark:border-slate-700', 'dark:border-emerald-500');
+                                }
+                            }
+                        }
+                    }
+                } catch(e) { console.warn("Error cargando borrador.", e); }
             }
         };
 
+        // --- FUNCIÓN PARA MATAR EL BORRADOR Y RESETEAR ---
+        window.limpiarBorrador = function() {
+            if(confirm("⚠️ ¿Estás seguro de limpiar todo el formulario? Se perderá toda la información capturada y los testigos.")) {
+                localStorage.removeItem('avm_leezar_draft');
+                document.getElementById('form-eme').reset();
+                window.location.reload(); // Recargamos para que la lógica inteligente reinicie los campos bloqueados
+            }
+        };
+
+        // Escucha en tiempo real para auto-guardar
+        document.getElementById('form-eme').addEventListener('input', window.guardarProgresoLocal);
+        document.getElementById('form-eme').addEventListener('change', window.guardarProgresoLocal);
+
+        // --- LÓGICA INTELIGENTE MILIMÉTRICA ---
+        window.aplicarLogicaInteligente = function() {
+            const tipo = document.getElementById('est-tipo')?.value;
+            const uso = document.getElementById('est-uso-suelo');
+            const cons = document.getElementById('est-conservacion');
+            const edad = document.getElementById('est-edad');
+            
+            const elevador = document.querySelector('select[name="Elevador"]');
+            const nivelesEdif = document.querySelector('input[name="Total_Niveles_Edificio"]');
+            const amenidadesEdif = document.querySelector('select[name="Cuenta_con_AmenIDADES"]');
+            const secVerticalidad = document.getElementById('seccion_verticalidad');
+            const panelMejoras = document.getElementById('panel_mejoras');
+            
+            const isTerreno = (tipo === 'Terreno');
+            const isCasa = (tipo === 'Casa');
+            const isDepa = (tipo === 'Departamento');
+
+            // 1. Mostrar/Ocultar Verticalidad SOLO para Departamentos
+            if(secVerticalidad) {
+                isDepa ? secVerticalidad.classList.remove('hidden') : secVerticalidad.classList.add('hidden');
+            }
+
+            // 2. Si es Vivienda, forzamos Habitacional
+            if (uso && (isCasa || isDepa)) uso.value = 'Habitacional';
+
+            // 3. Apagar campos de Edificio si es Casa o Terreno
+            if (elevador) {
+                elevador.disabled = (isCasa || isTerreno);
+                if(elevador.disabled) elevador.value = 'Ninguna';
+            }
+            if (nivelesEdif) {
+                nivelesEdif.disabled = (isCasa || isTerreno);
+                if(nivelesEdif.disabled) nivelesEdif.value = 0;
+            }
+            if (amenidadesEdif) {
+                amenidadesEdif.disabled = (isCasa || isTerreno);
+                if(amenidadesEdif.disabled) amenidadesEdif.value = 'Ninguna';
+            }
+
+            // 4. Ocultar Panel de Mejoras si es Terreno
+            if (panelMejoras) {
+                isTerreno ? panelMejoras.classList.add('hidden') : panelMejoras.classList.remove('hidden');
+            }
+
+            // 5. Campos dependientes de construcción (Se apagan y limpian si es Terreno)
+            const camposConstruccion = document.querySelectorAll(`
+                input[name="Superficie_Construccion"], input[name="Edad_Anos"], select[name="Estado_Conservacion"], 
+                input[name="Nivel_del_Inmueble"], select[name="Verticalidad_Premium"], input[name="No_Recamaras"], 
+                input[name="No_Banos"], input[name="No_Estacionamientos"], select[name="Clase_Inmueble"], 
+                select[name="Calidad_Acabados"], select[name="Tipo_de_Techos"], select[name="Material_de_Muros"], 
+                select[name="Acabado_de_Pisos"], select[name="Calidad_Madera"], select[name="Acabados_Cocina"], 
+                select[name="Tipo_Aire_Acondicionado"], input[name="Num_Equipos_Aire"], select[name="Amenidades_Interiores"], 
+                select[name="Proteccion_Termica"], select[name="Estado_de_Humedades"], select[name="Alcance_Remodelacion"],
+                input[name="Anos_desde_Remodelacion"], select[name="Altura_Techos"],
+                #panel_mejoras input[type="checkbox"]
+            `);
+
+            camposConstruccion.forEach(el => {
+                el.disabled = isTerreno;
+                
+                // Efecto visual para inputs normales
+                if(el.type !== 'checkbox') {
+                    const label = el.previousElementSibling;
+                    if(label && label.tagName === 'LABEL') {
+                        isTerreno ? label.classList.add('disabled-label') : label.classList.remove('disabled-label');
+                    }
+                } 
+                // Efecto visual para checkboxes
+                else if (el.type === 'checkbox' && el.parentElement) {
+                    isTerreno ? el.parentElement.classList.add('disabled-label', 'opacity-50') : el.parentElement.classList.remove('disabled-label', 'opacity-50');
+                }
+
+                // Limpieza interna si es Terreno
+                if(isTerreno) {
+                    if (el.type === 'number') el.value = 0;
+                    if (el.type === 'checkbox') el.checked = false;
+                    if (el.tagName === 'SELECT') el.value = 'Ninguna';
+                }
+            });
+
+            if (!isTerreno && cons && edad) {
+                if (cons.value === 'Nuevo') { edad.value = 0; edad.disabled = true; } 
+                else { edad.disabled = false; }
+            }
+
+            // Actualizar estilo visual CSS al desactivar (general)
+            document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
+                if(el.type !== 'checkbox') {
+                    const label = el.previousElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        el.disabled ? label.classList.add('disabled-label') : label.classList.remove('disabled-label');
+                    }
+                }
+            });
+
+            window.guardarProgresoLocal(); // Guarda cambios al evaluar reglas
+        };
+
+        // --- GESTIÓN DE PERFILES DE USUARIO ---
         window.aplicarVisibilidadPerfiles = function() {
-            const val = document.getElementById('perfil_usuario')?.value;
+            const val = document.getElementById('perfil_usuario')?.value || "4";
             const toggleClass = (id, action) => { const el = document.getElementById(id); if(el) el.classList[action]('hidden'); };
-            if(val === "1") { toggleClass('seccion-archivos', 'add'); toggleClass('seccion-valuador', 'add'); } 
-            else if(val === "2") { toggleClass('seccion-archivos', 'add'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'add'); toggleClass('grupo_id_eme', 'add'); } 
-            else if(val === "3") { toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); toggleClass('grupo_id_eme', 'add'); } 
-            else if(val === "4") { toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); toggleClass('grupo_id_eme', 'remove'); }
+            const isDepa = document.getElementById('est-tipo')?.value === 'Departamento';
+            
+            // 1. Apagamos todo por defecto (Perfil 1)
+            toggleClass('seccion-archivos', 'add'); 
+            toggleClass('seccion-valuador', 'add'); 
+            toggleClass('seccion_muestreo_manual', 'add');
+            toggleClass('grupo_id_eme', 'add');
+            
+            // Bloque Verticalidad se apaga si es perfil 1
+            if(val === "1") {
+                toggleClass('seccion_verticalidad', 'add');
+            } else {
+                if(isDepa) toggleClass('seccion_verticalidad', 'remove');
+            }
+
+            // 2. Encendemos según perfil
+            if(val === "2") { 
+                toggleClass('seccion_muestreo_manual', 'remove');
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'add'); 
+            } 
+            else if(val === "3") { 
+                toggleClass('seccion_muestreo_manual', 'remove');
+                toggleClass('seccion-archivos', 'remove'); 
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'remove'); 
+            } 
+            else if(val === "4") {
+                toggleClass('seccion_muestreo_manual', 'remove');
+                toggleClass('seccion-archivos', 'remove'); 
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'remove'); 
+                toggleClass('grupo_id_eme', 'remove');
+            }
+            window.guardarProgresoLocal();
+        };
+
+        // --- GENERADOR DE TESTIGOS (MODAL MINIMALISTA) ---
+        window.generarTestigosManuales = function() {
+            const grid = document.getElementById('testigos-grid');
+            const hiddenContainer = document.getElementById('testigos-hidden-data');
+            if (!grid || !hiddenContainer) return;
+            
+            grid.innerHTML = '';
+            hiddenContainer.innerHTML = '';
+            
+            for(let i=1; i<=6; i++) {
+                // 1. Tarjeta Resumen (Visible)
+                grid.innerHTML += `
+                <div onclick="window.abrirModalTestigo(${i})" id="card-testigo-${i}" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl cursor-pointer hover:border-amber-500 hover:shadow-md transition-all group relative overflow-hidden">
+                    <div class="absolute left-0 top-0 w-1 h-full bg-slate-300 dark:bg-slate-600 group-hover:bg-amber-500 transition-colors" id="indicador-t${i}"></div>
+                    <div class="flex justify-between items-center ml-2">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-rounded text-slate-400 group-hover:text-amber-500 transition-colors">real_estate_agent</span>
+                            <div>
+                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">Testigo ${i}</h4>
+                                <p class="text-[10px] text-slate-400 font-bold" id="resumen-t${i}">Sin capturar</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-rounded text-slate-300 group-hover:text-amber-500">chevron_right</span>
+                    </div>
+                </div>`;
+
+                // 2. Inputs Ocultos (Mantiene compatibilidad total con Python)
+                hiddenContainer.innerHTML += `
+                    <input type="hidden" name="EME_CP_T${i}_Precio" id="h_t${i}_precio" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Sup_Terreno" id="h_t${i}_terr" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Sup_Construccion" id="h_t${i}_const" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Niveles" id="h_t${i}_niveles" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Edad" id="h_t${i}_edad" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Estado" id="h_t${i}_estado" value="Bueno">
+                    <input type="hidden" name="EME_CP_T${i}_Ubicacion" id="h_t${i}_ubicacion" value="Intermedio">
+                    <input type="hidden" name="EME_CP_T${i}_Zona" id="h_t${i}_zona" value="Igual">
+                    <input type="hidden" name="EME_CP_T${i}_Link" id="h_t${i}_link" value="">
+                `;
+            }
+        };
+
+        window.abrirModalTestigo = function(index) {
+            document.getElementById('mt_id').value = index;
+            document.getElementById('modal-testigo-titulo').innerText = 'Testigo ' + index;
+            
+            // Cargar datos del input oculto al modal
+            document.getElementById('mt_precio').value = document.getElementById('h_t'+index+'_precio').value;
+            document.getElementById('mt_terr').value = document.getElementById('h_t'+index+'_terr').value;
+            document.getElementById('mt_const').value = document.getElementById('h_t'+index+'_const').value;
+            document.getElementById('mt_niveles').value = document.getElementById('h_t'+index+'_niveles').value;
+            document.getElementById('mt_edad').value = document.getElementById('h_t'+index+'_edad').value;
+            document.getElementById('mt_estado').value = document.getElementById('h_t'+index+'_estado').value;
+            document.getElementById('mt_ubicacion').value = document.getElementById('h_t'+index+'_ubicacion').value;
+            document.getElementById('mt_zona').value = document.getElementById('h_t'+index+'_zona').value;
+            document.getElementById('mt_link').value = document.getElementById('h_t'+index+'_link').value;
+
+            const modal = document.getElementById('modal-testigo');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex'); // Lo abrimos estilo Flexbox
+        };
+
+        window.cerrarModalTestigo = function() {
+            const modal = document.getElementById('modal-testigo');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.guardarModalTestigo = function() {
+            const index = document.getElementById('mt_id').value;
+            const precio = document.getElementById('mt_precio').value;
+            
+            // Guardar del modal a los inputs ocultos para Python
+            document.getElementById('h_t'+index+'_precio').value = precio;
+            document.getElementById('h_t'+index+'_terr').value = document.getElementById('mt_terr').value;
+            document.getElementById('h_t'+index+'_const').value = document.getElementById('mt_const').value;
+            document.getElementById('h_t'+index+'_niveles').value = document.getElementById('mt_niveles').value;
+            document.getElementById('h_t'+index+'_edad').value = document.getElementById('mt_edad').value;
+            document.getElementById('h_t'+index+'_estado').value = document.getElementById('mt_estado').value;
+            document.getElementById('h_t'+index+'_ubicacion').value = document.getElementById('mt_ubicacion').value;
+            document.getElementById('h_t'+index+'_zona').value = document.getElementById('mt_zona').value;
+            document.getElementById('h_t'+index+'_link').value = document.getElementById('mt_link').value;
+
+            // Actualizar UI de la tarjeta resumen
+            const resumen = document.getElementById('resumen-t'+index);
+            const indicador = document.getElementById('indicador-t'+index);
+            const card = document.getElementById('card-testigo-'+index);
+            
+            if(parseFloat(precio) > 0) {
+                const formato = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precio);
+                resumen.innerText = formato;
+                resumen.classList.replace('text-slate-400', 'text-emerald-500');
+                if(indicador) {
+                    indicador.classList.replace('bg-slate-300', 'bg-emerald-500');
+                    indicador.classList.replace('dark:bg-slate-600', 'bg-emerald-500');
+                }
+                if(card) {
+                    card.classList.add('border-emerald-500');
+                    card.classList.replace('dark:border-slate-700', 'dark:border-emerald-500');
+                }
+            } else {
+                resumen.innerText = "Sin capturar";
+                resumen.classList.replace('text-emerald-500', 'text-slate-400');
+                if(indicador) {
+                    indicador.classList.replace('bg-emerald-500', 'bg-slate-300');
+                    indicador.classList.replace('bg-emerald-500', 'dark:bg-slate-600');
+                }
+                if(card) {
+                    card.classList.remove('border-emerald-500');
+                    card.classList.replace('dark:border-emerald-500', 'dark:border-slate-700');
+                }
+            }
+
+            window.guardarProgresoLocal(); // Salvar en memoria
+            window.cerrarModalTestigo();
         };
 
         // --- 5. COMPRESIÓN DE IMÁGENES ---
@@ -848,15 +1229,18 @@
             try {
                 const idToken = await authUser.getIdToken(true);
 
+                // Armado estricto del Payload para Python (Base64 Limpio)
                 ultimaBusqueda["foto_base64"] = base64FotoPortada || "";
                 ultimaBusqueda["fotos_adicionales"] = arrayFotosAnexos.filter(f => f.tipo === 'foto').map(f => ({ base64: f.base64, descripcion: f.texto }));
                 ultimaBusqueda["anexos_adicionales"] = arrayFotosAnexos.filter(a => a.tipo === 'anexo').map(a => ({ base64: a.base64, titulo: a.texto }));
                 ultimaBusqueda["valor_comercial_rango"] = valorElegido;
                 ultimaBusqueda["limite_inferior"] = minValorCalculado;
                 ultimaBusqueda["limite_superior"] = maxValorCalculado;
+                ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
 
-                window.showLoader("Generando Dictamen", "Emitiendo documento oficial seguro...");
+                window.showLoader("Generando Dictamen", "Emitiendo documento oficial seguro en la nube...");
 
+                // POST a Netlify Functions (Proxy para ocultar la x-leezar-secret de Eli)
                 fetch('/.netlify/functions/consumir-credito', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
@@ -864,22 +1248,26 @@
                         parametros_motor: ultimaBusqueda,
                         valor_elegido: valorElegido,
                         rango_min: minValorCalculado,
-                        rango_max: maxValorCalculado
+                        rango_max: maxValorCalculado,
+                        expedienteId: window.expedienteMotorActivo
                     })
-                }).catch(e => console.error("Error silencioso en HTTP:", e));
+                }).catch(e => console.error("Aviso: El fetch inicial se completó asíncronamente.", e));
 
-                // 🕵️ CAZADOR DE FIREBASE
+                // 🕵️ CAZADOR DE FIREBASE (Espera a que Apps Script termine su trabajo)
                 let cazadorTimeout;
                 const unsubscribe = window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        const finalUrl = data.pdf_url || (data.resultados_motor?.auditoria_inyeccion?.pdf_url);
+                        
+                        // Buscamos la URL final del PDF
+                        const finalUrl = data.pdf_url || (data.resultados_motor && data.resultados_motor.auditoria_inyeccion && data.resultados_motor.auditoria_inyeccion.pdf_url);
                         
                         if (finalUrl) {
                             clearTimeout(cazadorTimeout);
                             unsubscribe();
                             window.open(finalUrl, '_blank');
                             
+                            // Reset Limpio
                             document.getElementById('panel_conclusion_interactivo').classList.add('hidden');
                             btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                             btn.disabled = false;
@@ -891,18 +1279,19 @@
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             window.hideLoader();
                             
-                            alert(`¡Transacción Exitosa! \nEl dictamen PDF ha sido generado y descargado.`);
+                            alert(`¡Transacción Exitosa! \nEl dictamen PDF ha sido generado.`);
                         }
                     }
                 });
 
+                // Si Apps Script falla o tarda más de 60 segundos, liberamos la interfaz
                 cazadorTimeout = setTimeout(() => {
                     unsubscribe();
                     window.hideLoader();
                     btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                     btn.disabled = false;
-                    alert("⚠️ El PDF se está generando en segundo plano, pero ha tardado más de lo normal. Revisa el historial de tu cuenta más tarde.");
-                }, 45000);
+                    alert("⚠️ El PDF se está generando en segundo plano, pero ha tardado más de lo normal en la nube de Google. Revisa el historial de tu cuenta en unos minutos.");
+                }, 60000);
 
             } catch (error) {
                 console.error("Error en Generación:", error);
@@ -913,13 +1302,26 @@
             }
         };
 
-        // Verificador de Dark Mode en el Load
+        // --- 8. ESCUCHA INICIAL (ARRANQUE Y RECUPERACIÓN) ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Verificar Tema
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 const icon = document.getElementById('dark-mode-icon');
                 if(icon) icon.innerText = 'light_mode';
             }
+            
+            // 1. Construimos los 6 testigos ocultos y sus tarjetas resumen
+            if(typeof window.generarTestigosManuales === 'function') window.generarTestigosManuales();
+
+            // 2. Cargamos el borrador por si se apagó la PC o cerró la pestaña
+            if(typeof window.cargarProgresoLocal === 'function') window.cargarProgresoLocal();
+
+            // 3. Forzamos barrido lógico para ajustar dependencias (Terrenos vs Casas)
+            setTimeout(() => {
+                if(typeof window.aplicarLogicaInteligente === 'function') window.aplicarLogicaInteligente();
+                if(typeof window.aplicarVisibilidadPerfiles === 'function') window.aplicarVisibilidadPerfiles();
+            }, 500);
         });
     </script>
 </body>
