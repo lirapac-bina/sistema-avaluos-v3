@@ -1716,7 +1716,8 @@
                 // 🤖 AUTO-SCANNER: Si validan el doc y no hay datos, lanzar la IA automáticamente
                 if (nuevoEstado === 'validado' && (!expediente.datos_extraidos || !expediente.datos_extraidos[llaveSegura])) {
                     // console.log("Activando extracción automática tras validación de: " + llaveSegura);
-                    extraerDatosConIA(llaveSegura, expediente.id);
+                    // Le enviamos "true" al final para avisarle que es un disparo automático
+                    extraerDatosConIA(llaveSegura, expediente.id, true);
                 }
 
                 renderCurrentGroup(); 
@@ -1739,10 +1740,10 @@
         }
 
         // ==========================================
-        // 🤖 CEREBRO IA: EXTRACCIÓN DE DATOS EN SEGUNDO PLANO
+        // 🤖 CEREBRO IA: EXTRACCIÓN MULTI-DOCUMENTO
         // ==========================================
-        window.extraerDatosConIA = async function(reqKey, expId) {
-            console.log(`🟣 Iniciando IA para: ${reqKey}...`);
+        window.extraerDatosConIA = async function(reqKey, expId, esAutomatico = false) {
+            console.log(`🟣 Iniciando IA para: ${reqKey}... (Automático: ${esAutomatico})`);
             
             const content = document.getElementById('ia-data-content');
             if (content) {
@@ -1750,62 +1751,99 @@
                     <div class="flex flex-col items-center justify-center h-full text-center p-6 mt-10">
                         <span class="material-symbols-rounded text-6xl text-indigo-500 animate-spin mb-4">sync</span>
                         <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-2">Gemini está leyendo...</p>
-                        <p class="text-xs text-slate-400">Analizando documento en segundo plano.</p>
+                        <p class="text-xs text-slate-400">Analizando documento(s) en segundo plano.</p>
                     </div>`;
             }
 
             try {
-                const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
-                if (!docConfig.exists) { 
-                    content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: No se encontró el diccionario.</p></div>`;
-                    return; 
-                }
-                
-                const dataConf = docConfig.data();
-                const configRequisito = (dataConf.requisitos && dataConf.requisitos[reqKey]) || (dataConf.diccionario && dataConf.diccionario[reqKey]) || null;
-                
-                // 🛡️ ESCUDO ANTI-GASTOS: Solo extraemos si hay un prompt explícito y el switch está prendido
-                const promptUniversal = configRequisito ? (configRequisito.promptIA || configRequisito.prompt || configRequisito.instrucciones) : null;
-                const iaActivada = configRequisito ? configRequisito.usaIA : false;
-
-                if (!promptUniversal || !iaActivada) {
-                    content.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-center p-6 opacity-90 mt-10 animate-[popIn_0.3s_ease-out]">
-                            <span class="material-symbols-rounded text-6xl text-amber-500 mb-3">money_off</span>
-                            <p class="text-sm font-black text-amber-700 dark:text-amber-400 mb-1 uppercase tracking-wide">Extracción Bloqueada</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">Para proteger tu saldo de API, no se extraen datos al azar.</p>
-                            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-lg text-left shadow-inner">
-                                <p class="text-[10px] text-amber-800 dark:text-amber-300 font-medium">Ve a <b>Admin > Catálogo de Requisitos</b>, busca este documento, activa la opción <span class="font-bold">"🤖 Extraer datos con Inteligencia Artificial"</span> y escribe exactamente qué datos necesitas obtener.</p>
-                            </div>
-                        </div>`;
-                    return; // Abortamos la ejecución y NO llamamos al backend
-                }
-
-                //console.log(`🧠 Prompt que se enviará a Gemini:`, promptUniversal);
-
+                // 1. Obtener datos frescos del expediente
                 const docFresco = await db.collection('expedientes_avaluos').doc(expId).get({ source: 'server' });
                 const docActualizado = docFresco.data().checklist[reqKey];
-
-                const posiblesUrls = [docActualizado.driveUrl, docActualizado.driveLink, docActualizado.url, docActualizado.archivoUrl];
-                const urlReal = posiblesUrls.find(u => u && u.startsWith('http'));
-
-                if (!urlReal) {
-                    console.error("⚠️ IA Abortada: No se encontró ningún enlace válido en Firebase.");
-                    if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: El documento no tiene un enlace.</p></div>`;
+                
+                if (!docActualizado) {
+                    if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: Requisito no encontrado.</p></div>`;
                     return;
                 }
 
-                const match = urlReal.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
-                const fileId = match ? match[1] : null;
+                // 2. 🚀 NUEVO: RECOPILAR TODOS LOS ARCHIVOS DEL REQUISITO (Modo Escopeta)
+                let listaArchivos = docActualizado.archivos || docActualizado.archivosSubidos || [];
+                
+                // Si es un documento "Extra" clonado, las fotos a veces se guardan a nivel raíz de checklist por como estaba programado antes
+                // Pero intentaremos pescar cualquier URL disponible si la lista está vacía
+                if (listaArchivos.length === 0) {
+                    const posiblesUrls = [docActualizado.driveUrl, docActualizado.driveLink, docActualizado.url, docActualizado.archivoUrl];
+                    const urlReal = posiblesUrls.find(u => u && u.startsWith('http'));
+                    if (urlReal) listaArchivos.push({ url: urlReal });
+                }
 
-                // console.log(`🚀 IA: Mandando petición a Netlify...`);
+                let archivosEmpaquetados = [];
+                listaArchivos.forEach(a => {
+                    const url = a.url || a.archivoUrl || a.driveUrl;
+                    if (url && url.startsWith('http')) {
+                        const match = url.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                        if (match) archivosEmpaquetados.push({ fileId: match[1], fileUrl: url });
+                        else archivosEmpaquetados.push({ fileId: null, fileUrl: url });
+                    }
+                });
 
+                if (archivosEmpaquetados.length === 0) {
+                    console.error("⚠️ IA Abortada: No se encontraron enlaces válidos.");
+                    if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs font-bold text-red-500">Error: El documento no tiene enlaces válidos para analizar.</p></div>`;
+                    return;
+                }
+
+                // 3. 🛡️ LÓGICA DE PROMPT (El muro de tokens flexible)
+                let promptUniversal = docActualizado.promptIA || docActualizado.prompt || null;
+                let iaActivada = docActualizado.usaIA === true;
+
+                // Si no tiene IA, buscamos en el catálogo global (Útil para ESCRITURA_EXTRA_1)
+                if (!promptUniversal || !iaActivada) {
+                    const docConfig = await db.collection('configuracion').doc('plantilla_maestra').get();
+                    if (docConfig.exists) {
+                        const dataConf = docConfig.data();
+                        
+                        let baseKey = reqKey;
+                        if (reqKey.includes('_EXTRA_')) baseKey = reqKey.split('_EXTRA_')[0];
+                        else if (docActualizado.originalId && docActualizado.originalId !== 'MANUAL') baseKey = docActualizado.originalId;
+
+                        const configRequisito = (dataConf.requisitos && dataConf.requisitos[baseKey]) || (dataConf.diccionario && dataConf.diccionario[baseKey]) || null;
+                        
+                        if (configRequisito) {
+                            promptUniversal = configRequisito.promptIA || configRequisito.prompt || configRequisito.instrucciones;
+                            iaActivada = configRequisito.usaIA === true;
+                        }
+                    }
+                }
+
+                // 4. MODO DECISIÓN: Qué hacer si definitivamente no tiene IA
+                if (!promptUniversal || !iaActivada) {
+                    if (esAutomatico) {
+                        if(content) content.innerHTML = `<div class="p-6 text-center mt-10"><p class="text-xs text-slate-400">Documento validado (Sin extracción IA requerida).</p></div>`;
+                        return; 
+                    } else {
+                        const promptManual = prompt(`Este documento (${docActualizado.nombre}) no tiene extracción automática configurada.\n\nPara forzar la IA, escribe qué datos necesitas (Ej. "Extrae el nombre y RFC") o cancela:`);
+                        
+                        if (promptManual && promptManual.trim() !== "") {
+                            promptUniversal = `Actúa como un extractor de datos. Analiza el/los documento(s) y extrae lo siguiente: ${promptManual}. Devuelve ÚNICAMENTE un JSON válido. Si un dato no existe, devuelve "N/A".`;
+                            iaActivada = true;
+                            
+                            await db.collection('expedientes_avaluos').doc(expId).update({
+                                [`checklist.${reqKey}.usaIA`]: true,
+                                [`checklist.${reqKey}.promptIA`]: promptUniversal
+                            });
+                        } else {
+                            if(content) content.innerHTML = `<div class="flex flex-col items-center justify-center p-6 opacity-90 mt-10"><span class="material-symbols-rounded text-5xl text-amber-500 mb-2">money_off</span><p class="text-sm font-bold text-amber-700">Extracción Cancelada</p></div>`;
+                            return; 
+                        }
+                    }
+                }
+
+                // 5. ENVIAR A NETLIFY (Mandamos el array de archivosEmpaquetados)
                 const res = await fetch('/.netlify/functions/extraer-datos-ia-background', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        fileId: fileId,
-                        fileUrl: urlReal,   
+                        archivos: archivosEmpaquetados,   // 🚀 Aquí viajan todos los PDFs/Fotos juntos
                         promptPersonalizado: promptUniversal,
                         expId: expId,       
                         reqKey: reqKey      
@@ -1813,8 +1851,8 @@
                 });
 
                 if (res.status === 202 || res.status === 200) {
-                    await registrarLog("LECTURA IA INICIADA", `Gemini está analizando ${reqKey} en segundo plano.`);
-                    if (typeof showToast !== 'undefined') showToast(`🤖 Gemini está leyendo... Te avisaré cuando termine.`, "info");
+                    await registrarLog("LECTURA IA INICIADA", `Gemini está analizando ${archivosEmpaquetados.length} archivo(s) de ${reqKey} en segundo plano.`);
+                    if (typeof showToast !== 'undefined') showToast(`🤖 Gemini está leyendo ${archivosEmpaquetados.length} archivo(s)...`, "info");
                     
                     const unsubscribe = db.collection('expedientes_avaluos').doc(expId).onSnapshot((doc) => {
                         const data = doc.data();
@@ -2497,7 +2535,7 @@
                         <span class="material-symbols-rounded text-6xl text-slate-300 dark:text-slate-600 mb-4">document_scanner</span>
                         <p class="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">Sin lectura de Gemini</p>
                         <p class="text-xs text-slate-400 mb-6">Inicia la extracción para que la IA escanee este documento.</p>
-                        <button onclick="extraerDatosConIA('${key}', '${expediente.id}')" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2">
+                        <button onclick="extraerDatosConIA('${key}', '${expediente.id}', false)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2">
                             <span class="material-symbols-rounded text-base">auto_awesome</span> Extraer Datos Ahora
                         </button>
                     </div>`;
