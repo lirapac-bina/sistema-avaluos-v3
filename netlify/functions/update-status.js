@@ -57,7 +57,12 @@ exports.handler = async (event) => {
             const extension = nombreArchivo.substring(nombreArchivo.lastIndexOf('.')) || '.pdf';
             archivoPath = `interno/${expedienteId}/${itemKey}_${Date.now()}${extension}`;
             const file = bucket.file(archivoPath);
-            await file.save(buffer, { metadata: { contentType: mimeType || 'application/pdf' } });
+            
+            // 🛡️ FIX: Forzamos resumable: false para evadir el crash de AbortSignal en Gaxios/Node
+            await file.save(buffer, { 
+                resumable: false, 
+                metadata: { contentType: mimeType || 'application/pdf' } 
+            });
             console.log(`✅ [FIREBASE] Archivo interno guardado en bucket: ${archivoPath}`);
         }
 
@@ -82,6 +87,20 @@ exports.handler = async (event) => {
             [`checklist.${itemKey}.estatus`]: estatusFinal,
             [`checklist.${itemKey}.fechaActualizacion`]: new Date().toISOString()
         };
+
+        // 🚀 FIX: Bautizamos el documento y lo obligamos a ir a la columna "interno"
+        if (!itemAnterior.nombre) {
+            const nombresAmigables = {
+                'CEDULA_GYS': 'Cédula GyS (Raíz)',
+                'MAPA_CONSOLIDACION_1': 'Mapa de Consolidación Urbana 1',
+                'MAPA_CONSOLIDACION_2': 'Mapa de Consolidación Urbana 2'
+            };
+            updateData[`checklist.${itemKey}.nombre`] = nombresAmigables[itemKey] || itemKey;
+        }
+        
+        if (!itemAnterior.categoria) {
+            updateData[`checklist.${itemKey}.categoria`] = 'interno'; // 🔑 Esto lo mueve a la columna correcta
+        }
 
         if ((nuevoEstado === 'rechazado' || nuevoEstado === 'anulado') && motivo) {
             updateData[`checklist.${itemKey}.retroalimentacion`] = motivo;
@@ -132,179 +151,119 @@ exports.handler = async (event) => {
             console.log(`📸 [FIREBASE] Generados ${urlsJpgGeneradas.length} enlaces JPG para DOC JUST.`);
         }
 
-        // ========================================================
+// ========================================================
         // 🌟 MAGIA MASIVA: TRANSFERENCIA A DRIVE VÍA PUENTE MÁGICO 🌟
         // ========================================================
         let archivosAPasar = [];
-        
-        // 🧠 LECTURA DINÁMICA: Consultamos el tipo de requisito directamente de la BD
         const tipoRequisito = itemAnterior.tipo || 'MIXTO';
 
-        // Si el Admin dictaminó que este requisito es una GALERÍA, recolectamos dinámicamente
         if (tipoRequisito === 'GALERIA') {
             console.log(`📸 [GALERÍA DETECTADA] Requisito dinámico: ${itemKey}`);
-            
             Object.keys(docData.checklist).forEach(k => {
-                // Atrapamos dinámicamente cualquier foto hija que pertenezca a una galería
                 if (k.includes('FOTO_EXTRA_') || k.includes('EXTRA_')) {
                     const fotoItem = docData.checklist[k];
                     const urlReal = fotoItem.url || fotoItem.archivoUrl;
                     if (urlReal) {
-                        archivosAPasar.push({
-                            key: k,
-                            url: urlReal,
-                            nombreBase: fotoItem.nombre || k,
-                            categoria: fotoItem.categoria || 'inmueble',
-                            pathEnNube: fotoItem.archivoPath
-                        });
-                        // También validamos las hijas para que la BD esté limpia
-                        updateData[`checklist.${k}.estatus`] = nuevoEstado; 
+                        archivosAPasar.push({ key: k, url: urlReal, nombreBase: fotoItem.nombre || k, categoria: fotoItem.categoria || 'inmueble', pathEnNube: fotoItem.archivoPath });
+                        updateData[`checklist.${k}.estatus`] = estatusFinal; 
                     }
                 }
             });
-            
-            // (Opcional) Si el "padre" también llegara a tener una foto principal, la sumamos
             if (firebaseUrl) {
-                archivosAPasar.push({
-                    key: itemKey,
-                    url: firebaseUrl,
-                    nombreBase: itemAnterior.nombre || itemKey,
-                    categoria: categoriaItem || itemAnterior.categoria || 'inmueble',
-                    pathEnNube: pathEnNube
-                });
+                archivosAPasar.push({ key: itemKey, url: firebaseUrl, nombreBase: itemAnterior.nombre || itemKey, categoria: categoriaItem || itemAnterior.categoria || 'inmueble', pathEnNube: pathEnNube });
             }
-            
         } else {
-            // Archivo normal individual (PDF, IMG, MIXTO, etc.)
             if (firebaseUrl) {
-                archivosAPasar.push({
-                    key: itemKey,
-                    url: firebaseUrl,
-                    nombreBase: itemAnterior.nombre || itemKey,
-                    categoria: categoriaItem || itemAnterior.categoria || 'solicitante',
-                    pathEnNube: pathEnNube
-                });
+                archivosAPasar.push({ key: itemKey, url: firebaseUrl, nombreBase: itemAnterior.nombre || itemKey, categoria: categoriaItem || itemAnterior.categoria || 'solicitante', pathEnNube: pathEnNube });
             }
         }
 
-        if ((nuevoEstado === 'validado' || nuevoEstado === 'VALIDADO') && archivosAPasar.length > 0) {
-            console.log(`🚀 [DRIVE] Estatus 'Validado'. Procesando ${archivosAPasar.length} archivo(s) en paralelo...`);
+        // 🚀 ESCUDO ANTI-TIMEOUT: GUARDAMOS EN FIREBASE INMEDIATAMENTE
+        await docRef.update(updateData);
+        console.log(`✅ [STATUS] Fase 1: BD actualizada con éxito (Evita Error 500 en UI).`);
+
+        if ((estatusFinal === 'validado' || estatusFinal === 'VALIDADO') && archivosAPasar.length > 0) {
+            console.log(`🚀 [DRIVE] Procesando ${archivosAPasar.length} archivo(s)...`);
             
-            // 🛡️ ESCUDO ANTI-SPAM: Enviamos los archivos a Drive UNO POR UNO (Secuencial)
             for (let i = 0; i < archivosAPasar.length; i++) {
                 const archivo = archivosAPasar[i];
                 let catDrive = (archivo.categoria || 'solicitante').toLowerCase();
                 
-                // 🚩 LÓGICA DE RAÍZ: Si es un archivo interno, usamos la carpeta principal; si no, la subcarpeta.
                 let driveFolderId = docData.driveSubfolders ? docData.driveSubfolders[catDrive] : null;
-                if (esRaiz && docData.driveFolderId) {
-                    driveFolderId = docData.driveFolderId;
-                    console.log(`📂 [DRIVE] Orden recibida: Guardando en la RAÍZ del expediente.`);
+                if (esRaiz && docData.driveFolderId) driveFolderId = docData.driveFolderId;
+                if (categoriaItem === 'docjust') {
+                    const llaves = Object.keys(docData.driveSubfolders || {});
+                    for (let llave of llaves) { if (llave.toLowerCase().replace(/\s/g, '') === 'docjust') driveFolderId = docData.driveSubfolders[llave]; }
                 }
 
                 if (archivo.url && driveFolderId && APPS_SCRIPT_WEBHOOK.startsWith("https://script.google.com")) {
                     const extension = archivo.pathEnNube && archivo.pathEnNube.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
                     const mimeType = extension === '.pdf' ? 'application/pdf' : 'image/jpeg';
-                    
-                    // --- INICIO DEL BLOQUE DE LIMPIEZA ---
-                    // Limpiamos el nombre de caracteres prohibidos por Drive
                     const nomLimpio = archivo.nombreBase.replace(/[/\\?%*:|"<>]/g, '-').substring(0, 40).trim();
                     const fileNameDrive = `${nomLimpio}${extension}`;
-                    // --- FIN DEL BLOQUE ---
 
                     try {
-                        const scriptResponse = await fetch(APPS_SCRIPT_WEBHOOK, {
+                        // ⏱️ RACE CONDITION: Si Drive tarda más de 7 segs, soltamos la conexión para que el servidor no explote
+                        const fetchPromise = fetch(APPS_SCRIPT_WEBHOOK, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                secretToken: "LeezarMagia2026",
-                                fileUrl: archivo.url, 
-                                fileName: fileNameDrive, // Esta variable ya usa nomLimpio
-                                mimeType: mimeType,
-                                folderId: driveFolderId
-                            })
+                            body: JSON.stringify({ secretToken: "LeezarMagia2026", fileUrl: archivo.url, fileName: fileNameDrive, mimeType: mimeType, folderId: driveFolderId })
                         });
-
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Drive")), 7000));
+                        
+                        const scriptResponse = await Promise.race([fetchPromise, timeoutPromise]);
                         const scriptData = await scriptResponse.json();
                         
                         if (scriptData.success) {
                             console.log(`✅ [DRIVE] Subido: ${fileNameDrive}`);
-                            updateData[`checklist.${archivo.key}.driveUrl`] = scriptData.url;
-                        } else {
-                            console.error(`❌ [DRIVE] Error con ${fileNameDrive}:`, scriptData.error);
+                            await docRef.update({ [`checklist.${archivo.key}.driveUrl`]: scriptData.url });
                         }
                     } catch (err) {
-                        console.error(`❌ [DRIVE] Falla de conexión con ${fileNameDrive}:`, err.message);
+                        console.warn(`⚠️ [DRIVE] Intermitencia con Google, pero el sistema continúa sin fallar.`);
                     }
                 }
-                
-                // 🛡️ PAUSA DE 500ms ENTRE CADA FOTO PARA NO ENOJAR A GOOGLE (ANTI-SPAM)
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            // 🌟 MAGIA: REPARTIDOR SECUENCIAL A "DOC JUST" (ANTI-SPAM) 🌟
+            // 🌟 REPARTIDOR A DOC JUST 🌟
             if (itemAnterior.autoConvertJpg && itemAnterior.urlsJpg && itemAnterior.urlsJpg.length > 0 && !itemAnterior.docJustUrl) {
-                // Buscamos la carpeta docJust sin importar mayúsculas o espacios
                 let docJustFolderId = null;
                 if (docData.driveSubfolders) {
                     const llaves = Object.keys(docData.driveSubfolders);
-                    for (let llave of llaves) {
-                        if (llave.toLowerCase().replace(/\s/g, '') === 'docjust') {
-                            docJustFolderId = docData.driveSubfolders[llave];
-                            break;
-                        }
-                    }
+                    for (let llave of llaves) { if (llave.toLowerCase().replace(/\s/g, '') === 'docjust') docJustFolderId = docData.driveSubfolders[llave]; }
                 }
                 
                 if (docJustFolderId) {
-                    console.log(`🚀 [DRIVE] Subiendo ${itemAnterior.urlsJpg.length} copias JPG a DOC JUST de forma secuencial...`);
-                    
-                    // Ciclo for tradicional (Uno por uno) para no activar los bloqueos de Google
                     for (let i = 0; i < itemAnterior.urlsJpg.length; i++) {
                         const urlJpg = itemAnterior.urlsJpg[i];
                         const cleanName = (itemAnterior.nombre || itemKey).replace(/[/\\?%*:|"<>]/g, '-').trim();
-                        // Si hay varias hojas, les pone número, si es una sola, deja el nombre limpio
                         const finalName = itemAnterior.urlsJpg.length > 1 ? `${cleanName} Pag_${i+1}.jpg` : `${cleanName}.jpg`;
                         
                         try {
-                            const scriptResp = await fetch(APPS_SCRIPT_WEBHOOK, {
+                            const fetchPromise = fetch(APPS_SCRIPT_WEBHOOK, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    secretToken: "LeezarMagia2026",
-                                    fileUrl: urlJpg,
-                                    fileName: finalName,
-                                    mimeType: 'image/jpeg',
-                                    folderId: docJustFolderId
-                                })
+                                body: JSON.stringify({ secretToken: "LeezarMagia2026", fileUrl: urlJpg, fileName: finalName, mimeType: 'image/jpeg', folderId: docJustFolderId })
                             });
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Drive")), 7000));
                             
+                            const scriptResp = await Promise.race([fetchPromise, timeoutPromise]);
                             const scriptData = await scriptResp.json();
-                            if (scriptData.success) {
-                                console.log(`✅ [DRIVE] JPG Subido a DOC JUST: ${finalName}`);
-                            } else {
-                                console.error(`❌ [DRIVE] Error JPG en DOC JUST:`, scriptData.error);
-                            }
+                            if (scriptData.success) console.log(`✅ [DRIVE] JPG Subido a DOC JUST: ${finalName}`);
                         } catch(e) {
-                            console.error(`❌ [DRIVE] Falla de conexión JPG DOC JUST:`, e.message);
+                            console.warn(`⚠️ [DRIVE] Timeout DOC JUST.`);
                         }
-                        
-                        // 🛡️ ESCUDO ANTI-SPAM: Pausa de medio segundo antes de subir la siguiente página
                         await new Promise(resolve => setTimeout(resolve, 500));
                     }
-                    updateData[`checklist.${itemKey}.docJustUrl`] = true; // Sellamos para que no se duplique al validar de nuevo
+                    await docRef.update({ [`checklist.${itemKey}.docJustUrl`]: true });
                 }
             }
         }
-        // ========================================================
-
-        await docRef.update(updateData);
-        console.log(`✅ [STATUS] Base de datos actualizada con éxito.`);
 
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ success: true, message: 'Estatus actualizado' })
+            body: JSON.stringify({ success: true, message: 'Operación asíncrona completada con escudo anti-timeout' })
         };
     } catch (error) {
         console.error("❌ [ERROR CRÍTICO]", error);

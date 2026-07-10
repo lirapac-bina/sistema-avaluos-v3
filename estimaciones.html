@@ -381,27 +381,50 @@
             <div id="seccion-archivos" class="card-bloque hidden">
                 <div class="card-header">
                     <span class="material-symbols-rounded icon">cloud_upload</span>
-                    <h2>8. Carga Digital (Fotos y Anexos PDF)</h2>
+                    <h2>8. Carga Digital Clasificada</h2>
                 </div>
-                <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl">
-                    <label class="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><span class="material-symbols-rounded text-sm">photo_camera</span> Foto de Fachada (Portada PDF)</label>
-                    <input type="file" id="foto_fachada" accept="image/*" onchange="window.procesarFotoBase()" class="mt-2 text-sm bg-transparent border-none p-0 cursor-pointer">
-                    <div id="vista_previa" class="hidden mt-3">
-                        <img id="img_preview" src="" class="h-24 w-auto rounded border-2 border-emerald-500 object-cover shadow-sm">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/10 p-6 rounded-2xl text-center hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors cursor-pointer flex flex-col items-center justify-center relative overflow-hidden" onclick="document.getElementById('foto_fachada').click()">
+                        <span class="material-symbols-rounded text-4xl text-indigo-500 mb-2">add_a_photo</span>
+                        <h3 class="text-sm font-black text-indigo-800 dark:text-indigo-300">1. Foto de Portada</h3>
+                        <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1">Obligatorio para la carátula</p>
+                        <input type="file" id="foto_fachada" accept="image/*" onchange="window.procesarFotoBase()" class="hidden">
+                        
+                        <div id="vista_previa" class="hidden mt-4 w-full relative z-10">
+                            <img id="img_preview" src="" class="h-24 w-auto mx-auto rounded-lg border-2 border-indigo-500 object-cover shadow-md">
+                            <button type="button" onclick="event.stopPropagation(); document.getElementById('foto_fachada').value=''; document.getElementById('vista_previa').classList.add('hidden'); base64FotoPortada='';" class="mt-3 text-[10px] bg-rose-500 text-white px-4 py-1.5 rounded-full font-bold shadow-sm hover:bg-rose-600">❌ Quitar Portada</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="drop-zone border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/10 h-full flex flex-col items-center justify-center" 
+                             ondragover="event.preventDefault(); this.classList.add('border-emerald-500');" 
+                             ondragleave="event.preventDefault(); this.classList.remove('border-emerald-500');" 
+                             ondrop="event.preventDefault(); this.classList.remove('border-emerald-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'foto');" 
+                             onclick="document.getElementById('file_interiores').click()">
+                            <span class="material-symbols-rounded text-4xl text-emerald-500 mb-2">collections</span>
+                            <h3 class="text-sm font-black text-emerald-800 dark:text-emerald-300">2. Fotos Interiores</h3>
+                            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">Arrastre imágenes aquí (Múltiples)</p>
+                            <input type="file" id="file_interiores" multiple accept="image/*" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'foto')">
+                        </div>
+                        <div id="contenedor_thumbnails_fotos" class="grid grid-cols-2 gap-2 empty:hidden"></div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 md:col-span-2">
+                        <div class="drop-zone border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10 py-8" 
+                             ondragover="event.preventDefault(); this.classList.add('border-amber-500');" 
+                             ondragleave="event.preventDefault(); this.classList.remove('border-amber-500');" 
+                             ondrop="event.preventDefault(); this.classList.remove('border-amber-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'anexo');" 
+                             onclick="document.getElementById('file_anexos').click()">
+                            <span class="material-symbols-rounded text-4xl text-amber-500 mb-2">picture_as_pdf</span>
+                            <h3 class="text-sm font-black text-amber-800 dark:text-amber-300">3. Documentos Anexos (Formato PDF)</h3>
+                            <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">Planos, escrituras, predial, etc.</p>
+                            <input type="file" id="file_anexos" multiple accept="application/pdf" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'anexo')">
+                        </div>
+                        <div id="contenedor_thumbnails_anexos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 empty:hidden"></div>
                     </div>
                 </div>
-                <!-- 🌟 FIX: Eventos completos de arrastrar y soltar integrados aquí -->
-                <div class="drop-zone" id="drop_zone_unificada" 
-                     ondragover="event.preventDefault(); event.stopPropagation(); this.classList.add('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');" 
-                     ondragenter="event.preventDefault(); event.stopPropagation();"
-                     ondragleave="event.preventDefault(); event.stopPropagation(); this.classList.remove('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');" 
-                     ondrop="event.preventDefault(); event.stopPropagation(); this.classList.remove('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30'); window.procesarArchivosDropzone(event.dataTransfer.files);" 
-                     onclick="document.getElementById('file_input_unificado').click()">
-                    <span class="material-symbols-rounded text-4xl mb-2">add_photo_alternate</span><br>
-                    <span>Arrastre aquí fotos interiores o planos (o haga clic)</span>
-                    <input type="file" id="file_input_unificado" multiple accept="image/*,application/pdf" class="hidden" onchange="window.procesarArchivosDropzone(this.files)">
-                </div>
-                <div id="contenedor_thumbnails" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
             </div>
 
             <!-- BLOQUE 9: DATOS DEL VALUADOR -->
@@ -516,6 +539,33 @@
                 <button type="button" onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
                     <span class="material-symbols-rounded">save</span> Guardar Testigo
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💳 MODAL DE PAGOS (BARRERA SIN CRÉDITOS) -->
+    <div id="paymentModal" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative animate-[popIn_0.3s_ease-out] border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500 shrink-0"></div>
+            <div class="p-8 text-center flex-1 overflow-y-auto custom-scroll">
+                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100 dark:border-slate-700">
+                    <span class="material-symbols-rounded text-4xl">account_balance_wallet</span>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Saldo Insuficiente</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+                    Tu cuenta tiene <b class="text-rose-500">0 Créditos</b>. Selecciona uno de los paquetes disponibles para continuar:
+                </p>
+                
+                <div id="contenedor-paquetes-pago" class="flex flex-col gap-3 mb-6">
+                    <span class="material-symbols-rounded animate-spin text-indigo-500 text-3xl mx-auto">sync</span>
+                    <p class="text-xs text-slate-400">Cargando paquetes...</p>
+                </div>
+
+                <div class="flex flex-col gap-3 mt-auto shrink-0">
+                    <button type="button" onclick="document.getElementById('paymentModal').classList.add('hidden'); document.getElementById('paymentModal').classList.remove('flex');" class="w-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 py-3 rounded-xl font-bold transition-colors text-sm">
+                        Cancelar y volver
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1057,7 +1107,7 @@
             window.cerrarModalTestigo();
         };
 
-        // --- 5. COMPRESIÓN DE IMÁGENES ---
+        // --- 5. COMPRESIÓN DE IMÁGENES (DIETA AGRESIVA V20) ---
         window.comprimirImagenBase64 = function(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1067,14 +1117,16 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1024;
+                        // 🔥 FIX: Bajamos de 1024 a 800 pixeles para evitar el bloqueo de Netlify
+                        const MAX_WIDTH = 800; 
                         let width = img.width;
                         let height = img.height;
                         if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+                        // 🔥 FIX: Calidad al 40% (0.4) garantiza que 6 fotos juntas no pesen ni 1 MB
+                        resolve(canvas.toDataURL('image/jpeg', 0.4)); 
                     };
                 };
             });
@@ -1093,11 +1145,12 @@
             window.hideLoader();
         };
 
-        window.procesarArchivosDropzone = async function(files) {
-            window.showLoader(`Procesando ${files.length} archivo(s)...`, "Comprimiendo anexos visuales");
+        window.procesarArchivosExtra = async function(files, tipoForzado) {
+            window.showLoader(`Procesando ${files.length} archivo(s)...`, `Añadiendo ${tipoForzado === 'foto' ? 'imágenes' : 'documentos PDF'}...`);
             for (let f of files) {
                 const id = 'doc_' + Date.now() + Math.floor(Math.random()*1000);
-                if (f.type === 'application/pdf') {
+                
+                if (f.type === 'application/pdf' && tipoForzado === 'anexo') {
                     await new Promise(resolve => {
                         const reader = new FileReader();
                         reader.onload = e => {
@@ -1106,9 +1159,11 @@
                         };
                         reader.readAsDataURL(f);
                     });
-                } else {
+                } else if (f.type.startsWith('image/') && tipoForzado === 'foto') {
                     const base64Data = await window.comprimirImagenBase64(f);
                     arrayFotosAnexos.push({ id, base64: base64Data.split(',')[1], preview: base64Data, tipo: 'foto', texto: 'Fotografía Interior' });
+                } else {
+                    alert(`⚠️ Formato incorrecto. Por favor, arrastre ${tipoForzado === 'foto' ? 'una IMAGEN en la caja verde.' : 'un PDF en la caja amarilla.'}`);
                 }
             }
             window.renderizarMiniaturasDropzone();
@@ -1116,35 +1171,91 @@
         };
 
         window.renderizarMiniaturasDropzone = function() {
-            const container = document.getElementById('contenedor_thumbnails');
-            if(!container) return;
-            container.innerHTML = arrayFotosAnexos.map(doc => `
-                <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-2 rounded-xl shadow-sm flex flex-col items-center">
-                    <img src="${doc.preview}" class="h-20 w-full object-cover rounded mb-2 border border-slate-100 dark:border-slate-600">
-                    <input type="text" class="w-full text-[9px] p-1.5 border border-slate-200 dark:border-slate-600 rounded mb-2 text-center outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-white" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)">
-                    <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="text-[10px] text-red-500 font-bold bg-red-50 dark:bg-red-900/20 w-full rounded py-1.5 hover:bg-red-100 dark:hover:bg-red-900/40">❌ Quitar</button>
-                </div>
-            `).join('');
+            const contFotos = document.getElementById('contenedor_thumbnails_fotos');
+            const contAnexos = document.getElementById('contenedor_thumbnails_anexos');
+            
+            // 1. Renderizar Miniaturas de Fotos (Cuadradas)
+            if(contFotos) {
+                const fotos = arrayFotosAnexos.filter(d => d.tipo === 'foto');
+                contFotos.innerHTML = fotos.map(doc => `
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded-xl shadow-sm flex flex-col items-center animate-fade-in relative group">
+                        <img src="${doc.preview}" class="h-16 w-full object-cover rounded mb-2 border border-slate-100 dark:border-slate-700">
+                        <input type="text" class="w-full text-[9px] p-1.5 border border-slate-200 dark:border-slate-600 rounded text-center outline-none bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white mb-2" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)" placeholder="Descripción...">
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="absolute -top-2 -right-2 bg-rose-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-rose-600">✖</button>
+                    </div>
+                `).join('');
+            }
+
+            // 2. Renderizar Miniaturas de Anexos PDF (Estilo Lista Horizontal)
+            if(contAnexos) {
+                const anexos = arrayFotosAnexos.filter(d => d.tipo === 'anexo');
+                contAnexos.innerHTML = anexos.map(doc => `
+                    <div class="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700/50 p-2 rounded-xl shadow-sm flex items-center gap-2 animate-fade-in">
+                        <img src="${doc.preview}" class="h-8 w-8 object-contain shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <input type="text" class="w-full text-[10px] p-1 border-b border-transparent hover:border-slate-200 focus:border-amber-500 bg-transparent outline-none text-slate-700 dark:text-slate-200 truncate font-bold" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)" placeholder="Nombre del anexo...">
+                        </div>
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1.5 rounded-lg transition-colors shrink-0 flex items-center justify-center" title="Eliminar PDF">
+                            <span class="material-symbols-rounded text-sm">delete</span>
+                        </button>
+                    </div>
+                `).join('');
+            }
         };
 
         window.actualizarTextoDoc = function(id, val) { const doc = arrayFotosAnexos.find(d => d.id === id); if(doc) doc.texto = val; };
         window.eliminarDoc = function(id) { arrayFotosAnexos = arrayFotosAnexos.filter(d => d.id !== id); window.renderizarMiniaturasDropzone(); };
 
-        // --- 6. EJECUCIÓN DEL ALGORITMO AVM ---
+// --- 6. EJECUCIÓN DEL ALGORITMO AVM ---
         window.enviarDictamenPrevio = async function() {
             if (!authUser) return alert("Inicia sesión primero.");
             
             const tipo = document.getElementById('est-tipo').value;
-            const m2Terr = parseFloat(document.querySelector('input[name="Superficie_Terreno"]')?.value || 0);
-            const m2Const = parseFloat(document.querySelector('input[name="Superficie_Construccion"]')?.value || 0);
             const coords = document.getElementById('est-coords')?.value || "";
             
-            // Reglas duras
-            if (tipo === 'Casa' && m2Terr <= 0) return alert("❌ Error: Para valuar una Casa, el Terreno no puede ser cero.");
-            if ((tipo === 'Casa' || tipo === 'Departamento') && m2Const <= 0) return alert("❌ Error: Para valuar Vivienda, la Construcción no puede ser cero.");
-            if (!coords || coords === "19.432600,-99.133200" || coords === "") return alert("❌ Error: Verifique las coordenadas.");
+            // 🚨 1. ESCUDO DE VALIDACIÓN VISUAL (UX SAAS) 🚨
+            // Limpiamos los bordes rojos de validaciones anteriores
+            document.querySelectorAll('.error-borde').forEach(el => {
+                el.classList.remove('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500');
+            });
 
-            window.showLoader("Ejecutando Algoritmo V18", "Buscando comparables y extrayendo parámetros...");
+            let errores = [];
+            
+            // Función constructora de errores visuales
+            const marcarError = (selector, mensaje) => {
+                const el = document.querySelector(selector);
+                if (el && !el.disabled) {
+                    el.classList.add('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500', 'transition-all');
+                    errores.push(mensaje);
+                }
+            };
+
+            // Reglas Duras de Negocio (Métricas reales)
+            const m2Terr = parseFloat(document.querySelector('input[name="Superficie_Terreno"]')?.value || 0);
+            const m2Const = parseFloat(document.querySelector('input[name="Superficie_Construccion"]')?.value || 0);
+
+            if ((tipo === 'Casa' || tipo === 'Terreno') && m2Terr <= 0) marcarError('input[name="Superficie_Terreno"]', "Terreno: No puede estar en 0 m².");
+            if ((tipo === 'Casa' || tipo === 'Departamento') && m2Const <= 0) marcarError('input[name="Superficie_Construccion"]', "Construcción: No puede estar en 0 m².");
+            
+            const elCalle = document.querySelector('input[name="Calle_Sujeto"]');
+            if (!elCalle || elCalle.value.trim() === "") marcarError('input[name="Calle_Sujeto"]', "Ubicación: Escribe la calle y número exterior.");
+            
+            const elCP = document.querySelector('input[name="CP"]');
+            if (!elCP || elCP.value.trim() === "") marcarError('input[name="CP"]', "Ubicación: Falta el Código Postal.");
+
+            if (!coords || coords === "19.432600,-99.133200" || coords === "") marcarError('#est-coords', "Mapa: Arrastra el pin para dar una coordenada exacta.");
+
+            // Si el escudo detectó errores, bloqueamos el envío a Python
+            if (errores.length > 0) {
+                alert("⚠️ Acción Requerida:\n\nPor favor, completa los campos marcados en color ROJO para poder continuar.\n\nFaltantes detectados:\n- " + errores.join("\n- "));
+                
+                // Navegación automática al primer error para que el usuario no lo busque
+                const primerError = document.querySelector('.error-borde');
+                if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return; // Cortamos ejecución aquí, Python está a salvo
+            }
+
+            window.showLoader("Ejecutando Algoritmo V20", "Buscando comparables y extrayendo parámetros...");
 
             const parametros = {};
             const formElements = document.getElementById('form-eme').elements;
@@ -1157,8 +1268,10 @@
                 if (el.type === 'checkbox') { parametros[el.name] = el.checked ? 1 : 0; } 
                 else if (camposNumericos.includes(el.name) || el.type === 'number' || el.type === 'range') { parametros[el.name] = parseFloat(val) || 0; } 
                 else {
-                    const exc = ['CP', 'Telefono_Valuador', 'Cedula_Valuador', 'EME_ID'];
+                    const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
+                    const exc = ['CP', ...camposValuador];
                     if (!exc.includes(el.name) && !isNaN(val) && val.trim() !== "") { parametros[el.name] = parseFloat(val); } 
+                    else if (camposValuador.includes(el.name)) { parametros[el.name] = val || ""; } // 🚀 FIX: Mandamos vacío como la Bóveda
                     else { parametros[el.name] = val || "Ninguna"; }
                 }
             }
@@ -1215,9 +1328,15 @@
             document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(val);
         };
 
-        // --- 7. FINALIZACIÓN Y CAZADOR DE PDF ---
+        // --- 7. FINALIZACIÓN, PAGOS Y CAZADOR DE PDF ---
         window.enviarGenerarReporteFinal = async function() {
             if (!authUser || !ultimaBusqueda || !window.expedienteMotorActivo) return;
+
+            // 🛑 BARRERA ESTRICTA DE SALDO 🛑 (APAGADA TEMPORALMENTE PARA PRUEBAS V20)
+            // if (authUser.creditos <= 0) {
+            //     window.abrirModalPagosDinamic();
+            //     return; // Cortamos la ejecución
+            // }
 
             const porcentajeSlider = document.getElementById('slider_conclusion_valor').value;
             const valorElegido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentajeSlider / 100));
@@ -1238,9 +1357,9 @@
                 ultimaBusqueda["limite_superior"] = maxValorCalculado;
                 ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
 
-                window.showLoader("Generando Dictamen", "Emitiendo documento oficial seguro en la nube...");
+                window.showLoader("Generando Dictamen", "Validando créditos y emitiendo documento oficial...");
 
-                // POST a Netlify Functions (Proxy para ocultar la x-leezar-secret de Eli)
+                // POST a Netlify Functions (Descuenta el crédito y conecta con Eli)
                 fetch('/.netlify/functions/consumir-credito', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
@@ -1253,13 +1372,12 @@
                     })
                 }).catch(e => console.error("Aviso: El fetch inicial se completó asíncronamente.", e));
 
-                // 🕵️ CAZADOR DE FIREBASE (Espera a que Apps Script termine su trabajo)
+                // 🕵️ CAZADOR DE FIREBASE
                 let cazadorTimeout;
                 const unsubscribe = window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
                         
-                        // Buscamos la URL final del PDF
                         const finalUrl = data.pdf_url || (data.resultados_motor && data.resultados_motor.auditoria_inyeccion && data.resultados_motor.auditoria_inyeccion.pdf_url);
                         
                         if (finalUrl) {
@@ -1267,7 +1385,6 @@
                             unsubscribe();
                             window.open(finalUrl, '_blank');
                             
-                            // Reset Limpio
                             document.getElementById('panel_conclusion_interactivo').classList.add('hidden');
                             btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                             btn.disabled = false;
@@ -1279,18 +1396,18 @@
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             window.hideLoader();
                             
-                            alert(`¡Transacción Exitosa! \nEl dictamen PDF ha sido generado.`);
+                            alert(`¡Transacción Exitosa! \nSe ha descontado 1 crédito de tu cuenta y el dictamen PDF ha sido generado.`);
                         }
                     }
                 });
 
-                // Si Apps Script falla o tarda más de 60 segundos, liberamos la interfaz
+                // Límite de tiempo
                 cazadorTimeout = setTimeout(() => {
                     unsubscribe();
                     window.hideLoader();
                     btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                     btn.disabled = false;
-                    alert("⚠️ El PDF se está generando en segundo plano, pero ha tardado más de lo normal en la nube de Google. Revisa el historial de tu cuenta en unos minutos.");
+                    alert("⚠️ El PDF se está generando en segundo plano. Revisa el historial de tu cuenta en unos minutos.");
                 }, 60000);
 
             } catch (error) {
@@ -1302,26 +1419,134 @@
             }
         };
 
+        // 💳 LECTURA DE PAQUETES DESDE ADMIN
+        window.abrirModalPagosDinamic = async function() {
+            const payModal = document.getElementById('paymentModal');
+            payModal.classList.remove('hidden');
+            payModal.classList.add('flex');
+            
+            const contenedor = document.getElementById('contenedor-paquetes-pago');
+            contenedor.innerHTML = '<span class="material-symbols-rounded animate-spin text-indigo-500 text-3xl mx-auto">sync</span><p class="text-xs text-slate-400">Cargando paquetes...</p>';
+            
+            try {
+                const doc = await window.appDb.collection('configuracion').doc('estimador_eme').get();
+                if(doc.exists && doc.data().paquetes && doc.data().paquetes.length > 0) {
+                    let html = '';
+                    doc.data().paquetes.forEach(p => {
+                        html += `
+                        <button onclick="window.comprarPaqueteStripe('${p.nombre}', ${p.precio}, ${p.creditos})" class="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-4 rounded-xl hover:border-indigo-500 dark:hover:border-indigo-500 hover:shadow-md transition-all text-left flex justify-between items-center group active:scale-95">
+                            <div>
+                                <p class="font-black text-slate-800 dark:text-white group-hover:text-indigo-600 transition-colors">${p.nombre}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">${p.creditos} Crédito(s)</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-emerald-600 dark:text-emerald-400 text-xl">$${p.precio} <span class="text-[10px] text-slate-400">MXN</span></p>
+                            </div>
+                        </button>`;
+                    });
+                    contenedor.innerHTML = html;
+                } else {
+                    contenedor.innerHTML = '<p class="text-sm text-red-500 font-bold">No hay paquetes disponibles actualmente.</p>';
+                }
+            } catch(e) {
+                console.error(e);
+                contenedor.innerHTML = '<p class="text-sm text-red-500">Error al conectar con el catálogo.</p>';
+            }
+        };
+
+        // 💳 CONEXIÓN A STRIPE (DINÁMICA)
+        window.comprarPaqueteStripe = async function(nombre, precio, creditos) {
+            try {
+                window.showLoader("Conectando con Stripe...", `Preparando ${nombre}`);
+                const idToken = await authUser.getIdToken(true);
+                
+                const response = await fetch('/.netlify/functions/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({ 
+                        expedienteId: window.expedienteMotorActivo || 'sin-expediente',
+                        returnUrl: window.location.href,
+                        nombrePaquete: nombre,
+                        precio: precio,
+                        creditos: creditos
+                    })
+                });
+
+                if (!response.ok) throw new Error("Error en la respuesta del servidor de pagos.");
+                
+                const data = await response.json();
+                if (data.url) window.location.href = data.url; 
+                else throw new Error("No se pudo generar la sesión de pago.");
+            } catch (error) {
+                console.error("Error Stripe:", error);
+                alert("Hubo un error al conectar con la pasarela de pago. Intente de nuevo.");
+                if(typeof window.hideLoader === 'function') window.hideLoader();
+            }
+        };
+
         // --- 8. ESCUCHA INICIAL (ARRANQUE Y RECUPERACIÓN) ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Verificar Tema
+            // Verificar Tema Dark Mode
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 const icon = document.getElementById('dark-mode-icon');
                 if(icon) icon.innerText = 'light_mode';
             }
             
-            // 1. Construimos los 6 testigos ocultos y sus tarjetas resumen
+            // 1. Construimos los testigos
             if(typeof window.generarTestigosManuales === 'function') window.generarTestigosManuales();
 
-            // 2. Cargamos el borrador por si se apagó la PC o cerró la pestaña
+            // 2. Cargamos el borrador
             if(typeof window.cargarProgresoLocal === 'function') window.cargarProgresoLocal();
 
-            // 3. Forzamos barrido lógico para ajustar dependencias (Terrenos vs Casas)
+            // 3. 🚀 EL EXTERMINADOR DE UX (Limpia todo al instante)
             setTimeout(() => {
                 if(typeof window.aplicarLogicaInteligente === 'function') window.aplicarLogicaInteligente();
                 if(typeof window.aplicarVisibilidadPerfiles === 'function') window.aplicarVisibilidadPerfiles();
-            }, 500);
+                
+                // A) Exterminar Números de los Títulos dinámicamente (Ej: "1. Identificación" -> "Identificación")
+                document.querySelectorAll('.card-header h2').forEach(h2 => {
+                    h2.innerText = h2.innerText.replace(/^\d+\.\s*/, '');
+                });
+
+                // B) Exterminar Textos Grises (Placeholders) y Ceros
+                document.querySelectorAll('input, textarea').forEach(el => {
+                    el.removeAttribute('placeholder'); // Adiós textos tenues
+                    if(el.type === 'number' && (el.value === "0" || el.value === 0)) { 
+                        el.value = ""; // Adiós ceros pre-llenados
+                    }
+                });
+
+                // C) Forzar Selectores en Blanco (Cero adivinanzas)
+                document.querySelectorAll('select').forEach(el => {
+                    // Solo perdonamos el perfil y el tipo de inmueble para no romper la lógica principal
+                    if(!['perfil_usuario', 'est-tipo'].includes(el.id || el.name)) {
+                        const primera = el.options[0];
+                        
+                        // Si ya tenía una opción "Ninguna", la disfrazamos de "-- Seleccione --"
+                        if(primera && (primera.value === "Ninguna" || primera.value === "Ninguno" || primera.value === "")) {
+                            primera.value = ""; 
+                            primera.innerText = "-- Seleccione --";
+                            primera.disabled = true;
+                            // Solo la seleccionamos si el usuario no había guardado un borrador con otro valor
+                            if(el.value === "Ninguna" || el.value === "Ninguno" || el.value === "") primera.selected = true; 
+                        } else {
+                            // Si la primera opción era un dato real (Ej. "Asfalto"), le inyectamos una opción vacía arriba
+                            const nuevaOpcion = document.createElement('option');
+                            nuevaOpcion.value = "";
+                            nuevaOpcion.innerText = "-- Seleccione --";
+                            nuevaOpcion.disabled = true;
+                            
+                            el.insertBefore(nuevaOpcion, el.firstChild);
+                            // Solo reseteamos si no hay borrador guardado
+                            if(el.value === el.options[1].value) {
+                                nuevaOpcion.selected = true;
+                                el.value = ""; 
+                            }
+                        }
+                    }
+                });
+            }, 500); // 500ms asegura que derrotemos a la caché del navegador
         });
     </script>
 </body>

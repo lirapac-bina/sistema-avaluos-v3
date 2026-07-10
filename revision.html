@@ -150,19 +150,31 @@
                     </div>
 
                         <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0 flex flex-col gap-2">
-                            <button onclick="solicitarDocumentoExtra()" class="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                                <span class="material-symbols-rounded text-base">add_circle</span> Solicitar Documento Extra
+                            <button onclick="solicitarDocumentoExtra()" class="w-full py-2 bg-white dark:bg-slate-800 border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-rounded text-base">add_circle</span> Solicitar Doc Extra
                             </button>
                             
-                            <button id="btn-subir-cedula-gys" onclick="document.getElementById('cedula-gys-upload').click()" class="w-full py-2.5 bg-indigo-600 border border-indigo-700 rounded-xl text-[11px] font-bold text-white hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                                <span class="material-symbols-rounded text-base">upload_file</span> Subir Cédula GYS (Raíz)
+                            <button id="btn-subir-cedula-gys" onclick="document.getElementById('cedula-gys-upload').click()" class="w-full py-2 bg-indigo-600 border border-indigo-700 rounded-xl text-[11px] font-bold text-white hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-rounded text-base">upload_file</span> Subir Cédula GYS
                             </button>
+                            <input type="file" id="cedula-gys-upload" class="hidden" accept="application/pdf,image/*" onchange="subirCedulaGYSDirecto(this)">
 
-                            <button onclick="forzarSincronizacionIA(event)" class="w-full py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
+                            <!-- NUEVO: Botones para Mapas Consolidación -->
+                            <div class="flex gap-2 w-full">
+                                <button id="btn-subir-mapa-1" onclick="document.getElementById('input-mapa-1').click()" class="flex-1 py-2 bg-teal-600 border border-teal-700 rounded-xl text-[10px] font-bold text-white hover:bg-teal-700 transition-colors flex items-center justify-center gap-1 shadow-sm active:scale-95" title="Subir Mapa de Consolidación 1">
+                                    <span class="material-symbols-rounded text-sm">map</span> Mapa 1
+                                </button>
+                                <input type="file" id="input-mapa-1" class="hidden" accept="image/*,application/pdf" onchange="subirMapaConsolidacion(this, 1)">
+
+                                <button id="btn-subir-mapa-2" onclick="document.getElementById('input-mapa-2').click()" class="flex-1 py-2 bg-teal-600 border border-teal-700 rounded-xl text-[10px] font-bold text-white hover:bg-teal-700 transition-colors flex items-center justify-center gap-1 shadow-sm active:scale-95" title="Subir Mapa de Consolidación 2">
+                                    <span class="material-symbols-rounded text-sm">map</span> Mapa 2
+                                </button>
+                                <input type="file" id="input-mapa-2" class="hidden" accept="image/*,application/pdf" onchange="subirMapaConsolidacion(this, 2)">
+                            </div>
+
+                            <button onclick="forzarSincronizacionIA(event)" class="w-full py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
                                 <span class="material-symbols-rounded text-base">sync</span> Re-procesar con IA
                             </button>
-
-                            <input type="file" id="cedula-gys-upload" class="hidden" accept="application/pdf" onchange="subirCedulaGYSDirecto(this)">
                         </div>
 
                 </div> 
@@ -2314,8 +2326,31 @@
             }
         };
 
+        // --- 🛡️ COMPRESOR DE IMÁGENES (Anti Error 500) ---
+        window.comprimirImagenJustificativa = function(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 1200; 
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
+            });
+        };
+
         // 🚀 SUBIR CÉDULA GYS A LA RAÍZ Y EXTRAER CON IA
-        async function subirCedulaGYSDirecto(input) {
+        window.subirCedulaGYSDirecto = async function(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
             const btn = document.getElementById('btn-subir-cedula-gys');
@@ -2325,68 +2360,136 @@
             btn.disabled = true;
 
             try {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                    const base64 = reader.result.split(',')[1];
-                    
-                    const res = await fetch('/.netlify/functions/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            expedienteId: expediente.id,
-                            itemKey: 'CEDULA_GYS',
-                            nuevoEstado: 'validado',
-                            archivoBase64: base64,
-                            nombreArchivo: file.name,
-                            mimeType: file.type,
-                            esRaiz: true, 
-                            categoriaItem: 'interno'
-                        })
+                let base64 = "";
+                let isPDF = file.type.includes('pdf');
+
+                if (!isPDF) {
+                    const base64Data = await window.comprimirImagenJustificativa(file);
+                    base64 = base64Data.split(',')[1];
+                } else {
+                    if(file.size > 5 * 1024 * 1024) throw new Error("El PDF supera 5MB de límite.");
+                    base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+                        reader.readAsDataURL(file);
                     });
+                }
+                    
+                const res = await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        expedienteId: expediente.id,
+                        itemKey: 'CEDULA_GYS',
+                        nuevoEstado: 'validado',
+                        archivoBase64: base64,
+                        nombreArchivo: file.name,
+                        mimeType: isPDF ? 'application/pdf' : 'image/jpeg',
+                        esRaiz: true, 
+                        categoriaItem: 'docjust' // 🔑 Dirigido a DOC JUST como pediste
+                    })
+                });
 
-                    if (!res.ok) throw new Error("Error al subir archivo");
-                    if (typeof showToast !== 'undefined') showToast("¡Cédula guardada en raíz! Despertando a Gemini...", "info");
+                if (!res.ok) throw new Error("Error al subir archivo");
+                if (typeof showToast !== 'undefined') showToast("¡Cédula guardada en raíz! Despertando a Gemini...", "info");
 
-                    setTimeout(async () => {
-                        try {
-                            const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get({source: 'server'});
-                            const urlDrive = doc.data().checklist['CEDULA_GYS']?.driveUrl || doc.data().checklist['CEDULA_GYS']?.url;
+                setTimeout(async () => {
+                    try {
+                        const doc = await db.collection('expedientes_avaluos').doc(expediente.id).get({source: 'server'});
+                        const urlDrive = doc.data().checklist['CEDULA_GYS']?.driveUrl || doc.data().checklist['CEDULA_GYS']?.url;
+                        
+                        if (urlDrive) {
+                            const match = urlDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
+                            const fileId = match ? match[1] : null;
                             
-                            if (urlDrive) {
-                                const match = urlDrive.match(/(?:id=|v\/|d\/)([a-zA-Z0-9_-]{15,})/);
-                                const fileId = match ? match[1] : null;
+                            if (fileId) {
+                                const promptFijo = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
                                 
-                                if (fileId) {
-                                    const promptFijo = "Este documento es una Cédula MAI de la Unidad de Valuación. Extrae los datos exactos. Responde ÚNICAMENTE en JSON: {'solicitante': {'nombre_completo': '...', 'rfc': '...', 'nss': '...', 'curp': '...'}, 'oferente': {'nombre_completo': '...', 'rfc': '...', 'curp': '...'}, 'inmueble': {'direccion_completa': '...', 'cp': '...'}}.";
-                                    
-                                    fetch('/.netlify/functions/extraer-datos-ia-background', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            fileId: fileId,
-                                            promptPersonalizado: promptFijo,
-                                            expId: expediente.id,
-                                            reqKey: 'CEDULA_GYS'
-                                        })
-                                    });
-                                }
+                                fetch('/.netlify/functions/extraer-datos-ia-background', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        fileId: fileId,
+                                        promptPersonalizado: promptFijo,
+                                        expId: expediente.id,
+                                        reqKey: 'CEDULA_GYS'
+                                    })
+                                });
                             }
-                            alert("¡Cédula GYS subida a la Raíz y enviada a IA con éxito! 🤖");
-                            location.reload();
-                        } catch (err) {
-                            console.error(err);
-                            alert("Se subió el PDF, pero hubo un detalle al iniciar la extracción IA.");
-                            location.reload();
                         }
-                    }, 2500); 
-                };
+                        alert("¡Cédula GYS subida a la Raíz y enviada a IA con éxito! 🤖");
+                        location.reload();
+                    } catch (err) {
+                        console.error(err);
+                        alert("Se subió el documento, pero hubo un detalle al iniciar la extracción IA.");
+                        location.reload();
+                    }
+                }, 2500); 
             } catch (e) {
                 alert("Error: " + e.message);
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
-        }
+        };
+
+        // --- 🗺️ NUEVO: SUBIR MAPAS DE CONSOLIDACIÓN A DOC JUST ---
+        window.subirMapaConsolidacion = async function(input, numMapa) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const btn = document.getElementById('btn-subir-mapa-' + numMapa);
+            const originalHtml = btn.innerHTML;
+
+            btn.innerHTML = `<span class="animate-spin material-symbols-rounded text-sm">sync</span>...`;
+            btn.disabled = true;
+
+            try {
+                let base64 = "";
+                let isPDF = file.type.includes('pdf');
+
+                if (!isPDF) {
+                    const base64Data = await window.comprimirImagenJustificativa(file);
+                    base64 = base64Data.split(',')[1];
+                } else {
+                    if(file.size > 5 * 1024 * 1024) throw new Error("El PDF supera 5MB de límite.");
+                    base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+                        reader.readAsDataURL(file);
+                    });
+                }
+                
+                const res = await fetch('/.netlify/functions/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        expedienteId: expediente.id,
+                        itemKey: 'MAPA_CONSOLIDACION_' + numMapa,
+                        nuevoEstado: 'validado',
+                        archivoBase64: base64,
+                        nombreArchivo: `Mapa Consolidacion Urbana ${numMapa}` + (isPDF ? '.pdf' : '.jpg'),
+                        mimeType: isPDF ? 'application/pdf' : 'image/jpeg',
+                        esRaiz: false, 
+                        categoriaItem: 'docjust' 
+                    })
+                });
+
+                if (!res.ok) throw new Error("Error en servidor al subir mapa.");
+                
+                btn.innerHTML = `<span class="material-symbols-rounded text-sm text-emerald-300">check_circle</span> Mapa ${numMapa}`;
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 2000);
+                
+                if (typeof showToast !== 'undefined') showToast(`Mapa Consolidación ${numMapa} enviado a DOC JUST`, "success");
+                else alert(`✅ Mapa Consolidación ${numMapa} enviado a DOC JUST`);
+                
+            } catch (e) {
+                alert("Error: " + e.message);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        };
 
         // ⚡ FUNCIÓN MÁGICA: ENVIAR TODOS LOS DOCUMENTOS VIEJOS A IA (VERSIÓN BLINDADA)
         async function forzarSincronizacionIA(event) {
