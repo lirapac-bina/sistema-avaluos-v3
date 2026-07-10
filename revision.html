@@ -2752,6 +2752,15 @@
         };
 
         window.generarPDFAnalisis = async function() {
+            // 🛡️ 1. ESCUDO ANTI-DUPLICADOS (Revisamos si ya existe el PDF generado)
+            if (expediente.reportePremiumUrl) {
+                const respuesta = confirm("⚠️ Ya existe un Análisis Documental para este expediente.\n\n[Aceptar] = Abrir el PDF existente.\n[Cancelar] = Generar uno NUEVO y sobreescribirlo.");
+                if (respuesta) {
+                    window.open(expediente.reportePremiumUrl, '_blank');
+                    return; // Cortamos la ejecución, sin duplicar en Drive
+                }
+            }
+
             const checklist = expediente.checklist || {};
             const extraidos = expediente.datos_extraidos || {};
             const btn = document.getElementById('btn-generar-analisis');
@@ -2761,7 +2770,7 @@
 
             try {
                 let textos = { solicitante: '', propietario: '', inmueble: '', coordenadas: '' };
-                let imagenes = { mapa: null, portada: null, interiores: [] };
+                let imagenes = { mapa: null, portada: null, interiores: [], mapa_cons_1: null, mapa_cons_2: null };
 
                 // 1. RECOPILAR TEXTOS (CON FILTRO ANTI-BASURA)
                 Object.entries(extraidos).forEach(([key, val]) => {
@@ -2800,24 +2809,47 @@
                     }
                 });
 
-                // 2. RECOPILAR IMÁGENES Y MAPAS (AQUÍ ESTÁ LA MAGIA QUE FALTABA)
+                // 2. 📸 RECOPILAR IMÁGENES EXACTAS DESDE FIREBASE
                 const mapKey = atob("QUl6YVN5QkRYM2hZVzJ1LU9oWUpXSjlCMmdBQW50VjBPWnlrZms0"); 
-                const mapItem = Object.values(checklist).find(i => i.key === 'UBICACION_MAPS');
                 
-                // Extraemos las coordenadas directamente de lo que guardó el cliente
+                // A) Coordenadas y Mapa Satelital
+                const mapItem = checklist['UBICACION_MAPS'];
                 if(mapItem && mapItem.coordenadas) {
                     textos.coordenadas = `Coordenadas exactas: ${mapItem.coordenadas}\nDirección Maps: ${mapItem.direccion || 'No especificada'}`;
-                    imagenes.mapa = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=19&size=640x640&maptype=satellite&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
+                    // Creamos la foto del mapa con las coordenadas puras y un Pin rojo
+                    imagenes.mapa = `https://maps.googleapis.com/maps/api/staticmap?center=${mapItem.coordenadas}&zoom=18&size=800x400&maptype=hybrid&markers=color:red%7C${mapItem.coordenadas}&key=${mapKey}`;
                 }
 
-                // Extraemos la Portada y las Fotos Interiores
-                const port = Object.values(checklist).find(i => i.key === 'FOTO_PORTADA' && (i.url || i.archivoUrl || i.driveLink));
-                if(port) imagenes.portada = port.url || port.archivoUrl || port.driveLink;
-
-                const gal = Object.values(checklist).find(i => i.key === 'FOTOS_INTERIORES_GENERAL');
-                if(gal && gal.fotos && gal.fotos.length > 0) {
-                    imagenes.interiores = gal.fotos.map(f => f.url);
+                // B) Foto de Fachada
+                const fachada = checklist['FOTO_FACHADA'];
+                if(fachada && fachada.url) {
+                    imagenes.portada = fachada.url;
                 }
+
+                // C) Mapas de Consolidación
+                const mapaCons1 = checklist['MAPA_CONSOLIDACION_1'];
+                if(mapaCons1 && mapaCons1.url) imagenes.mapa_cons_1 = mapaCons1.url;
+
+                const mapaCons2 = checklist['MAPA_CONSOLIDACION_2'];
+                if(mapaCons2 && mapaCons2.url) imagenes.mapa_cons_2 = mapaCons2.url;
+
+                // D) Fotos Interiores (Buscar todas las llaves que empiecen con FOTO_EXTRA_)
+                let recolectorFotos = [];
+                Object.keys(checklist).forEach(key => {
+                    if (key.includes('FOTO_EXTRA_') && checklist[key].url) {
+                        // Guardamos la foto junto con su fecha/ID para poder ordenarlas cronológicamente
+                        recolectorFotos.push({
+                            url: checklist[key].url,
+                            id: key
+                        });
+                    }
+                });
+
+                // Ordenamos las fotos para que salgan en el orden que se subieron y no revueltas
+                recolectorFotos.sort((a, b) => a.id.localeCompare(b.id));
+
+                // 🚀 Extraemos solo las URLs y le ponemos el límite estricto de 30 elementos
+                imagenes.interiores = recolectorFotos.map(foto => foto.url).slice(0, 30);
 
                 let folderId = null;
                 if (expediente.carpeta_drive) {
@@ -2825,7 +2857,7 @@
                     if (match) folderId = match[1];
                 }
 
-                // 3. ENVIAR A NETLIFY
+                // 3. ENVIAR A TU NETLIFY LOCAL
                 const res = await fetch('/.netlify/functions/generar-doc-analisis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2842,6 +2874,12 @@
                 const data = await res.json();
                 
                 if (data.success && data.docUrl) {
+                    // 🛡️ GUARDAMOS LA URL EN FIREBASE PARA QUE EL ESCUDO ANTI-DUPLICADOS FUNCIONE
+                    await db.collection('expedientes_avaluos').doc(expediente.id).update({
+                        reportePremiumUrl: data.docUrl
+                    });
+                    expediente.reportePremiumUrl = data.docUrl; // Actualizamos memoria local
+
                     if (typeof showToast !== 'undefined') showToast("¡Reporte Ejecutivo generado!", "success");
                     window.open(data.docUrl, '_blank');
                 } else {
@@ -2850,7 +2888,7 @@
 
             } catch (err) {
                 console.error("Error crítico Doc:", err);
-                alert("Error al generar el documento. Revisa tu consola.");
+                alert("Error al generar el documento. Verifica la consola.");
             } finally {
                 btn.innerHTML = orig;
                 btn.disabled = false;
