@@ -154,7 +154,7 @@
                             <label class="leezar-label text-amber-600 flex items-center gap-1">
                                 <span class="material-symbols-rounded text-sm">edit_note</span> Resumen Ejecutivo de Escritura / Anotaciones Internas
                             </label>
-                            <textarea id="info-anotaciones" class="leezar-input !text-left bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold resize-none" rows="8" readonly placeholder="Esperando análisis de Gemini..."></textarea>
+                            <div id="info-anotaciones" class="leezar-input !text-left bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold overflow-y-auto whitespace-pre-wrap min-h-[12rem] text-xs leading-relaxed">Esperando análisis de Gemini...</div>
                         </div>
                     </div>
 
@@ -244,7 +244,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label class="leezar-label">Sup. Terreno</label><input type="text" id="esc-sup-terreno" class="leezar-input !text-left font-bold" readonly></div>
                             <div><label class="leezar-label">Sup. Const.</label><input type="text" id="esc-sup-const" class="leezar-input !text-left font-bold" readonly></div>
-                            <div class="col-span-full"><label class="leezar-label">Medidas y Colindancias</label><textarea id="esc-medidas" class="leezar-input !text-left text-xs" rows="4" readonly></textarea></div>
+                            <div class="col-span-full"><label class="leezar-label">Medidas y Colindancias</label><div id="esc-medidas" class="leezar-input !text-left text-xs overflow-y-auto whitespace-pre-wrap min-h-[6rem] bg-white dark:bg-slate-900 leading-relaxed"></div></div>
                         </div>
                     </div>
                         
@@ -1668,23 +1668,22 @@
             document.getElementById('info-entidad').value = d.entidad || '';
             document.getElementById('info-tramite').value = d.tipoTramite || 'INFONAVIT';
             
-            // --- FIX: SEPARAR LA NOTA CORTA DEL RESUMEN IA ---
+            // --- FIX: EXTRACCIÓN PRECISA Y COLOREADO ---
             const txtAnotacion = document.getElementById('info-anotaciones');
             const inpTerreno = document.getElementById('esc-sup-terreno');
             const inpConst = document.getElementById('esc-sup-const');
             const inpMedidas = document.getElementById('esc-medidas');
             
-            let resumenEscritura = "Esperando análisis de la Escritura por parte de Gemini...";
-            let supTerr = "---", supConst = "---", medidas = "---";
+            let resumenEscritura = "";
+            let supTerr = "", supConst = "", medidas = "";
 
-            // Sabueso inteligente para extraer datos desde Gemini
             if (d.datos_extraidos) {
                 const buscarDato = (obj, posiblesLlaves) => {
-                    if (typeof obj === 'string') return "";
+                    if (typeof obj !== 'object' || obj === null) return "";
                     for (const [key, val] of Object.entries(obj)) {
                         const kUpper = key.toUpperCase().replace(/_/g, '');
                         if (posiblesLlaves.some(pk => kUpper.includes(pk))) {
-                            if (typeof val === 'string' || typeof val === 'number') return val;
+                            if (typeof val === 'string' || typeof val === 'number') return String(val);
                         }
                         if (typeof val === 'object' && val !== null) {
                             const res = buscarDato(val, posiblesLlaves);
@@ -1696,37 +1695,63 @@
 
                 for (const [docName, value] of Object.entries(d.datos_extraidos)) {
                     if (docName.toUpperCase().includes('ESCRITURA') || docName.toUpperCase().includes('AVALUO')) {
-                        let jsonEscritura = {};
+                        let jsonEscritura = value;
                         if (typeof value === 'string') {
                             try {
                                 const jsonMatch = value.match(/\{[\s\S]*\}/);
                                 jsonEscritura = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(value.replace(/```json/gi, '').replace(/```/g, '').trim());
-                            } catch (e) { }
-                        } else {
-                            jsonEscritura = value;
+                            } catch (e) { jsonEscritura = {}; }
                         }
                         
-                        // Extraemos la información precisa
-                        const res = buscarDato(jsonEscritura, ['RESUMEN', 'SINTESIS', 'DESCRIPCION']);
-                        if(res) resumenEscritura = res;
-                        
-                        const st = buscarDato(jsonEscritura, ['SUPERFICIETERRENO', 'AREATERRENO']);
-                        if(st) supTerr = st;
-                        
-                        const sc = buscarDato(jsonEscritura, ['SUPERFICIECONSTRUCCION', 'AREACONSTRUCCION']);
-                        if(sc) supConst = sc;
-                        
-                        const mc = buscarDato(jsonEscritura, ['MEDIDAS', 'COLINDANCIAS', 'LINDEROS']);
-                        if(mc) medidas = mc;
+                        // Extraemos la información basándonos EXACTAMENTE en tu estructura de Firebase
+                        if(!resumenEscritura) resumenEscritura = buscarDato(jsonEscritura, ['RESUMENEJECUTIVO', 'RESUMEN']);
+                        if(!supTerr) supTerr = buscarDato(jsonEscritura, ['SUPERFICIETERRENO']);
+                        if(!supConst) supConst = buscarDato(jsonEscritura, ['SUPERFICIECONSTRUCCION']);
+                        if(!medidas) medidas = buscarDato(jsonEscritura, ['MEDIDASYCOLINDANCIAS', 'MEDIDAS']);
                     }
                 }
             }
 
-            // Inyectamos todo en sus respectivas cajas (Ya no se duplica la nota de 140 chars)
-            if (txtAnotacion) txtAnotacion.value = resumenEscritura;
+            // Textos por defecto si no hubo datos
+            if (!resumenEscritura) resumenEscritura = "Esperando análisis de la Escritura por parte de Gemini...";
+            if (!supTerr) supTerr = "---";
+            if (!supConst) supConst = "---";
+            if (!medidas) medidas = "---";
+
+// --- MOTOR DE COLOR PARA ORIENTACIONES (Brújula Completa Pericial) ---
+            const formatearOrientaciones = (texto) => {
+                if (!texto || texto === "---" || String(texto).includes("Esperando")) return texto;
+                let textoFmt = String(texto).toUpperCase();
+                
+                const orientaciones = {
+                    'NORTE': 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-700',
+                    'SUR': 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-700',
+                    'ESTE': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700',
+                    'ORIENTE': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700',
+                    'OESTE': 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-700',
+                    'PONIENTE': 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-700',
+                    'NORESTE': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700',
+                    'NORORIENTE': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700',
+                    'NOROESTE': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700',
+                    'NORPONIENTE': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700',
+                    'SURESTE': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/60 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700',
+                    'SURORIENTE': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/60 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700',
+                    'SUROESTE': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/60 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700',
+                    'SURPONIENTE': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/60 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700'
+                };
+                
+                for (const [ori, clases] of Object.entries(orientaciones)) {
+                    const regex = new RegExp(`\\b(${ori})\\b`, 'g');
+                    textoFmt = textoFmt.replace(regex, `<span class="px-1.5 py-0.5 mx-0.5 rounded text-[10px] font-black shadow-sm inline-block tracking-widest ${clases}">$1</span>`);
+                }
+                return textoFmt;
+            };
+
+            // 4. INYECCIÓN FINAL (Quitamos el formateo de color al Resumen Ejecutivo para evitar "ESTES" falsos)
+            if (txtAnotacion) txtAnotacion.innerText = resumenEscritura; 
             if (inpTerreno) inpTerreno.value = supTerr;
             if (inpConst) inpConst.value = supConst;
-            if (inpMedidas) inpMedidas.value = medidas;
+            if (inpMedidas) inpMedidas.innerHTML = formatearOrientaciones(medidas);
 
             // --- RECUPERAR DATOS GUARDADOS (MERCADO, NOTAS Y DOCS) ---
             if(document.getElementById('texto-notas-tramite')) document.getElementById('texto-notas-tramite').value = d.notas_captura || '';
