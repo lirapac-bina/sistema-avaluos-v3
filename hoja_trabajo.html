@@ -1668,8 +1668,65 @@
             document.getElementById('info-entidad').value = d.entidad || '';
             document.getElementById('info-tramite').value = d.tipoTramite || 'INFONAVIT';
             
+            // --- FIX: SEPARAR LA NOTA CORTA DEL RESUMEN IA ---
             const txtAnotacion = document.getElementById('info-anotaciones');
-            if(txtAnotacion) txtAnotacion.value = d.anotacion || 'Sin anotaciones pendientes.';
+            const inpTerreno = document.getElementById('esc-sup-terreno');
+            const inpConst = document.getElementById('esc-sup-const');
+            const inpMedidas = document.getElementById('esc-medidas');
+            
+            let resumenEscritura = "Esperando análisis de la Escritura por parte de Gemini...";
+            let supTerr = "---", supConst = "---", medidas = "---";
+
+            // Sabueso inteligente para extraer datos desde Gemini
+            if (d.datos_extraidos) {
+                const buscarDato = (obj, posiblesLlaves) => {
+                    if (typeof obj === 'string') return "";
+                    for (const [key, val] of Object.entries(obj)) {
+                        const kUpper = key.toUpperCase().replace(/_/g, '');
+                        if (posiblesLlaves.some(pk => kUpper.includes(pk))) {
+                            if (typeof val === 'string' || typeof val === 'number') return val;
+                        }
+                        if (typeof val === 'object' && val !== null) {
+                            const res = buscarDato(val, posiblesLlaves);
+                            if (res) return res;
+                        }
+                    }
+                    return "";
+                };
+
+                for (const [docName, value] of Object.entries(d.datos_extraidos)) {
+                    if (docName.toUpperCase().includes('ESCRITURA') || docName.toUpperCase().includes('AVALUO')) {
+                        let jsonEscritura = {};
+                        if (typeof value === 'string') {
+                            try {
+                                const jsonMatch = value.match(/\{[\s\S]*\}/);
+                                jsonEscritura = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(value.replace(/```json/gi, '').replace(/```/g, '').trim());
+                            } catch (e) { }
+                        } else {
+                            jsonEscritura = value;
+                        }
+                        
+                        // Extraemos la información precisa
+                        const res = buscarDato(jsonEscritura, ['RESUMEN', 'SINTESIS', 'DESCRIPCION']);
+                        if(res) resumenEscritura = res;
+                        
+                        const st = buscarDato(jsonEscritura, ['SUPERFICIETERRENO', 'AREATERRENO']);
+                        if(st) supTerr = st;
+                        
+                        const sc = buscarDato(jsonEscritura, ['SUPERFICIECONSTRUCCION', 'AREACONSTRUCCION']);
+                        if(sc) supConst = sc;
+                        
+                        const mc = buscarDato(jsonEscritura, ['MEDIDAS', 'COLINDANCIAS', 'LINDEROS']);
+                        if(mc) medidas = mc;
+                    }
+                }
+            }
+
+            // Inyectamos todo en sus respectivas cajas (Ya no se duplica la nota de 140 chars)
+            if (txtAnotacion) txtAnotacion.value = resumenEscritura;
+            if (inpTerreno) inpTerreno.value = supTerr;
+            if (inpConst) inpConst.value = supConst;
+            if (inpMedidas) inpMedidas.value = medidas;
 
             // --- RECUPERAR DATOS GUARDADOS (MERCADO, NOTAS Y DOCS) ---
             if(document.getElementById('texto-notas-tramite')) document.getElementById('texto-notas-tramite').value = d.notas_captura || '';

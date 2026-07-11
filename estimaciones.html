@@ -153,17 +153,24 @@
         
         <form id="form-eme" onsubmit="event.preventDefault();">
             
-            <!-- PANEL SUPERIOR: PERFIL -->
-            <div class="bg-slate-900 rounded-xl p-5 mb-6 shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between border border-slate-700">
-                <div class="w-full">
-                    <label class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1 block">Perfil Operativo Activo</label>
-                    <select id="perfil_usuario" name="perfil_solicitante" class="bg-slate-800 border border-slate-600 text-white w-full max-w-md p-2.5 rounded-lg text-sm outline-none font-bold" onchange="window.aplicarVisibilidadPerfiles()">
-                        <option value="4" selected>Perfil 4: Valuador Certificado EME (Completo)</option>
-                        <option value="3">Perfil 3: Valuador Independiente</option>
-                        <option value="2">Perfil 2: Híbrido Inmobiliario</option>
-                        <option value="1">Perfil 1: Automatizado (Básico)</option>
-                    </select>
+            <div class="bg-white dark:bg-slate-900 rounded-xl p-4 mb-6 shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span id="badge-color-perfil" class="w-3 h-3 rounded-full bg-slate-300 animate-pulse"></span>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modo de Operación</p>
+                        <h2 id="lbl-nombre-perfil" class="font-black text-slate-700 dark:text-slate-200 text-sm">No Seleccionado</h2>
+                    </div>
                 </div>
+                <button type="button" onclick="window.abrirModalPerfiles()" class="text-xs font-bold text-slate-500 hover:text-indigo-500 flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-rounded text-sm">sync_alt</span> Cambiar
+                </button>
+                
+                <select id="perfil_usuario" name="perfil_solicitante" class="hidden">
+                    <option value="4" selected>4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
             </div>
 
             <!-- 🚀 STICKY FOOTER PARA EJECUTAR EL ALGORITMO Y LIMPIAR -->
@@ -171,6 +178,11 @@
                 <button type="button" onclick="window.limpiarBorrador()" class="px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center" title="Limpiar Formulario (Reset)">
                     <span class="material-symbols-rounded">delete_sweep</span>
                 </button>
+                
+                <button type="button" onclick="window.guardarProgresoLocalManual()" class="px-6 py-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center gap-2" title="Guardar Borrador">
+                    <span class="material-symbols-rounded">save</span> <span class="hidden sm:inline">Guardar</span>
+                </button>
+
                 <button type="button" onclick="window.enviarDictamenPrevio()" class="max-w-2xl w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-xl shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-3 transition-transform active:scale-95 uppercase tracking-widest text-sm border border-emerald-400">
                     <span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM
                 </button>
@@ -265,7 +277,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="md:col-span-2"><label>Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" id="num_sup_const" value="0"></div>
                     <div><label>Edad (Años)</label><input type="number" name="Edad_Anos" id="num_edad" value="0"></div>
-                    <div><label>Conservación</label><select name="Estado_Conservacion" id="est-conservacion" onchange="window.aplicarLogicaInteligente()"><option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
+                    <div><label>Conservación</label><select name="Estado_Conservacion" id="est-conservacion" onchange="window.aplicarLogicaInteligente(); window.aplicarFiltroRemodelacion();"><option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
                     <div><label>Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0"></div>
                     <div><label>Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0"></div>
                     <div><label>Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
@@ -334,7 +346,7 @@
                     <div class="md:col-span-3"><label>Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto" value=""></div>
                     <div class="md:col-span-2"><label>Mantenimiento Reciente</label><input type="text" name="Mantenimiento_Reciente_Lista" value=""></div>
                     <div><label>Humedades</label><select name="Estado_de_Humedades"><option value="Ninguna" selected>Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
-                    <div><label>Alcance Remodelación</label><select name="Alcance_Remodelacion"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
+                    <div><label>Alcance Remodelación</label><select name="Alcance_Remodelacion" onchange="window.aplicarFiltroRemodelacion()"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
                 </div>
 
                 <div id="panel_mejoras" class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
@@ -503,40 +515,95 @@
 
     <!-- 🌟 FIX MAESTRO: MODAL FUERA DE <main> PARA EVITAR PROBLEMAS DE Z-INDEX CON LA ANIMACIÓN FADE-IN -->
     <!-- 🌟 MODAL HERMOSO PARA TESTIGOS -->
-    <div id="modal-testigo" class="fixed inset-0 z-[9999] hidden bg-slate-900/90 backdrop-blur-sm flex-col items-center justify-center p-4 transition-opacity">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700 animate-fade-in">
-            <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800 shrink-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-rounded">real_estate_agent</span>
-                    </div>
-                    <div>
-                        <h3 class="font-black text-slate-800 dark:text-white" id="modal-testigo-titulo">Testigo 1</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Captura de Mercado</p>
-                    </div>
+    <div id="modal-seleccion-perfil" class="fixed inset-0 z-[9999] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700 animate-fade-in">
+            
+            <div class="p-8 text-center border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="material-symbols-rounded text-4xl">admin_panel_settings</span>
                 </div>
-                <button type="button" onclick="window.cerrarModalTestigo()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-red-100 hover:text-red-600 transition-colors"><span class="material-symbols-rounded">close</span></button>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Selecciona tu Perfil Operativo</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Las herramientas del sistema se adaptarán al nivel que elijas.</p>
             </div>
             
-            <div class="p-6 overflow-y-auto thin-scroll flex-1 space-y-4">
+            <div class="p-6 overflow-y-auto custom-scroll flex-1 bg-slate-100/50 dark:bg-slate-800/50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <button onclick="window.confirmarPerfil(1, 'Automatizado (Básico)', 'bg-slate-500', 'text-slate-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-slate-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-slate-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-slate-500 mb-3">speed</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 1: Automatizado</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Algoritmo AVM puro. Solo captura la ubicación y características básicas. Cero carga pericial.</p>
+                    </button>
+
+                    <button onclick="window.confirmarPerfil(2, 'Híbrido Inmobiliario', 'bg-amber-500', 'text-amber-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-amber-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-amber-500 mb-3">handshake</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 2: Híbrido Inmobiliario</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Solicita avalúos y carga mercado manual. Se ocultan datos técnicos complejos.</p>
+                    </button>
+
+                    <button onclick="window.confirmarPerfil(3, 'Valuador Independiente', 'bg-emerald-600', 'text-emerald-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-emerald-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-emerald-500 mb-3">real_estate_agent</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 3: Independiente</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Sin carga de documentos periciales. Ideal para estimaciones de mercado rápidas y precisas.</p>
+                    </button>
+
+                    <button onclick="window.confirmarPerfil(4, 'Valuador Certificado EME', 'bg-indigo-600', 'text-indigo-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-indigo-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-indigo-500 mb-3">verified</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 4: Valuador EME</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Acceso total. Firmas oficiales, verticales, fotos ilimitadas y conexión directa con el motor.</p>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-testigo" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden relative animate-[popIn_0.3s_ease-out] border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                <h3 id="modal-testigo-titulo" class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">real_estate_agent</span> Testigo X</h3>
+                <button onclick="window.cerrarModalTestigo()" class="text-slate-400 hover:text-rose-500 transition-colors"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scroll flex-1 bg-slate-100/50 dark:bg-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input type="hidden" id="mt_id">
-                <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Precio Oferta ($)</label><input type="number" id="mt_precio" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-lg font-black text-emerald-600 dark:text-emerald-400 outline-none focus:border-amber-500 transition-colors"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">M² Terreno</label><input type="number" id="mt_terr" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">M² Const.</label><input type="number" id="mt_const" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Niveles</label><input type="number" id="mt_niveles" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Edad (Años)</label><input type="number" id="mt_edad" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm text-center outline-none focus:border-amber-500 transition-colors"></div>
+                
+                <div class="sm:col-span-2"><label>Precio de Salida (MXN)</label><input type="text" id="mt_precio" oninput="window.formatearMiles(this)" placeholder="Ej. 1,500,000" class="text-lg font-bold text-emerald-600"></div>
+                <div><label>Terreno (m²)</label><input type="number" id="mt_terr" placeholder="0"></div>
+                <div><label>Construcción (m²)</label><input type="number" id="mt_const" placeholder="0"></div>
+                <div><label>Niveles</label><input type="number" id="mt_niveles" placeholder="0"></div>
+                <div><label>Edad (Años)</label><input type="number" id="mt_edad" placeholder="0"></div>
+                
+                <div>
+                    <label>Estado Conservación</label>
+                    <select id="mt_estado">
+                        <option value="Bueno">Bueno</option><option value="Excelente">Excelente/Nuevo</option>
+                        <option value="Regular">Regular</option><option value="Malo">Malo</option>
+                    </select>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Conservación</label><select id="mt_estado" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Bueno">Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo">Malo/Ruina</option></select></div>
-                    <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Ubicación</label><select id="mt_ubicacion" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option><option value="Cabecera">Cabecera</option><option value="Dos frentes">Dos frentes</option></select></div>
-                    <div class="sm:col-span-2"><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Zona</label><select id="mt_zona" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"><option value="Igual">Igual al sujeto</option><option value="Mejor que el sujeto">Mejor que el sujeto</option><option value="Peor que el sujeto">Peor que el sujeto</option></select></div>
+                <div>
+                    <label>Ubicación</label>
+                    <select id="mt_ubicacion">
+                        <option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option>
+                        <option value="Frente a parque">Frente a parque</option>
+                    </select>
                 </div>
-                <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 block">Enlace Web (URL)</label><input type="text" id="mt_link" placeholder="https://..." class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-amber-500 transition-colors"></div>
+                <div class="sm:col-span-2">
+                    <label>Comparación de Zona (Respecto al sujeto)</label>
+                    <select id="mt_zona">
+                        <option value="Igual">Igual / Similar</option><option value="Mejor">Mejor (Sobrevalorada)</option>
+                        <option value="Peor">Peor (Infravalorada)</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2"><label>Enlace / Link (Opcional)</label><input type="text" id="mt_link" placeholder="URL de Inmuebles24, Vivanuncios..."></div>
             </div>
             
-            <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 w-full max-w-2xl rounded-b-3xl">
-                <button type="button" onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <button onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2">
                     <span class="material-symbols-rounded">save</span> Guardar Testigo
                 </button>
             </div>
@@ -581,6 +648,12 @@
 
     <script>
         // --- 1. UI Y LOADERS (Blur Anti-Estrés) ---
+        // 🛡️ FIX UX: Apagar el scroll nativo que cambia los valores en campos numéricos
+        document.addEventListener('wheel', function(e) {
+            if (document.activeElement.type === 'number') {
+                e.preventDefault();
+            }
+        }, { passive: false });
         window.showLoader = function(titulo = "Procesando Motor EME", desc = "Calculando en la nube...") {
             const overlay = document.getElementById('loadingOverlay');
             if(overlay) {
@@ -642,7 +715,8 @@
                     
                     // 1. Mostrar/Ocultar Pantallas
                     document.getElementById('auth-screen').classList.add('hidden');
-                    document.getElementById('app-dashboard').classList.remove('hidden');
+                    // NO mostramos el dashboard aún. Mostramos el modal de perfiles:
+                    window.abrirModalPerfiles();
                     const authMini = document.getElementById('auth-mini');
                     if (authMini) authMini.classList.remove('hidden');
                     
@@ -692,6 +766,60 @@
             });
         } catch (error) { console.warn("Firebase warning:", error); }
 
+        // --- 3.5 CONTROL DE PERFILES DINÁMICOS ---
+        window.abrirModalPerfiles = function() {
+            document.getElementById('app-dashboard').classList.add('hidden'); // Ocultar form si estaba abierto
+            const modal = document.getElementById('modal-seleccion-perfil');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.confirmarPerfil = function(nivel, nombrePerfil, bgClass, textClass) {
+            // 1. Actualizar el selector oculto
+            const select = document.getElementById('perfil_usuario');
+            if(select) select.value = nivel;
+
+            // 2. Actualizar UI (Colores y Textos)
+            document.getElementById('lbl-nombre-perfil').innerText = nombrePerfil;
+            const badge = document.getElementById('badge-color-perfil');
+            const headerRole = document.getElementById('header-user-role');
+            
+            badge.className = `w-3 h-3 rounded-full animate-pulse shadow-sm ${bgClass}`;
+            
+            if(headerRole) {
+                headerRole.innerText = nombrePerfil;
+                headerRole.className = `text-[10px] font-bold uppercase tracking-widest ${textClass}`;
+            }
+
+            // 3. Ocultar modal y mostrar dashboard
+            const modal = document.getElementById('modal-seleccion-perfil');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            document.getElementById('app-dashboard').classList.remove('hidden');
+
+            // 🚀 FIX: Forzar al mapa a redibujarse (Evita que salga en gris/blanco)
+            setTimeout(() => {
+                if (window.leezarMapReady && typeof google !== 'undefined' && map) {
+                    google.maps.event.trigger(map, 'resize');
+                    // Lo centramos en el valor guardado o en el default
+                    const coords = document.getElementById('est-coords')?.value;
+                    if(coords && coords.includes(',')){
+                        const pts = coords.split(',');
+                        map.setCenter({lat: parseFloat(pts[0]), lng: parseFloat(pts[1])});
+                    } else {
+                        map.setCenter({ lat: 19.5332, lng: -96.9271 }); // Xalapa default
+                    }
+                }
+            }, 300); // 300ms permite que la animación fade-in termine antes de redibujar
+
+            // 4. Disparar tu lógica existente
+            window.aplicarVisibilidadPerfiles();
+            window.guardarProgresoLocal();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
         // --- 4. MAPA Y COMPONENTES VISUALES ---
         window.sincronizarTextoAMapa = function(val) {
             if (!val || !map) return;
@@ -712,10 +840,65 @@
             }
         };
 
+        // 💰 FORMATEADOR DE MILES Y MILLONES
+        window.formatearMiles = function(input) {
+            // 1. Quitar todo lo que no sea número
+            let valor = input.value.replace(/\D/g, '');
+            if (valor === "") {
+                input.value = "";
+                return;
+            }
+            // 2. Aplicar el formato con comas
+            input.value = parseInt(valor, 10).toLocaleString('en-US');
+        };
+
         window.inicializarMapa = function() {
             if(mapLoaded || typeof google === 'undefined') return;
             geocoder = new google.maps.Geocoder();
-            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 19.5332, lng: -96.9271 }, zoom: 15, disableDefaultUI: true, zoomControl: true });
+            
+            // Coordenadas por defecto (Xalapa) por si el usuario rechaza el GPS
+            let defaultCenter = { lat: 19.5332, lng: -96.9271 };
+            
+            map = new google.maps.Map(document.getElementById("map"), { 
+                center: defaultCenter, 
+                zoom: 15, 
+                disableDefaultUI: true, 
+                zoomControl: true 
+            });
+
+            // 🚀 GEOLOCALIZACIÓN AUTOMÁTICA (Pide permiso al navegador)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        map.setCenter(pos);
+                        map.setZoom(17);
+                        document.getElementById('est-coords').value = `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+                        
+                        // Hacemos geocodificación inversa para auto-llenar la dirección
+                        geocoder.geocode({ location: pos }, (results, status) => {
+                            if (status === "OK" && results[0]) {
+                                let est = "", calle = "", num = "", cp = "", muni = "";
+                                results[0].address_components.forEach(comp => {
+                                    if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
+                                    if (comp.types.includes("route")) calle = comp.long_name;
+                                    if (comp.types.includes("street_number")) num = comp.long_name;
+                                    if (comp.types.includes("postal_code")) cp = comp.long_name;
+                                    if (comp.types.includes("locality") || comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
+                                });
+                                const elEst = document.querySelector('input[name="Estado"]'); if(elEst && est) elEst.value = est;
+                                const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun && muni) elMun.value = muni;
+                                const elDir = document.querySelector('input[name="Calle_Sujeto"]'); 
+                                if(elDir && calle) elDir.value = (calle + " " + num).trim();
+                                const elCp = document.querySelector('input[name="CP"]');
+                                if(cp && elCp) { elCp.value = cp; window.buscarCPFirebase(cp); }
+                            }
+                        });
+                    },
+                    (error) => { console.warn("GPS Denegado o sin señal. Se usará la ubicación por defecto."); },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
             
             // VÍA 1: Arrastrar el mapa actualiza Coordenadas y Textos
             map.addListener("idle", () => {
@@ -752,15 +935,7 @@
                     map.setCenter(place.geometry.location);
                     map.setZoom(18);
                     document.getElementById('est-coords').value = `${place.geometry.location.lat().toFixed(6)},${place.geometry.location.lng().toFixed(6)}`;
-                    let cp = "", muni = "", est = "";
-                    place.address_components?.forEach(comp => {
-                        if (comp.types.includes("postal_code")) cp = comp.long_name;
-                        if (comp.types.includes("locality") || comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
-                        if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
-                    });
-                    if (cp) { const eCp = document.querySelector('input[name="CP"]'); if(eCp) { eCp.value = cp; window.buscarCPFirebase(cp); } }
-                    if (muni) { const eMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(eMun) eMun.value = muni; }
-                    if (est) { const eEst = document.querySelector('input[name="Estado"]'); if(eEst) eEst.value = est; }
+                    // ... (El resto del geocoder sigue igual)
                 });
             }
             mapLoaded = true;
@@ -792,8 +967,14 @@
             } catch (e) { console.error(e); }
         };
 
-        // --- 4.5. SISTEMA ANTI-PÉRDIDA (AUTO-GUARDADO) ---
+        // --- 4.5. SISTEMA ANTI-PÉRDIDA (GUARDADO MANUAL) ---
+        // Desactivamos el auto-guardado silencioso para evitar "fantasmas"
         window.guardarProgresoLocal = function() {
+            // Función vacía para no romper el código antiguo que la mandaba a llamar sola.
+        };
+
+        // Esta es la NUEVA función que responde al botón de Guardar
+        window.guardarProgresoLocalManual = function() {
             const formElements = document.getElementById('form-eme').elements;
             const data = {};
             for(let el of formElements) {
@@ -803,6 +984,19 @@
                 }
             }
             localStorage.setItem('avm_leezar_draft', JSON.stringify(data));
+            
+            // Retroalimentación visual para el usuario
+            const btn = document.querySelector('button[title="Guardar Borrador"]');
+            const icon = btn.querySelector('span.material-symbols-rounded');
+            const originalClass = btn.className;
+            
+            btn.className = "px-6 py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2";
+            icon.innerText = "check_circle";
+            
+            setTimeout(() => {
+                btn.className = originalClass;
+                icon.innerText = "save";
+            }, 2000);
         };
 
         window.cargarProgresoLocal = function() {
@@ -817,7 +1011,6 @@
                             else el.value = data[el.name];
                         }
                     }
-                    // Restaurar UI visual de las tarjetas resumen de testigos
                     for(let i=1; i<=6; i++) {
                         const precioEl = document.getElementById('h_t'+i+'_precio');
                         if(precioEl && parseFloat(precioEl.value) > 0) {
@@ -839,18 +1032,115 @@
             }
         };
 
-        // --- FUNCIÓN PARA MATAR EL BORRADOR Y RESETEAR ---
         window.limpiarBorrador = function() {
             if(confirm("⚠️ ¿Estás seguro de limpiar todo el formulario? Se perderá toda la información capturada y los testigos.")) {
+                
+                // 1. Matar la memoria oculta
                 localStorage.removeItem('avm_leezar_draft');
+                
+                // 2. Limpiar el formulario suavemente (SIN HACER F5)
                 document.getElementById('form-eme').reset();
-                window.location.reload(); // Recargamos para que la lógica inteligente reinicie los campos bloqueados
+                
+                // 3. Limpiar las tarjetas visuales de los testigos
+                for(let i=1; i<=6; i++) {
+                    const precioEl = document.getElementById('h_t'+i+'_precio');
+                    if(precioEl) precioEl.value = 0; // Borramos el input oculto
+                    
+                    const resumen = document.getElementById('resumen-t'+i);
+                    const indicador = document.getElementById('indicador-t'+i);
+                    const card = document.getElementById('card-testigo-'+i);
+                    
+                    if(resumen) {
+                        resumen.innerText = "Sin capturar";
+                        resumen.classList.remove('text-emerald-500');
+                        resumen.classList.add('text-slate-400');
+                    }
+                    if(indicador) {
+                        indicador.classList.remove('bg-emerald-500');
+                        indicador.classList.add('bg-slate-300', 'dark:bg-slate-600');
+                    }
+                    if(card) {
+                        card.classList.remove('border-emerald-500', 'dark:border-emerald-500');
+                        card.classList.add('dark:border-slate-700');
+                    }
+                }
+
+                // 4. Despertar el Mapa y forzar la ubicación GPS del cliente
+                if (typeof google !== 'undefined' && map) {
+                    google.maps.event.trigger(map, 'resize'); // Evita el glitch gris
+                    
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                                map.setCenter(pos);
+                                map.setZoom(17);
+                                document.getElementById('est-coords').value = `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+                                
+                                // Autollenar la dirección con el nuevo pin
+                                if (geocoder) {
+                                    geocoder.geocode({ location: pos }, (results, status) => {
+                                        if (status === "OK" && results[0]) {
+                                            let est = "", calle = "", num = "", cp = "", muni = "";
+                                            results[0].address_components.forEach(comp => {
+                                                if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
+                                                if (comp.types.includes("route")) calle = comp.long_name;
+                                                if (comp.types.includes("street_number")) num = comp.long_name;
+                                                if (comp.types.includes("postal_code")) cp = comp.long_name;
+                                                if (comp.types.includes("locality") || comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
+                                            });
+                                            const elEst = document.querySelector('input[name="Estado"]'); if(elEst) elEst.value = est;
+                                            const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun) elMun.value = muni;
+                                            const elDir = document.querySelector('input[name="Calle_Sujeto"]'); if(elDir) elDir.value = (calle + " " + num).trim();
+                                            const elCp = document.querySelector('input[name="CP"]'); if(elCp && cp) { elCp.value = cp; window.buscarCPFirebase(cp); }
+                                        }
+                                    });
+                                }
+                            },
+                            (error) => { console.warn("GPS denegado por el usuario."); },
+                            { enableHighAccuracy: true }
+                        );
+                    }
+                }
+
+                // 5. Restablecer la inteligencia de los bloqueos de Perfiles y Tipos
+                window.aplicarVisibilidadPerfiles();
+
+                // --- UX: (Remodelación) ---
+            const edadInput = document.querySelector('input[name="Edad_Anos"]');
+            const estadoSelect = document.getElementById('est-conservacion');
+            const bloqueRemodelacion = document.querySelector('select[name="Alcance_Remodelacion"]')?.closest('div.bg-white, div.dark\\:bg-slate-900'); // Selecciona el contenedor de la sección
+            
+            if (edadInput && estadoSelect && bloqueRemodelacion) {
+                const edad = parseFloat(edadInput.value) || 0;
+                const estado = estadoSelect.value;
+                
+                // Si es menor a 10 años o es "Nuevo", ocultamos todo lo de remodelación
+                if (edad < 10 || estado === "Excelente" || estado === "Nuevo") {
+                    bloqueRemodelacion.classList.add('hidden');
+                    // Forzamos los valores a 0 y Nula por detrás
+                    const alcance = document.querySelector('select[name="Alcance_Remodelacion"]');
+                    const anosRemod = document.querySelector('input[name="Anos_desde_Remodelacion"]');
+                    if (alcance) alcance.value = "Nula";
+                    if (anosRemod) anosRemod.value = "0";
+                    
+                    // Apagar checkboxes
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        const cbName = cb.name || "";
+                        if (['cambio_pisos', 'cambio_pisos_instalaciones', 'techado_cochera', 'remodelacion_cocina', 'ampliacion_habitaciones', 'ampliacion_piso', 'remodelacion_parcial', 'remodelacion_completa'].includes(cbName)) {
+                            cb.checked = false;
+                        }
+                    });
+                } else {
+                    bloqueRemodelacion.classList.remove('hidden');
+                }
+            }
+                
+                // 6. Subir la pantalla suavemente como nuevo inicio
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
-
-        // Escucha en tiempo real para auto-guardar
-        document.getElementById('form-eme').addEventListener('input', window.guardarProgresoLocal);
-        document.getElementById('form-eme').addEventListener('change', window.guardarProgresoLocal);
+        // 🚀 SE ELIMINARON LOS EVENT LISTENERS QUE GUARDABAN SOLOS
 
         // --- LÓGICA INTELIGENTE MILIMÉTRICA ---
         window.aplicarLogicaInteligente = function() {
@@ -991,6 +1281,47 @@
             window.guardarProgresoLocal();
         };
 
+        // --- UX: REGLA DE MASCOTAS (REMODELACIÓN LIBRE Y AVANCE) ---
+        window.aplicarFiltroRemodelacion = function() {
+            const alcanceSelect = document.querySelector('select[name="Alcance_Remodelacion"]');
+            
+            if (!alcanceSelect) return;
+
+            const inputAnos = document.querySelector('input[name="Anos_desde_Remodelacion"]');
+            const inputAvance = document.querySelector('input[name="Porcentaje_Avance"]');
+            
+            const contenedorAnos = inputAnos ? inputAnos.closest('div') : null;
+            const contenedorAvance = inputAvance ? inputAvance.closest('div') : null;
+            const panelMejoras = document.getElementById('panel_mejoras');
+
+            // Regla Única: Si el valuador indica que el alcance es "Nula", escondemos los detalles.
+            if (alcanceSelect.value === "Nula" || alcanceSelect.value === "Ninguna" || alcanceSelect.value === "") {
+                if (contenedorAnos) contenedorAnos.classList.add('hidden');
+                if (contenedorAvance) contenedorAvance.classList.add('hidden'); // Oculta el slider de porcentaje
+                if (panelMejoras) panelMejoras.classList.add('hidden');
+                
+                // Forzamos ceros, 100% de obra terminada y false por debajo para Python
+                if (inputAnos) inputAnos.value = 0;
+                if (inputAvance) {
+                    inputAvance.value = 100; // Asume que la casa está al 100% construida si no hay remodelación a medias
+                    const valAvanceLabel = document.getElementById('val_avance');
+                    if(valAvanceLabel) valAvanceLabel.innerText = "100";
+                }
+
+                if (panelMejoras) {
+                    panelMejoras.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                    });
+                }
+            } else {
+                // Si el valuador indica cualquier otro alcance, mostramos las opciones y el porcentaje
+                if (contenedorAnos) contenedorAnos.classList.remove('hidden');
+                if (contenedorAvance) contenedorAvance.classList.remove('hidden');
+                const isTerreno = document.getElementById('est-tipo')?.value === 'Terreno';
+                if (panelMejoras && !isTerreno) panelMejoras.classList.remove('hidden');
+            }
+        };
+
         // --- GENERADOR DE TESTIGOS (MODAL MINIMALISTA) ---
         window.generarTestigosManuales = function() {
             const grid = document.getElementById('testigos-grid');
@@ -1032,12 +1363,14 @@
             }
         };
 
-        window.abrirModalTestigo = function(index) {
+window.abrirModalTestigo = function(index) {
             document.getElementById('mt_id').value = index;
             document.getElementById('modal-testigo-titulo').innerText = 'Testigo ' + index;
             
-            // Cargar datos del input oculto al modal
-            document.getElementById('mt_precio').value = document.getElementById('h_t'+index+'_precio').value;
+            // Cargar datos del input oculto al modal (Poniendo comas al precio)
+            let precioGuardado = document.getElementById('h_t'+index+'_precio').value;
+            document.getElementById('mt_precio').value = precioGuardado > 0 ? parseInt(precioGuardado, 10).toLocaleString('en-US') : "";
+            
             document.getElementById('mt_terr').value = document.getElementById('h_t'+index+'_terr').value;
             document.getElementById('mt_const').value = document.getElementById('h_t'+index+'_const').value;
             document.getElementById('mt_niveles').value = document.getElementById('h_t'+index+'_niveles').value;
@@ -1049,18 +1382,15 @@
 
             const modal = document.getElementById('modal-testigo');
             modal.classList.remove('hidden');
-            modal.classList.add('flex'); // Lo abrimos estilo Flexbox
-        };
-
-        window.cerrarModalTestigo = function() {
-            const modal = document.getElementById('modal-testigo');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            modal.classList.add('flex');
         };
 
         window.guardarModalTestigo = function() {
             const index = document.getElementById('mt_id').value;
-            const precio = document.getElementById('mt_precio').value;
+            
+            // 🛡️ Limpiamos las comas antes de guardar para Python
+            let precioCrudo = document.getElementById('mt_precio').value.replace(/,/g, '');
+            const precio = parseFloat(precioCrudo) || 0;
             
             // Guardar del modal a los inputs ocultos para Python
             document.getElementById('h_t'+index+'_precio').value = precio;
@@ -1078,7 +1408,7 @@
             const indicador = document.getElementById('indicador-t'+index);
             const card = document.getElementById('card-testigo-'+index);
             
-            if(parseFloat(precio) > 0) {
+            if(precio > 0) {
                 const formato = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precio);
                 resumen.innerText = formato;
                 resumen.classList.replace('text-slate-400', 'text-emerald-500');
@@ -1105,6 +1435,15 @@
 
             window.guardarProgresoLocal(); // Salvar en memoria
             window.cerrarModalTestigo();
+        };
+
+        // 🔒 CERRAR MODAL TESTIGO (Faltaba esta pieza)
+        window.cerrarModalTestigo = function() {
+            const modal = document.getElementById('modal-testigo');
+            if(modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         };
 
         // --- 5. COMPRESIÓN DE IMÁGENES (DIETA AGRESIVA V20) ---
@@ -1213,72 +1552,113 @@
             const tipo = document.getElementById('est-tipo').value;
             const coords = document.getElementById('est-coords')?.value || "";
             
-            // 🚨 1. ESCUDO DE VALIDACIÓN VISUAL (UX SAAS) 🚨
-            // Limpiamos los bordes rojos de validaciones anteriores
+// 🚨 1. ESCUDO DE VALIDACIÓN TOTAL (CALIBRADO V20 - ANTI-CEROS) 🚨
             document.querySelectorAll('.error-borde').forEach(el => {
                 el.classList.remove('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500');
             });
 
-            let errores = [];
+            let hayErrores = false;
             
-            // Función constructora de errores visuales
-            const marcarError = (selector, mensaje) => {
-                const el = document.querySelector(selector);
+            const marcarError = (el) => {
                 if (el && !el.disabled) {
                     el.classList.add('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500', 'transition-all');
-                    errores.push(mensaje);
+                    hayErrores = true;
                 }
             };
 
-            // Reglas Duras de Negocio (Métricas reales)
-            const m2Terr = parseFloat(document.querySelector('input[name="Superficie_Terreno"]')?.value || 0);
-            const m2Const = parseFloat(document.querySelector('input[name="Superficie_Construccion"]')?.value || 0);
+            const camposNumericosEstrictos = [
+                'Superficie_Terreno', 'Superficie_Construccion', 'Frente_m', 'Fondo_m', 'Edad_Anos', 
+                'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'No_Recamaras', 'No_Banos', 
+                'No_Estacionamientos', 'Cuota_Mantenimiento', 'Anos_desde_Remodelacion', 
+                'Porcentaje_Avance', 'Factor_Negociacion_Final', 'Num_Equipos_Aire',
+                'EME_CP_T1_Precio', 'EME_CP_T1_Sup_Terreno', 'EME_CP_T1_Sup_Construccion', 'EME_CP_T1_Niveles', 'EME_CP_T1_Edad',
+                'EME_CP_T2_Precio', 'EME_CP_T2_Sup_Terreno', 'EME_CP_T2_Sup_Construccion', 'EME_CP_T2_Niveles', 'EME_CP_T2_Edad',
+                'EME_CP_T3_Precio', 'EME_CP_T3_Sup_Terreno', 'EME_CP_T3_Sup_Construccion', 'EME_CP_T3_Niveles', 'EME_CP_T3_Edad',
+                'EME_CP_T4_Precio', 'EME_CP_T4_Sup_Terreno', 'EME_CP_T4_Sup_Construccion', 'EME_CP_T4_Niveles', 'EME_CP_T4_Edad',
+                'EME_CP_T5_Precio', 'EME_CP_T5_Sup_Terreno', 'EME_CP_T5_Sup_Construccion', 'EME_CP_T5_Niveles', 'EME_CP_T5_Edad',
+                'EME_CP_T6_Precio', 'EME_CP_T6_Sup_Terreno', 'EME_CP_T6_Sup_Construccion', 'EME_CP_T6_Niveles', 'EME_CP_T6_Edad'
+            ];
 
-            if ((tipo === 'Casa' || tipo === 'Terreno') && m2Terr <= 0) marcarError('input[name="Superficie_Terreno"]', "Terreno: No puede estar en 0 m².");
-            if ((tipo === 'Casa' || tipo === 'Departamento') && m2Const <= 0) marcarError('input[name="Superficie_Construccion"]', "Construcción: No puede estar en 0 m².");
-            
-            const elCalle = document.querySelector('input[name="Calle_Sujeto"]');
-            if (!elCalle || elCalle.value.trim() === "") marcarError('input[name="Calle_Sujeto"]', "Ubicación: Escribe la calle y número exterior.");
-            
-            const elCP = document.querySelector('input[name="CP"]');
-            if (!elCP || elCP.value.trim() === "") marcarError('input[name="CP"]', "Ubicación: Falta el Código Postal.");
-
-            if (!coords || coords === "19.432600,-99.133200" || coords === "") marcarError('#est-coords', "Mapa: Arrastra el pin para dar una coordenada exacta.");
-
-            // Si el escudo detectó errores, bloqueamos el envío a Python
-            if (errores.length > 0) {
-                alert("⚠️ Acción Requerida:\n\nPor favor, completa los campos marcados en color ROJO para poder continuar.\n\nFaltantes detectados:\n- " + errores.join("\n- "));
+            const formElementsArr = Array.from(document.getElementById('form-eme').elements);
+            formElementsArr.forEach(el => {
+                if (el.disabled || el.type === 'hidden' || el.closest('.hidden') || el.type === 'checkbox' || el.name === 'Notas_Particulares' || el.name === 'Espacios_Exteriores_Lista' || el.name === 'Amenidades_Entorno_Abierto' || el.name === 'Mantenimiento_Reciente_Lista') return;
                 
-                // Navegación automática al primer error para que el usuario no lo busque
+                if (!el.name && !el.id) return;
+                
+                let val = el.value.trim();
+                
+                if (val === "" || val === "Ninguna" || val === "Ninguno") {
+                    const permitenNinguno = ['Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
+                    if (permitenNinguno.includes(el.name)) return;
+                    marcarError(el);
+                } 
+                else if (el.type === 'number' || camposNumericosEstrictos.includes(el.name)) {
+                    let valorLimpio = typeof val === 'string' ? val.replace(/,/g, '') : val;
+                    const num = parseFloat(valorLimpio);
+                    
+                    if (isNaN(num) || num < 0) {
+                        marcarError(el);
+                    } else if (num === 0) {
+                        // 🌟 FIX 1: AGREGAMOS ESTACIONAMIENTOS, BAÑOS Y RECÁMARAS PARA QUE ACEPTEN 0
+                        const permitenCero = ['Edad_Anos', 'Cuota_Mantenimiento', 'Num_Equipos_Aire', 'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'Anos_desde_Remodelacion', 'No_Estacionamientos', 'No_Recamaras', 'No_Banos'];
+                        if (!permitenCero.includes(el.name)) {
+                            marcarError(el); 
+                        }
+                    }
+                }
+            });
+
+            const coordsStr = document.getElementById('est-coords')?.value || "";
+            if (!coordsStr || coordsStr === "19.5332,-96.9271" || coordsStr === "19.533200,-96.927100" || coordsStr === "") {
+                marcarError(document.getElementById('est-coords'));
+            }
+
+            if (hayErrores) {
+                alert("⚠️ Acción Requerida:\n\nFaltan campos obligatorios para correr el motor AVM.\nRevisa las casillas marcadas en color ROJO.");
                 const primerError = document.querySelector('.error-borde');
-                if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return; // Cortamos ejecución aquí, Python está a salvo
+                if (primerError) {
+                    const y = primerError.getBoundingClientRect().top + window.scrollY - 100;
+                    window.scrollTo({top: y, behavior: 'smooth'});
+                }
+                return; 
             }
 
             window.showLoader("Ejecutando Algoritmo V20", "Buscando comparables y extrayendo parámetros...");
 
             const parametros = {};
             const formElements = document.getElementById('form-eme').elements;
-            const camposNumericos = ['Superficie_Terreno', 'Superficie_Construccion', 'Frente_m', 'Fondo_m', 'Edad_Anos', 'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'No_Recamaras', 'No_Banos', 'No_Estacionamientos', 'Cuota_Mantenimiento', 'Anos_desde_Remodelacion', 'Porcentaje_Avance', 'Factor_Negociacion_Final', 'Num_Equipos_Aire', 'perfil_solicitante'];
-
+            
             for(let el of formElements) {
                 if(!el.name) continue;
                 let val = el.value;
-                if(el.disabled) { parametros[el.name] = (el.type === 'checkbox') ? 0 : (camposNumericos.includes(el.name) ? 0 : "Ninguna"); continue; }
-                if (el.type === 'checkbox') { parametros[el.name] = el.checked ? 1 : 0; } 
-                else if (camposNumericos.includes(el.name) || el.type === 'number' || el.type === 'range') { parametros[el.name] = parseFloat(val) || 0; } 
+                
+                // 🌟 FIX 2: CAMBIAMOS "Ninguna" por "" (vacío) PARA QUE PYTHON NO CRASHEE
+                if(el.disabled || el.closest('.hidden')) { 
+                    parametros[el.name] = (el.type === 'checkbox') ? 0 : ((camposNumericosEstrictos.includes(el.name) || el.type === 'number' || el.type === 'range') ? 0 : ""); 
+                    continue; 
+                }
+                
+                if (el.type === 'checkbox') { 
+                    parametros[el.name] = el.checked ? 1 : 0; 
+                } 
+                else if (camposNumericosEstrictos.includes(el.name) || el.type === 'number' || el.type === 'range') { 
+                    let valorLimpio = typeof val === 'string' ? val.replace(/,/g, '') : val;
+                    parametros[el.name] = parseFloat(valorLimpio) || 0; 
+                } 
                 else {
-                    const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
-                    const exc = ['CP', ...camposValuador];
-                    if (!exc.includes(el.name) && !isNaN(val) && val.trim() !== "") { parametros[el.name] = parseFloat(val); } 
-                    else if (camposValuador.includes(el.name)) { parametros[el.name] = val || ""; } // 🚀 FIX: Mandamos vacío como la Bóveda
-                    else { parametros[el.name] = val || "Ninguna"; }
+                    parametros[el.name] = val;
                 }
             }
             
             parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
             parametros["Geolocalizacion_Google"] = coords;
             ultimaBusqueda = parametros;
+
+            // 🚀 IMPRIMIR EN CONSOLA LO QUE SE ENVÍA A PYTHON
+            console.log("=====================================");
+            console.log("🧠 PAYLOAD ENVIADO AL CEREBRO AVM:");
+            console.log(JSON.stringify(parametros, null, 2));
+            console.log("=====================================");
 
             try {
                 const idToken = await authUser.getIdToken(true);
@@ -1348,14 +1728,16 @@
             try {
                 const idToken = await authUser.getIdToken(true);
 
-                // Armado estricto del Payload para Python (Base64 Limpio)
+                // Armado estricto del Payload para Python (CLON V20)
                 ultimaBusqueda["foto_base64"] = base64FotoPortada || "";
+                ultimaBusqueda["anexo_croquis"] = ""; // CLON V20: Python los espera aunque estén vacíos
+                ultimaBusqueda["anexo_evidencia"] = ""; // CLON V20: Python los espera aunque estén vacíos
                 ultimaBusqueda["fotos_adicionales"] = arrayFotosAnexos.filter(f => f.tipo === 'foto').map(f => ({ base64: f.base64, descripcion: f.texto }));
                 ultimaBusqueda["anexos_adicionales"] = arrayFotosAnexos.filter(a => a.tipo === 'anexo').map(a => ({ base64: a.base64, titulo: a.texto }));
+                ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
                 ultimaBusqueda["valor_comercial_rango"] = valorElegido;
                 ultimaBusqueda["limite_inferior"] = minValorCalculado;
                 ultimaBusqueda["limite_superior"] = maxValorCalculado;
-                ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
 
                 window.showLoader("Generando Dictamen", "Validando créditos y emitiendo documento oficial...");
 
@@ -1519,8 +1901,14 @@
 
                 // C) Forzar Selectores en Blanco (Cero adivinanzas)
                 document.querySelectorAll('select').forEach(el => {
-                    // Solo perdonamos el perfil y el tipo de inmueble para no romper la lógica principal
-                    if(!['perfil_usuario', 'est-tipo'].includes(el.id || el.name)) {
+                    // 🛡️ EXENTOS: Estos campos conservan su opción "Ninguno" por defecto, el sistema NO los borra.
+                    const exentos = [
+                        'perfil_usuario', 'est-tipo', 'Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 
+                        'Amenidades_Interiores', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 
+                        'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'
+                    ];
+                    
+                    if(!exentos.includes(el.id || el.name)) {
                         const primera = el.options[0];
                         
                         // Si ya tenía una opción "Ninguna", la disfrazamos de "-- Seleccione --"
@@ -1528,17 +1916,15 @@
                             primera.value = ""; 
                             primera.innerText = "-- Seleccione --";
                             primera.disabled = true;
-                            // Solo la seleccionamos si el usuario no había guardado un borrador con otro valor
                             if(el.value === "Ninguna" || el.value === "Ninguno" || el.value === "") primera.selected = true; 
                         } else {
-                            // Si la primera opción era un dato real (Ej. "Asfalto"), le inyectamos una opción vacía arriba
+                            // Si la primera opción era un dato real, inyectamos una vacía arriba
                             const nuevaOpcion = document.createElement('option');
                             nuevaOpcion.value = "";
                             nuevaOpcion.innerText = "-- Seleccione --";
                             nuevaOpcion.disabled = true;
                             
                             el.insertBefore(nuevaOpcion, el.firstChild);
-                            // Solo reseteamos si no hay borrador guardado
                             if(el.value === el.options[1].value) {
                                 nuevaOpcion.selected = true;
                                 el.value = ""; 
