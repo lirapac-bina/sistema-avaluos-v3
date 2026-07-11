@@ -794,28 +794,52 @@
 
         const recalculateSection = (type) => {
             const config = window.comps[type];
-            let sum = 0, count = 0, arr = [];
+            let sumOrig = 0, countOrig = 0, arrOrig = [];
+            
             for(let i=1; i<=config.count; i++){
-                const el = document.getElementById(`${type}-unitario-${i}`);
-                if(el){
-                    el.classList.remove('unit-value-max','unit-value-min');
-                    const v = parseFloat(el.dataset.value||0);
-                    if(v>0 && isFinite(v)){ sum+=v; count++; arr.push({v, el}); }
+                // Limpiamos los colores brincantes si es que quedaron pegados
+                const elHom = document.getElementById(`${type}-unitario-${i}`);
+                if(elHom) elHom.classList.remove('unit-value-max','unit-value-min');
+                
+                const elOrig = document.getElementById(`${type}-orig-${i}`);
+                if(elOrig){
+                    elOrig.classList.remove('unit-value-max','unit-value-min');
+                    
+                    // Extraemos el número crudo (ignorando signos de $ y comas) de la columna ORIGINAL
+                    const vOrigStr = elOrig.textContent.replace(/[^0-9.-]+/g, '');
+                    const vOrig = parseFloat(vOrigStr);
+                    
+                    if(vOrig > 0 && isFinite(vOrig)){ 
+                        sumOrig += vOrig; 
+                        countOrig++; 
+                        arrOrig.push(vOrig); 
+                    }
                 }
             }
-            document.getElementById(config.avgId).textContent = formatCurrency(count>0 ? sum/count : 0);
             
-            const dVal = document.getElementById(`${type}-dispersion-value`), dStat = document.getElementById(`${type}-dispersion-status`);
-            if(arr.length >= 2){
-                arr.sort((a,b)=>a.v - b.v);
-                arr[0].el.classList.add('unit-value-min');
-                arr[arr.length-1].el.classList.add('unit-value-max');
-                const disp = arr[0].v>0 ? (arr[arr.length-1].v / arr[0].v) : 0;
+            // 1. Promedio basado SOLO en Original
+            document.getElementById(config.avgId).textContent = formatCurrency(countOrig > 0 ? sumOrig / countOrig : 0);
+            
+            // 2. Dispersión basada SOLO en Original (Sin alterar los colores)
+            const dVal = document.getElementById(`${type}-dispersion-value`);
+            const dStat = document.getElementById(`${type}-dispersion-status`);
+            
+            if(arrOrig.length >= 2){
+                arrOrig.sort((a,b) => a - b);
+                
+                const disp = arrOrig[0] > 0 ? (arrOrig[arrOrig.length-1] / arrOrig[0]) : 0;
                 dVal.textContent = formatNumber(disp, 4);
-                if(disp < MAX_DISPERSION && disp > 0){ dStat.textContent='CUMPLE (<1.30)'; dStat.className='font-black text-base text-emerald-600';}
-                else { dStat.textContent='NO CUMPLE (≥1.30)'; dStat.className='font-black text-base text-rose-600'; }
+                
+                if(disp < MAX_DISPERSION && disp > 0){ 
+                    dStat.textContent = 'CUMPLE (<1.30)'; 
+                    dStat.className = 'font-black text-base text-emerald-600';
+                } else { 
+                    dStat.textContent = 'NO CUMPLE (≥1.30)'; 
+                    dStat.className = 'font-black text-base text-rose-600'; 
+                }
             } else {
-                if(dVal) dVal.textContent='N/A'; if(dStat) { dStat.textContent='Faltan datos'; dStat.className='font-black text-base text-gray-500'; }
+                if(dVal) dVal.textContent = 'N/A'; 
+                if(dStat) { dStat.textContent = 'Faltan datos'; dStat.className = 'font-black text-base text-gray-500'; }
             }
         };
 
@@ -1283,38 +1307,113 @@
         window.exportToPDF = () => {
             const fGys = document.getElementById('folio-gys').value || 'Sin_Folio';
             const html = document.createElement('div');
-            html.style = "padding:20px; font-family:sans-serif; background:#fff; color:#000; font-size:10px;";
-            html.innerHTML = `<h2 style="color:#0d9488; text-align:center; font-size:18px; margin-bottom:10px;">Estudio de Mercado - Folio: ${fGys}</h2>`;
+            // Ancho forzado a 270mm para caber perfecto en A4 Landscape con márgenes
+            html.style = "padding:10px; font-family:Arial, sans-serif; background:#fff; color:#000; font-size:9px; width: 275mm;";
+            html.innerHTML = `<h2 style="color:#0f766e; text-align:center; font-size:16px; margin-bottom:10px; text-transform:uppercase; border-bottom: 2px solid #0f766e; padding-bottom:5px;">Estudio de Mercado - Folio: ${fGys}</h2>`;
             
             ['terreno', 'mercado', 'rentas'].forEach(type => {
                 const sec = document.getElementById(`section-${type}`);
                 if(!sec) return;
-                html.innerHTML += `<div style="background:#f3f4f6; padding:8px; margin-top:15px; font-weight:bold; text-transform:uppercase;">${sec.querySelector('h2').innerText}</div>`;
+                
+                const title = sec.querySelector('h2').innerText;
+                html.innerHTML += `<div style="background:#0f766e; color:#fff; padding:6px; margin-top:15px; font-weight:bold; text-transform:uppercase; font-size:11px; border-radius:4px 4px 0 0;">${title}</div>`;
                 
                 // Info Sujeto
-                let sujHTML = `<div style="padding:5px; border:1px solid #ddd; display:flex; justify-content:space-between; margin-bottom:5px;">`;
+                let sujHTML = `<div style="padding:6px; border:1px solid #0f766e; border-top:none; display:flex; justify-content:space-around; background:#f0fdfa; margin-bottom:5px; font-size:10px;">`;
                 window.comps[type].sujetoFields.forEach(f => {
-                    sujHTML += `<span><b>Sujeto ${f}:</b> ${document.getElementById(`${type}-sujeto-${f}`).value}</span>`;
+                    const val = document.getElementById(`${type}-sujeto-${f}`).value || '0';
+                    sujHTML += `<span><b>Sujeto ${f.toUpperCase()}:</b> ${val}</span>`;
                 });
                 html.innerHTML += sujHTML + `</div>`;
 
-                // Clonar Tabla
-                const table = sec.querySelector('table').cloneNode(true);
-                // Limpiar inputs, pasar a texto
-                table.querySelectorAll('input').forEach(inp => {
-                    const txt = document.createTextNode(inp.value);
-                    inp.parentNode.replaceChild(txt, inp);
+                // Construir tabla limpia para PDF (Evita el desborde web)
+                let tableHTML = `<table style="width:100%; border-collapse:collapse; text-align:center; margin-bottom:5px; table-layout: fixed; word-wrap: break-word;">`;
+                
+                // Cabeceras
+                tableHTML += `<thead><tr style="background:#e5e7eb; font-size:8px;">`;
+                const headers = Array.from(sec.querySelectorAll('thead th'));
+                headers.forEach((th, index) => {
+                    let text = th.innerText.replace(' ↓','').replace(' ↑','').trim();
+                    let width = "auto";
+                    if(index === 0) width = "3%"; 
+                    else if(text.includes('URL')) width = "25%"; 
+                    else if(text.includes('PRECIO') || text.includes('RENTA')) width = "12%";
+                    else if(text.includes('HOM.')) width = "12%";
+                    
+                    tableHTML += `<th style="border:1px solid #9ca3af; padding:4px; width:${width};">${text}</th>`;
                 });
-                table.style = "width:100%; border-collapse:collapse; text-align:center; border: 1px solid #ccc;";
-                table.querySelectorAll('th, td').forEach(c => c.style="border:1px solid #ccc; padding:4px;");
-                html.appendChild(table);
+                tableHTML += `</tr></thead><tbody>`;
 
-                // Dispersión
-                html.innerHTML += `<div style="text-align:right; font-size:11px; margin-top:5px;"><b>Dispersión Calculada:</b> ${document.getElementById(`${type}-dispersion-value`).innerText} | <b>Estado:</b> ${document.getElementById(`${type}-dispersion-status`).innerText}</div>`;
+                // Filas
+                for(let i=1; i<=window.comps[type].count; i++) {
+                    const trOriginal = document.getElementById(`${type}-rows`).children[i-1];
+                    if(!trOriginal) continue;
+                    
+                    tableHTML += `<tr style="font-size:8px; background:${i%2===0?'#f9fafb':'#ffffff'};">`;
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px; font-weight:bold;">${i}</td>`;
+                    
+                    // Columnas de Inputs
+                    window.comps[type].cols.forEach(col => {
+                        const val = document.getElementById(`${type}-${col.id}-${i}`).value || '';
+                        tableHTML += `<td style="border:1px solid #d1d5db; padding:3px;">${val}</td>`;
+                    });
+                    
+                    // Rango
+                    const rango = document.getElementById(`${type}-rango-${i}`).innerText;
+                    const colorRango = rango.includes('CUMPLE') ? '#166534' : '#991b1c';
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px; color:${colorRango}; font-weight:bold;">${rango}</td>`;
+                    
+                    // Original
+                    const orig = document.getElementById(`${type}-orig-${i}`).innerText;
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px;">${orig}</td>`;
+                    
+                    // Factor
+                    const factorId = type === 'terreno' ? `${type}-fsup-${i}` : `${type}-fedad-${i}`;
+                    const factor = document.getElementById(factorId).innerText;
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px;">${factor}</td>`;
+                    
+                    // Homologado
+                    const hom = document.getElementById(`${type}-unitario-${i}`).innerText;
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px; font-weight:bold; color:#0f766e;">${hom}</td>`;
+                    
+                    // URLs (Acortadas para que no rompan la tabla)
+                    const urlComp = document.getElementById(`${type}-url-completa-${i}`).value || '';
+                    const urlAcor = document.getElementById(`${type}-liga-acortada-${i}`).value || '';
+                    let displayUrl = urlAcor ? urlAcor : (urlComp.length > 50 ? urlComp.substring(0,47)+'...' : urlComp);
+                    tableHTML += `<td style="border:1px solid #d1d5db; padding:3px; font-size:7px; word-break:break-all;"><a href="${urlComp}" style="color:#2563eb; text-decoration:none;">${displayUrl}</a></td>`;
+                    
+                    tableHTML += `</tr>`;
+                }
+                tableHTML += `</tbody></table>`;
+                html.innerHTML += tableHTML;
+
+                // Promedio y Dispersión
+                const dispVal = document.getElementById(`${type}-dispersion-value`).innerText;
+                const dispStat = document.getElementById(`${type}-dispersion-status`).innerText;
+                const prom = document.getElementById(`${type}-promedio-unitario`).innerText;
+                
+                html.innerHTML += `<div style="text-align:right; font-size:10px; margin-bottom:10px; padding:6px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:0 0 4px 4px;">
+                    <b style="color:#4b5563;">Promedio (Original):</b> <span style="color:#0f766e; font-weight:black; font-size:12px; margin-right:20px;">${prom}</span>
+                    <b style="color:#4b5563;">Dispersión (Sobre Original):</b> <span style="font-weight:bold;">${dispVal}</span> | 
+                    <b style="color:#4b5563;">Estado:</b> <span style="font-weight:black; color:${dispStat.includes('NO CUMPLE')?'#e11d48':'#16a34a'}">${dispStat}</span>
+                </div>`;
             });
 
-            document.body.appendChild(html);
-            html2pdf().from(html).set({ margin: 10, filename: `Mercado_${fGys}.pdf`, image: {type: 'jpeg', quality: 0.98}, html2canvas: {scale: 2}, jsPDF: {unit: 'mm', format: 'a4', orientation: 'landscape'} }).save().then(() => html.remove());
+            // Motor de renderizado en alta definición (Oculto del usuario)
+            const wrap = document.createElement('div');
+            wrap.style.position = 'absolute';
+            wrap.style.left = '-9999px';
+            wrap.style.top = '0';
+            wrap.appendChild(html);
+            document.body.appendChild(wrap);
+
+            html2pdf().from(html).set({ 
+                margin: 10, 
+                filename: `Investigación de Mercado_${fGys}.pdf`, 
+                image: {type: 'jpeg', quality: 1}, 
+                html2canvas: {scale: 4, useCORS: true, letterRendering: true}, // Resolucion 4K
+                jsPDF: {unit: 'mm', format: 'a4', orientation: 'landscape'} 
+            }).save().then(() => wrap.remove());
         };
 
         // --- 4. INTEGRACIÓN FIREBASE & UI ---
