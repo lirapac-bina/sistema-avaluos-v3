@@ -85,7 +85,7 @@
                 </div>
             </button>
 
-            <button onclick="window.location.href='estimaciones.html'" class="group glass-card rounded-3xl p-6 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(79,70,229,0.15)] hover:border-indigo-200 transition-all duration-300 fade-in-up delay-200 relative overflow-hidden flex flex-col">
+            <button onclick="window.location.href='dashboard_estimaciones.html'" class="group glass-card rounded-3xl p-6 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(79,70,229,0.15)] hover:border-indigo-200 transition-all duration-300 fade-in-up delay-200 relative overflow-hidden flex flex-col">
                 <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300 shadow-inner relative z-10 shrink-0">
@@ -93,12 +93,12 @@
                 </div>
                 
                 <div class="w-full relative z-10">
-                    <h2 class="text-xl font-black text-slate-800 mb-0.5">AvEME</h2>
+                    <h2 class="text-xl font-bold text-slate-800 mb-0.5">AvEME</h2>
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Reporte Automatizado</p>
                 </div>
                 
                 <div class="mt-4 flex items-center text-xs font-bold text-indigo-600 gap-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 relative z-10">
-                    Generar Reporte <span class="material-symbols-rounded text-[14px]">arrow_forward</span>
+                    Ingresar al Panel <span class="material-symbols-rounded text-[14px]">arrow_forward</span>
                 </div>
             </button>
 
@@ -232,5 +232,35 @@
     </script>
 </body>
 </html>
+
+<div id="cookie-banner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-slate-900 text-slate-300 p-5 rounded-2xl shadow-2xl z-[9999] text-xs transform transition-transform translate-y-[150%] flex flex-col gap-3 border border-slate-700">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-rounded text-indigo-400 text-2xl">cookie</span>
+            <p class="leading-relaxed">
+                <strong class="text-white">Uso de Cookies:</strong> AvEME utiliza cookies estrictamente técnicas y esenciales para mantener tu sesión segura. No utilizamos cookies de rastreo publicitario. Al iniciar sesión, aceptas nuestra <a href="#" class="text-indigo-400 hover:text-indigo-300 underline">Política de Privacidad</a>.
+            </p>
+        </div>
+        <div class="flex justify-end">
+            <button onclick="aceptarCookies()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-lg transition-colors active:scale-95 shadow-md">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Lógica para mostrar el banner solo si el usuario no ha aceptado antes
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('cookies_aceptadas_aveme')) {
+                setTimeout(() => {
+                    document.getElementById('cookie-banner').classList.remove('translate-y-[150%]');
+                }, 1500); // Aparece 1.5 segundos después de cargar la página
+            }
+        });
+
+        function aceptarCookies() {
+            localStorage.setItem('cookies_aceptadas_aveme', 'true');
+            document.getElementById('cookie-banner').classList.add('translate-y-[150%]');
+        }
+    </script>
 </body>
 </html>

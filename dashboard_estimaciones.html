@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvEME - Panel de Cliente</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' },
+                        brand: { 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                } 
+            } 
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .dark body { background-color: #0f172a; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .dark .glass-card { background: rgba(30, 41, 59, 0.8); border-color: rgba(255, 255, 255, 0.05); }
+        .thin-scroll::-webkit-scrollbar { width: 6px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 6px; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-up { animation: fadeUp 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- NAVEGACIÓN -->
+    <nav class="fixed top-0 w-full glass-card shadow-sm z-50 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <span class="material-symbols-rounded">real_estate_agent</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">AvEME</h1>
+                    <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Panel de Cliente</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="toggleDarkMode()" class="p-2 text-slate-400 hover:text-indigo-500 transition-colors bg-slate-100 dark:bg-slate-800 rounded-full">
+                    <span class="material-symbols-rounded" id="icon-theme">dark_mode</span>
+                </button>
+                
+                <div id="user-menu" class="hidden items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase">Bienvenido</p>
+                        <p id="lbl-username" class="text-sm font-bold truncate max-w-[120px]">Cargando...</p>
+                    </div>
+                    <!-- FIX: referrerpolicy evita que la foto de Google salga rota (Error 403) -->
+                    <img id="img-avatar" src="" class="w-10 h-10 rounded-full border-2 border-indigo-200 object-cover hidden" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+                    <button onclick="cerrarSesion()" class="p-2 text-rose-500 hover:bg-rose-50 rounded-full transition-colors ml-2" title="Cerrar Sesión">
+                        <span class="material-symbols-rounded">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="pantalla-login" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl w-full max-w-md text-center border border-slate-100 dark:border-slate-700 animate-fade-up">
+            <span class="material-symbols-rounded text-6xl text-indigo-500 mb-4">vpn_key</span>
+            <h2 class="text-2xl font-bold mb-2 dark:text-white">Acceso al Panel</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-8">Inicia sesión para gestionar tus estimaciones y consultar tu saldo.</p>
+            <button onclick="iniciarSesionGoogle()" class="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold py-4 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-3">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5"> Continuar con Google
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (DASHBOARD) -->
+    <main id="pantalla-dashboard" class="hidden pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 animate-fade-up">
+        
+        <!-- CABECERA DE ACCIÓN -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-indigo-900 to-slate-900 rounded-3xl p-8 shadow-lg text-white">
+            <div>
+                <h2 class="text-2xl font-bold mb-1">Mi Panel de Estimaciones</h2>
+                <p class="text-sm text-indigo-200">Gestiona tus AVMs y descarga tus reportes oficiales.</p>
+            </div>
+            <div class="flex gap-3 w-full sm:w-auto">
+                <a href="estimaciones.html" class="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold px-6 py-3 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">add_circle</span> Nueva Estimación
+                </a>
+            </div>
+        </div>
+
+        <!-- TARJETAS DE MÉTRICAS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Saldo -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shrink-0">
+                    <span class="material-symbols-rounded text-3xl">account_balance_wallet</span>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saldo Disponible</p>
+                    <p class="text-3xl font-bold dark:text-white" id="metrica-creditos">0</p>
+                </div>
+                <button onclick="abrirModalPagosDinamic()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+                    Recargar
+                </button>
+            </div>
+            <!-- Terminados -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center shrink-0">
+                    <span class="material-symbols-rounded text-3xl">task_alt</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estimaciones Listas</p>
+                    <p class="text-3xl font-bold dark:text-white" id="metrica-terminados">0</p>
+                </div>
+            </div>
+            <!-- En Proceso -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shrink-0">
+                    <span class="material-symbols-rounded text-3xl">hourglass_top</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">En Proceso</p>
+                    <p class="text-3xl font-bold dark:text-white" id="metrica-proceso">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA HISTORIAL -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                <h3 class="font-bold text-lg dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500">history</span> Historial de AVMs
+                </h3>
+            </div>
+            <div class="overflow-x-auto thin-scroll">
+                <table class="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">
+                            <th class="p-4 border-b border-slate-200 dark:border-slate-700">Folio / Fecha</th>
+                            <th class="p-4 border-b border-slate-200 dark:border-slate-700">Inmueble evaluado</th>
+                            <th class="p-4 border-b border-slate-200 dark:border-slate-700">Valor Concluido</th>
+                            <th class="p-4 border-b border-slate-200 dark:border-slate-700 text-center">Estatus</th>
+                            <th class="p-4 border-b border-slate-200 dark:border-slate-700 text-center">Documento Oficial</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-expedientes" class="text-sm">
+                        <tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold"><span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span><br>Cargando información...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 💳 MODAL DE PAGOS (STRIPE) -->
+    <div id="paymentModal" class="fixed inset-0 z-[9999] hidden bg-slate-900/90 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative animate-fade-up flex flex-col max-h-[90vh]">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500"></div>
+            <div class="p-8 text-center flex-1 overflow-y-auto thin-scroll">
+                <div class="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-rounded text-4xl">storefront</span>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">Comprar Créditos</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Selecciona un paquete para recargar tu cuenta al instante.</p>
+                
+                <div id="contenedor-paquetes-pago" class="flex flex-col gap-3 mb-6">
+                    <span class="material-symbols-rounded animate-spin text-indigo-500 text-3xl mx-auto">sync</span>
+                </div>
+
+                <button onclick="cerrarModalPagos()" class="w-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 py-3 rounded-xl font-bold transition-colors text-sm">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS CORE -->
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+        // FIX: Obliga a Google a mostrar el selector de cuentas siempre, solucionando la cuenta "atrapada"
+        provider.setCustomParameters({ prompt: 'select_account' }); 
+        
+        let currentUser = null;
+        let unsubscribeExpedientes = null;
+        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+        // TEMA OSCURO
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); localStorage.theme = 'light';
+                document.getElementById('icon-theme').innerText = 'dark_mode';
+            } else {
+                html.classList.add('dark'); localStorage.theme = 'dark';
+                document.getElementById('icon-theme').innerText = 'light_mode';
+            }
+        }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) { toggleDarkMode(); }
+
+        // AUTENTICACIÓN Y MÁQUINA DE ESTADOS
+        function iniciarSesionGoogle() { 
+            const freshProvider = new firebase.auth.GoogleAuthProvider();
+            freshProvider.setCustomParameters({ prompt: 'select_account' });
+            auth.signInWithPopup(freshProvider).catch(e => alert(e.message)); 
+        }
+        
+        function cerrarSesion() { 
+            auth.signOut().then(() => {
+                // FIX: Destrucción de Cookies del ecosistema y caché local
+                document.cookie = "leezar_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.reload();
+            }); 
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('pantalla-login').classList.add('hidden');
+                document.getElementById('pantalla-dashboard').classList.remove('hidden');
+                document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('user-menu').classList.add('flex');
+                
+                // FIX: Protección nivel diamante contra correos nulos o privados
+                const nombreSeguro = user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario AvEME');
+                document.getElementById('lbl-username').innerText = nombreSeguro;
+                
+                if(user.photoURL) {
+                    const img = document.getElementById('img-avatar');
+                    img.src = user.photoURL; img.classList.remove('hidden');
+                }
+
+                sincronizarPerfil(user);
+                cargarExpedientes(user);
+            } else {
+                currentUser = null;
+                if(unsubscribeExpedientes) unsubscribeExpedientes();
+                document.getElementById('pantalla-login').classList.remove('hidden');
+                document.getElementById('pantalla-dashboard').classList.add('hidden');
+                document.getElementById('user-menu').classList.add('hidden');
+                document.getElementById('user-menu').classList.remove('flex');
+            }
+        });
+
+        // SINCRONIZAR USUARIO Y SALDO
+        function sincronizarPerfil(user) {
+            db.collection('usuarios_estimador').doc(user.uid).onSnapshot(doc => {
+                if(!doc.exists) {
+                    // FIX: Salvavidas para evitar guardar datos nulos en la base de datos
+                    db.collection('usuarios_estimador').doc(user.uid).set({
+                        email: user.email || 'correo-oculto@aveme.com', 
+                        nombre: user.displayName || 'Usuario AvEME', 
+                        foto: user.photoURL || '', 
+                        creditos: 0, 
+                        rol: 'Cliente'
+                    });
+                } else {
+                    const data = doc.data();
+                    document.getElementById('metrica-creditos').innerText = data.creditos || 0;
+                }
+            });
+        }
+
+// CARGAR HISTORIAL DE EXPEDIENTES
+        function cargarExpedientes(user) {
+            // Buscamos expedientes que haya creado este usuario (su ID suele estar al inicio del doc.id)
+            unsubscribeExpedientes = db.collection('expedientes_avaluos')
+                .onSnapshot(snapshot => {
+                    const tbody = document.getElementById('tabla-expedientes');
+                    let html = '';
+                    let countTerminados = 0;
+                    let countProceso = 0;
+
+                    // Filtramos localmente para asegurar que solo vea los suyos
+                    const misFolios = snapshot.docs.filter(doc => doc.id.startsWith(user.uid));
+
+                    // Ordenamos por los más recientes
+                    misFolios.sort((a,b) => {
+                        const timeA = parseInt(a.id.split('_')[1]) || 0;
+                        const timeB = parseInt(b.id.split('_')[1]) || 0;
+                        return timeB - timeA;
+                    });
+
+                    if(misFolios.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-semibold">Aún no tienes estimaciones generadas. ¡Crea la primera!</td></tr>`;
+                        document.getElementById('metrica-terminados').innerText = "0";
+                        document.getElementById('metrica-proceso').innerText = "0";
+                        return;
+                    }
+
+                    misFolios.forEach(doc => {
+                        const data = doc.data();
+                        
+                        const idCorto = doc.id.substring(doc.id.indexOf('_')+1);
+                        const fecha = new Date(parseInt(idCorto)).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+                        
+                        // 🕵️‍♂️ FIX CAZADOR DE PARÁMETROS V2.0: Rastreo profundo para expedientes nuevos y viejos
+                        let parametros = data.parametros_motor || {};
+                        // Si Python lo guardó como String en algún momento, lo convertimos a Objeto
+                        if (typeof parametros === 'string') {
+                            try { parametros = JSON.parse(parametros); } catch(e) { parametros = {}; }
+                        }
+                        
+                        // Buscamos el tipo (Soporta estructura nueva y legacy)
+                        const tipo = parametros.Tipo_Inmueble || parametros.tipo_inmueble || data.tipoTramite || 'Inmueble';
+                        
+                        // Buscamos la calle (Soporta motor nuevo o el viejo Checklist)
+                        let calle = parametros.Calle_Sujeto || parametros.calle || data.direccion;
+                        
+                        // Fallback a versión vieja (Los que hiciste en julio)
+                        if (!calle && data.checklist && data.checklist['UBICACION_MAPS']) {
+                            calle = data.checklist['UBICACION_MAPS'].direccion || data.checklist['UBICACION_MAPS'].ubicacion;
+                        }
+                        if (!calle) calle = 'Dirección no especificada';
+                        
+                        // Limpieza estética para que no rompa la tabla
+                        if(calle.length > 50) calle = calle.substring(0, 47) + '...';
+
+                        const valorCierre = data.valor_comercial_rango ? formatoMoneda.format(data.valor_comercial_rango) : '---';
+                        
+                        const estatusMotor = data.estatus_motor || 'PROCESANDO';
+                        
+                        // 🕵️‍♂️ FIX CAZADOR DE PDF: Buscamos la URL en todas sus posibles rutas (Raíz o Anidada)
+                        const finalUrl = data.pdf_url || 
+                                         (data.resultados_motor && data.resultados_motor.auditoria_inyeccion && data.resultados_motor.auditoria_inyeccion.pdf_url) || 
+                                         (data.resultados_motor && data.resultados_motor.pdf_url);
+
+                        let badgeEstatus = '';
+                        let btnAccion = '';
+
+                        if (finalUrl || estatusMotor === 'COMPLETADO') {
+                            countTerminados++;
+                            badgeEstatus = `<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-emerald-200 dark:border-emerald-800">COMPLETADO</span>`;
+                            
+                            if (finalUrl) {
+                                btnAccion = `<a href="${finalUrl}" target="_blank" class="bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm"><span class="material-symbols-rounded text-[16px]">download</span> Reporte</a>`;
+                            } else {
+                                btnAccion = `<span class="text-xs text-slate-500 font-semibold italic">Generando archivo...</span>`;
+                            }
+                        } else if (estatusMotor === 'ERROR') {
+                            badgeEstatus = `<span class="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-rose-200 dark:border-rose-800">ERROR IA</span>`;
+                            btnAccion = `<span class="text-xs text-rose-500 font-bold">Consulta a Soporte</span>`;
+                        } else {
+                            countProceso++;
+                            badgeEstatus = `<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-amber-200 dark:border-amber-800 flex items-center gap-1"><span class="material-symbols-rounded text-[12px] animate-spin">sync</span> CALCULANDO</span>`;
+                            btnAccion = `<button disabled class="bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 text-xs font-bold px-4 py-2 rounded-lg cursor-not-allowed">Procesando...</button>`;
+                        }
+
+                        html += `
+                        <tr class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td class="p-4">
+                                <p class="font-bold text-slate-800 dark:text-slate-200 text-xs">#${idCorto.substring(0,8)}</p>
+                                <p class="text-[10px] text-slate-500 font-semibold uppercase">${fecha}</p>
+                            </td>
+                            <td class="p-4 max-w-[250px]">
+                                <p class="font-semibold text-slate-700 dark:text-slate-300 text-xs truncate" title="${calle}">${calle}</p>
+                                <p class="text-[10px] text-indigo-500 font-bold uppercase">${tipo}</p>
+                            </td>
+                            <td class="p-4 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                                ${valorCierre}
+                            </td>
+                            <td class="p-4 text-center">${badgeEstatus}</td>
+                            <td class="p-4 flex justify-center">${btnAccion}</td>
+                        </tr>`;
+                    });
+
+                    tbody.innerHTML = html;
+                    document.getElementById('metrica-terminados').innerText = countTerminados;
+                    document.getElementById('metrica-proceso').innerText = countProceso;
+                });
+        }
+
+        // TIENDA STRIPE
+        async function abrirModalPagosDinamic() {
+            const modal = document.getElementById('paymentModal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            
+            const contenedor = document.getElementById('contenedor-paquetes-pago');
+            try {
+                const doc = await db.collection('configuracion').doc('estimador_eme').get();
+                if(doc.exists && doc.data().paquetes && doc.data().paquetes.length > 0) {
+                    let html = '';
+                    doc.data().paquetes.forEach(p => {
+                        html += `
+                        <button onclick="comprarPaqueteStripe('${p.nombre}', ${p.precio}, ${p.creditos})" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl hover:border-indigo-500 transition-all text-left flex justify-between items-center group active:scale-95">
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white group-hover:text-indigo-500">${p.nombre}</p>
+                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${p.creditos} Créditos</p>
+                            </div>
+                            <p class="font-bold text-emerald-600 text-lg">$${p.precio} <span class="text-[10px] text-slate-400">MXN</span></p>
+                        </button>`;
+                    });
+                    contenedor.innerHTML = html;
+                } else {
+                    contenedor.innerHTML = '<p class="text-sm text-rose-500 font-bold">Catálogo no disponible.</p>';
+                }
+            } catch(e) {
+                contenedor.innerHTML = '<p class="text-sm text-rose-500 font-bold">Error de red.</p>';
+            }
+        }
+
+        function cerrarModalPagos() {
+            const modal = document.getElementById('paymentModal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        async function comprarPaqueteStripe(nombre, precio, creditos) {
+            try {
+                const idToken = await currentUser.getIdToken(true);
+                document.getElementById('contenedor-paquetes-pago').innerHTML = '<span class="material-symbols-rounded animate-spin text-indigo-500 text-3xl mx-auto">sync</span><p class="text-xs text-slate-400">Redirigiendo a pasarela segura...</p>';
+                
+                const response = await fetch('/.netlify/functions/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({ 
+                        expedienteId: 'recarga_directa', returnUrl: window.location.href, nombrePaquete: nombre, precio: precio, creditos: creditos
+                    })
+                });
+                const data = await response.json();
+                if (data.url) window.location.href = data.url; 
+                else throw new Error("Fallo en Stripe");
+            } catch (error) {
+                alert("Error al procesar pago.");
+                cerrarModalPagos();
+            }
+        }
+    </script>
+
+    <div id="cookie-banner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-slate-900 text-slate-300 p-5 rounded-2xl shadow-2xl z-[9999] text-xs transform transition-transform translate-y-[150%] flex flex-col gap-3 border border-slate-700">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-rounded text-indigo-400 text-2xl">cookie</span>
+            <p class="leading-relaxed">
+                <strong class="text-white">Uso de Cookies:</strong> AvEME utiliza cookies estrictamente técnicas y esenciales para mantener tu sesión segura. No utilizamos cookies de rastreo publicitario. Al iniciar sesión, aceptas nuestra <a href="#" class="text-indigo-400 hover:text-indigo-300 underline">Política de Privacidad</a>.
+            </p>
+        </div>
+        <div class="flex justify-end">
+            <button onclick="aceptarCookies()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-lg transition-colors active:scale-95 shadow-md">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Lógica para mostrar el banner solo si el usuario no ha aceptado antes
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('cookies_aceptadas_aveme')) {
+                setTimeout(() => {
+                    document.getElementById('cookie-banner').classList.remove('translate-y-[150%]');
+                }, 1500); // Aparece 1.5 segundos después de cargar la página
+            }
+        });
+
+        function aceptarCookies() {
+            localStorage.setItem('cookies_aceptadas_aveme', 'true');
+            document.getElementById('cookie-banner').classList.add('translate-y-[150%]');
+        }
+    </script>
+</body>
+</html>

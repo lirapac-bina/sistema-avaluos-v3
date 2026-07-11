@@ -697,17 +697,30 @@
 
         // --- 3. AUTENTICACIÓN Y FIREBASE ---
         window.iniciarSesionGoogle = function() { 
-            if (window.appAuth && window.appProvider) {
-                window.appAuth.signInWithPopup(window.appProvider).catch(err => alert("Error: " + err.message));
+            if (window.appAuth) {
+                // FIX: Instanciar proveedor EXACTAMENTE al hacer clic para romper la caché de Chrome
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' }); // Obliga a preguntar la cuenta
+                window.appAuth.signInWithPopup(provider).catch(err => alert("Error: " + err.message));
             } else { alert("Conexión en curso, presiona Ctrl+F5."); }
         };
         
-        window.cerrarSesion = function() { if (window.appAuth) window.appAuth.signOut(); };
+        window.cerrarSesion = function() { 
+            if (window.appAuth) {
+                window.appAuth.signOut().then(() => {
+                    // FIX: Aniquilar sesión, destruir cookie de Ecosistema Leezar y recargar
+                    document.cookie = "leezar_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.reload();
+                });
+            } 
+        };
 
         try {
             window.appDb = window.db || firebase.firestore();
             window.appAuth = firebase.auth();
-            window.appProvider = new firebase.auth.GoogleAuthProvider();
+            // (Eliminamos window.appProvider global para que siempre se genere uno nuevo en el clic)
             
             window.appAuth.onAuthStateChanged(async (user) => {
                 if (user) {
