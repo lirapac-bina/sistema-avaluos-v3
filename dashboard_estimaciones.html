@@ -279,9 +279,8 @@
             });
         }
 
-// CARGAR HISTORIAL DE EXPEDIENTES
+        // CARGAR HISTORIAL DE EXPEDIENTES (V4.1 Sincronizada con Python y Fallbacks)
         function cargarExpedientes(user) {
-            // Buscamos expedientes que haya creado este usuario (su ID suele estar al inicio del doc.id)
             unsubscribeExpedientes = db.collection('expedientes_avaluos')
                 .onSnapshot(snapshot => {
                     const tbody = document.getElementById('tabla-expedientes');
@@ -289,10 +288,8 @@
                     let countTerminados = 0;
                     let countProceso = 0;
 
-                    // Filtramos localmente para asegurar que solo vea los suyos
                     const misFolios = snapshot.docs.filter(doc => doc.id.startsWith(user.uid));
 
-                    // Ordenamos por los más recientes
                     misFolios.sort((a,b) => {
                         const timeA = parseInt(a.id.split('_')[1]) || 0;
                         const timeB = parseInt(b.id.split('_')[1]) || 0;
@@ -308,37 +305,66 @@
 
                     misFolios.forEach(doc => {
                         const data = doc.data();
-                        
                         const idCorto = doc.id.substring(doc.id.indexOf('_')+1);
-                        const fecha = new Date(parseInt(idCorto)).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
                         
-                        // 🕵️‍♂️ FIX CAZADOR DE PARÁMETROS V2.0: Rastreo profundo para expedientes nuevos y viejos
-                        let parametros = data.parametros_motor || {};
-                        // Si Python lo guardó como String en algún momento, lo convertimos a Objeto
+                        // 🕒 1. SINCRONIZACIÓN DE TIEMPO EXACTO CON EL PDF
+                        let fechaDashboard, horaDashboard;
+                        if (data.resultados_motor && data.resultados_motor.data && data.resultados_motor.data.FECHA_AVALUO) {
+                            const pyDate = data.resultados_motor.data.FECHA_AVALUO.split(' ');
+                            fechaDashboard = pyDate[0]; 
+                            horaDashboard = pyDate[1] || '';  
+                        } else {
+                            const dateObj = new Date(parseInt(idCorto));
+                            fechaDashboard = dateObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+                            horaDashboard = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                        }
+
+                        // 🔥 EL ESCUDO DEFINITIVO PARA LEER PARÁMETROS
+                        let parametros = data.parametros_motor || data.parametros_historico || {};
                         if (typeof parametros === 'string') {
                             try { parametros = JSON.parse(parametros); } catch(e) { parametros = {}; }
                         }
+                        if (parametros.parametros_motor) { 
+                            parametros = parametros.parametros_motor; 
+                        }
                         
-                        // Buscamos el tipo (Soporta estructura nueva y legacy)
                         const tipo = parametros.Tipo_Inmueble || parametros.tipo_inmueble || data.tipoTramite || 'Inmueble';
                         
-                        // Buscamos la calle (Soporta motor nuevo o el viejo Checklist)
-                        let calle = parametros.Calle_Sujeto || parametros.calle || data.direccion;
+                        // 📍 2. SINCRONIZACIÓN DE UBICACIÓN BLINDADA
+                        let calleRaw = parametros.Calle_Sujeto || parametros.calle || '';
+                        let coloniaRaw = parametros.Colonia || parametros.colonia || '';
+                        let municipioRaw = parametros.Ciudad_Municipio || parametros.municipio || '';
+                        let estadoRaw = parametros.Estado || parametros.estado || '';
                         
-                        // Fallback a versión vieja (Los que hiciste en julio)
-                        if (!calle && data.checklist && data.checklist['UBICACION_MAPS']) {
-                            calle = data.checklist['UBICACION_MAPS'].direccion || data.checklist['UBICACION_MAPS'].ubicacion;
+                        let arrDir = [];
+                        if(calleRaw && calleRaw !== "Ninguna" && calleRaw !== "Ninguno") arrDir.push(calleRaw);
+                        if(coloniaRaw && coloniaRaw !== "Ninguna" && coloniaRaw !== "Ninguno") arrDir.push(coloniaRaw);
+                        if(municipioRaw && municipioRaw !== "Ninguna" && municipioRaw !== "Ninguno") arrDir.push(municipioRaw);
+                        if(estadoRaw && estadoRaw !== "Ninguna" && estadoRaw !== "Ninguno") arrDir.push(estadoRaw);
+                        
+                        let direccionArmada = arrDir.join(', ');
+                        
+                        if (!direccionArmada || direccionArmada.trim() === '') {
+                            if (data.checklist && data.checklist['UBICACION_MAPS']) {
+                                direccionArmada = data.checklist['UBICACION_MAPS'].direccion || data.checklist['UBICACION_MAPS'].ubicacion;
+                            }
                         }
-                        if (!calle) calle = 'Dirección no especificada';
+                        if (!direccionArmada || direccionArmada.trim() === '') {
+                            direccionArmada = 'Dirección no especificada';
+                        }
                         
-                        // Limpieza estética para que no rompa la tabla
-                        if(calle.length > 50) calle = calle.substring(0, 47) + '...';
+                        if(direccionArmada.length > 55) direccionArmada = direccionArmada.substring(0, 52) + '...';
 
-                        const valorCierre = data.valor_comercial_rango ? formatoMoneda.format(data.valor_comercial_rango) : '---';
+                        // 💰 3. LECTURA DEL VALOR DE CIERRE (CON FALLBACK BLINDADO A LA IA)
+                        let valorCierreFormateado = '---';
+                        if (data.valor_comercial_rango) {
+                            valorCierreFormateado = formatoMoneda.format(data.valor_comercial_rango);
+                        } else if (data.resultados_motor && data.resultados_motor.data && data.resultados_motor.data.valor_final) {
+                            valorCierreFormateado = formatoMoneda.format(data.resultados_motor.data.valor_final);
+                        }
                         
-                        const estatusMotor = data.estatus_motor || 'PROCESANDO';
+                        const estatusGeneral = data.estatus_pdf || data.estatus_motor || 'PROCESANDO';
                         
-                        // 🕵️‍♂️ FIX CAZADOR DE PDF: Buscamos la URL en todas sus posibles rutas (Raíz o Anidada)
                         const finalUrl = data.pdf_url || 
                                          (data.resultados_motor && data.resultados_motor.auditoria_inyeccion && data.resultados_motor.auditoria_inyeccion.pdf_url) || 
                                          (data.resultados_motor && data.resultados_motor.pdf_url);
@@ -346,7 +372,7 @@
                         let badgeEstatus = '';
                         let btnAccion = '';
 
-                        if (finalUrl || estatusMotor === 'COMPLETADO') {
+                        if (estatusGeneral === 'COMPLETADO') {
                             countTerminados++;
                             badgeEstatus = `<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-emerald-200 dark:border-emerald-800">COMPLETADO</span>`;
                             
@@ -355,7 +381,7 @@
                             } else {
                                 btnAccion = `<span class="text-xs text-slate-500 font-semibold italic">Generando archivo...</span>`;
                             }
-                        } else if (estatusMotor === 'ERROR') {
+                        } else if (estatusGeneral === 'ERROR') {
                             badgeEstatus = `<span class="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-rose-200 dark:border-rose-800">ERROR IA</span>`;
                             btnAccion = `<span class="text-xs text-rose-500 font-bold">Consulta a Soporte</span>`;
                         } else {
@@ -368,14 +394,14 @@
                         <tr class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td class="p-4">
                                 <p class="font-bold text-slate-800 dark:text-slate-200 text-xs">#${idCorto.substring(0,8)}</p>
-                                <p class="text-[10px] text-slate-500 font-semibold uppercase">${fecha}</p>
+                                <p class="text-[10px] text-slate-500 font-semibold uppercase">${fechaDashboard} <span class="text-indigo-500 ml-1 font-bold">${horaDashboard}</span></p>
                             </td>
                             <td class="p-4 max-w-[250px]">
-                                <p class="font-semibold text-slate-700 dark:text-slate-300 text-xs truncate" title="${calle}">${calle}</p>
+                                <p class="font-semibold text-slate-700 dark:text-slate-300 text-xs truncate" title="${direccionArmada}">${direccionArmada}</p>
                                 <p class="text-[10px] text-indigo-500 font-bold uppercase">${tipo}</p>
                             </td>
                             <td class="p-4 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                ${valorCierre}
+                                ${valorCierreFormateado}
                             </td>
                             <td class="p-4 text-center">${badgeEstatus}</td>
                             <td class="p-4 flex justify-center">${btnAccion}</td>

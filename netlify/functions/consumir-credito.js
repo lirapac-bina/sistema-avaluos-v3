@@ -1,93 +1,58 @@
-// netlify/functions/consumir-credito.js
 const admin = require('firebase-admin');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT))
-    });
+    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT)) });
 }
-const db = admin.firestore();
 
 exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
-
     try {
         const authHeader = event.headers.authorization || event.headers.Authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) return { statusCode: 401, body: JSON.stringify({ error: 'No autorizado.' }) };
-        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) return { statusCode: 401, body: 'No autorizado' };
         const idToken = authHeader.split('Bearer ')[1];
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        const body = JSON.parse(event.body);
-        const { parametros_motor, valor_elegido, rango_min, rango_max, expedienteId } = body;
+        // 🔥 FIX: Recibimos valor_elegido
+        const { parametros_motor, expedienteId, valor_elegido } = JSON.parse(event.body);
+        const API_KEY_SECRETA = process.env.LEEZAR_API_SECRET || process.env.LEEZAR_API_KEY_PYTHON; 
+        const URL_CLOUD_FUNCTION = "https://us-central1-motor-valuacion-api.cloudfunctions.net/motor-pericial-eme";
 
-        const userRef = db.collection('usuarios_estimador').doc(uid);
-        const historialRef = db.collection('historial_estimaciones').doc(); 
+        if (!API_KEY_SECRETA || !expedienteId || !parametros_motor) return { statusCode: 400, body: 'Faltan parámetros' };
 
-        // 1. DESCONTAR CRÉDITO
-        await db.runTransaction(async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if ((userDoc.data().creditos || 0) <= 0) throw new Error("Saldo insuficiente.");
-
-            transaction.update(userRef, { creditos: admin.firestore.FieldValue.increment(-1) });
-            transaction.set(historialRef, {
-                uid_cliente: uid,
-                fecha_estimacion: admin.firestore.FieldValue.serverTimestamp(),
-                datos_inmueble: parametros_motor,
-                limite_inferior_calculado: rango_min,
-                limite_superior_calculado: rango_max,
-                valor_cierre_elegido: valor_elegido,
-                estatus: "Completado"
-            });
+        const userRef = admin.firestore().collection('usuarios_estimador').doc(uid);
+        await admin.firestore().runTransaction(async (t) => {
+            const doc = await t.get(userRef);
+            const creditos = doc.data().creditos || 0;
+            if (creditos <= 0) throw new Error("Sin créditos suficientes");
+            t.update(userRef, { creditos: creditos - 1 });
         });
 
-// 2. 🚀 MANDAR FOTOS Y DATOS A PYTHON V20 PARA GENERAR EL PDF
-        try {
-            const urlPython = "https://motor-pericial-eme-o5hgi24naa-uc.a.run.app"; 
-            
-            const pythonRes = await fetch(urlPython, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-leezar-secret': process.env.LEEZAR_API_KEY_PYTHON 
-                },
-                body: JSON.stringify(parametros_motor) // JSON PLANO
-            });
+        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({ estatus_pdf: 'PROCESANDO' }, { merge: true });
 
-            if (pythonRes.ok) {
-                const pythonData = await pythonRes.json();
-                
-                // 3. RECIBIR EL PDF Y GUARDARLO EN FIREBASE (EN AMBOS LADOS)
-                if (pythonData.auditoria_inyeccion && pythonData.auditoria_inyeccion.pdf_url) {
-                    const urlFinalPdf = pythonData.auditoria_inyeccion.pdf_url;
-                    
-                    // A) Guardamos para el Frontend (El cliente lo descarga)
-                    await db.collection('expedientes_avaluos').doc(expedienteId).set({
-                        pdf_url: urlFinalPdf,
-                        resultados_motor: pythonData
-                    }, { merge: true });
+        const response = await fetch(URL_CLOUD_FUNCTION, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-leezar-secret': API_KEY_SECRETA },
+            body: JSON.stringify({ parametros_motor: parametros_motor }) 
+        });
 
-                    // B) Actualizamos tu Caja Registradora (Historial) con la URL
-                    await historialRef.update({
-                        estatus: "Completado Exitosamente",
-                        pdf_url: urlFinalPdf
-                    });
-                } else {
-                    await historialRef.update({ estatus: "Error: Python no devolvió PDF" });
-                }
-            } else {
-                await historialRef.update({ estatus: "Error: Fallo en Motor Python" });
-            }
-        } catch (errPython) {
-            console.error("❌ Fallo de red con Python:", errPython);
-            await historialRef.update({ estatus: "Error de Conexión" });
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({ estatus_pdf: 'ERROR', error_pdf: data.error || "Fallo al generar PDF." }, { merge: true });
+            return { statusCode: 500, body: 'Error en el Motor Python' };
         }
 
-        return { statusCode: 200, body: JSON.stringify({ success: true, id_transaccion: historialRef.id }) };
+        // 🔥 FIX: Guardamos valor_comercial_rango y parametros_motor para el Dashboard
+        await admin.firestore().collection('expedientes_avaluos').doc(expedienteId).set({
+            estatus_pdf: 'COMPLETADO',
+            pdf_url: data.auditoria_inyeccion?.pdf_url || data.pdf_url || null,
+            valor_comercial_rango: valor_elegido,
+            parametros_motor: parametros_motor
+        }, { merge: true });
 
+        return { statusCode: 200, body: JSON.stringify({ success: true }) };
     } catch (error) {
-        return { statusCode: 400, body: JSON.stringify({ error: error.message || "Fallo en la BD." }) };
+        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };

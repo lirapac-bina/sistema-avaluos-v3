@@ -85,7 +85,7 @@
                 </div>
             </button>
 
-            <button onclick="window.location.href='dashboard_estimaciones.html'" class="group glass-card rounded-3xl p-6 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(79,70,229,0.15)] hover:border-indigo-200 transition-all duration-300 fade-in-up delay-200 relative overflow-hidden flex flex-col">
+            <button onclick="verificarAccesoSecreto('dashboard_estimaciones.html')" class="group glass-card rounded-3xl p-6 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(79,70,229,0.15)] hover:border-indigo-200 transition-all duration-300 fade-in-up delay-200 relative overflow-hidden flex flex-col">
                 <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300 shadow-inner relative z-10 shrink-0">
@@ -247,19 +247,16 @@
         </div>
     </div>
 
-    <script>
-        // Lógica para mostrar el banner solo si el usuario no ha aceptado antes
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('cookies_aceptadas_aveme')) {
-                setTimeout(() => {
-                    document.getElementById('cookie-banner').classList.remove('translate-y-[150%]');
-                }, 1500); // Aparece 1.5 segundos después de cargar la página
-            }
-        });
 
-        function aceptarCookies() {
-            localStorage.setItem('cookies_aceptadas_aveme', 'true');
-            document.getElementById('cookie-banner').classList.add('translate-y-[150%]');
+    <script>
+        // CANDADO DE SEGURIDAD MODO PRUEBAS
+        function verificarAccesoSecreto(urlDestino) {
+            const password = prompt("⚠️ (Modo Mantenimiento EME)\n\nDeja tu mensaje:");
+            if (password === "jack") {
+                window.location.href = urlDestino;
+            } else if (password !== null) {
+                alert(" Mensaje enviado.");
+            }
         }
     </script>
 </body>
