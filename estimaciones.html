@@ -409,8 +409,8 @@
             
             <div class="bg-white/10 p-6 rounded-xl border border-white/20 backdrop-blur-md mb-8 shadow-sm">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-2">
-                    <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado:</p>
-                    <p class="text-3xl font-black text-amber-300 drop-shadow-md font-mono" id="val_conclusion_seleccionado">$0.00</p>
+                    <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado (Editable):</p>
+                    <input type="text" id="input_conclusion_manual" onblur="window.formatearMilesFinal(this)" class="text-3xl font-black text-amber-300 drop-shadow-md font-mono bg-transparent border-b-2 border-amber-300/30 hover:border-amber-300 focus:border-amber-300 outline-none text-right w-full sm:w-64 transition-all" value="$0.00">
                 </div>
                 <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="window.actualizarValorConcluidoLabel(this.value)" class="w-full mt-2 accent-amber-400 h-2 bg-emerald-900/50 rounded-lg appearance-none cursor-pointer">
             </div>
@@ -1444,15 +1444,23 @@
 
         window.actualizarValorConcluidoLabel = function(porc) {
             const val = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porc / 100));
-            document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(val);
+            const input = document.getElementById('input_conclusion_manual');
+            if(input) input.value = formatoMoneda.format(val);
+        };
+
+        window.formatearMilesFinal = function(input) {
+            let valor = input.value.replace(/[^0-9.]/g, '');
+            if (valor === "") { input.value = formatoMoneda.format(0); return; }
+            input.value = formatoMoneda.format(parseFloat(valor));
         };
 
         // 📥 CAZADOR DE PDF SEGURO VIA NETLIFY
         window.enviarGenerarReporteFinal = async function() {
             if (!authUser || !ultimaBusqueda || !window.expedienteMotorActivo) return;
 
-            const porcentajeSlider = document.getElementById('slider_conclusion_valor').value;
-            const valorElegido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentajeSlider / 100));
+            // Extraemos el valor limpio directamente de la caja editable
+            const inputValStr = document.getElementById('input_conclusion_manual')?.value || "0";
+            const valorElegido = parseFloat(inputValStr.replace(/[^0-9.-]+/g, '')) || 0;
 
             const btn = document.getElementById('btn-generar-pdf');
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Compilando PDF...';
@@ -1501,7 +1509,13 @@
                         const data = doc.data();
                         if (data.estatus_pdf === 'COMPLETADO' && data.pdf_url) {
                             clearTimeout(cazadorTimeout); unsubscribe();
-                            window.open(data.pdf_url, '_blank');
+                            
+                            // 1. 🚀 Abrimos tu nuevo Visor Dinámico en una nueva pestaña
+                            const urlVisorDinamico = `visor_dictamen.html?id=${window.expedienteMotorActivo}`;
+                            window.open(urlVisorDinamico, '_blank');
+                            
+                            // 2. 📥 Descargamos el PDF Estático en la pestaña actual (Evita el bloqueo de Pop-ups)
+                            window.location.href = data.pdf_url;
                             
                             document.getElementById('panel_conclusion_interactivo').classList.add('hidden');
                             btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
