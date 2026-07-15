@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Estimador de Valor - AvEme (V4.0 Blindada)</title>
+    <title>Estimador de Valor - AvEme</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -18,7 +18,9 @@
             theme: { 
                 extend: { 
                     colors: { 
-                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' }
+                        leezar: { 500: '#0f4c81', 600: '#0a355c', 900: '#051b30' },
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        eme: { 500: '#e11d48', 600: '#be123c', 700: '#9f1239' }
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] }
                 } 
@@ -29,31 +31,32 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style type="text/tailwindcss">
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
         .dark body { background-color: #0f172a; color: #cbd5e1; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        .step-container { display: none; opacity: 0; transform: translateX(20px); transition: all 0.4s ease-out; }
-        .step-container.active { display: block; opacity: 1; transform: translateX(0); }
-
         .card-bloque { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .dark .card-bloque { background: #1e293b; border-color: #334155; }
+        
         .card-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 20px; }
         .dark .card-header { border-color: #334155; }
-        .card-header h2 { font-size: 1.1rem; font-weight: 800; color: #0f4c81; text-transform: uppercase; }
+        .card-header h2 { font-size: 1.1rem; font-weight: 800; color: #0f4c81; text-transform: uppercase; letter-spacing: 0.05em; }
         .dark .card-header h2 { color: #e2e8f0; }
         .card-header span.icon { color: #0f4c81; background: #f1f5f9; padding: 6px; border-radius: 8px; }
         .dark .card-header span.icon { color: #38bdf8; background: #0f172a; }
         
-        label { font-size: 0.70rem !important; font-weight: 700; color: #64748b; margin-bottom: 6px; display: block; text-transform: none;}
+        label { font-size: 0.70rem !important; font-weight: 700; color: #64748b; text-transform: none !important; letter-spacing: normal !important; margin-bottom: 6px; display: block; transition: all 0.3s;}
         .dark label { color: #94a3b8; }
+        
+        select { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-right: 2rem; }
         
         input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.85rem; font-weight: 600; color: #1e293b; transition: all 0.2s; outline: none; }
         .dark input[type="text"], .dark input[type="number"], .dark select, .dark textarea { background: #0f172a; border-color: #475569; color: #f8fafc; }
-        input:focus, select:focus, textarea:focus { border-color: #0d9488; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
+        input:focus, select:focus, textarea:focus { border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
+        .dark input:focus, .dark select:focus, .dark textarea:focus { background: #1e293b; border-color: #14b8a6; }
         
-        input:disabled, select:disabled, textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; opacity: 0.7; }
-        .dark input:disabled, .dark select:disabled { background: #334155; color: #475569; }
+        input:disabled, select:disabled, textarea:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; opacity: 0.7; border-color: #e2e8f0; }
+        .dark input:disabled, .dark select:disabled { background: #334155; color: #475569; border-color: #334155; }
         .disabled-label { color: #cbd5e1 !important; text-decoration: line-through; }
         .dark .disabled-label { color: #475569 !important; }
         
@@ -61,16 +64,16 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; }
         .dark .checkbox-item { background: #0f172a; border-color: #334155; }
         .checkbox-item input { width: 16px; height: 16px; cursor: pointer; accent-color: #0d9488; }
+        .checkbox-item label { margin: 0; font-size: 0.75rem !important; text-transform: none !important; color: #334155; cursor: pointer; }
+        .dark .checkbox-item label { color: #cbd5e1; }
         
         .drop-zone { border: 2px dashed #94a3b8; border-radius: 12px; padding: 30px; text-align: center; background: #f8fafc; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .dark .drop-zone { background: #0f172a; border-color: #475569; }
         .drop-zone:hover { border-color: #0d9488; background: #f0fdfa; color: #0d9488; }
+        .dark .drop-zone:hover { background: #064e3b; color: #34d399; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
     </style>
 
     <script>
@@ -88,391 +91,677 @@
 
 <body class="transition-colors duration-300">
 
-    <header class="fixed top-0 left-0 w-full bg-slate-900 text-white shadow-lg z-40 h-20 flex items-center">
+    <header class="fixed top-0 left-0 w-full bg-slate-900 text-white shadow-lg z-40 h-20 flex items-center transition-colors duration-300">
         <div class="max-w-5xl w-full mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="h-11 w-11 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center overflow-hidden relative">
-                    <img id="header-user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="h-full w-full object-cover z-10" onerror="this.style.display='none'">
+                <div class="h-11 w-11 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center overflow-hidden shadow-inner relative">
+                    <img id="header-user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar" class="h-full w-full object-cover z-10 relative" onerror="this.style.display='none'">
                     <span class="material-symbols-rounded absolute text-slate-500 z-0">person</span>
                 </div>
-                <div class="flex flex-col">
-                    <span id="header-user-name" class="font-black text-lg">Cargando...</span>
-                    <span id="header-user-role" class="text-[10px] font-bold text-emerald-400 uppercase">Conectando...</span>
+                <div class="flex flex-col justify-center">
+                    <span id="header-user-name" class="font-black text-lg tracking-tight leading-none text-white truncate max-w-[180px] sm:max-w-xs">Cargando perfil...</span>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                        <span id="header-user-role" class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Conectando...</span>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <button onclick="window.toggleDarkMode()" class="p-2 bg-white/10 rounded-xl"><span class="material-symbols-rounded" id="dark-mode-icon">dark_mode</span></button>
+            
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="window.toggleDarkMode()" class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cambiar Tema">
+                    <span class="material-symbols-rounded text-xl" id="dark-mode-icon">dark_mode</span>
+                </button>
+                <div class="flex items-center gap-2 sm:gap-4 hidden animate-fade-in" id="auth-mini">
+                    <div class="text-right hidden sm:block bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
+                        <p class="text-[8px] font-bold uppercase tracking-widest text-slate-400">Saldo Operativo</p>
+                        <p class="text-sm font-black text-white"><span id="user-credits" class="text-emerald-400">0</span> Créditos</p>
+                    </div>
+                    <button onclick="window.cerrarSesion()" class="p-2 bg-rose-500 hover:bg-rose-600 rounded-xl transition-colors text-white shadow-sm flex items-center justify-center" title="Cerrar Sesión">
+                        <span class="material-symbols-rounded text-xl">logout</span>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
     <div id="auth-screen" class="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in hidden">
-        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl text-center w-full max-w-md">
-            <h2 class="text-2xl font-black mb-2 dark:text-white">Acceso al Estimador</h2>
-            <button onclick="window.iniciarSesionGoogle()" class="w-full bg-slate-100 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl mt-6">Continuar con Google</button>
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 text-center w-full max-w-md relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-leezar-500"></div>
+            <div class="w-20 h-20 bg-slate-50 dark:bg-slate-900 text-leezar-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100 dark:border-slate-700">
+                <span class="material-symbols-rounded text-4xl">vpn_key</span>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Acceso a Valuadores</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Inicia sesión de forma segura para generar tus dictámenes de valor.</p>
+            <button onclick="window.iniciarSesionGoogle()" class="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-leezar-500 text-slate-700 dark:text-white font-bold py-3.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-3">
+                Continuar con Google
+            </button>
         </div>
     </div>
 
-    <!-- CARGADOR -->
-    <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-slate-900/90 backdrop-blur-sm flex-col items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center">
-            <span class="material-symbols-rounded text-5xl animate-spin text-emerald-500 mb-4">memory</span>
-            <h3 id="loader-title" class="text-xl font-black dark:text-white">Procesando...</h3>
-            <p id="loader-desc" class="text-xs text-slate-500 dark:text-slate-400">Conectando de forma segura</p>
+    <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-slate-900/80 backdrop-blur-sm flex-col items-center justify-center">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-[90%] text-center border border-slate-200 dark:border-slate-700">
+            <span class="material-symbols-rounded text-5xl animate-spin text-emerald-500 mb-4 drop-shadow-md">memory</span>
+            <h3 id="loader-title" class="text-xl font-black text-slate-800 dark:text-white mb-2">Procesando Motor EME</h3>
+            <p id="loader-desc" class="text-xs text-slate-500 dark:text-slate-400">Analizando mercado en la nube...</p>
         </div>
     </div>
 
-    <main id="app-dashboard" class="max-w-5xl mx-auto px-4 pt-28 pb-32 hidden animate-fade-in">
+    <main id="app-dashboard" class="max-w-5xl mx-auto px-4 pt-28 pb-20 hidden animate-fade-in">
         
         <div class="bg-white dark:bg-slate-900 rounded-xl p-4 mb-6 shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-            <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Modo de Operación</p>
-                <h2 id="lbl-nombre-perfil" class="font-black text-slate-700 dark:text-slate-200 text-sm">Perfil Valuador EME</h2>
+            <div class="flex items-center gap-3">
+                <span id="badge-color-perfil" class="w-3 h-3 rounded-full bg-slate-300 animate-pulse"></span>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modo de Operación</p>
+                    <h2 id="lbl-nombre-perfil" class="font-black text-slate-700 dark:text-slate-200 text-sm">No Seleccionado</h2>
+                </div>
             </div>
-            <select id="perfil_usuario" name="perfil_solicitante" class="hidden"><option value="4" selected>4</option></select>
+            <button type="button" onclick="window.abrirModalPerfiles()" class="text-xs font-bold text-slate-500 hover:text-indigo-500 flex items-center gap-1 transition-colors">
+                <span class="material-symbols-rounded text-sm">sync_alt</span> Cambiar
+            </button>
+            <select id="perfil_usuario" name="perfil_solicitante" class="hidden">
+                <option value="4" selected>4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option>
+            </select>
         </div>
 
         <form id="form-eme" onsubmit="event.preventDefault();">
-            
-            <!-- ETAPA 1: UBICACIÓN Y TERRENO -->
-            <div class="step-container active" id="step-1">
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">map</span><h2>1. Identificación y Ubicación</h2></div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div><label>Tipo de Inmueble</label><select name="Tipo_Inmueble" id="est-tipo" onchange="window.aplicarLogicaInteligente()"><option value="Casa">Casa Habitación</option><option value="Departamento">Departamento</option><option value="Terreno">Terreno</option></select></div>
-                        <div><label>Uso de Suelo</label><select name="Uso_de_Suelo" id="est-uso-suelo"><option value="Habitacional">Habitacional</option><option value="Comercial">Comercial</option><option value="Industrial">Industrial</option><option value="Mixto">Mixto</option><option value="Equipamiento">Equipamiento</option><option value="Campestre">Campestre</option><option value="En Breña">En Breña</option><option value="Rústico/Sin Servicios">Rústico/Sin Servicios</option><option value="Agrario/Agropecuario">Agrario/Agropecuario</option></select></div>
-                        <div><label>Estado</label><input type="text" name="Estado" id="est-estado" readonly></div>
-                        <div><label>Ciudad / Municipio</label><input type="text" name="Ciudad_Municipio" id="est-municipio" readonly></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <label>Código Postal</label>
-                            <div class="relative">
-                                <input type="text" name="CP" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="if(this.value.length === 5) window.buscarCPFirebase(this.value)">
-                                <p id="cp-status" class="absolute -bottom-5 left-0 text-[9px] text-emerald-600 font-bold hidden">Buscando colonias...</p>
-                            </div>
+                
+
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">map</span><h2>1. Identificación y Ubicación</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div><label>Tipo de Inmueble</label><select name="Tipo_Inmueble" id="est-tipo" onchange="window.aplicarLogicaInteligente()"><option value="Casa">Casa Habitación</option><option value="Departamento">Departamento</option><option value="Terreno">Terreno</option></select></div>
+                    <div><label>Uso de Suelo</label><select name="Uso_de_Suelo" id="est-uso-suelo"><option value="Habitacional">Habitacional</option><option value="Comercial">Comercial</option><option value="Industrial">Industrial</option><option value="Mixto">Mixto</option><option value="Equipamiento">Equipamiento</option><option value="Campestre">Campestre</option><option value="En Breña">En Breña</option><option value="Rústico/Sin Servicios">Rústico/Sin Servicios</option><option value="Agrario/Agropecuario">Agrario/Agropecuario</option></select></div>
+                    <div><label>Estado</label><input type="text" name="Estado" id="est-estado" readonly></div>
+                    <div><label>Ciudad / Municipio</label><input type="text" name="Ciudad_Municipio" id="est-municipio" readonly></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label>Código Postal</label>
+                        <div class="relative">
+                            <input type="text" name="CP" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="if(this.value.length === 5) window.buscarCPFirebase(this.value)">
+                            <p id="cp-status" class="absolute -bottom-5 left-0 text-[9px] text-emerald-600 font-bold hidden">Buscando colonias...</p>
                         </div>
-                        <div class="md:col-span-1"><label>Colonia / Condominio</label><select name="Colonia" id="est-colonia"><option value="">Escriba el CP</option></select></div>
-                        <div class="md:col-span-2"><label>Calle y Número</label><input type="text" name="Calle_Sujeto" id="est-calle" placeholder="Ej: Avenida Siempre Viva"></div>
                     </div>
-                    <div class="mt-6">
-                        <label>Microlote Interactivo (Arrastre el pin)</label>
-                        <div class="relative h-64 w-full rounded-xl border-2 border-slate-300 overflow-hidden mb-3"><div id="map" class="w-full h-full bg-slate-100"></div><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8"><span class="material-symbols-rounded text-[40px] text-rose-600">location_on</span></div></div>
-                        <input type="text" name="Geolocalizacion_Google" id="est-coords" onchange="window.sincronizarTextoAMapa(this.value)" class="w-full p-2 text-center text-sm font-mono">
-                    </div>
+                    <div class="md:col-span-1"><label>Colonia / Condominio</label><select name="Colonia" id="est-colonia"><option value="">Escriba el CP o mueva el mapa</option></select></div>
+                    <div class="md:col-span-2"><label>Calle y Número</label><input type="text" name="Calle_Sujeto" id="est-calle" placeholder="Ej: Avenida Siempre Viva"></div>
                 </div>
 
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">landscape</span><h2>2. Características del Terreno</h2></div>
-                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                        <div class="md:col-span-2"><label>Superficie Terreno (m²)</label><input type="number" name="Superficie_Terreno" value="0"></div>
-                        <div><label>Frente (m)</label><input type="number" name="Frente_m" value="0"></div>
-                        <div><label>Fondo (m)</label><input type="number" name="Fondo_m" value="0"></div>
-                        <div class="md:col-span-2"><label>Topografía</label><select name="Topografia"><option value="Ninguna">-- Seleccione --</option><option value="Plano">Plano</option><option value="Pendiente Ligera">Pendiente Ligera</option><option value="Accidentado/Barranco">Accidentado</option></select></div>
-                        <div class="md:col-span-3"><label>Ubicación en Manzana</label><select name="Ubicacion_en_Manzana"><option value="Ninguna">-- Seleccione --</option><option value="Un frente">Un frente</option><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option><option value="Dos frentes no contiguos">Dos frentes no contiguos</option><option value="Cabecera de manzana">Cabecera de manzana</option></select></div>
-                        <div class="md:col-span-3"><label>Frente a</label><select name="Frente_a"><option value="Ninguna">-- Seleccione --</option><option value="Calle">Calle</option><option value="Carretera">Carretera</option><option value="Avenida">Avenida</option><option value="Cerrada">Cerrada</option><option value="Andador">Andador</option><option value="Servidumbre de paso">Servidumbre de paso</option><option value="Sin acceso">Sin acceso</option><option value="Privada">Privada</option></select></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ETAPA 2: CONSTRUCCIÓN Y ADN -->
-            <div class="step-container" id="step-2">
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">foundation</span><h2>3. Construcción</h2></div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2"><label>Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" value="0"></div>
-                        <div><label>Edad (Años)</label><input type="number" name="Edad_Anos" value="0"></div>
-                        <div><label>Conservación</label><select name="Estado_Conservacion"><option value="Ninguna">-- Seleccione --</option><option value="Bueno">Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
-                        <div><label>Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0"></div>
-                        <div><label>Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0"></div>
-                        <div><label>Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">-- Seleccione --</option><option value="Si">Si</option><option value="No">No</option></select></div>
-                        <div><label>Elevador</label><select name="Elevador"><option value="Ninguna">-- Seleccione --</option><option value="Si">Si</option><option value="No">No</option></select></div>
-                    </div>
-                </div>
-
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">chair</span><h2>4. Equipamiento</h2></div>
-                    <div class="grid grid-cols-3 md:grid-cols-5 gap-4">
-                        <div><label>Recámaras</label><input type="number" name="No_Recamaras" value="0"></div>
-                        <div><label>Baños</label><input type="number" name="No_Banos" value="0"></div>
-                        <div><label>Autos</label><input type="number" name="No_Estacionamientos" value="0"></div>
-                        <div class="col-span-3 md:col-span-1"><label>Clase de Inmueble</label><select name="Clase_Inmueble"><option value="Ninguna">-- Seleccione --</option><option value="Clase Media">Clase Media</option><option value="Interés Social">Interés Social</option><option value="Semilujo">Semilujo</option><option value="Residencial">Residencial</option><option value="Lujo">Lujo</option></select></div>
-                        <div class="col-span-3 md:col-span-1"><label>Calidad Acabados</label><select name="Calidad_Acabados"><option value="Ninguna">-- Seleccione --</option><option value="Estándar">Estándar</option><option value="Económicos">Económicos</option><option value="Semilujo">Semilujo</option><option value="Lujo">Lujo</option></select></div>
-                    </div>
-                </div>
-
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">architecture</span><h2>5. ADN e Infraestructura</h2></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label>Tipo de Calle</label><select name="Tipo_de_Calle"><option value="Ninguna">Ninguna</option><option value="Asfalto">Asfalto</option><option value="Terraceria">Terraceria</option><option value="Adoquin">Adoquin</option><option value="Concreto Hidraulico">Concreto Hidraulico</option><option value="Calle de Piedra">Calle de Piedra</option><option value="Piedra">Piedra</option></select></div>
-                        <div><label>Tipo Acceso Complejo</label><select name="Tipo_de_Acceso_Complejo"><option value="Ninguna">Ninguna</option><option value="Pluma TAG">Pluma TAG</option><option value="Abierto">Abierto</option><option value="Porton Electrico">Porton Electrico</option></select></div>
-                        <div><label>Red de Agua</label><select name="Red_de_Agua"><option value="Ninguna">Ninguna</option><option value="Conexion al Inmueble">Conexion al Inmueble</option><option value="Pozo de Agua">Pozo de Agua</option><option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option></select></div>
-                        <div><label>Tipo de Drenaje</label><select name="Tipo_de_Drenaje"><option value="Ninguna">Ninguna</option><option value="Conexion a Red">Conexion a Red</option><option value="Fosa Septica">Fosa Septica</option><option value="Resumidero">Resumidero</option></select></div>
-                        <div><label>Señalización / Nom.</label><select name="Senalizacion_Nomenclatura"><option value="Ninguna">Ninguna</option><option value="Completa">Completa</option><option value="Inexistente">Inexistente</option><option value="Solo Nomenclatura">Solo Nomenclatura</option></select></div>
-                        <div><label>Suministro Servicios</label><select name="Suministro_Servicios"><option value="Ninguna">Ninguna</option><option value="Subterraneos">Subterraneos</option><option value="Aereos">Aereos</option><option value="Mixtos">Mixtos</option></select></div>
-                        <div><label>Amenidades Urbanas</label><select name="Amenidades_Urbanas"><option value="Ninguna">Ninguna</option><option value="Parque Privado">Parque Privado</option><option value="Parque Publico">Parque Publico</option><option value="Casa Club">Casa Club</option><option value="Canchas Deportivas">Canchas Deportivas</option><option value="Acceso a Playa">Acceso a Playa</option><option value="Muelle">Muelle</option></select></div>
-                        <div><label>Tipo de Techos</label><select name="Tipo_de_Techos"><option value="Ninguna">Ninguna</option><option value="Losacero">Losacero</option><option value="Provisional">Provisional</option><option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option><option value="Losa de concreto">Losa de concreto</option><option value="Vigueta y bovedilla">Vigueta y bovedilla</option><option value="Estructura metalica">Estructura metalica</option></select></div>
-                        <div><label>Material de Muros</label><select name="Material_de_Muros"><option value="Ninguna">Ninguna</option><option value="Tablaroca">Tablaroca</option><option value="Provisionales">Provisionales</option><option value="Tablacemento">Tablacemento</option><option value="De block">De block</option><option value="De tabique">De tabique</option><option value="Prefabricados">Prefabricados</option><option value="De concreto">De concreto</option><option value="De piedra">De piedra</option><option value="De adobe">De adobe</option><option value="De madera">De madera</option></select></div>
-                        <div><label>Acabado de Pisos</label><select name="Acabado_de_Pisos"><option value="Ninguna">Ninguna</option><option value="Porcelanatos">Porcelanatos</option><option value="Tierra">Tierra</option><option value="Cemento">Cemento</option><option value="Ceramicos">Ceramicos</option><option value="Maderas">Maderas</option><option value="Marmol / Gama Alta">Marmol / Gama Alta</option></select></div>
-                        <div><label>Calidad Madera</label><select name="Calidad_Madera"><option value="Ninguna">Ninguna</option><option value="MDF/Pino">MDF/Pino</option><option value="Cedro/Caoba">Cedro/Caoba</option><option value="Encino/Roble">Encino/Roble</option><option value="Sin Madera">Sin Madera</option></select></div>
-                        <div><label>Acabados Cocina</label><select name="Acabados_Cocina"><option value="Ninguna">Ninguna</option><option value="Granito">Granito</option><option value="Nula">Nula</option><option value="Barra de Concreto">Barra de Concreto</option><option value="MDF">MDF</option><option value="Cuarzo">Cuarzo</option><option value="Tarja">Tarja</option></select></div>
-                        <div><label>Portón Propiedad</label><select name="Tipo_de_Porton_Propiedad"><option value="Ninguna">Ninguna</option><option value="Sin Porton">Sin Porton</option><option value="Electrico">Electrico</option><option value="Herreria">Herreria</option><option value="Manual">Manual</option><option value="Madera">Madera</option></select></div>
-                        <div><label>Tipo Estacionamiento</label><select name="Tipo_de_Estacionamiento"><option value="Ninguna">Ninguna</option><option value="Subterraneo">Subterraneo</option><option value="Abierto">Abierto</option><option value="En Bateria">En Bateria</option><option value="Techado">Techado</option></select></div>
-                        <div><label>Aire Acondicionado</label><select name="Tipo_Aire_Acondicionado"><option value="Ninguno">Ninguno</option><option value="Minisplit Inverter">Minisplit Inverter</option><option value="Minisplit">Minisplit</option><option value="Cassette">Cassette</option><option value="Fan and Coil">Fan and Coil</option></select></div>
-                        <div><label>Num Equipos Aire</label><input type="number" name="Num_Equipos_Aire" value="0"></div>
-                        <div><label>Amenidades Interiores</label><select name="Amenidades_Interiores"><option value="Ninguna">Ninguna</option><option value="Bodega">Bodega</option><option value="Cuarto de Servicio">Cuarto de Servicio</option><option value="Estudio">Estudio</option><option value="Gimnasio Privado">Gimnasio Privado</option></select></div>
-                        <div><label>Protección Térmica</label><select name="Proteccion_Termica"><option value="Ninguna">Ninguna</option><option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option><option value="Vidrio Sencillo">Vidrio Sencillo</option><option value="Muros Aislados">Muros Aislados</option></select></div>
-                        <div><label>Plusvalía Atípica</label><select name="Caso_Atipico_Plusvalia"><option value="Ninguno">Ninguno</option><option value="Vista al Mar">Vista al Mar</option><option value="Primera Fila al Mar">Primera Fila al Mar</option><option value="Frente a Laguna">Frente a Laguna</option><option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option><option value="Vista a la Laguna">Vista a la Laguna</option><option value="Vista a la Marina">Vista a la Marina</option></select></div>
-                        <div><label>Conectividad</label><select name="Conectividad"><option value="Ninguna">Ninguna</option><option value="Fibra Optica">Fibra Optica</option><option value="Satelital">Satelital</option><option value="Cobre">Cobre</option></select></div>
-                        <div class="md:col-span-3"><label>Lista Espacios Exteriores</label><input type="text" name="Espacios_Exteriores_Lista" placeholder="Ej: Jardín, terraza..."></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ETAPA 3: CRÍTICOS Y TESTIGOS -->
-            <div class="step-container" id="step-3">
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">warning</span><h2>6. Críticos y Mejoras</h2></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div><label>Certeza Jurídica</label><select name="Certeza_Juridica"><option value="Escritura Publica">Escritura Pública</option><option value="Ejidal">Ejidal</option><option value="Certificado Parcelario">Certificado Parcelario</option><option value="Posesion">Posesion</option></select></div>
-                        <div><label>Régimen Propiedad</label><select name="Regimen_Propiedad"><option value="Individual">Individual</option><option value="Privada Condominal">Privada Condominal</option><option value="Privada Normal (Asociacion)">Privada Normal</option><option value="Privada Copropiedad">Copropiedad</option><option value="Sin Regimen">Sin Regimen</option></select></div>
-                        <div><label>Vigilancia</label><select name="Tipo_de_Vigilancia"><option value="Nula">Nula</option><option value="Privada (Caseta)">Privada (Caseta)</option><option value="Publica">Publica</option></select></div>
-                        <div><label>Cuota Mant. ($)</label><input type="number" name="Cuota_Mantenimiento" value="0"></div>
-                        <div><label>Colindancia</label><select name="Colindancia"><option value="Habitacional">Habitacional</option><option value="Comercial Ruidosa">Comercial Ruidosa</option><option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option></select></div>
-                        <div><label>Humedades</label><select name="Estado_de_Humedades"><option value="Ninguna">Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
-                        
-                        <div class="md:col-span-3"><label>Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto"></div>
-                        
-                        <!-- Panel Mejoras -->
-                        <div class="md:col-span-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <label>🛡️ Selección de Mejoras (Opcional)</label>
-                            <div class="checkbox-grid">
-                                <div class="checkbox-item"><input type="checkbox" name="cambio_pisos"><label>Cambio Pisos</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="cambio_pisos_instalaciones"><label>Pisos + Instal.</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="techado_cochera"><label>Techado Cochera</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="remodelacion_cocina"><label>Remodeló Cocina</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="ampliacion_habitaciones"><label>Amp. Habitaciones</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="ampliacion_piso"><label>Ampliación Piso</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="remodelacion_parcial"><label>Remodelación Parcial</label></div>
-                                <div class="checkbox-item"><input type="checkbox" name="remodelacion_completa"><label>Remodelación Total</label></div>
-                            </div>
+                <div class="mt-6">
+                    <label class="flex items-center gap-1"><span class="material-symbols-rounded text-sm">my_location</span> Microlote Interactivo (Arrastre el pin o pegue coordenadas)</label>
+                    <div class="relative h-64 w-full rounded-xl border-2 border-slate-300 dark:border-slate-600 overflow-hidden shadow-inner mb-3">
+                        <div id="map" class="w-full h-full bg-slate-100"></div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
+                            <span class="material-symbols-rounded text-[40px] text-rose-600 drop-shadow-md">location_on</span>
+                            <div class="w-4 h-1.5 bg-black/30 rounded-[100%] blur-[1px] -mt-2 z-10"></div>
                         </div>
-
-                        <div><label>Alcance Remodelación</label><select name="Alcance_Remodelacion"><option value="Nula">Nula</option><option value="Solo Estetica">Solo Estetica</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
-                        <div><label>Años desde Remod.</label><input type="number" name="Anos_desde_Remodelacion" value="0"></div>
-                        <div><label>Porcentaje Avance</label><input type="number" name="Porcentaje_Avance" value="100"></div>
-                        <div><label>Altura Techos</label><select name="Altura_Techos"><option value="Estandar (<2.50m)">Estandar (<2.50m)</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseno</option></select></div>
-                        <div><label>Negociación Final (%)</label><input type="number" name="Factor_Negociacion_Final" value="2"></div>
-
-                        <div class="md:col-span-3"><label>Notas Particulares (Para el PDF)</label><input type="text" name="Notas_Particulares" placeholder="Observaciones físicas..."></div>
-                        <input type="hidden" name="Mantenimiento_Reciente_Lista" value="Ninguna">
                     </div>
-                </div>
-
-                <div class="card-bloque" id="seccion_verticalidad"><div class="card-header"><span class="material-symbols-rounded icon">domain</span><h2>7. Verticalidad Premium</h2></div>
-                    <select name="Verticalidad_Premium"><option value="Ninguna">No Aplica</option><option value="Si">Sí</option></select>
-                </div>
-
-                <div class="card-bloque" style="border-color: #f59e0b;">
-                    <div class="card-header"><span class="material-symbols-rounded icon" style="color: #d97706; background: #fef3c7;">analytics</span><h2>Mercado Manual (Mín. 3)</h2></div>
-                    <div id="testigos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2"></div>
-                    <div id="testigos-hidden-data" class="hidden"></div>
+                    <input type="text" name="Geolocalizacion_Google" id="est-coords" onchange="window.sincronizarTextoAMapa(this.value)" placeholder="Ej: 19.432600, -99.133200" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-mono text-center outline-none focus:border-emerald-500 font-bold">
                 </div>
             </div>
 
-            <!-- ETAPA 4: DIGITAL Y VALUADOR -->
-            <div class="step-container" id="step-4">
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">cloud_upload</span><h2>8. Carga Digital (Formatos)</h2></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">landscape</span><h2>2. Características del Terreno</h2></div>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div class="md:col-span-2"><label>Superficie Terreno (m²)</label><input type="number" name="Superficie_Terreno" id="num_superficie_terreno" value="0"></div>
+                    <div><label>Frente (m)</label><input type="number" name="Frente_m" value="0"></div>
+                    <div><label>Fondo (m)</label><input type="number" name="Fondo_m" value="0"></div>
+                    <div class="md:col-span-2"><label>Topografía</label><select name="Topografia"><option value="Ninguna">Ninguna</option><option value="Plano" selected>Plano</option><option value="Pendiente Ligera">Pendiente Ligera</option><option value="Accidentado/Barranco">Accidentado/Barranco</option></select></div>
+                    <div class="md:col-span-3"><label>Ubicación en Manzana</label><select name="Ubicacion_en_Manzana"><option value="Ninguna">Ninguna</option><option value="Un frente">Un frente</option><option value="Intermedio" selected>Intermedio</option><option value="Esquina">Esquina</option><option value="Dos frentes no contiguos">Dos frentes no contiguos</option><option value="Cabecera de manzana">Cabecera de manzana</option></select></div>
+                    <div class="md:col-span-3"><label>Frente a</label><select name="Frente_a"><option value="Ninguna">Ninguna</option><option value="Calle" selected>Calle</option><option value="Carretera">Carretera</option><option value="Avenida">Avenida</option><option value="Cerrada">Cerrada</option><option value="Andador">Andador</option><option value="Servidumbre de paso">Servidumbre de paso</option><option value="Sin acceso">Sin acceso</option><option value="Privada">Privada</option></select></div>
+                </div>
+            </div>
+
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">foundation</span><h2>3. Características de Construcción</h2></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="md:col-span-2"><label>Superficie Const. (m²)</label><input type="number" name="Superficie_Construccion" id="num_sup_const" value="0"></div>
+                    <div><label>Edad (Años)</label><input type="number" name="Edad_Anos" id="num_edad" value="0"></div>
+                    <div><label>Conservación</label><select name="Estado_Conservacion" id="est-conservacion" onchange="window.aplicarLogicaInteligente(); window.aplicarFiltroRemodelacion();"><option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
+                    <div><label>Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0"></div>
+                    <div><label>Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0"></div>
+                    <div><label>Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                    <div><label>Elevador</label><select name="Elevador"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                </div>
+            </div>
+
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">chair</span><h2>4. Equipamiento y Categoría</h2></div>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-4 text-center">
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">bed</span>Recámaras</label><input type="number" name="No_Recamaras" value="0"></div>
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">shower</span>Baños</label><input type="number" name="No_Banos" value="0"></div>
+                    <div><label><span class="material-symbols-rounded text-xl block mb-1">directions_car</span>Autos</label><input type="number" name="No_Estacionamientos" value="0"></div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="mt-2 md:mt-0">Clase de Inmueble</label><select name="Clase_Inmueble"><option value="Ninguna">Ninguna</option><option value="Clase Media" selected>Clase Media</option><option value="Interés Social">Interés Social</option><option value="Semilujo">Semilujo</option><option value="Residencial">Residencial</option><option value="Lujo">Lujo</option></select></div>
+                    <div class="col-span-3 md:col-span-1 text-left"><label class="mt-2 md:mt-0">Calidad Acabados</label><select name="Calidad_Acabados"><option value="Ninguna">Ninguna</option><option value="Estándar" selected>Estándar</option><option value="Económicos">Económicos</option><option value="Semilujo">Semilujo</option><option value="Lujo">Lujo</option></select></div>
+                </div>
+            </div>
+
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">architecture</span><h2>5. Capa ADN e Infraestructura</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label>Tipo de Calle</label><select name="Tipo_de_Calle"><option value="Ninguna">Ninguna</option><option value="Asfalto" selected>Asfalto</option><option value="Terraceria">Terraceria</option><option value="Adoquin">Adoquin</option><option value="Concreto Hidraulico">Concreto Hidraulico</option><option value="Calle de Piedra">Calle de Piedra</option><option value="Piedra">Piedra</option></select></div>
+                    <div><label>Tipo Acceso Complejo</label><select name="Tipo_de_Acceso_Complejo"><option value="Ninguna">Ninguna</option><option value="Pluma TAG">Pluma TAG</option><option value="Abierto" selected>Abierto</option><option value="Porton Electrico">Porton Electrico</option></select></div>
+                    <div><label>Red de Agua</label><select name="Red_de_Agua"><option value="Ninguna">Ninguna</option><option value="Conexion al Inmueble" selected>Conexion al Inmueble</option><option value="Pozo de Agua">Pozo de Agua</option><option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option></select></div>
+                    <div><label>Tipo de Drenaje</label><select name="Tipo_de_Drenaje"><option value="Ninguna">Ninguna</option><option value="Conexion a Red" selected>Conexion a Red</option><option value="Fosa Septica">Fosa Septica</option><option value="Resumidero">Resumidero</option></select></div>
+                    <div><label>Señalización / Nom.</label><select name="Senalizacion_Nomenclatura"><option value="Ninguna">Ninguna</option><option value="Completa" selected>Completa</option><option value="Inexistente">Inexistente</option><option value="Solo Nomenclatura">Solo Nomenclatura</option></select></div>
+                    <div><label>Suministro Servicios</label><select name="Suministro_Servicios"><option value="Ninguna">Ninguna</option><option value="Subterraneos">Subterraneos</option><option value="Aereos" selected>Aereos</option><option value="Mixtos">Mixtos</option></select></div>
+                    <div><label>Amenidades Urbanas</label><select name="Amenidades_Urbanas"><option value="Ninguna" selected>Ninguna</option><option value="Parque Privado">Parque Privado</option><option value="Parque Publico">Parque Publico</option><option value="Casa Club">Casa Club</option><option value="Canchas Deportivas">Canchas Deportivas</option><option value="Acceso a Playa">Acceso a Playa</option><option value="Muelle">Muelle</option></select></div>
+                    <div><label>Tipo de Techos</label><select name="Tipo_de_Techos"><option value="Ninguna">Ninguna</option><option value="Losa de concreto" selected>Losa de concreto</option><option value="Losacero">Losacero</option><option value="Provisional">Provisional</option><option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option><option value="Vigueta y bovedilla">Vigueta y bovedilla</option><option value="Estructura metalica">Estructura metalica</option></select></div>
+                    <div><label>Material de Muros</label><select name="Material_de_Muros"><option value="Ninguna">Ninguna</option><option value="De block" selected>De block</option><option value="Tablaroca">Tablaroca</option><option value="Provisionales">Provisionales</option><option value="Tablacemento">Tablacemento</option><option value="De tabique">De tabique</option><option value="Prefabricados">Prefabricados</option><option value="De concreto">De concreto</option><option value="De piedra">De piedra</option><option value="De adobe">De adobe</option><option value="De madera">De madera</option></select></div>
+                    <div><label>Acabado de Pisos</label><select name="Acabado_de_Pisos"><option value="Ninguna">Ninguna</option><option value="Ceramicos" selected>Ceramicos</option><option value="Porcelanatos">Porcelanatos</option><option value="Tierra">Tierra</option><option value="Cemento">Cemento</option><option value="Maderas">Maderas</option><option value="Marmol / Gama Alta">Marmol / Gama Alta</option></select></div>
+                    <div><label>Calidad Madera</label><select name="Calidad_Madera"><option value="Ninguna">Ninguna</option><option value="MDF/Pino" selected>MDF/Pino</option><option value="Cedro/Caoba">Cedro/Caoba</option><option value="Encino/Roble">Encino/Roble</option><option value="Sin Madera">Sin Madera</option></select></div>
+                    <div><label>Acabados Cocina</label><select name="Acabados_Cocina"><option value="Ninguna">Ninguna</option><option value="Barra de Concreto" selected>Barra de Concreto</option><option value="Granito">Granito</option><option value="Nula">Nula</option><option value="MDF">MDF</option><option value="Cuarzo">Cuarzo</option><option value="Tarja">Tarja</option></select></div>
+                    <div><label>Portón Propiedad</label><select name="Tipo_de_Porton_Propiedad"><option value="Ninguna">Ninguna</option><option value="Sin Porton" selected>Sin Porton</option><option value="Electrico">Electrico</option><option value="Herreria">Herreria</option><option value="Manual">Manual</option><option value="Madera">Madera</option></select></div>
+                    <div><label>Tipo Estacionamiento</label><select name="Tipo_de_Estacionamiento"><option value="Ninguna">Ninguna</option><option value="Abierto" selected>Abierto</option><option value="Subterraneo">Subterraneo</option><option value="En Bateria">En Bateria</option><option value="Techado">Techado</option></select></div>
+                    <div><label>Aire Acondicionado</label><select name="Tipo_Aire_Acondicionado" onchange="window.aplicarFiltroAires()"><option value="Ninguno" selected>Ninguno</option><option value="Minisplit">Minisplit</option><option value="Minisplit Inverter">Minisplit Inverter</option><option value="Cassette">Cassette</option><option value="Fan and Coil">Fan and Coil</option></select></div>
+                    <div><label>Num Equipos Aire</label><input type="number" name="Num_Equipos_Aire" value="0"></div>
+                    <div><label>Amenidades Interiores</label><select name="Amenidades_Interiores"><option value="Ninguna" selected>Ninguna</option><option value="Bodega">Bodega</option><option value="Cuarto de Servicio">Cuarto de Servicio</option><option value="Estudio">Estudio</option><option value="Gimnasio Privado">Gimnasio Privado</option></select></div>
+                    <div><label>Protección Térmica</label><select name="Proteccion_Termica"><option value="Ninguna" selected>Ninguna</option><option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option><option value="Vidrio Sencillo">Vidrio Sencillo</option><option value="Muros Aislados">Muros Aislados</option></select></div>
+                    <div class="md:col-span-3"><label>Lista Espacios Exteriores</label><input type="text" name="Espacios_Exteriores_Lista" value="" placeholder="Ej: Jardín, terraza..."></div>
+                    <div><label>Plusvalía Atípica</label><select name="Caso_Atipico_Plusvalia"><option value="Ninguno" selected>Ninguno</option><option value="Vista al Mar">Vista al Mar</option><option value="Primera Fila al Mar">Primera Fila al Mar</option><option value="Frente a Laguna">Frente a Laguna</option><option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option><option value="Vista a la Laguna">Vista a la Laguna</option><option value="Vista a la Marina">Vista a la Marina</option></select></div>
+                    <div><label>Conectividad</label><select name="Conectividad"><option value="Ninguna" selected>Ninguna</option><option value="Fibra Optica">Fibra Optica</option><option value="Satelital">Satelital</option><option value="Cobre">Cobre</option></select></div>
+                </div>
+            </div>
+
+            <div class="card-bloque">
+                <div class="card-header"><span class="material-symbols-rounded icon">warning</span><h2>6. Parámetros Críticos y Mejoras</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div><label>Certeza Jurídica</label><select name="Certeza_Juridica"><option value="Escritura Publica" selected>Escritura Pública</option><option value="Ejidal">Ejidal</option><option value="Certificado Parcelario">Certificado Parcelario</option><option value="Posesion">Posesión</option></select></div>
+                    <div><label>Régimen Propiedad</label><select name="Regimen_Propiedad"><option value="Ninguna">Ninguna</option><option value="Individual" selected>Individual</option><option value="Privada Condominal">Privada Condominal</option><option value="Privada Normal (Asociacion)">Privada Normal (Asociacion)</option><option value="Privada Copropiedad">Privada Copropiedad</option><option value="Sin Regimen">Sin Regimen</option></select></div>
+                    <div><label>Vigilancia</label><select name="Tipo_de_Vigilancia"><option value="Nula" selected>Nula</option><option value="Privada (Caseta)">Privada (Caseta)</option><option value="Publica">Pública</option></select></div>
+                    <div><label>Cuota Mantenimiento ($)</label><input type="number" name="Cuota_Mantenimiento" value="0"></div>
+                    <div><label>Colindancia</label><select name="Colindancia"><option value="Ninguna" selected>Ninguna</option><option value="Habitacional">Habitacional</option><option value="Comercial Ruidosa">Comercial Ruidosa</option><option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option></select></div>
+                    <div class="md:col-span-3"><label>Amenidades Entorno Abierto</label><input type="text" name="Amenidades_Entorno_Abierto" value=""></div>
+                    <div class="md:col-span-2"><label>Mantenimiento Reciente</label><input type="text" name="Mantenimiento_Reciente_Lista" value=""></div>
+                    <div><label>Humedades</label><select name="Estado_de_Humedades"><option value="Ninguna" selected>Ninguna</option><option value="Inexistente">Inexistente</option><option value="Salitre leve">Salitre leve</option><option value="Humedad Estructural">Humedad Estructural</option></select></div>
+                    <div><label>Alcance Remodelación</label><select name="Alcance_Remodelacion" onchange="window.aplicarFiltroRemodelacion()"><option value="Nula" selected>Nula</option><option value="Solo Estetica">Solo Estética</option><option value="Instalaciones y Acabados">Instalaciones y Acabados</option><option value="Integral">Integral</option></select></div>
+                </div>
+
+                <div id="panel_mejoras" class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
+                    <label class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-3 block border-b border-slate-200 dark:border-slate-700 pb-2">🛡️ Selección de Mejoras</label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item"><input type="checkbox" name="cambio_pisos"><label>Cambio Pisos</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="cambio_pisos_instalaciones"><label>Pisos + Instal.</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="techado_cochera"><label>Techado Cochera</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_cocina"><label>Remodeló Cocina</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="ampliacion_habitaciones"><label>Amp. Habitaciones</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="ampliacion_piso"><label>Ampliación Piso</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_parcial"><label>Remodelación Parcial</label></div>
+                        <div class="checkbox-item"><input type="checkbox" name="remodelacion_completa"><label>Remodelación Total</label></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div><label>Años desde Remodelación</label><input type="number" name="Anos_desde_Remodelacion" value="0"></div>
+                    <div><label>Porcentaje Avance: <span id="val_avance" class="text-emerald-600 dark:text-emerald-400">0</span>%</label><input type="range" name="Porcentaje_Avance" min="0" max="100" value="0" oninput="document.getElementById('val_avance').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div><label>Altura Techos</label><select name="Altura_Techos"><option value="Ninguna" selected>Ninguna</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Estandar (<2.50m)">Estándar (<2.50m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseño</option></select></div>
+                    <div><label>Negociación Final: <span id="val_negociacion" class="text-emerald-600 dark:text-emerald-400">2</span>%</label><input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" oninput="document.getElementById('val_negociacion').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
+                    <div class="md:col-span-4 mt-2">
+                        <label>Notas Particulares (PDF - Pag. 4 u 8)</label>
+                        <textarea name="Notas_Particulares" rows="3" placeholder="Observaciones de campo, advertencias técnicas..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="seccion_verticalidad" class="card-bloque hidden">
+                <div class="card-header"><span class="material-symbols-rounded icon">domain</span><h2>7. Especificaciones de Verticalidad</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-3">
+                    <div>
+                        <label>Verticalidad Premium (Torres Lujo)</label>
+                        <select name="Verticalidad_Premium"><option value="Ninguna" selected>No Aplica</option><option value="Si">Sí</option><option value="No">No</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="seccion-archivos" class="card-bloque hidden">
+                <div class="card-header"><span class="material-symbols-rounded icon">cloud_upload</span><h2>8. Carga Digital Clasificada</h2></div>
+                
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
-                        <!-- PORTADA -->
-                        <div class="border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-6 rounded-2xl text-center cursor-pointer hover:bg-indigo-50" onclick="document.getElementById('foto_fachada').click()">
+                        <div class="border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/10 p-6 rounded-2xl text-center hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors cursor-pointer flex flex-col items-center justify-center relative overflow-hidden" onclick="document.getElementById('foto_fachada').click()">
                             <span class="material-symbols-rounded text-4xl text-indigo-500 mb-2">add_a_photo</span>
-                            <h3 class="text-sm font-black text-indigo-800">1. Foto de Portada</h3>
+                            <h3 class="text-sm font-black text-indigo-800 dark:text-indigo-300">1. Portada</h3>
+                            <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1">Carátula PDF</p>
                             <input type="file" id="foto_fachada" accept="image/*" onchange="window.procesarFotoBase()" class="hidden">
+                            
                             <div id="vista_previa" class="hidden mt-4 w-full relative z-10">
                                 <img id="img_preview" src="" class="h-24 w-auto mx-auto rounded-lg border-2 border-indigo-500 object-cover shadow-md">
                                 <button type="button" onclick="event.stopPropagation(); document.getElementById('foto_fachada').value=''; document.getElementById('vista_previa').classList.add('hidden'); base64FotoPortada='';" class="mt-3 text-[10px] bg-rose-500 text-white px-4 py-1.5 rounded-full font-bold shadow-sm hover:bg-rose-600">❌ Quitar</button>
                             </div>
                         </div>
 
-                        <!-- INTERIORES -->
-                        <div class="drop-zone border-emerald-300 bg-emerald-50/50" ondrop="event.preventDefault(); this.classList.remove('border-emerald-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'foto');" onclick="document.getElementById('file_interiores').click()" ondragover="event.preventDefault(); this.classList.add('border-emerald-500');" ondragleave="event.preventDefault(); this.classList.remove('border-emerald-500');">
-                            <span class="material-symbols-rounded text-4xl text-emerald-500 mb-2">collections</span>
-                            <h3 class="text-sm font-black text-emerald-800">2. Fotos Interiores</h3>
-                            <p class="text-[10px] text-emerald-600">Arrastre múltiples imágenes</p>
-                            <input type="file" id="file_interiores" multiple accept="image/*" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'foto')">
-                            <div id="contenedor_thumbnails_fotos" class="grid grid-cols-2 gap-2 mt-4 max-h-48 overflow-y-auto custom-scroll empty:hidden"></div>
+                        <div class="md:col-span-2 flex flex-col gap-3">
+                            <div class="drop-zone border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/10 h-full flex flex-col items-center justify-center py-6" 
+                                 ondragover="event.preventDefault(); this.classList.add('border-emerald-500');" 
+                                 ondragleave="event.preventDefault(); this.classList.remove('border-emerald-500');" 
+                                 ondrop="event.preventDefault(); this.classList.remove('border-emerald-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'foto');" 
+                                 onclick="document.getElementById('file_interiores').click()">
+                                <span class="material-symbols-rounded text-4xl text-emerald-500 mb-2">collections</span>
+                                <h3 class="text-sm font-black text-emerald-800 dark:text-emerald-300">2. Fotos Interiores</h3>
+                                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">Arrastre imágenes aquí (Múltiples)</p>
+                                <input type="file" id="file_interiores" multiple accept="image/*" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'foto')">
+                            </div>
+                            <div id="contenedor_thumbnails_fotos" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto custom-scroll empty:hidden"></div>
                         </div>
-
-                        <!-- ANEXOS -->
-                        <div class="drop-zone border-amber-300 bg-amber-50/50 md:col-span-2" ondrop="event.preventDefault(); this.classList.remove('border-amber-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'anexo');" onclick="document.getElementById('file_anexos').click()" ondragover="event.preventDefault(); this.classList.add('border-amber-500');" ondragleave="event.preventDefault(); this.classList.remove('border-amber-500');">
-                            <span class="material-symbols-rounded text-4xl text-amber-500 mb-2">picture_as_pdf</span>
-                            <h3 class="text-sm font-black text-amber-800">3. Documentos Anexos (Fotos)</h3>
-                            <p class="text-[10px] text-amber-600">Sube imágenes (.jpg o .png) de Planos/Predial para el PDF</p>
-                            <!-- REGLA APLICADA: Ahora acepta imágenes para que Python las lea -->
-                            <input type="file" id="file_anexos" multiple accept="image/*" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'anexo')">
-                            <div id="contenedor_thumbnails_anexos" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 max-h-48 overflow-y-auto custom-scroll empty:hidden"></div>
-                        </div>
-
                     </div>
-                </div>
 
-                <div class="card-bloque">
-                    <div class="card-header"><span class="material-symbols-rounded icon">badge</span><h2>9. Datos del Valuador</h2></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label>Nombre Completo</label><input type="text" name="Nombre_Valuador" placeholder="Arq. Juan Pérez"></div>
-                        <div><label>Cédula</label><input type="text" name="Cedula_Valuador" placeholder="Ej: 12345678"></div>
-                        <input type="hidden" name="EME_ID" value="Ninguna">
-                        <div><label>Correo</label><input type="text" name="Correo_Valuador" placeholder="ejemplo@correo.com"></div>
-                        <div><label>Teléfono</label><input type="text" name="Telefono_Valuador" placeholder="5555555555"></div>
+                    <div class="flex flex-col gap-3">
+                        <div class="drop-zone border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10 py-6" 
+                             ondragover="event.preventDefault(); this.classList.add('border-amber-500');" 
+                             ondragleave="event.preventDefault(); this.classList.remove('border-amber-500');" 
+                             ondrop="event.preventDefault(); this.classList.remove('border-amber-500'); window.procesarArchivosExtra(event.dataTransfer.files, 'anexo');" 
+                             onclick="document.getElementById('file_anexos').click()">
+                            <span class="material-symbols-rounded text-4xl text-amber-500 mb-2">document_scanner</span>
+                            <h3 class="text-sm font-black text-amber-800 dark:text-amber-300">3. Documentos Anexos (Planos / Escrituras)</h3>
+                            <p class="text-[11px] font-bold text-rose-500 mt-1">⚠️ Subir ÚNICAMENTE formatos de imagen (.jpg, .png)</p>
+                            <input type="file" id="file_anexos" multiple accept="image/*" class="hidden" onchange="window.procesarArchivosExtra(this.files, 'anexo')">
+                        </div>
+                        <div id="contenedor_thumbnails_anexos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-48 overflow-y-auto custom-scroll empty:hidden"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- NAVEGACIÓN WIZARD -->
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 z-30 flex justify-between gap-3 dark:bg-slate-900 dark:border-slate-700" id="wizard-nav">
-                <button type="button" onclick="window.prevStep()" id="btn-prev" class="px-6 py-3 font-bold text-slate-500 hover:bg-slate-100 rounded-xl hidden">Atrás</button>
-                <div class="flex-1 flex justify-center items-center font-bold text-slate-400 text-sm hidden sm:flex" id="step-indicator">Paso 1 de 4</div>
-                <button type="button" onclick="window.nextStep()" id="btn-next" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg">Siguiente</button>
-                <button type="button" onclick="window.enviarDictamenPrevio()" id="btn-calc" class="hidden px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg flex items-center gap-2"><span class="material-symbols-rounded animate-pulse">rocket_launch</span> Calcular Valor</button>
+            <div id="seccion-valuador" class="card-bloque hidden">
+                <div class="card-header"><span class="material-symbols-rounded icon">badge</span><h2>9. Datos del Valuador (Para el PDF Oficial)</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div><label>Nombre Completo</label><input type="text" name="Nombre_Valuador" placeholder="Arq. Juan Pérez"></div>
+                    <div id="grupo_cedula"><label>Cédula Profesional</label><input type="text" name="Cedula_Valuador" placeholder="Ej: 12345678"></div>
+                    <div id="grupo_id_eme" class="hidden"><label>Código EME</label><input type="text" name="EME_ID" placeholder="Ej: EME-092"></div>
+                    <div><label>Correo de Contacto</label><input type="text" name="Correo_Valuador" placeholder="ejemplo@correo.com"></div>
+                    <div><label>Teléfono</label><input type="text" name="Telefono_Valuador" placeholder="55 5555 5555"></div>
+                </div>
+            </div>
+
+            <div id="seccion_muestreo_manual" class="card-bloque hidden" style="border-color: #f59e0b; padding: 24px 0 24px 24px;">
+                <div class="pr-6">
+                    <div class="card-header"><span class="material-symbols-rounded icon" style="color: #d97706; background: #fef3c7;">analytics</span><h2>10. Panel de Control Pericial (Mercado Manual)</h2></div>
+                    <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border-l-4 border-amber-500 mb-6 shadow-sm">
+                        <p class="text-[11px] sm:text-xs text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+                            ⚠️ <strong>NOTA TÉCNICA:</strong> Registre un mínimo de <strong>3 testigos activos</strong>. Toque una tarjeta para abrir el formulario de captura.
+                        </p>
+                    </div>
+                </div>
+                <div id="testigos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-6 pb-2"></div>
+                <div id="testigos-hidden-data" class="hidden"></div>
             </div>
 
         </form>
 
-        <!-- PANEL DE CONCLUSIÓN VERDE -->
-        <div id="panel_conclusion_interactivo" class="hidden bg-emerald-600 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden mt-8 mb-24">
-            <h3 class="text-2xl font-black mb-4">Conclusión de Valor</h3>
-            <p class="text-xs mb-6">Mueva el selector para definir el valor de cierre.</p>
+        <div id="panel_conclusion_interactivo" class="hidden bg-emerald-600 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden mb-12">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+            <h3 class="text-2xl font-black mb-4 flex items-center gap-2 drop-shadow-md"><span class="material-symbols-rounded text-3xl">task_alt</span> Conclusión de Valor</h3>
+            <p class="text-xs font-medium text-emerald-100 mb-6 leading-relaxed max-w-2xl">Mueva el selector para definir el valor comercial de cierre dentro del rango técnico autorizado por el modelo AVM para generar su Dictamen Pericial Oficial (PDF).</p>
+
             <div class="grid grid-cols-2 gap-6 mb-4 text-center">
-                <div class="bg-black/20 p-5 rounded-xl border border-white/10"><p class="text-[10px] uppercase font-bold text-emerald-200 mb-2">Mínimo Estimado</p><p class="text-2xl font-black font-mono" id="lbl_limite_inf">$0</p></div>
-                <div class="bg-black/20 p-5 rounded-xl border border-white/10"><p class="text-[10px] uppercase font-bold text-emerald-200 mb-2">Máximo Estimado</p><p class="text-2xl font-black font-mono" id="lbl_limite_sup">$0</p></div>
+                <div class="bg-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
+                    <p class="text-[10px] uppercase font-bold text-emerald-200 tracking-widest mb-2">Mínimo Estimado</p>
+                    <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_inf">$0</p>
+                </div>
+                <div class="bg-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
+                    <p class="text-[10px] uppercase font-bold text-emerald-200 tracking-widest mb-2">Máximo Estimado</p>
+                    <p class="text-2xl lg:text-3xl font-black font-mono tracking-tight" id="lbl_limite_sup">$0</p>
+                </div>
             </div>
-            <div class="bg-white/10 p-6 rounded-xl border border-white/20 mb-8 shadow-sm">
-                <div class="flex justify-between items-end mb-4"><p class="text-sm font-bold">Valor de Cierre:</p><p class="text-3xl font-black text-amber-300 font-mono" id="val_conclusion_seleccionado">$0.00</p></div>
-                <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="window.actualizarValorConcluidoLabel(this.value)" class="w-full mt-2 accent-amber-400">
+            
+            <p id="lbl_aviso_manual" class="text-xs text-amber-300 text-center mb-6 hidden animate-pulse font-bold tracking-widest uppercase">⭐ Incluye análisis de su Mercado Manual</p>
+            
+            <div class="bg-white/10 p-6 rounded-xl border border-white/20 backdrop-blur-md mb-8 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-2">
+                    <p class="text-sm font-bold text-emerald-50">Valor de Cierre Seleccionado:</p>
+                    <p class="text-3xl font-black text-amber-300 drop-shadow-md font-mono" id="val_conclusion_seleccionado">$0.00</p>
+                </div>
+                <input type="range" id="slider_conclusion_valor" min="0" max="100" value="50" oninput="window.actualizarValorConcluidoLabel(this.value)" class="w-full mt-2 accent-amber-400 h-2 bg-emerald-900/50 rounded-lg appearance-none cursor-pointer">
             </div>
-            <button onclick="window.enviarGenerarReporteFinal()" id="btn-generar-pdf" class="w-full bg-amber-400 hover:bg-amber-300 text-amber-950 font-black py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest"><span class="material-symbols-rounded text-xl">download</span> Generar PDF Oficial</button>
+            
+            <button onclick="window.enviarGenerarReporteFinal()" id="btn-generar-pdf" class="w-full bg-amber-400 hover:bg-amber-300 text-amber-950 font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 tracking-widest uppercase">
+                <span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial
+            </button>
         </div>
+
     </main>
 
-    <!-- MODAL TESTIGO MINIMALISTA -->
-    <div id="modal-testigo" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
-            <h3 id="modal-testigo-titulo" class="text-lg font-black mb-4 dark:text-white">Testigo</h3>
-            <input type="hidden" id="mt_id">
-            <div class="space-y-3">
-                <div><label>Precio (MXN)</label><input type="text" id="mt_precio" oninput="window.formatearMiles(this)" placeholder="Ej. 1,500,000" class="text-lg font-bold text-emerald-600"></div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label>Terreno (m²)</label><input type="number" id="mt_terr"></div>
-                    <div><label>Const. (m²)</label><input type="number" id="mt_const"></div>
-                    <div><label>Niveles</label><input type="number" id="mt_niveles"></div>
-                    <div><label>Edad</label><input type="number" id="mt_edad"></div>
+    <div id="footer-pegajoso" class="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 shadow-[0_-15px_20px_-5px_rgba(0,0,0,0.1)] p-4 z-[9000] flex justify-center gap-3 pb-safe">
+        <button type="button" onclick="window.limpiarBorrador()" class="px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center" title="Limpiar Formulario (Reset)">
+            <span class="material-symbols-rounded">delete_sweep</span>
+        </button>
+        
+        <button type="button" onclick="window.guardarProgresoLocalManual()" class="px-6 py-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center gap-2" title="Guardar Borrador">
+            <span class="material-symbols-rounded">save</span> <span class="hidden sm:inline">Guardar</span>
+        </button>
+
+        <button type="button" id="btn_ejecutar_avm" onclick="window.enviarDictamenPrevio()" class="max-w-2xl w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-xl shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-3 transition-all active:scale-95 uppercase tracking-widest text-sm border border-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM
+        </button>
+    </div>
+
+    <div id="modal-seleccion-perfil" class="fixed inset-0 z-[9999] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700 animate-fade-in">
+            <div class="p-8 text-center border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="material-symbols-rounded text-4xl">admin_panel_settings</span>
                 </div>
-                <div><label>Estado</label><select id="mt_estado"><option value="Bueno">Bueno</option><option value="Excelente">Excelente/Nuevo</option><option value="Regular">Regular</option></select></div>
-                <div><label>Ubicación</label><select id="mt_ubicacion"><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option></select></div>
-                <div><label>Zona vs Sujeto</label><select id="mt_zona"><option value="Igual">Igual / Similar</option><option value="Mejor">Mejor (Sobrevalorada)</option><option value="Peor">Peor (Infravalorada)</option></select></div>
-                <button onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 text-amber-950 font-black py-3 rounded-xl mt-4">Guardar</button>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Selecciona tu Perfil Operativo</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Las herramientas del sistema se adaptarán al nivel que elijas.</p>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll flex-1 bg-slate-100/50 dark:bg-slate-800/50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="window.confirmarPerfil(1, 'Automatizado (Básico)', 'bg-slate-500', 'text-slate-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-slate-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-slate-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-slate-500 mb-3">speed</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 1: Automatizado</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Algoritmo AVM puro. Solo captura la ubicación y características básicas. Cero carga pericial.</p>
+                    </button>
+                    <button onclick="window.confirmarPerfil(2, 'Híbrido Inmobiliario', 'bg-amber-500', 'text-amber-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-amber-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-amber-500 mb-3">handshake</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 2: Híbrido Inmobiliario</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Solicita avalúos y carga mercado manual. Se ocultan datos técnicos complejos.</p>
+                    </button>
+                    <button onclick="window.confirmarPerfil(3, 'Valuador Independiente', 'bg-emerald-600', 'text-emerald-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-emerald-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-emerald-500 mb-3">real_estate_agent</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 3: Independiente</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Sin carga de documentos periciales. Ideal para estimaciones de mercado rápidas y precisas.</p>
+                    </button>
+                    <button onclick="window.confirmarPerfil(4, 'Valuador Certificado EME', 'bg-indigo-600', 'text-indigo-400')" class="group text-left bg-white dark:bg-slate-800 border-2 border-transparent hover:border-indigo-500 p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all relative overflow-hidden active:scale-95">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <span class="material-symbols-rounded text-3xl text-indigo-500 mb-3">verified</span>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Perfil 4: Valuador EME</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Acceso total. Firmas oficiales, verticales, fotos ilimitadas y conexión directa con el motor.</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-testigo" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden relative animate-[popIn_0.3s_ease-out] border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                <h3 id="modal-testigo-titulo" class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2"><span class="material-symbols-rounded text-amber-500">real_estate_agent</span> Testigo X</h3>
+                <button onclick="window.cerrarModalTestigo()" class="text-slate-400 hover:text-rose-500 transition-colors"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scroll flex-1 bg-slate-100/50 dark:bg-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="hidden" id="mt_id">
+                <div class="sm:col-span-2"><label>Precio de Salida (MXN)</label><input type="text" id="mt_precio" oninput="window.formatearMiles(this)" placeholder="Ej. 1,500,000" class="text-lg font-bold text-emerald-600"></div>
+                <div><label>Terreno (m²)</label><input type="number" id="mt_terr" placeholder="0"></div>
+                <div><label>Construcción (m²)</label><input type="number" id="mt_const" placeholder="0"></div>
+                <div><label>Niveles</label><input type="number" id="mt_niveles" placeholder="0"></div>
+                <div><label>Edad (Años)</label><input type="number" id="mt_edad" placeholder="0"></div>
+                <div><label>Estado Conservación</label><select id="mt_estado"><option value="Bueno">Bueno</option><option value="Excelente">Excelente/Nuevo</option><option value="Regular">Regular</option><option value="Malo">Malo</option></select></div>
+                <div><label>Ubicación</label><select id="mt_ubicacion"><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option><option value="Frente a parque">Frente a parque</option></select></div>
+                <div class="sm:col-span-2"><label>Comparación de Zona (Respecto al sujeto)</label><select id="mt_zona"><option value="Igual">Igual / Similar</option><option value="Mejor">Mejor (Sobrevalorada)</option><option value="Peor">Peor (Infravalorada)</option></select></div>
+                <div class="sm:col-span-2"><label>Enlace / Link (Opcional)</label><input type="text" id="mt_link" placeholder="URL de Inmuebles24, Vivanuncios..."></div>
+            </div>
+            
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <button onclick="window.guardarModalTestigo()" class="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">save</span> Guardar Testigo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="fixed inset-0 z-[9500] hidden bg-slate-900/95 backdrop-blur-md flex-col items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative animate-[popIn_0.3s_ease-out] border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500 shrink-0"></div>
+            <div class="p-8 text-center flex-1 overflow-y-auto custom-scroll">
+                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100 dark:border-slate-700">
+                    <span class="material-symbols-rounded text-4xl">account_balance_wallet</span>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Saldo Insuficiente</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+                    Tu cuenta tiene <b class="text-rose-500">0 Créditos</b>. Selecciona uno de los paquetes disponibles para continuar:
+                </p>
+                <div id="contenedor-paquetes-pago" class="flex flex-col gap-3 mb-6"><span class="material-symbols-rounded animate-spin text-indigo-500 text-3xl mx-auto">sync</span><p class="text-xs text-slate-400">Cargando paquetes...</p></div>
+                <div class="flex flex-col gap-3 mt-auto shrink-0">
+                    <button type="button" onclick="document.getElementById('paymentModal').classList.add('hidden'); document.getElementById('paymentModal').classList.remove('flex');" class="w-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 py-3 rounded-xl font-bold transition-colors text-sm">Cancelar y volver</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 🚀 CEREBRO V4.0 - SEGURO CON NETLIFY
-        // ==========================================
-
-        let currentStep = 1;
-        const totalSteps = 4;
-        let minValorCalculado = 0;
-        let maxValorCalculado = 0;
-        let ultimaBusqueda = null;
-        let base64FotoPortada = ""; 
-        let arrayFotosAnexos = []; 
-        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
-
-        const camposNumericosEstrictos = [
-            'Superficie_Terreno', 'Superficie_Construccion', 'Frente_m', 'Fondo_m', 'Edad_Anos', 
-            'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'No_Recamaras', 'No_Banos', 'No_Estacionamientos', 
-            'Cuota_Mantenimiento', 'Anos_desde_Remodelacion', 'Porcentaje_Avance', 'Factor_Negociacion_Final', 'Num_Equipos_Aire',
-            'EME_CP_T1_Precio', 'EME_CP_T1_Sup_Terreno', 'EME_CP_T1_Sup_Construccion', 'EME_CP_T1_Niveles', 'EME_CP_T1_Edad',
-            'EME_CP_T2_Precio', 'EME_CP_T2_Sup_Terreno', 'EME_CP_T2_Sup_Construccion', 'EME_CP_T2_Niveles', 'EME_CP_T2_Edad',
-            'EME_CP_T3_Precio', 'EME_CP_T3_Sup_Terreno', 'EME_CP_T3_Sup_Construccion', 'EME_CP_T3_Niveles', 'EME_CP_T3_Edad',
-            'EME_CP_T4_Precio', 'EME_CP_T4_Sup_Terreno', 'EME_CP_T4_Sup_Construccion', 'EME_CP_T4_Niveles', 'EME_CP_T4_Edad',
-            'EME_CP_T5_Precio', 'EME_CP_T5_Sup_Terreno', 'EME_CP_T5_Sup_Construccion', 'EME_CP_T5_Niveles', 'EME_CP_T5_Edad',
-            'EME_CP_T6_Precio', 'EME_CP_T6_Sup_Terreno', 'EME_CP_T6_Sup_Construccion', 'EME_CP_T6_Niveles', 'EME_CP_T6_Edad'
-        ];
-
-        // --- SISTEMA WIZARD (PASOS) ---
-        window.actualizarWizard = function() {
-            for(let i=1; i<=totalSteps; i++) {
-                const el = document.getElementById(`step-${i}`);
-                if(el) { i === currentStep ? el.classList.add('active') : el.classList.remove('active'); }
+        // --- 1. UI Y LOADERS ---
+        document.addEventListener('wheel', function(e) { if (document.activeElement.type === 'number') e.preventDefault(); }, { passive: false });
+        window.showLoader = function(titulo = "Procesando Motor EME", desc = "Calculando en la nube...") {
+            const overlay = document.getElementById('loadingOverlay');
+            if(overlay) {
+                const titleEl = overlay.querySelector('h3');
+                const descEl = overlay.querySelector('p');
+                if(titleEl) titleEl.innerText = titulo;
+                if(descEl) descEl.innerText = desc;
+                overlay.classList.replace('hidden', 'flex');
             }
-            document.getElementById('step-indicator').innerText = `Paso ${currentStep} de ${totalSteps}`;
-            
-            const btnPrev = document.getElementById('btn-prev');
-            const btnNext = document.getElementById('btn-next');
-            const btnCalc = document.getElementById('btn-calc');
+        };
+        window.hideLoader = function() {
+            const overlay = document.getElementById('loadingOverlay');
+            if(overlay) overlay.classList.replace('flex', 'hidden');
+        };
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const icon = document.getElementById('dark-mode-icon');
+            if (html.classList.contains('dark')) { html.classList.remove('dark'); if(icon) icon.innerText = 'dark_mode'; localStorage.theme = 'light'; } 
+            else { html.classList.add('dark'); if(icon) icon.innerText = 'light_mode'; localStorage.theme = 'dark'; }
+        };
 
-            if(currentStep === 1) { btnPrev.classList.add('hidden'); } else { btnPrev.classList.remove('hidden'); }
+        // --- 2. VARIABLES GLOBALES ---
+        let authUser = null; let map, geocoder; let mapLoaded = false;
+        let minValorCalculado = 0; let maxValorCalculado = 0; let ultimaBusqueda = null;
+        let base64FotoPortada = ""; let arrayFotosAnexos = []; 
+        const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
+
+        // --- 3. AUTENTICACIÓN Y FIREBASE ---
+        window.iniciarSesionGoogle = function() { 
+            if (window.appAuth) {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                window.appAuth.signInWithPopup(provider).catch(err => alert("Error: " + err.message));
+            } else { alert("Conexión en curso, presiona Ctrl+F5."); }
+        };
+        
+        window.cerrarSesion = function() { 
+            if (window.appAuth) {
+                window.appAuth.signOut().then(() => {
+                    document.cookie = "leezar_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    localStorage.clear(); sessionStorage.clear(); window.location.reload();
+                });
+            } 
+        };
+
+        try {
+            window.appDb = window.db || firebase.firestore();
+            window.appAuth = firebase.auth();
             
-            if(currentStep === totalSteps) {
-                btnNext.classList.add('hidden');
-                btnCalc.classList.remove('hidden');
-            } else {
-                btnNext.classList.remove('hidden');
-                btnCalc.classList.add('hidden');
-            }
+            window.appAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    authUser = user;
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    window.abrirModalPerfiles();
+                    const authMini = document.getElementById('auth-mini');
+                    if (authMini) authMini.classList.remove('hidden');
+                    
+                    const headerName = document.getElementById('header-user-name');
+                    const headerAvatar = document.getElementById('header-user-avatar');
+                    const headerRole = document.getElementById('header-user-role');
+                    if(headerName) headerName.innerText = user.displayName || user.email.split('@')[0];
+                    if(headerAvatar && user.photoURL) headerAvatar.src = user.photoURL;
+
+                    window.appDb.collection('usuarios_estimador').doc(user.uid).onSnapshot((doc) => {
+                        if (!doc.exists) {
+                            window.appDb.collection('usuarios_estimador').doc(user.uid).set({ email: user.email, nombre: user.displayName || '', foto: user.photoURL || '', creditos: 0, rol: 'Valuador Base' });
+                            if(headerRole) headerRole.innerText = 'Valuador Base';
+                        } else {
+                            const userData = doc.data();
+                            authUser.creditos = userData.creditos || 0;
+                            const cr = document.getElementById('user-credits');
+                            if (cr) cr.innerText = authUser.creditos;
+                            if(headerRole) headerRole.innerText = userData.rol || 'Valuador';
+                        }
+                    });
+                    // El mapa ya no arranca aquí, arranca cuando el modal desaparezca
+                    window.aplicarVisibilidadPerfiles();
+                } else {
+                    authUser = null;
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                    document.getElementById('app-dashboard').classList.add('hidden');
+                    const authMini = document.getElementById('auth-mini');
+                    if (authMini) authMini.classList.add('hidden');
+                }
+            });
+        } catch (error) { console.warn("Firebase warning:", error); }
+
+        // --- 3.5 CONTROL DE PERFILES DINÁMICOS ---
+        window.abrirModalPerfiles = function() {
+            document.getElementById('app-dashboard').classList.add('hidden'); 
+            const modal = document.getElementById('modal-seleccion-perfil');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        };
+
+        window.confirmarPerfil = function(nivel, nombrePerfil, bgClass, textClass) {
+            const select = document.getElementById('perfil_usuario'); if(select) select.value = nivel;
+            document.getElementById('lbl-nombre-perfil').innerText = nombrePerfil;
+            const badge = document.getElementById('badge-color-perfil');
+            const headerRole = document.getElementById('header-user-role');
+            badge.className = `w-3 h-3 rounded-full animate-pulse shadow-sm ${bgClass}`;
+            if(headerRole) { headerRole.innerText = nombrePerfil; headerRole.className = `text-[10px] font-bold uppercase tracking-widest ${textClass}`; }
+
+            const modal = document.getElementById('modal-seleccion-perfil');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+            document.getElementById('app-dashboard').classList.remove('hidden');
+
+            setTimeout(() => {
+                if (window.leezarMapReady && typeof google !== 'undefined') {
+                    if (!mapLoaded) window.inicializarMapa(); 
+                    if (map) {
+                        google.maps.event.trigger(map, 'resize');
+                        const coords = document.getElementById('est-coords')?.value;
+                        if(coords && coords.includes(',')){
+                            const pts = coords.split(','); map.setCenter({lat: parseFloat(pts[0]), lng: parseFloat(pts[1])});
+                        } else { map.setCenter({ lat: 19.5332, lng: -96.9271 }); }
+                    } // <-- Esta es la llave mágica que me faltó ponerte
+                }
+            }, 300);
+
+            window.aplicarVisibilidadPerfiles();
+            window.guardarProgresoLocal();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.nextStep = function() { if(currentStep < totalSteps) { currentStep++; window.actualizarWizard(); } };
-        window.prevStep = function() { if(currentStep > 1) { currentStep--; window.actualizarWizard(); } };
-
-        // --- UI UTILS & FIREBASE ---
-        window.toggleDarkMode = function() {
-            document.documentElement.classList.toggle('dark');
-            document.getElementById('dark-mode-icon').innerText = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
-        };
-
-        window.showLoader = function(titulo, desc) {
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.querySelector('h3').innerText = titulo;
-            overlay.querySelector('p').innerText = desc;
-            overlay.classList.replace('hidden', 'flex');
-        };
-        window.hideLoader = function() { document.getElementById('loadingOverlay').classList.replace('flex', 'hidden'); };
-
-        window.iniciarSesionGoogle = function() { 
-            const p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
-            firebase.auth().signInWithPopup(p).catch(e => alert("Error: " + e.message));
-        };
-
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                authUser = user;
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('app-dashboard').classList.remove('hidden');
-                document.getElementById('header-user-name').innerText = user.displayName;
-                if(user.photoURL) document.getElementById('header-user-avatar').src = user.photoURL;
-                if(window.leezarMapReady) window.inicializarMapa();
-                window.generarTestigosManuales();
-            } else {
-                authUser = null;
-                document.getElementById('auth-screen').classList.remove('hidden');
-                document.getElementById('app-dashboard').classList.add('hidden');
+        // --- 4. MAPA Y COMPONENTES VISUALES ---
+        window.sincronizarTextoAMapa = function(val) {
+            if (!val || !map) return;
+            const parts = val.replace(/\s/g, '').split(',');
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                const pos = { lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) };
+                map.setCenter(pos); map.setZoom(18);
+                if (geocoder) {
+                    geocoder.geocode({ location: pos }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            const elDir = document.querySelector('input[name="Calle_Sujeto"]');
+                            if(elDir) elDir.value = results[0].formatted_address;
+                        }
+                    });
+                }
             }
-        });
+        };
 
-        // --- MAPA E INTEGRACIÓN CÓDIGO POSTAL ---
+        window.formatearMiles = function(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor === "") { input.value = ""; return; }
+            input.value = parseInt(valor, 10).toLocaleString('en-US');
+        };
+
+        window.inicializarMapa = function() {
+            if(mapLoaded || typeof google === 'undefined') return;
+            geocoder = new google.maps.Geocoder();
+            let defaultCenter = { lat: 19.5332, lng: -96.9271 };
+            
+            map = new google.maps.Map(document.getElementById("map"), { center: defaultCenter, zoom: 15, disableDefaultUI: true, zoomControl: true });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        map.setCenter(pos); map.setZoom(17);
+                        document.getElementById('est-coords').value = `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+                        geocoder.geocode({ location: pos }, (results, status) => {
+                            if (status === "OK" && results[0]) {
+                                let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                                results[0].address_components.forEach(comp => {
+                                    if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
+                                    if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
+                                    if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
+                                    if (comp.types.includes("locality")) loc = comp.long_name;
+                                    if (comp.types.includes("route")) calle = comp.long_name;
+                                    if (comp.types.includes("street_number")) num = comp.long_name;
+                                    if (comp.types.includes("postal_code")) cp = comp.long_name;
+                                });
+                                if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
+                                let ciudadFinal = muni || admin3 || loc || "";
+                                const elEst = document.querySelector('input[name="Estado"]'); if(elEst && est) elEst.value = est;
+                                const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun && ciudadFinal) elMun.value = ciudadFinal;
+                                const elDir = document.querySelector('input[name="Calle_Sujeto"]'); 
+                                if(elDir && calle) elDir.value = (calle + " " + num).trim();
+                                const elCp = document.querySelector('input[name="CP"]');
+                                if(cp && elCp) { elCp.value = cp; window.buscarCPFirebase(cp); }
+                            }
+                        });
+                    },
+                    (error) => { console.warn("GPS Denegado."); },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+            
+            map.addListener("idle", () => {
+                const c = map.getCenter();
+                document.getElementById('est-coords').value = `${c.lat().toFixed(6)},${c.lng().toFixed(6)}`;
+                geocoder.geocode({ location: { lat: c.lat(), lng: c.lng() } }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                        results[0].address_components.forEach(comp => {
+                            if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
+                            if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
+                            if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
+                            if (comp.types.includes("locality")) loc = comp.long_name;
+                            if (comp.types.includes("route")) calle = comp.long_name;
+                            if (comp.types.includes("street_number")) num = comp.long_name;
+                            if (comp.types.includes("postal_code")) cp = comp.long_name;
+                        });
+                        if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
+                        let ciudadFinal = muni || admin3 || loc || "";
+                        const elEst = document.querySelector('input[name="Estado"]'); if(elEst && est) elEst.value = est;
+                        const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun && ciudadFinal) elMun.value = ciudadFinal;
+                        const elDir = document.querySelector('input[name="Calle_Sujeto"]'); 
+                        if(elDir && document.activeElement !== elDir && calle) elDir.value = (calle + " " + num).trim();
+                        const elCp = document.querySelector('input[name="CP"]');
+                        if(cp && elCp && elCp.value !== cp) { elCp.value = cp; window.buscarCPFirebase(cp); }
+                    }
+                });
+            });
+
+            const inputCalle = document.querySelector('input[name="Calle_Sujeto"]');
+            if (inputCalle) {
+                const autocomplete = new google.maps.places.Autocomplete(inputCalle);
+                autocomplete.bindTo("bounds", map);
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (!place.geometry || !place.geometry.location) return;
+                    map.setCenter(place.geometry.location); map.setZoom(18);
+                    document.getElementById('est-coords').value = `${place.geometry.location.lat().toFixed(6)},${place.geometry.location.lng().toFixed(6)}`;
+                });
+            }
+            mapLoaded = true;
+        };
+
         window.buscarCPFirebase = async function(cp, suggestedColonia = null) {
             const status = document.getElementById('cp-status');
             const selectColonia = document.querySelector('select[name="Colonia"]');
             if(status) { status.innerText = "Buscando..."; status.classList.remove('hidden'); }
             try {
-                const doc = await firebase.firestore().collection('codigos_postales').doc(cp).get();
+                const doc = await window.appDb.collection('codigos_postales').doc(cp).get();
                 if(selectColonia) selectColonia.innerHTML = '';
                 if (doc.exists) {
                     const data = doc.data();
@@ -490,96 +779,400 @@
                     if(selectColonia) selectColonia.innerHTML = '<option value="">Escriba la colonia...</option>';
                     if(status) status.innerText = "CP no registrado.";
                 }
-            } catch (e) {
-                if(status) status.innerText = "Error al buscar CP.";
+            } catch (e) { console.error(e); }
+        };
+
+        // --- 4.5. SISTEMA ANTI-PÉRDIDA (GUARDADO MANUAL) ---
+        window.guardarProgresoLocal = function() {}; // Silencioso apagado
+
+        window.guardarProgresoLocalManual = function() {
+            const formElements = document.getElementById('form-eme').elements;
+            const data = {};
+            for(let el of formElements) {
+                if(el.name) {
+                    if (el.type === 'checkbox') data[el.name] = el.checked;
+                    else data[el.name] = el.value;
+                }
+            }
+            localStorage.setItem('avm_leezar_draft', JSON.stringify(data));
+            
+            const btn = document.querySelector('button[title="Guardar Borrador"]');
+            const icon = btn.querySelector('span.material-symbols-rounded');
+            const originalClass = btn.className;
+            
+            btn.className = "px-6 py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2";
+            icon.innerText = "check_circle";
+            
+            setTimeout(() => { btn.className = originalClass; icon.innerText = "save"; }, 2000);
+        };
+
+        window.cargarProgresoLocal = function() {
+            const draft = localStorage.getItem('avm_leezar_draft');
+            if(draft) {
+                try {
+                    const data = JSON.parse(draft);
+                    const formElements = document.getElementById('form-eme').elements;
+                    for(let el of formElements) {
+                        if(el.name && data[el.name] !== undefined) {
+                            if (el.type === 'checkbox') el.checked = data[el.name];
+                            else el.value = data[el.name];
+                        }
+                    }
+                    for(let i=1; i<=6; i++) {
+                        const precioEl = document.getElementById('h_t'+i+'_precio');
+                        if(precioEl && parseFloat(precioEl.value) > 0) {
+                            const resumen = document.getElementById('resumen-t'+i);
+                            const indicador = document.getElementById('indicador-t'+i);
+                            const card = document.getElementById('card-testigo-'+i);
+                            if(resumen) {
+                                resumen.innerText = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precioEl.value);
+                                resumen.classList.replace('text-slate-400', 'text-emerald-500');
+                                if(indicador) indicador.classList.replace('bg-slate-300', 'bg-emerald-500');
+                                if(card) { card.classList.add('border-emerald-500'); card.classList.replace('dark:border-slate-700', 'dark:border-emerald-500'); }
+                            }
+                        }
+                    }
+                } catch(e) { console.warn("Error cargando borrador.", e); }
             }
         };
 
-        window.sincronizarTextoAMapa = function(val) {
-            if(!map) return;
-            const parts = val.replace(/\s/g, '').split(',');
-            if(parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                map.setCenter({ lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) });
-                map.setZoom(18);
+        window.limpiarBorrador = function() {
+            if(confirm("⚠️ ¿Estás seguro de limpiar todo el formulario? Se perderá toda la información capturada y los testigos.")) {
+                localStorage.removeItem('avm_leezar_draft');
+                document.getElementById('form-eme').reset();
+                
+                for(let i=1; i<=6; i++) {
+                    const precioEl = document.getElementById('h_t'+i+'_precio'); if(precioEl) precioEl.value = 0; 
+                    const resumen = document.getElementById('resumen-t'+i);
+                    const indicador = document.getElementById('indicador-t'+i);
+                    const card = document.getElementById('card-testigo-'+i);
+                    
+                    if(resumen) { resumen.innerText = "Sin capturar"; resumen.classList.remove('text-emerald-500'); resumen.classList.add('text-slate-400'); }
+                    if(indicador) { indicador.classList.remove('bg-emerald-500'); indicador.classList.add('bg-slate-300', 'dark:bg-slate-600'); }
+                    if(card) { card.classList.remove('border-emerald-500', 'dark:border-emerald-500'); card.classList.add('dark:border-slate-700'); }
+                }
+
+                if (typeof google !== 'undefined' && map) {
+                    google.maps.event.trigger(map, 'resize'); 
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                                map.setCenter(pos); map.setZoom(17);
+                                document.getElementById('est-coords').value = `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+                                if (geocoder) {
+                                    geocoder.geocode({ location: pos }, (results, status) => {
+                                        if (status === "OK" && results[0]) {
+                                            let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                                            results[0].address_components.forEach(comp => {
+                                                if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
+                                                if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
+                                                if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
+                                                if (comp.types.includes("locality")) loc = comp.long_name;
+                                                if (comp.types.includes("route")) calle = comp.long_name;
+                                                if (comp.types.includes("street_number")) num = comp.long_name;
+                                                if (comp.types.includes("postal_code")) cp = comp.long_name;
+                                            });
+                                            if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
+                                            let ciudadFinal = muni || admin3 || loc || "";
+                                            const elEst = document.querySelector('input[name="Estado"]'); if(elEst) elEst.value = est;
+                                            const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun) elMun.value = ciudadFinal;
+                                            const elDir = document.querySelector('input[name="Calle_Sujeto"]'); if(elDir) elDir.value = (calle + " " + num).trim();
+                                            const elCp = document.querySelector('input[name="CP"]'); if(elCp && cp) { elCp.value = cp; window.buscarCPFirebase(cp); }
+                                        }
+                                    });
+                                }
+                            },
+                            (error) => { console.warn("GPS denegado por el usuario."); },
+                            { enableHighAccuracy: true }
+                        );
+                    }
+                }
+                window.aplicarVisibilidadPerfiles();
+                
+                const edadInput = document.querySelector('input[name="Edad_Anos"]');
+                const estadoSelect = document.getElementById('est-conservacion');
+                const bloqueRemodelacion = document.querySelector('select[name="Alcance_Remodelacion"]')?.closest('div.bg-white, div.dark\\:bg-slate-900'); 
+                
+                if (edadInput && estadoSelect && bloqueRemodelacion) {
+                    const edad = parseFloat(edadInput.value) || 0; const estado = estadoSelect.value;
+                    if (edad < 10 || estado === "Excelente" || estado === "Nuevo") {
+                        bloqueRemodelacion.classList.add('hidden');
+                        const alcance = document.querySelector('select[name="Alcance_Remodelacion"]');
+                        const anosRemod = document.querySelector('input[name="Anos_desde_Remodelacion"]');
+                        if (alcance) alcance.value = "Nula"; if (anosRemod) anosRemod.value = "0";
+                        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                            if (['cambio_pisos', 'cambio_pisos_instalaciones', 'techado_cochera', 'remodelacion_cocina', 'ampliacion_habitaciones', 'ampliacion_piso', 'remodelacion_parcial', 'remodelacion_completa'].includes(cb.name || "")) { cb.checked = false; }
+                        });
+                    } else { bloqueRemodelacion.classList.remove('hidden'); }
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
-        window.inicializarMapa = function() {
-            let geocoder = new google.maps.Geocoder();
-            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 19.5332, lng: -96.9271 }, zoom: 15, disableDefaultUI: true });
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    map.setCenter(latlng); map.setZoom(17);
-                    document.getElementById('est-coords').value = `${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}`;
-                }, () => {}, { enableHighAccuracy: true });
+        // --- LÓGICA INTELIGENTE (CLON BÓVEDA EME) ---
+        window.aplicarLogicaInteligente = function() {
+            const tipo = document.getElementById('est-tipo')?.value;
+            const isTerreno = (tipo === 'Terreno');
+            const isDepa = (tipo === 'Departamento');
+            const isCasa = (tipo === 'Casa');
+            
+            // 1. Mostrar/Ocultar Verticalidad
+            const secVerticalidad = document.getElementById('seccion_verticalidad');
+            if(secVerticalidad) { isDepa ? secVerticalidad.classList.remove('hidden') : secVerticalidad.classList.add('hidden'); }
+
+            // 2. Reset General de Bloqueos
+            document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
+                if(!el.id || el.id !== 'perfil_usuario') el.disabled = false;
+            });
+
+            // 3A. Reglas de Bloqueo Departamentos
+            const lblNivelesEdif = document.querySelector('input[name="Total_Niveles_Edificio"]')?.previousElementSibling;
+            if (isDepa) {
+                if(lblNivelesEdif) lblNivelesEdif.innerText = "Niveles Totales Edif.";
+                const camposTerreno = ['Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Ubicacion_en_Manzana', 'Frente_a', 'Topografia'];
+                camposTerreno.forEach(name => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if(el) { el.disabled = true; if(el.type === 'number') el.value = 0; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
+                });
             }
-            map.addListener("idle", () => {
-                const c = map.getCenter();
-                document.getElementById('est-coords').value = `${c.lat().toFixed(6)},${c.lng().toFixed(6)}`;
-                geocoder.geocode({ location: { lat: c.lat(), lng: c.lng() } }, (res, status) => {
-                    if (status === "OK" && res[0]) {
-                        document.querySelector('input[name="Estado"]').value = res[0].address_components.find(c => c.types.includes("administrative_area_level_1"))?.long_name || "";
-                        document.querySelector('input[name="Ciudad_Municipio"]').value = res[0].address_components.find(c => c.types.includes("locality"))?.long_name || "";
-                        const calle = res[0].address_components.find(c => c.types.includes("route"))?.long_name || "";
-                        const num = res[0].address_components.find(c => c.types.includes("street_number"))?.long_name || "";
-                        document.querySelector('input[name="Calle_Sujeto"]').value = `${calle} ${num}`.trim();
+
+            // 3B. Reglas de Bloqueo CASAS (El Truco UX)
+            if (isCasa) {
+                if(lblNivelesEdif) lblNivelesEdif.innerText = "Niveles de la Casa";
+                const camposDepa = ['Elevador', 'Cuenta_con_AmenIDADES', 'Nivel_del_Inmueble'];
+                camposDepa.forEach(name => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if(el) { el.disabled = true; if(el.type === 'number') el.value = 1; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
+                });
+            }   
+
+            // 4. Reglas de Bloqueo Terrenos (Infraestructura activa, cero acabados)
+            if (isTerreno) {
+                const camposExceptuadosTerreno = [
+                    'Tipo_Inmueble', 'Uso_de_Suelo', 'Estado', 'Ciudad_Municipio', 'Colonia', 'Calle_Sujeto', 'CP', 'Geolocalizacion_Google',
+                    'Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Topografia', 'Ubicacion_en_Manzana', 'Frente_a',
+                    'Tipo_de_Calle', 'Tipo_de_Acceso_Complejo', 'Red_de_Agua', 'Tipo_de_Drenaje', 'Senalizacion_Nomenclatura', 'Suministro_Servicios', 'Amenidades_Urbanas', 'Conectividad', 'Caso_Atipico_Plusvalia',
+                    'Certeza_Juridica', 'Regimen_Propiedad', 'Tipo_de_Vigilancia', 'Cuota_Mantenimiento', 'Colindancia', 'Amenidades_Entorno_Abierto', 'Notas_Particulares',
+                    'Factor_Negociacion_Final', 'Porcentaje_Avance' // <-- SALVAMOS ESTOS DOS DEL BLOQUEO PARA PYTHON
+                ];
+                
+                document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
+                    if (el.name && !camposExceptuadosTerreno.includes(el.name)) {
+                        el.disabled = true;
+                        if(el.type === 'number' || el.type === 'range') el.value = 0;
+                        if(el.type === 'checkbox') el.checked = false;
+                        if(el.tagName === 'SELECT') el.value = 'Ninguna';
                     }
                 });
+            }
+
+            // 5. Aplicar Filtros Secundarios (Aires y Remodelaciones)
+            window.aplicarFiltroRemodelacion();
+            window.aplicarFiltroAires();
+
+            // 6. Pintar Labels Opacos
+            document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
+                if(el.type !== 'checkbox') {
+                    const label = el.previousElementSibling;
+                    if (label && label.tagName === 'LABEL') { el.disabled ? label.classList.add('disabled-label') : label.classList.remove('disabled-label'); }
+                } else if(el.type === 'checkbox' && el.parentElement) {
+                    el.disabled ? el.parentElement.classList.add('disabled-label', 'opacity-50') : el.parentElement.classList.remove('disabled-label', 'opacity-50');
+                }
             });
-            const inputCalle = document.querySelector('input[name="Calle_Sujeto"]');
-            const autocomplete = new google.maps.places.Autocomplete(inputCalle);
-            autocomplete.bindTo("bounds", map);
-            autocomplete.addListener("place_changed", () => {
-                const place = autocomplete.getPlace();
-                if(place.geometry) { map.setCenter(place.geometry.location); map.setZoom(18); }
-            });
+
+            window.guardarProgresoLocal(); 
         };
 
-        // --- TESTIGOS ---
+        window.aplicarFiltroAires = function() {
+            const tipoAire = document.querySelector('select[name="Tipo_Aire_Acondicionado"]');
+            const numAires = document.querySelector('input[name="Num_Equipos_Aire"]');
+            const contenedorNum = numAires ? numAires.closest('div') : null;
+            if(tipoAire && (tipoAire.value === "Ninguno" || tipoAire.value === "Ninguna" || tipoAire.value === "")) {
+                if(contenedorNum) contenedorNum.classList.add('hidden');
+                if(numAires) numAires.value = 0;
+            } else {
+                if(contenedorNum) contenedorNum.classList.remove('hidden');
+            }
+        };
+
+        window.aplicarFiltroRemodelacion = function() {
+            const alcanceSelect = document.querySelector('select[name="Alcance_Remodelacion"]');
+            const inputAnos = document.querySelector('input[name="Anos_desde_Remodelacion"]');
+            const inputAvance = document.querySelector('input[name="Porcentaje_Avance"]');
+            const panelMejoras = document.getElementById('panel_mejoras');
+            const isTerreno = document.getElementById('est-tipo')?.value === 'Terreno';
+
+            if (!alcanceSelect) return;
+
+            if (isTerreno || alcanceSelect.value === "Nula" || alcanceSelect.value === "Ninguna" || alcanceSelect.value === "") {
+                if (inputAnos) inputAnos.closest('div').classList.add('hidden');
+                if (inputAvance) inputAvance.closest('div').classList.add('hidden'); 
+                if (panelMejoras) panelMejoras.classList.add('hidden');
+                
+                // Inyectamos valores por defecto seguros para Python
+                if (inputAnos) inputAnos.value = 0;
+                if (inputAvance) { inputAvance.value = 100; document.getElementById('val_avance').innerText = "100"; }
+                if (panelMejoras) { panelMejoras.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; }); }
+            } else {
+                if (inputAnos) inputAnos.closest('div').classList.remove('hidden');
+                if (inputAvance) inputAvance.closest('div').classList.remove('hidden');
+                if (panelMejoras) panelMejoras.classList.remove('hidden');
+            }
+        };
+
+        window.aplicarVisibilidadPerfiles = function() {
+            const val = document.getElementById('perfil_usuario')?.value || "4";
+            const toggleClass = (id, action) => { const el = document.getElementById(id); if(el) el.classList[action]('hidden'); };
+            const isDepa = document.getElementById('est-tipo')?.value === 'Departamento';
+            
+            toggleClass('seccion-archivos', 'add'); toggleClass('seccion-valuador', 'add'); toggleClass('seccion_muestreo_manual', 'add'); toggleClass('grupo_id_eme', 'add');
+            
+            if(val === "1") { toggleClass('seccion_verticalidad', 'add'); } else { if(isDepa) toggleClass('seccion_verticalidad', 'remove'); }
+
+            if(val === "2") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'add'); } 
+            else if(val === "3") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); } 
+            else if(val === "4") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); toggleClass('grupo_id_eme', 'remove'); }
+            window.guardarProgresoLocal();
+        };
+
+        window.aplicarFiltroRemodelacion = function() {
+            const alcanceSelect = document.querySelector('select[name="Alcance_Remodelacion"]');
+            if (!alcanceSelect) return;
+            const inputAnos = document.querySelector('input[name="Anos_desde_Remodelacion"]');
+            const inputAvance = document.querySelector('input[name="Porcentaje_Avance"]');
+            const contenedorAnos = inputAnos ? inputAnos.closest('div') : null;
+            const contenedorAvance = inputAvance ? inputAvance.closest('div') : null;
+            const panelMejoras = document.getElementById('panel_mejoras');
+
+            if (alcanceSelect.value === "Nula" || alcanceSelect.value === "Ninguna" || alcanceSelect.value === "") {
+                if (contenedorAnos) contenedorAnos.classList.add('hidden');
+                if (contenedorAvance) contenedorAvance.classList.add('hidden'); 
+                if (panelMejoras) panelMejoras.classList.add('hidden');
+                
+                if (inputAnos) inputAnos.value = 0;
+                if (inputAvance) {
+                    inputAvance.value = 100; 
+                    const valAvanceLabel = document.getElementById('val_avance');
+                    if(valAvanceLabel) valAvanceLabel.innerText = "100";
+                }
+                if (panelMejoras) { panelMejoras.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; }); }
+            } else {
+                if (contenedorAnos) contenedorAnos.classList.remove('hidden');
+                if (contenedorAvance) contenedorAvance.classList.remove('hidden');
+                const isTerreno = document.getElementById('est-tipo')?.value === 'Terreno';
+                if (panelMejoras && !isTerreno) panelMejoras.classList.remove('hidden');
+            }
+        };
+
+        window.aplicarFiltroAires = function() {
+            const tipoAire = document.querySelector('select[name="Tipo_Aire_Acondicionado"]');
+            const numAires = document.querySelector('input[name="Num_Equipos_Aire"]');
+            const contenedorNum = numAires ? numAires.closest('div') : null;
+            if(tipoAire && (tipoAire.value === "Ninguno" || tipoAire.value === "Ninguna" || tipoAire.value === "")) {
+                if(contenedorNum) contenedorNum.classList.add('hidden');
+                if(numAires) numAires.value = 0;
+            } else {
+                if(contenedorNum) contenedorNum.classList.remove('hidden');
+                if(numAires && (numAires.value === "0" || numAires.value === 0)) numAires.value = 1;
+            }
+        };
+
         window.generarTestigosManuales = function() {
             const grid = document.getElementById('testigos-grid');
             const hiddenContainer = document.getElementById('testigos-hidden-data');
+            if (!grid || !hiddenContainer) return;
+            
             grid.innerHTML = ''; hiddenContainer.innerHTML = '';
+            
             for(let i=1; i<=6; i++) {
-                grid.innerHTML += `<div onclick="window.abrirModalTestigo(${i})" id="card-testigo-${i}" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl cursor-pointer hover:border-amber-500 transition-all"><h4 class="text-xs font-black text-slate-700 dark:text-slate-200">Testigo ${i}</h4><p class="text-[10px] text-slate-400 font-bold" id="resumen-t${i}">Sin capturar</p></div>`;
-                hiddenContainer.innerHTML += `<input type="hidden" name="EME_CP_T${i}_Precio" id="h_t${i}_precio" value="0"><input type="hidden" name="EME_CP_T${i}_Sup_Terreno" id="h_t${i}_terr" value="0"><input type="hidden" name="EME_CP_T${i}_Sup_Construccion" id="h_t${i}_const" value="0"><input type="hidden" name="EME_CP_T${i}_Niveles" id="h_t${i}_niveles" value="0"><input type="hidden" name="EME_CP_T${i}_Edad" id="h_t${i}_edad" value="0"><input type="hidden" name="EME_CP_T${i}_Estado" id="h_t${i}_estado" value="Bueno"><input type="hidden" name="EME_CP_T${i}_Ubicacion" id="h_t${i}_ubicacion" value="Intermedio"><input type="hidden" name="EME_CP_T${i}_Zona" id="h_t${i}_zona" value="Igual"><input type="hidden" name="EME_CP_T${i}_Link" id="h_t${i}_link" value="Ninguna">`;
+                grid.innerHTML += `
+                <div onclick="window.abrirModalTestigo(${i})" id="card-testigo-${i}" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl cursor-pointer hover:border-amber-500 hover:shadow-md transition-all group relative overflow-hidden">
+                    <div class="absolute left-0 top-0 w-1 h-full bg-slate-300 dark:bg-slate-600 group-hover:bg-amber-500 transition-colors" id="indicador-t${i}"></div>
+                    <div class="flex justify-between items-center ml-2">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-rounded text-slate-400 group-hover:text-amber-500 transition-colors">real_estate_agent</span>
+                            <div>
+                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">Testigo ${i}</h4>
+                                <p class="text-[10px] text-slate-400 font-bold" id="resumen-t${i}">Sin capturar</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-rounded text-slate-300 group-hover:text-amber-500">chevron_right</span>
+                    </div>
+                </div>`;
+
+                hiddenContainer.innerHTML += `
+                    <input type="hidden" name="EME_CP_T${i}_Precio" id="h_t${i}_precio" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Sup_Terreno" id="h_t${i}_terr" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Sup_Construccion" id="h_t${i}_const" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Niveles" id="h_t${i}_niveles" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Edad" id="h_t${i}_edad" value="0">
+                    <input type="hidden" name="EME_CP_T${i}_Estado" id="h_t${i}_estado" value="Bueno">
+                    <input type="hidden" name="EME_CP_T${i}_Ubicacion" id="h_t${i}_ubicacion" value="Intermedio">
+                    <input type="hidden" name="EME_CP_T${i}_Zona" id="h_t${i}_zona" value="Igual">
+                    <input type="hidden" name="EME_CP_T${i}_Link" id="h_t${i}_link" value="">
+                `;
             }
         };
 
-        window.abrirModalTestigo = function(i) {
-            document.getElementById('mt_id').value = i;
-            document.getElementById('modal-testigo-titulo').innerText = 'Testigo ' + i;
-            let p = document.getElementById('h_t'+i+'_precio').value;
-            document.getElementById('mt_precio').value = p > 0 ? parseInt(p, 10).toLocaleString('en-US') : "";
-            ['terr','const','niveles','edad','estado','ubicacion','zona'].forEach(f => {
-                document.getElementById('mt_'+f).value = document.getElementById('h_t'+i+'_'+f).value;
-            });
-            document.getElementById('modal-testigo').classList.replace('hidden', 'flex');
+        window.abrirModalTestigo = function(index) {
+            document.getElementById('mt_id').value = index;
+            document.getElementById('modal-testigo-titulo').innerText = 'Testigo ' + index;
+            
+            let precioGuardado = document.getElementById('h_t'+index+'_precio').value;
+            document.getElementById('mt_precio').value = precioGuardado > 0 ? parseInt(precioGuardado, 10).toLocaleString('en-US') : "";
+            document.getElementById('mt_terr').value = document.getElementById('h_t'+index+'_terr').value;
+            document.getElementById('mt_const').value = document.getElementById('h_t'+index+'_const').value;
+            document.getElementById('mt_niveles').value = document.getElementById('h_t'+index+'_niveles').value;
+            document.getElementById('mt_edad').value = document.getElementById('h_t'+index+'_edad').value;
+            document.getElementById('mt_estado').value = document.getElementById('h_t'+index+'_estado').value;
+            document.getElementById('mt_ubicacion').value = document.getElementById('h_t'+index+'_ubicacion').value;
+            document.getElementById('mt_zona').value = document.getElementById('h_t'+index+'_zona').value;
+            document.getElementById('mt_link').value = document.getElementById('h_t'+index+'_link').value;
+
+            const modal = document.getElementById('modal-testigo');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
         };
 
         window.guardarModalTestigo = function() {
-            const i = document.getElementById('mt_id').value;
-            const precio = parseFloat(document.getElementById('mt_precio').value.replace(/,/g, '')) || 0;
-            document.getElementById('h_t'+i+'_precio').value = precio;
-            ['terr','const','niveles','edad','estado','ubicacion','zona'].forEach(f => {
-                document.getElementById('h_t'+i+'_'+f).value = document.getElementById('mt_'+f).value;
-            });
-            const resumen = document.getElementById('resumen-t'+i);
+            const index = document.getElementById('mt_id').value;
+            let precioCrudo = document.getElementById('mt_precio').value.replace(/,/g, '');
+            const precio = parseFloat(precioCrudo) || 0;
+            
+            document.getElementById('h_t'+index+'_precio').value = precio;
+            document.getElementById('h_t'+index+'_terr').value = document.getElementById('mt_terr').value;
+            document.getElementById('h_t'+index+'_const').value = document.getElementById('mt_const').value;
+            document.getElementById('h_t'+index+'_niveles').value = document.getElementById('mt_niveles').value;
+            document.getElementById('h_t'+index+'_edad').value = document.getElementById('mt_edad').value;
+            document.getElementById('h_t'+index+'_estado').value = document.getElementById('mt_estado').value;
+            document.getElementById('h_t'+index+'_ubicacion').value = document.getElementById('mt_ubicacion').value;
+            document.getElementById('h_t'+index+'_zona').value = document.getElementById('mt_zona').value;
+            document.getElementById('h_t'+index+'_link').value = document.getElementById('mt_link').value;
+
+            const resumen = document.getElementById('resumen-t'+index);
+            const indicador = document.getElementById('indicador-t'+index);
+            const card = document.getElementById('card-testigo-'+index);
+            
             if(precio > 0) {
-                resumen.innerText = formatoMoneda.format(precio);
-                resumen.classList.replace('text-slate-400', 'text-emerald-500');
+                const formato = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precio);
+                resumen.innerText = formato; resumen.classList.replace('text-slate-400', 'text-emerald-500');
+                if(indicador) { indicador.classList.replace('bg-slate-300', 'bg-emerald-500'); indicador.classList.replace('dark:bg-slate-600', 'bg-emerald-500'); }
+                if(card) { card.classList.add('border-emerald-500'); card.classList.replace('dark:border-slate-700', 'dark:border-emerald-500'); }
             } else {
-                resumen.innerText = "Sin capturar";
-                resumen.classList.replace('text-emerald-500', 'text-slate-400');
+                resumen.innerText = "Sin capturar"; resumen.classList.replace('text-emerald-500', 'text-slate-400');
+                if(indicador) { indicador.classList.replace('bg-emerald-500', 'bg-slate-300'); indicador.classList.replace('bg-emerald-500', 'dark:bg-slate-600'); }
+                if(card) { card.classList.remove('border-emerald-500'); card.classList.replace('dark:border-emerald-500', 'dark:border-slate-700'); }
             }
+
+            window.guardarProgresoLocal(); 
             window.cerrarModalTestigo();
         };
 
-        window.cerrarModalTestigo = function() { document.getElementById('modal-testigo').classList.replace('flex', 'hidden'); };
-        window.formatearMiles = function(inp) { let v = inp.value.replace(/\D/g, ''); inp.value = v === "" ? "" : parseInt(v, 10).toLocaleString('en-US'); };
+        window.cerrarModalTestigo = function() {
+            const modal = document.getElementById('modal-testigo');
+            if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        };
 
-        // --- SUBIDA Y COMPRESIÓN DE FOTOS ---
         window.comprimirImagenBase64 = function(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader(); reader.readAsDataURL(file);
@@ -587,10 +1180,10 @@
                     const img = new Image(); img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        let width = img.width, height = img.height;
-                        if (width > 800) { height = Math.round((height * 800) / width); width = 800; }
+                        const MAX_WIDTH = 800; let width = img.width; let height = img.height;
+                        if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         resolve(canvas.toDataURL('image/jpeg', 0.4)); 
                     };
                 };
@@ -600,21 +1193,25 @@
         window.procesarFotoBase = async function() {
             const file = document.getElementById('foto_fachada').files[0];
             if (!file) return;
-            window.showLoader("Optimizando foto...", "Reduciendo tamaño para la nube");
-            const base64Data = await window.comprimirImagenBase64(file);
-            base64FotoPortada = base64Data.split(',')[1];
-            document.getElementById('img_preview').src = base64Data;
-            document.getElementById('vista_previa').classList.remove('hidden');
+            window.showLoader("Optimizando foto principal...", "Reduciendo tamaño para la nube");
+            try {
+                const base64Data = await window.comprimirImagenBase64(file);
+                base64FotoPortada = base64Data.split(',')[1];
+                document.getElementById('img_preview').src = base64Data;
+                document.getElementById('vista_previa').classList.remove('hidden');
+            } catch(e) { console.error("Error portada:", e); }
             window.hideLoader();
         };
 
         window.procesarArchivosExtra = async function(files, tipoForzado) {
-            window.showLoader(`Procesando archivos...`, `Preparando...`);
+            window.showLoader(`Procesando ${files.length} archivo(s)...`, `Añadiendo imágenes...`);
             for (let f of files) {
                 const id = 'doc_' + Date.now() + Math.floor(Math.random()*1000);
                 if (f.type.startsWith('image/')) {
                     const base64Data = await window.comprimirImagenBase64(f);
-                    arrayFotosAnexos.push({ id, base64: base64Data.split(',')[1], preview: base64Data, tipo: tipoForzado, texto: tipoForzado === 'foto' ? 'Fotografía Interior' : 'Documento Anexo' });
+                    arrayFotosAnexos.push({ id, base64: base64Data.split(',')[1], preview: base64Data, tipo: tipoForzado, texto: tipoForzado === 'foto' ? 'Fotografía Interior' : 'Anexo' });
+                } else {
+                    alert(`⚠️ FORMATO INCORRECTO: Solo se permiten imágenes (.jpg, .png).\n\nSi tienes un PDF, por favor tómale una captura de pantalla y sube esa imagen.`);
                 }
             }
             window.renderizarMiniaturasDropzone();
@@ -624,58 +1221,175 @@
         window.renderizarMiniaturasDropzone = function() {
             const contFotos = document.getElementById('contenedor_thumbnails_fotos');
             const contAnexos = document.getElementById('contenedor_thumbnails_anexos');
+            
+            // 📸 CAJA VERDE: Carrusel limpio sin textos
             if(contFotos) {
-                contFotos.innerHTML = arrayFotosAnexos.filter(d => d.tipo === 'foto').map(doc => `
-                    <div class="bg-white dark:bg-slate-800 p-2 rounded-xl shadow flex flex-col items-center relative group">
-                        <img src="${doc.preview}" class="h-16 w-full object-cover rounded mb-2 border border-slate-200 dark:border-slate-600">
-                        <input type="text" class="w-full text-[9px] p-1.5 border rounded text-center bg-slate-50 dark:bg-slate-900" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)">
-                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="absolute -top-2 -right-2 bg-rose-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow-md">✖</button>
-                    </div>`).join('');
+                const fotos = arrayFotosAnexos.filter(d => d.tipo === 'foto');
+                contFotos.innerHTML = fotos.map(doc => `
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 rounded-xl shadow-sm relative group aspect-video overflow-hidden animate-fade-in">
+                        <img src="${doc.preview}" class="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105">
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="absolute top-1 right-1 bg-rose-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-rose-600 z-10">✖</button>
+                    </div>
+                `).join('');
             }
+            
+            // 📂 CAJA AMARILLA: Anexos con título
             if(contAnexos) {
-                contAnexos.innerHTML = arrayFotosAnexos.filter(d => d.tipo === 'anexo').map(doc => `
-                    <div class="bg-white dark:bg-slate-800 p-2 rounded-xl shadow flex flex-col items-center relative group">
-                        <img src="${doc.preview}" class="h-16 w-full object-cover rounded mb-2 border border-slate-200 dark:border-slate-600">
-                        <input type="text" class="w-full text-[9px] p-1.5 border rounded text-center bg-slate-50 dark:bg-slate-900" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)">
-                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="absolute -top-2 -right-2 bg-rose-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow-md">✖</button>
-                    </div>`).join('');
+                const anexos = arrayFotosAnexos.filter(d => d.tipo === 'anexo');
+                contAnexos.innerHTML = anexos.map(doc => `
+                    <div class="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700/50 p-2 rounded-xl shadow-sm flex items-center gap-2 animate-fade-in">
+                        <img src="${doc.preview}" class="h-8 w-8 object-cover rounded shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <input type="text" class="w-full text-[10px] p-1 border-b border-transparent hover:border-slate-200 focus:border-amber-500 bg-transparent outline-none text-slate-700 dark:text-slate-200 truncate font-bold" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)" placeholder="Ej: Plano o Predial">
+                        </div>
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1.5 rounded-lg transition-colors shrink-0"><span class="material-symbols-rounded text-sm">delete</span></button>
+                    </div>
+                `).join('');
             }
         };
-
         window.actualizarTextoDoc = function(id, val) { const doc = arrayFotosAnexos.find(d => d.id === id); if(doc) doc.texto = val; };
         window.eliminarDoc = function(id) { arrayFotosAnexos = arrayFotosAnexos.filter(d => d.id !== id); window.renderizarMiniaturasDropzone(); };
 
-
-        // --- 🧠 EL CEREBRO DE CÁLCULO SEGURO VIA NETLIFY ---
+        // 🧠 CEREBRO BLINDADO Y PROTEGIDO POR NETLIFY
         window.enviarDictamenPrevio = async function() {
             if (!authUser) return alert("Inicia sesión primero.");
-            window.showLoader("Conectando de Forma Segura", "Consultando la Bóveda AVM a través de Netlify...");
             
+            const tipo = document.getElementById('est-tipo').value;
+            const coords = document.getElementById('est-coords')?.value || "";
+            
+            document.querySelectorAll('.error-borde').forEach(el => {
+                el.classList.remove('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500');
+            });
+
+            let hayErrores = false;
+            const marcarError = (el) => {
+                if (el && !el.disabled) {
+                    el.classList.add('border-rose-500', 'bg-rose-50', 'dark:border-rose-500', 'dark:bg-rose-900/20', 'error-borde', 'ring-2', 'ring-rose-500', 'transition-all');
+                    hayErrores = true;
+                }
+            };
+
+            const camposNumericosEstrictos = [
+                'Superficie_Terreno', 'Superficie_Construccion', 'Frente_m', 'Fondo_m', 'Edad_Anos', 
+                'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'No_Recamaras', 'No_Banos', 
+                'No_Estacionamientos', 'Cuota_Mantenimiento', 'Anos_desde_Remodelacion', 
+                'Porcentaje_Avance', 'Factor_Negociacion_Final', 'Num_Equipos_Aire',
+                'EME_CP_T1_Precio', 'EME_CP_T1_Sup_Terreno', 'EME_CP_T1_Sup_Construccion', 'EME_CP_T1_Niveles', 'EME_CP_T1_Edad',
+                'EME_CP_T2_Precio', 'EME_CP_T2_Sup_Terreno', 'EME_CP_T2_Sup_Construccion', 'EME_CP_T2_Niveles', 'EME_CP_T2_Edad',
+                'EME_CP_T3_Precio', 'EME_CP_T3_Sup_Terreno', 'EME_CP_T3_Sup_Construccion', 'EME_CP_T3_Niveles', 'EME_CP_T3_Edad',
+                'EME_CP_T4_Precio', 'EME_CP_T4_Sup_Terreno', 'EME_CP_T4_Sup_Construccion', 'EME_CP_T4_Niveles', 'EME_CP_T4_Edad',
+                'EME_CP_T5_Precio', 'EME_CP_T5_Sup_Terreno', 'EME_CP_T5_Sup_Construccion', 'EME_CP_T5_Niveles', 'EME_CP_T5_Edad',
+                'EME_CP_T6_Precio', 'EME_CP_T6_Sup_Terreno', 'EME_CP_T6_Sup_Construccion', 'EME_CP_T6_Niveles', 'EME_CP_T6_Edad'
+            ];
+
+            const formElementsArr = Array.from(document.getElementById('form-eme').elements);
+            formElementsArr.forEach(el => {
+                if (el.disabled || el.type === 'hidden' || el.closest('.hidden') || el.type === 'checkbox' || el.name === 'Notas_Particulares' || el.name === 'Espacios_Exteriores_Lista' || el.name === 'Amenidades_Entorno_Abierto' || el.name === 'Mantenimiento_Reciente_Lista') return;
+                if (!el.name && !el.id) return;
+                
+                let val = el.value.trim();
+                
+                if (val === "" || val === "Ninguna" || val === "Ninguno") {
+                    // SE AGREGÓ Amenidades_Urbanas y Uso_de_Suelo para que no den error
+                    const permitenNinguno = ['Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Amenidades_Urbanas', 'Uso_de_Suelo', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
+                    if (permitenNinguno.includes(el.name)) return;
+                    marcarError(el);
+                } 
+                else if (el.type === 'number' || camposNumericosEstrictos.includes(el.name)) {
+                    let valorLimpio = typeof val === 'string' ? val.replace(/,/g, '') : val;
+                    // Si el usuario deja la cuota vacía, el sistema asume 0 automáticamente y no da error
+                    if (valorLimpio === "") valorLimpio = "0"; 
+                    
+                    const num = parseFloat(valorLimpio);
+                    if (isNaN(num) || num < 0) { marcarError(el); } 
+                    else if (num === 0) {
+                        const permitenCero = ['Edad_Anos', 'Cuota_Mantenimiento', 'Num_Equipos_Aire', 'Nivel_del_Inmueble', 'Total_Niveles_Edificio', 'Anos_desde_Remodelacion', 'No_Estacionamientos', 'No_Recamaras', 'No_Banos'];
+                        if (!permitenCero.includes(el.name)) { marcarError(el); }
+                    }
+                }
+            });
+
+            const coordsStr = document.getElementById('est-coords')?.value || "";
+            if (!coordsStr || coordsStr === "19.5332,-96.9271" || coordsStr === "19.533200,-96.927100" || coordsStr === "") {
+                marcarError(document.getElementById('est-coords'));
+            }
+
+            const btnEjecutar = document.getElementById('btn_ejecutar_avm');
+
+            if (hayErrores) {
+                alert("⚠️ Acción Requerida:\n\nFaltan campos obligatorios para correr el motor AVM.\nRevisa las casillas marcadas en color ROJO.");
+                const primerError = document.querySelector('.error-borde');
+                if (primerError) { const y = primerError.getBoundingClientRect().top + window.scrollY - 100; window.scrollTo({top: y, behavior: 'smooth'}); }
+                return; 
+            }
+
+            // Bloquear Botón para evitar doble clic
+            if(btnEjecutar) {
+                btnEjecutar.disabled = true;
+                btnEjecutar.innerHTML = '<span class="material-symbols-rounded text-xl animate-spin">sync</span> Calculando...';
+            }
+
+            window.showLoader("Ejecutando Algoritmo V20", "Buscando comparables y extrayendo parámetros...");
+
             const parametros = {};
-            for(let el of document.getElementById('form-eme').elements) {
+            const formElements = document.getElementById('form-eme').elements;
+            
+            for(let el of formElements) {
                 if(!el.name) continue;
-                const esNumerico = camposNumericosEstrictos.includes(el.name) || el.type === 'number' || el.type === 'range' || (el.name.startsWith('EME_CP_T') && el.name.includes('Precio'));
+                const esNumerico = (typeof camposNumericosEstrictos !== 'undefined' && camposNumericosEstrictos.includes(el.name)) || 
+                                   el.name === 'Porcentaje_Avance' ||
+                                   (el.name.startsWith('EME_CP_T') && (el.name.includes('Precio') || el.name.includes('Sup_') || el.name.includes('Niveles') || el.name.includes('Edad')));
 
                 if(el.disabled) { 
-                    // Modo rescate desactivado
-                    parametros[el.name] = (el.type === 'checkbox') ? false : (esNumerico ? 0 : "Ninguna"); 
-                } else {
-                    if (el.type === 'checkbox') parametros[el.name] = el.checked; 
-                    else if (esNumerico) parametros[el.name] = parseFloat(typeof el.value === 'string' ? el.value.replace(/[^0-9.-]+/g, '') : el.value) || 0; 
-                    else parametros[el.name] = el.value && el.value.trim() !== "" ? el.value : "Ninguna";
+                    const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
+                    
+                    if (camposValuador.includes(el.name)) {
+                        parametros[el.name] = "";
+                    } else if (el.name === 'Porcentaje_Avance') {
+                        parametros[el.name] = 100; // El motor exige 100% en terreno para no tronar
+                    } else if (el.name === 'Factor_Negociacion_Final') {
+                        parametros[el.name] = parseFloat(el.value) || 2; // Respetar su valor o mandar 2%
+                    } else {
+                        parametros[el.name] = (el.type === 'checkbox') ? false : (esNumerico ? 0 : "Ninguna"); 
+                    }
+                } 
+                else {
+                    if (el.type === 'checkbox') { parametros[el.name] = el.checked; } 
+                    else if (esNumerico) { 
+                        let valorLimpio = typeof el.value === 'string' ? el.value.replace(/[^0-9.-]+/g, '') : el.value;
+                        parametros[el.name] = parseFloat(valorLimpio) || 0; 
+                    } 
+                    else { parametros[el.name] = el.value; } // Igual que Bóveda V20: si está vacío se envía "" y Python lo ignora inteligentemente
                 }
             }
             
-            parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value || 4);
-            parametros["Geolocalizacion_Google"] = document.getElementById('est-coords').value || "0,0";
+            parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
+            parametros["Geolocalizacion_Google"] = coords;
+            
+            // 🛡️ PARCHE DE NIVELES Y TERRENOS
+            if (parametros["Tipo_Inmueble"] === "Departamento") {
+                if (!parametros["Nivel_del_Inmueble"] || parametros["Nivel_del_Inmueble"] === 0) parametros["Nivel_del_Inmueble"] = 1;
+                if (!parametros["Total_Niveles_Edificio"] || parametros["Total_Niveles_Edificio"] === 0) parametros["Total_Niveles_Edificio"] = 3;
+            } else if (parametros["Tipo_Inmueble"] === "Terreno") {
+                parametros["Porcentaje_Avance"] = 100;
+                parametros["Factor_Negociacion_Final"] = parametros["Factor_Negociacion_Final"] || 2;
+            }
+            
+            // Atrapamos el perfil real desde fuera del formulario
+            parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
+
             ultimaBusqueda = parametros;
+
+            // 🕵️ AUDITORÍA DE DATOS (Míralo presionando F12 -> Consola)
+            console.log("============= AUDITORÍA MOTOR EME =============");
+            console.log("Enviando JSON a Python:", JSON.stringify(ultimaBusqueda, null, 2));
+            console.log("===============================================");
 
             try {
                 const idToken = await authUser.getIdToken(true);
                 window.expedienteMotorActivo = authUser.uid + '_' + Date.now();
 
-                // 📡 Escuchamos la respuesta asíncrona que guardará Netlify en Firebase
-                const unsubscribe = firebase.firestore().collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
+                const unsubscribe = window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
                         if (data.estatus_motor === 'COMPLETADO') {
@@ -687,31 +1401,44 @@
                             document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
                             document.getElementById('slider_conclusion_valor').value = 50;
                             window.actualizarValorConcluidoLabel(50);
-
-                            document.getElementById('wizard-nav').classList.add('hidden');
+                            
                             document.getElementById('panel_conclusion_interactivo').classList.remove('hidden');
                             document.getElementById('panel_conclusion_interactivo').scrollIntoView({ behavior: 'smooth' });
+                            
+                            // 🧹 MAGIA UX: Ocultar footer, limpiar form y re-activar botón
+                            document.getElementById('footer-pegajoso').classList.add('hidden');
+                            document.getElementById('form-eme').reset();
+                            window.aplicarLogicaInteligente(); // Re-aplica los bloqueos al form limpio
+                            
+                            if(btnEjecutar) {
+                                btnEjecutar.disabled = false;
+                                btnEjecutar.innerHTML = '<span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM';
+                            }
+
                             window.hideLoader();
                             if (typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
                             unsubscribe();
                         } else if (data.estatus_motor === 'ERROR') {
-                            alert("Error desde Netlify/Python: " + data.error_motor);
+                            alert("Motor EME: " + data.error_motor);
                             window.hideLoader();
                             unsubscribe();
                         }
                     }
                 });
 
-                // 🔒 SEGURIDAD: LLAMADA A TU PROPIO BACKEND (NETLIFY)
                 await fetch('/.netlify/functions/calcular-estimacion-background', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                    body: JSON.stringify({ parametros_motor: ultimaBusqueda, expedienteId: window.expedienteMotorActivo })
+                    body: JSON.stringify({ parametros_motor: parametros, expedienteId: window.expedienteMotorActivo })
                 });
 
-            } catch(e) {
-                window.hideLoader();
-                alert("❌ Fallo de conexión con tu backend:\n" + e.message);
+            } catch (e) { 
+                alert("Fallo de red: " + e.message); 
+                window.hideLoader(); 
+                if(btnEjecutar) {
+                    btnEjecutar.disabled = false;
+                    btnEjecutar.innerHTML = '<span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM';
+                }
             }
         };
 
@@ -720,47 +1447,62 @@
             document.getElementById('val_conclusion_seleccionado').innerText = formatoMoneda.format(val);
         };
 
-        // --- 📥 GENERACIÓN DE PDF SEGURO VIA NETLIFY ---
+        // 📥 CAZADOR DE PDF SEGURO VIA NETLIFY
         window.enviarGenerarReporteFinal = async function() {
-            if (!ultimaBusqueda || !window.expedienteMotorActivo) return alert("Primero debes calcular el dictamen previo.");
+            if (!authUser || !ultimaBusqueda || !window.expedienteMotorActivo) return;
 
             const porcentajeSlider = document.getElementById('slider_conclusion_valor').value;
             const valorElegido = minValorCalculado + ((maxValorCalculado - minValorCalculado) * (porcentajeSlider / 100));
 
             const btn = document.getElementById('btn-generar-pdf');
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Compilando PDF Oficial...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Compilando PDF...';
             btn.disabled = true;
-
-            // Inyectamos fotos y precio final al Payload
-            ultimaBusqueda["foto_base64"] = base64FotoPortada || "";
-            ultimaBusqueda["anexo_croquis"] = ""; ultimaBusqueda["anexo_evidencia"] = ""; 
-            ultimaBusqueda["fotos_adicionales"] = arrayFotosAnexos.filter(f => f.tipo === 'foto').map(f => ({ base64: f.base64, descripcion: f.texto }));
-            ultimaBusqueda["anexos_adicionales"] = arrayFotosAnexos.filter(a => a.tipo === 'anexo').map(a => ({ base64: a.base64, titulo: a.texto }));
-            ultimaBusqueda["valor_comercial_rango"] = parseFloat(valorElegido);
 
             try {
                 const idToken = await authUser.getIdToken(true);
-                window.showLoader("Generando Dictamen Oficial", "Consumiendo crédito y uniendo fotografías...");
 
-                fetch('/.netlify/functions/consumir-credito', {
+                // Enviamos vacío si no hay foto (Python detecta el vacío y renderiza el PDF corto)
+                ultimaBusqueda["foto_base64"] = base64FotoPortada || "";
+                ultimaBusqueda["anexo_croquis"] = ""; 
+                ultimaBusqueda["anexo_evidencia"] = ""; 
+                ultimaBusqueda["fotos_adicionales"] = arrayFotosAnexos.filter(f => f.tipo === 'foto').map(f => ({ base64: f.base64, descripcion: f.texto }));
+                ultimaBusqueda["anexos_adicionales"] = arrayFotosAnexos.filter(a => a.tipo === 'anexo').map(a => ({ base64: a.base64, titulo: a.texto }));
+                ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
+                ultimaBusqueda["valor_comercial_rango"] = parseFloat(valorElegido);
+
+                window.showLoader("Generando Dictamen Oficial", "Consumiendo crédito y procesando documento...");
+
+                // POST a Netlify Functions (Descuenta el crédito y conecta con Eli)
+                fetch('/.netlify/functions/consumir-credito-background', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify({
                         parametros_motor: ultimaBusqueda,
                         valor_elegido: valorElegido,
+                        rango_min: minValorCalculado,
+                        rango_max: maxValorCalculado,
                         expedienteId: window.expedienteMotorActivo
                     })
-                }).catch(e => console.error("Aviso: fetch asíncrono", e));
+                }).then(async (res) => {
+                    if (!res.ok) {
+                        const errTxt = await res.text();
+                        throw new Error(`Netlify Error ${res.status}: ${errTxt}`);
+                    }
+                }).catch(e => {
+                    console.error("Fallo crítico en Netlify:", e);
+                    window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).set({
+                        estatus_pdf: 'ERROR', error_pdf: "El servidor rechazó la solicitud. Revisa el peso de las imágenes o la conexión."
+                    }, { merge: true });
+                });
 
                 let cazadorTimeout;
-                const unsubscribe = firebase.firestore().collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
+                const unsubscribe = window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        
-                        // 🔥 FIX VITAL: Ahora esperamos estrictamente a que el ESTATUS_PDF sea completado (ignora el borrador viejo)
                         if (data.estatus_pdf === 'COMPLETADO' && data.pdf_url) {
                             clearTimeout(cazadorTimeout); unsubscribe();
                             window.open(data.pdf_url, '_blank');
+                            
                             document.getElementById('panel_conclusion_interactivo').classList.add('hidden');
                             btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                             btn.disabled = false;
@@ -768,8 +1510,10 @@
                             document.getElementById('vista_previa')?.classList.add('hidden');
                             if(document.getElementById('contenedor_thumbnails_fotos')) document.getElementById('contenedor_thumbnails_fotos').innerHTML = '';
                             if(document.getElementById('foto_fachada')) document.getElementById('foto_fachada').value = '';
+                            document.getElementById('footer-pegajoso').classList.remove('hidden');
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             window.hideLoader();
+                            
                             alert(`¡Transacción Exitosa! \nSe ha descontado 1 crédito y el PDF Oficial ha sido generado.`);
                         } else if (data.estatus_pdf === 'ERROR') {
                             clearTimeout(cazadorTimeout); unsubscribe();
@@ -785,27 +1529,41 @@
                     unsubscribe(); window.hideLoader();
                     btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                     btn.disabled = false;
-                    alert("⚠️ El PDF Oficial se está generando en segundo plano en Netlify. Revisa el historial de tu cuenta en unos minutos.");
+                    alert("⚠️ El PDF Oficial se está generando en segundo plano. Revisa el historial de tu cuenta en unos minutos.");
                 }, 60000);
 
-            } catch(e) {
+            } catch (error) {
+                alert("Atención: " + error.message);
                 window.hideLoader();
                 btn.innerHTML = '<span class="material-symbols-rounded text-xl">download</span> Consumir Crédito y Generar PDF Oficial';
                 btn.disabled = false;
-                alert("❌ Error de red:\n" + e.message);
             }
         };
 
-        // --- ARRANQUE ---
+        // --- 8. ESCUCHA INICIAL (ARRANQUE Y RECUPERACIÓN) ---
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 const icon = document.getElementById('dark-mode-icon');
                 if(icon) icon.innerText = 'light_mode';
             }
+            if(typeof window.generarTestigosManuales === 'function') window.generarTestigosManuales();
+            if(typeof window.cargarProgresoLocal === 'function') window.cargarProgresoLocal();
+
             setTimeout(() => {
+                if(typeof window.aplicarLogicaInteligente === 'function') window.aplicarLogicaInteligente();
+                if(typeof window.aplicarVisibilidadPerfiles === 'function') window.aplicarVisibilidadPerfiles();
+                if(typeof window.aplicarFiltroAires === 'function') window.aplicarFiltroAires();
+                
+                document.querySelectorAll('.card-header h2').forEach(h2 => { h2.innerText = h2.innerText.replace(/^\d+\.\s*/, ''); });
+                document.querySelectorAll('input, textarea').forEach(el => {
+                    el.removeAttribute('placeholder'); 
+                    if(el.type === 'number' && (el.value === "0" || el.value === 0)) { el.value = ""; }
+                });
+
                 document.querySelectorAll('select').forEach(el => {
-                    const exentos = ['perfil_usuario', 'est-tipo', 'Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
+                    // Campos que tienen permitido usar "Ninguna" o valores por defecto reales
+                    const exentos = ['perfil_usuario', 'est-tipo', 'Uso_de_Suelo', 'Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Amenidades_Urbanas', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
                     if(!exentos.includes(el.id || el.name)) {
                         const primera = el.options[0];
                         if(primera && (primera.value === "Ninguna" || primera.value === "Ninguno" || primera.value === "")) {
@@ -819,7 +1577,7 @@
                         }
                     }
                 });
-            }, 500);
+            }, 500); 
         });
     </script>
 </body>
