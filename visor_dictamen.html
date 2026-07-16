@@ -11,231 +11,352 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         
-        /* 📄 LA MAGIA DEL TAMAÑO CARTA (US LETTER) */
+        /* 🏦 PAPEL DE SEGURIDAD (Azul muy sutil para Perfil 1) */
+        .papel-seguridad {
+            background-color: #ffffff;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%230a2342' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E");
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
         .hoja-carta {
             width: 21.59cm;
             min-height: 27.94cm;
             margin: 2rem auto;
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             position: relative;
             box-sizing: border-box;
-            page-break-after: always; /* Salto de página al imprimir */
+            background: white;
+            page-break-after: always; /* Indispensable para forzar el PDF a 2 páginas limpias */
         }
 
-        /* 🛡️ MARCA DE AGUA ANTI-COPIAS */
-        .marca-agua {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 7rem;
-            color: rgba(15, 76, 129, 0.03); /* Azul EME ultra transparente */
-            font-weight: 900;
-            white-space: nowrap;
-            pointer-events: none;
-            user-select: none;
-            z-index: 0;
-        }
-
-        /* 🖨️ REGLAS ESTRICTAS PARA CUANDO LE DEN "IMPRIMIR" */
         @media print {
-            @page { size: letter; margin: 0; } /* Fuerza a la impresora a usar tamaño Carta */
+            @page { size: letter; margin: 0; } 
             body { background: white; margin: 0; padding: 0; }
             .hoja-carta { 
                 margin: 0; border: none; box-shadow: none; 
-                width: 21.59cm; min-height: 27.94cm; page-break-after: always;
+                width: 21.59cm;
             }
             .no-imprimir { display: none !important; }
-            .evitar-corte { page-break-inside: avoid; } /* Evita que las fotos se partan a la mitad */
-            
-            /* Fuerza a los navegadores a imprimir los colores de fondo */
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
 <body class="text-slate-800">
 
-    <div class="fixed top-4 right-4 z-50 flex gap-2 no-imprimir bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-lg border border-slate-200">
-        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            Imprimir / Guardar PDF
+    <div class="fixed top-4 right-4 z-50 flex gap-2 no-imprimir bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-lg border border-slate-200">
+        <button onclick="window.print()" class="bg-indigo-900 hover:bg-indigo-800 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all flex items-center gap-2 uppercase tracking-widest text-xs">
+            <span class="material-symbols-rounded text-lg">print</span> Imprimir Dictamen Oficial
         </button>
-        <button onclick="window.close()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl font-bold transition-all">Cerrar</button>
+        <button onclick="window.close()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all uppercase tracking-widest text-xs">Cerrar</button>
     </div>
 
-    <div class="hoja-carta flex flex-col relative overflow-hidden p-[2cm] print:p-[1.5cm]">
-        <div class="marca-agua">DOCUMENTO OFICIAL</div>
+    <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
         
-        <div class="flex justify-between items-center border-b-2 border-indigo-900 pb-6 mb-8 relative z-10">
-            <div>
-                <h1 class="text-4xl font-bold text-indigo-900 tracking-tight">DICTAMEN DE VALOR</h1>
-                <p class="text-slate-500 font-semibold tracking-widest uppercase text-sm mt-1">Modelo de Valuación Automatizada</p>
+        <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
+            
+            <div class="w-full flex h-3 mb-6 relative z-10">
+                <div class="w-1/4 bg-[#0a2342]"></div>
+                <div class="w-1/2 bg-[#b91c1c]"></div>
+                <div class="w-1/4 bg-[#eab308]"></div>
             </div>
-            <div class="text-right">
-                <p class="text-xs font-semibold text-slate-400 uppercase">Folio de Emisión</p>
-                <p class="text-xl font-mono font-bold text-slate-800" id="pdf_folio">#CARGANDO...</p>
+
+            <div class="flex justify-between items-center mb-6 relative z-10 border-b border-slate-300 pb-4">
+                <div class="flex items-center gap-6">
+                    <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="EME Logo" class="h-24 object-contain shrink-0">
+                    <div class="flex flex-col justify-center">
+                        <h1 class="text-2xl font-bold text-indigo-900 tracking-tight leading-none mb-1">DICTAMEN DE VALOR COMERCIAL</h1>
+                        <p class="text-slate-500 font-medium tracking-widest uppercase text-[8px]">Modelo de Valuación Automatizada EME | Todos los derechos reservados</p>
+                    </div>
+                </div>
+                
+                <div class="text-right flex flex-col justify-end">
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
+                    <p class="text-sm font-mono font-bold text-slate-700" id="pdf_folio_1">#CARGANDO...</p>
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mt-1.5 mb-0.5">Fecha de Emisión</p>
+                    <p class="text-xs font-semibold text-slate-700" id="pdf_fecha_1">--/--/----</p>
+                </div>
+            </div>
+
+            <div class="mb-5 relative z-10">
+                <h2 class="text-lg font-bold text-slate-800 leading-snug mb-0.5 uppercase tracking-wide" id="pdf_calle_portada">Cargando dirección...</h2>
+                <p class="text-xs font-medium text-slate-500 uppercase" id="pdf_colonia_portada">...</p>
+            </div>
+
+            <div class="mb-6 relative z-10">
+                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">
+                    Conclusión de Valor
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+                        <p class="text-[8px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Valor Comercial Automatizado</p>
+                        <h2 class="text-xl font-bold text-slate-700" id="pdf_valor_motor">$0.00</h2>
+                    </div>
+                    <div class="bg-indigo-900 rounded-lg p-3 text-white border border-indigo-950 text-center shadow-md">
+                        <p class="text-[8px] font-semibold text-indigo-300 uppercase tracking-widest mb-1">Valor Comercial Concluido</p>
+                        <h2 class="text-xl font-bold text-amber-400" id="pdf_valor_cierre">$0.00</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Unitario Auto.</p>
+                        <p class="text-[10px] font-bold text-indigo-900" id="pdf_valor_unitario">$0 / m²</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Renta Est. Mensual</p>
+                        <p class="text-[10px] font-bold text-rose-600" id="pdf_renta">$0 / mes</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Termómetro Medio Zonal</p>
+                        <p class="text-[10px] font-bold text-slate-700" id="pdf_termometro">$0 / m² / mes</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rango Automatizado</p>
+                        <p class="text-[9px] font-bold text-slate-700 mt-1" id="pdf_rango">$0 - $0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6 relative z-10">
+                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">
+                    El Genoma del Inmueble
+                </h3>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Construcción</p><p class="text-[10px] font-bold text-slate-700" id="pdf_const">0 m²</p></div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Terreno</p><p class="text-[10px] font-bold text-slate-700" id="pdf_terr">0 m²</p></div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Edad Cronológica</p><p class="text-[10px] font-bold text-slate-700" id="pdf_edad_cron">0</p></div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Clase Inmueble</p><p class="text-[10px] font-bold text-slate-700 truncate" id="pdf_clase">Ninguna</p></div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Conservación</p><p class="text-[10px] font-bold text-slate-700 truncate" id="pdf_estado">Ninguna</p></div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Niveles</p><p class="text-[10px] font-bold text-slate-700" id="pdf_niveles">0</p></div>
+                </div>
+            </div>
+
+            <div class="relative z-10 flex-1 flex flex-col">
+                <div class="w-full h-full min-h-[200px] bg-slate-100 rounded-xl border border-slate-300 overflow-hidden shadow-sm relative">
+                    <iframe id="pdf_iframe_mapa" width="100%" height="100%" frameborder="0" style="border:0;" src="" loading="lazy"></iframe>
+                </div>
+                <div class="flex justify-between items-center mt-1.5 px-1">
+                    <p class="text-[8px] text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-sm">pin_drop</span> Coordenadas Decimales: <span id="pdf_coords" class="text-slate-700 font-mono font-semibold">0.000000, 0.000000</span></p>
+                    <p class="text-[8px] text-slate-400 italic">Nota: El mapa muestra la ubicación del sujeto.</p>
+                </div>
+            </div>
+
+        </div> </div>
+
+
+    <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
+        
+        <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
+            
+            <div class="w-full flex h-3 mb-6 relative z-10">
+                <div class="w-1/4 bg-[#0a2342]"></div>
+                <div class="w-1/2 bg-[#b91c1c]"></div>
+                <div class="w-1/4 bg-[#eab308]"></div>
+            </div>
+
+            <div class="flex justify-between items-end w-full border-b border-slate-300 pb-3 mb-6 relative z-10">
+                <h3 class="text-sm font-bold text-indigo-900 tracking-widest uppercase mb-1">Matriz de Homologación Automatizada</h3>
+                
+                <div class="text-right flex flex-col justify-end">
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
+                    <p class="text-xs font-mono font-bold text-slate-700" id="pdf_folio_2">#CARGANDO...</p>
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mt-1 mb-0.5">Fecha de Emisión</p>
+                    <p class="text-[10px] font-semibold text-slate-700" id="pdf_fecha_2">--/--/----</p>
+                </div>
+            </div>
+
+            <div class="mb-6 relative z-10">
+                <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-[10px] text-center">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[8px] border-b border-slate-200">
+                            <tr><th class="py-2.5">ID</th><th>Valor Oferta</th><th>m² Const.</th><th>Edad</th><th>Factor Res.</th><th>Homologado/m²</th></tr>
+                        </thead>
+                        <tbody id="pdf_tabla_testigos" class="text-slate-700 font-medium divide-y divide-slate-100">
+                            </tbody>
+                    </table>
+                    <div class="bg-slate-50 p-2 border-t border-slate-200 flex justify-between items-center text-[8px]">
+                        <span class="font-semibold text-slate-600 uppercase tracking-wider">Calidad de la Muestra (CV): <span id="pdf_cv" class="text-indigo-700 font-bold text-xs">0.00%</span></span>
+                        <span class="font-bold text-emerald-600 uppercase tracking-wider">MUESTRA CONFIABLE ✅</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6 relative z-10 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 border-b border-slate-200 pb-1">Declaraciones y Advertencias</h3>
+                <div class="text-[8px] text-slate-600 text-justify leading-relaxed space-y-1.5 font-medium">
+                    <p><strong class="font-semibold text-slate-800">OBJETO DEL DICTAMEN:</strong> Este documento presenta una estimación de valor automatizada, generada mediante algoritmos propietarios de inteligencia pericial y procesamiento de datos masivos (Big Data) del mercado inmobiliario local.</p>
+                    <p><strong class="font-semibold text-slate-800">METODOLOGÍA:</strong> Se emplea el Enfoque Comparativo de Mercado, aplicando factores de homologación por zona, superficie, edad, estado de conservación y características específicas. Este proceso se realiza en estricto apego a las Normas Internacionales de Valuación (IVS) y a los criterios técnicos vigentes de la Sociedad Hipotecaria Federal (SHF).</p>
+                    <p><strong class="font-semibold text-slate-800">VIGENCIA:</strong> Dada la dinámica y volatilidad del mercado inmobiliario, los valores presentados reflejan las condiciones exactas al momento de la consulta. Para fines de referencia técnica, se establece que la utilidad de este reporte caduca irrevocablemente a los 6 meses de su fecha de emisión.</p>
+                    <p><strong class="font-semibold text-slate-800">DESCARGO DE RESPONSABILIDAD:</strong> Este documento constituye una herramienta tecnológica de soporte analítico y no sustituye en ningún caso a un avalúo formal emitido por un perito valuador certificado. La veracidad y exactitud de la información capturada en la plataforma son responsabilidad exclusiva del usuario; por lo tanto, no se asume responsabilidad legal ni técnica por discrepancias derivadas de los datos ingresados.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 relative z-10 mt-auto pt-4 border-t border-slate-200 pb-6">
+                <div class="flex items-start gap-3">
+                    <div id="qrcode" class="p-1.5 bg-white border border-slate-200 rounded shadow-sm shrink-0"></div>
+                    <div>
+                        <h4 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Sello de Integridad Digital</h4>
+                        <p class="text-[7px] text-slate-500 font-medium leading-relaxed">Escanee el código QR con la cámara de su dispositivo móvil para validar la autenticidad inalterable de este dictamen directamente en los servidores de Ingeniería Leezar.</p>
+                    </div>
+                </div>
+                <div class="text-right flex flex-col justify-center">
+                    <h4 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Firma Electrónica del AVM EME</h4>
+                    <p class="text-sm font-mono font-bold text-slate-800" id="pdf_hash_firma">#CARGANDO...</p>
+                    <p class="text-[7px] font-semibold text-slate-500 mt-1 uppercase">Creado por: Ingeniería Leezar S.A. de C.V.</p>
+                </div>
+            </div>
+
+        </div> <div class="w-full bg-[#000000] text-white p-3 relative flex items-center justify-between shadow-md mt-auto z-20 h-16 shrink-0 border-t-2 border-indigo-900">
+            <div class="absolute left-0 top-0 bottom-0 w-2 bg-[#b91c1c]"></div>
+            <div class="ml-4 text-[7px] font-medium leading-relaxed tracking-widest text-slate-300">
+                <p>www.centrointegralinmobiliarioeme.com | www.emeavaluos.com</p>
+                <p>eme@centrointegralinmobiliarioeme.com | eme@emeavaluos.com</p>
+                <p class="text-slate-400 mt-0.5">Contacto: 99.991.45.15.75 | 99.81.62.81.94 | 55.16.36.80.39 | 81.85.26.28.85</p>
+            </div>
+            <div class="flex flex-col items-end h-full justify-between py-1 px-4">
+                <div class="w-8 h-8 bg-[#0a2342] shadow-sm mb-1 rounded-sm"></div>
+                <div class="w-32 h-1.5 bg-[#eab308]"></div>
             </div>
         </div>
 
-        <div class="flex-1 relative z-10 flex flex-col">
-            <div class="w-full h-80 bg-slate-100 rounded-2xl mb-8 border border-slate-300 overflow-hidden shadow-sm flex items-center justify-center">
-                <img id="pdf_foto_portada" src="" class="w-full h-full object-cover hidden">
-                <span id="pdf_placeholder_foto" class="text-slate-400 font-semibold tracking-widest uppercase">Sin Fotografía</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Ubicación del Inmueble</p>
-                    <h2 class="text-lg font-bold text-slate-800 leading-tight" id="pdf_direccion">Cargando dirección...</h2>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Valor Comercial Concluido</p>
-                    <h2 class="text-3xl font-bold text-emerald-600 tracking-tight" id="pdf_valor_total">$0.00</h2>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-auto pt-6 border-t-2 border-slate-200 flex justify-between items-end relative z-10">
-            <div class="flex gap-4 items-center">
-                <div id="qrcode" class="p-1 bg-white border border-slate-300 rounded-lg shadow-sm"></div>
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Validez Criptográfica</p>
-                    <p class="text-xs text-slate-600 font-medium">Escanee el código QR para validar la<br>autenticidad de este dictamen en línea.</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="text-xs font-bold text-indigo-900">Ingeniería Leezar S.A. de C.V.</p>
-                <p class="text-[10px] text-slate-500">www.centrointegralinmobiliarioeme.com</p>
-            </div>
-        </div>
     </div>
 
-    <div id="contenedor_paginas_fotos">
-        </div>
+    <div id="contenedor_paginas_fotos"></div>
 
     <script>
-        // Inicializar Base de Datos
         const db = firebase.firestore();
 
-        // 🧠 CEREBRO DEL VISOR DINÁMICO
         document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Obtener el ID del Avalúo desde la URL (Ej: visor_dictamen.html?id=12345)
             const urlParams = new URLSearchParams(window.location.search);
             let expedienteId = urlParams.get('id');
 
-            // Si no hay ID en la URL, buscamos el borrador local para fines de prueba
-            if(!expedienteId) {
-                alert("Modo de Prueba: No se detectó un ID oficial en la URL. Mostrando datos de prueba locales.");
-                ejecutarModoPrueba();
-                return;
-            }
+            if(!expedienteId) { alert("Modo de Prueba: No se detectó un ID oficial en la URL."); return; }
 
             try {
-                // 2. Extraer datos reales desde Firebase
                 const doc = await db.collection('expedientes_avaluos').doc(expedienteId).get();
-                
-                if (!doc.exists) {
-                    document.body.innerHTML = `<div class="p-10 text-center"><h1 class="text-2xl font-bold text-rose-600">Error 404</h1><p>El dictamen solicitado no existe o fue eliminado.</p></div>`;
-                    return;
-                }
+                if (!doc.exists) { document.body.innerHTML = `<h1 class="text-center mt-20 text-rose-600 font-bold">Error 404: Documento no encontrado</h1>`; return; }
 
                 const data = doc.data();
-                const parametros = data.parametros_motor;
+                const parametros = data.parametros_motor || {};
+                const resultados = data.resultados_motor?.data || data.resultados_motor || {};
+                const formMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+                const formMonedaDec = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
                 
-                // 3. Llenar Carátula Oficial
-                document.getElementById('pdf_folio').innerText = "#" + expedienteId.split('_')[1]; // Usamos el timestamp como folio corto
+                // 1. CARÁTULA, FOLIOS Y FECHAS
+                const folioHash = "#" + (data.hash_id || resultados.HASH_ID || expedienteId.split('_')[1] || "000");
+                document.getElementById('pdf_folio_1').innerText = folioHash;
+                document.getElementById('pdf_folio_2').innerText = folioHash;
+                document.getElementById('pdf_hash_firma').innerText = folioHash;
                 
-                // Formatear Dirección
-                const direccion = `${parametros.Calle_Sujeto || ''}, ${parametros.Colonia || ''}\n${parametros.Ciudad_Municipio || ''}, ${parametros.Estado || ''}, CP. ${parametros.CP || ''}`;
-                document.getElementById('pdf_direccion').innerText = direccion;
+                const fechaEmi = resultados.FECHA_AVALUO || resultados.fecha_avaluo || new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+                document.getElementById('pdf_fecha_1').innerText = fechaEmi;
+                document.getElementById('pdf_fecha_2').innerText = fechaEmi;
                 
-                // Formatear Valor Final
-                const valorMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(data.valor_comercial_rango || 0);
-                document.getElementById('pdf_valor_total').innerText = valorMoneda;
+                // Dirección
+                document.getElementById('pdf_calle_portada').innerText = parametros.Calle_Sujeto || 'Dirección no especificada';
+                document.getElementById('pdf_colonia_portada').innerText = `${parametros.Colonia || ''}, ${parametros.Ciudad_Municipio || ''}, ${parametros.Estado || ''}, C.P. ${parametros.CP || ''}`;
 
-                // Cargar Foto Principal (Si existe)
-                if (parametros.foto_base64 && parametros.foto_base64 !== "") {
-                    const imgPortada = document.getElementById('pdf_foto_portada');
-                    imgPortada.src = "data:image/jpeg;base64," + parametros.foto_base64;
-                    imgPortada.classList.remove('hidden');
-                    document.getElementById('pdf_placeholder_foto').classList.add('hidden');
+                // 2. MATEMÁTICAS
+                const valorMotor = resultados.valor_final || resultados.VALOR_FINAL || 0;
+                document.getElementById('pdf_valor_motor').innerText = formMonedaDec.format(valorMotor);
+                
+                const valorFinal = parametros.valor_comercial_rango || data.valor_elegido || data.valor_final || valorMotor;
+                document.getElementById('pdf_valor_cierre').innerText = formMonedaDec.format(valorFinal);
+                
+                document.getElementById('pdf_valor_unitario').innerText = formMoneda.format(resultados.valor_unitario || resultados.VALOR_UNITARIO || 0) + ' / m²';
+                document.getElementById('pdf_renta').innerText = formMoneda.format(resultados.renta_mensual || resultados.RENTA_MENSUAL || 0) + ' / mes';
+                
+                // Termómetro Zonal
+                const termoZonal = parseFloat(resultados.termometro_zonal || resultados.TERMOMETRO_ZONAL || 0);
+                document.getElementById('pdf_termometro').innerText = formMoneda.format(termoZonal) + ' / m² / mes';
+                
+                // Rango Automatizado
+                const limInf = parseFloat(resultados.limite_inf || resultados.LIMITE_INF || 0);
+                const limSup = parseFloat(resultados.limite_sup || resultados.LIMITE_SUP || 0);
+                document.getElementById('pdf_rango').innerText = formMoneda.format(limInf) + ' - ' + formMoneda.format(limSup);
+
+                // 3. GENOMA FÍSICO
+                document.getElementById('pdf_terr').innerText = (parametros.Superficie_Terreno || 0) + ' m²';
+                document.getElementById('pdf_const').innerText = (parametros.Superficie_Construccion || 0) + ' m²';
+                document.getElementById('pdf_clase').innerText = parametros.Clase_Inmueble || 'Ninguna';
+                document.getElementById('pdf_estado').innerText = parametros.Estado_Conservacion || 'Ninguna';
+                
+                const edadCro = parametros.Edad_Anos || 0;
+                document.getElementById('pdf_edad_cron').innerText = edadCro;
+                
+                let txtNiveles = parametros.Total_Niveles_Edificio || parametros.Nivel_del_Inmueble || 0;
+                if (parametros.Tipo_Inmueble === 'Departamento') txtNiveles = `${parametros.Nivel_del_Inmueble} de ${parametros.Total_Niveles_Edificio}`;
+                if (parametros.Tipo_Inmueble === 'Terreno') txtNiveles = "N/A";
+                document.getElementById('pdf_niveles').innerText = txtNiveles;
+
+                // 4. MAPA DE GOOGLE (IFRAME NATIVO Y BLINDADO)
+                let latVal = 19.4326;
+                let lngVal = -99.1332;
+
+                if (parametros.Geolocalizacion_Google) {
+                    if (typeof parametros.Geolocalizacion_Google === 'string' && parametros.Geolocalizacion_Google.includes(',')) {
+                        const partes = parametros.Geolocalizacion_Google.split(',');
+                        latVal = parseFloat(partes[0].trim());
+                        lngVal = parseFloat(partes[1].trim());
+                    } else if (parametros.Geolocalizacion_Google.lat && parametros.Geolocalizacion_Google.lng) {
+                        latVal = parseFloat(parametros.Geolocalizacion_Google.lat);
+                        lngVal = parseFloat(parametros.Geolocalizacion_Google.lng);
+                    } else if (parametros.Geolocalizacion_Google.latitude && parametros.Geolocalizacion_Google.longitude) {
+                        latVal = parseFloat(parametros.Geolocalizacion_Google.latitude);
+                        lngVal = parseFloat(parametros.Geolocalizacion_Google.longitude);
+                    }
+                } else if (data.ubicacion) {
+                    if (data.ubicacion.latitude) { latVal = parseFloat(data.ubicacion.latitude); lngVal = parseFloat(data.ubicacion.longitude); }
+                    else if (data.ubicacion.lat) { latVal = parseFloat(data.ubicacion.lat); lngVal = parseFloat(data.ubicacion.lng); }
                 }
 
-                // 4. Generar QR Criptográfico apuntando a la versión web pública
-                const urlValidacion = window.location.href; // El QR lleva a esta misma página
-                new QRCode(document.getElementById("qrcode"), {
-                    text: urlValidacion, width: 64, height: 64, colorDark : "#1e1b4b", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
-                });
+                if(isNaN(latVal)) latVal = 19.4326;
+                if(isNaN(lngVal)) lngVal = -99.1332;
 
-                // 5. Inyectar Páginas Fotográficas Dinámicas
-                renderizarHojasDinamicas(parametros.fotos_adicionales, "REPORTAJE FOTOGRÁFICO");
-                renderizarHojasDinamicas(parametros.anexos_adicionales, "DOCUMENTOS ANEXOS");
+                const coordsStr = `${latVal.toFixed(6)}, ${lngVal.toFixed(6)}`;
+                document.getElementById('pdf_coords').innerText = coordsStr;
+                
+                // Usamos el embed genérico de Google Maps, el cual no requiere API Key ni Billing y carga perfectamente.
+                const mapUrl = `https://maps.google.com/maps?q=${latVal},${lngVal}&hl=es&z=17&output=embed`;
+                document.getElementById('pdf_iframe_mapa').src = mapUrl;
 
-            } catch (error) {
-                console.error("Error al cargar dictamen:", error);
-                alert("Hubo un error al conectar con la bóveda de datos.");
-            }
+                // 5. MATRIZ DE HOMOLOGACIÓN EN VIVO
+                let htmlTabla = '';
+                for(let i=1; i<=6; i++) {
+                    const oferta = resultados[`t${i}_oferta`] || resultados[`T${i}_OFERTA`] || 0;
+                    if(oferta > 0) {
+                        htmlTabla += `<tr>
+                            <td class="py-1.5 font-bold text-slate-700">T${i}</td>
+                            <td class="font-bold">${formMoneda.format(oferta)}</td>
+                            <td>${resultados[`t${i}_m2`] || resultados[`T${i}_M2`] || 0}</td>
+                            <td>${resultados[`t${i}_edad`] || resultados[`T${i}_EDAD`] || 'N/A'}</td>
+                            <td>${parseFloat(resultados[`t${i}_factor`] || resultados[`T${i}_FACTOR`] || 0).toFixed(4)}</td>
+                            <td class="font-semibold text-emerald-700">${formMoneda.format(resultados[`t${i}_hom`] || resultados[`T${i}_HOM`] || 0)}</td>
+                        </tr>`;
+                    }
+                }
+                if(htmlTabla === '') htmlTabla = `<tr><td colspan="6" class="py-3 text-[9px] text-slate-400 italic font-semibold">Análisis Físico/Residual aplicado (Sin testigos de mercado directo)</td></tr>`;
+                document.getElementById('pdf_tabla_testigos').innerHTML = htmlTabla;
+                
+                // Formateo del CV a 2 decimales exactos
+                const cvValue = parseFloat(resultados.cv || resultados.COEFICIENTE_VARIACION || 0);
+                document.getElementById('pdf_cv').innerText = cvValue.toFixed(2) + '%';
+
+                // 6. QR CRIPTOGRÁFICO
+                setTimeout(() => {
+                    new QRCode(document.getElementById("qrcode"), { 
+                        text: window.location.href, width: 60, height: 60, colorDark : "#312e81", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+                    });
+                }, 100);
+
+            } catch (error) { alert("Error al cargar bóveda: " + error); }
         });
-
-        // 🏗️ EL INYECTOR DE PÁGINAS (Crea las hojas Carta necesarias)
-        function renderizarHojasDinamicas(arregloArchivos, tituloSeccion) {
-            if (!arregloArchivos || arregloArchivos.length === 0) return;
-
-            const contenedor = document.getElementById('contenedor_paginas_fotos');
-            const FOTOS_POR_PAGINA = 4; // Agrupamos de 4 en 4 para un diseño limpio
-
-            // Dividir el arreglo completo en "Chunks" (pedazos) de 4
-            for (let i = 0; i < arregloArchivos.length; i += FOTOS_POR_PAGINA) {
-                const chunk = arregloArchivos.slice(i, i + FOTOS_POR_PAGINA);
-                
-                // Crear el esqueleto de una nueva hoja tamaño Carta
-                const hoja = document.createElement('div');
-                hoja.className = "hoja-carta flex flex-col relative overflow-hidden p-[2cm] print:p-[1.5cm]";
-                
-                let htmlInterior = `
-                    <div class="marca-agua" style="font-size: 5rem;">${tituloSeccion}</div>
-                    <div class="border-b-2 border-slate-300 pb-2 mb-6 relative z-10">
-                        <h2 class="text-xl font-bold text-slate-800 tracking-tight">${tituloSeccion} - Parte ${Math.floor(i/FOTOS_POR_PAGINA) + 1}</h2>
-                    </div>
-                    <div class="flex-1 grid grid-cols-2 grid-rows-2 gap-6 relative z-10">
-                `;
-
-                // Inyectar las fotos de este pedazo
-                chunk.forEach(archivo => {
-                    // Python recibe descripciones en "descripcion" (fotos) o "titulo" (anexos)
-                    const leyenda = archivo.descripcion || archivo.titulo || "Vista de Inmueble"; 
-                    htmlInterior += `
-                        <div class="flex flex-col h-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm p-2">
-                            <div class="flex-1 overflow-hidden rounded-lg bg-slate-200 flex items-center justify-center">
-                                <img src="data:image/jpeg;base64,${archivo.base64}" class="w-full h-full object-cover">
-                            </div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center mt-2 truncate">${leyenda}</p>
-                        </div>
-                    `;
-                });
-
-                htmlInterior += `</div>`;
-                hoja.innerHTML = htmlInterior;
-                contenedor.appendChild(hoja);
-            }
-        }
-
-        function ejecutarModoPrueba() {
-            // Lógica temporal para cuando lo abres directo sin URL
-            const draft = localStorage.getItem('avm_leezar_draft');
-            if(draft) {
-                const data = JSON.parse(draft);
-                document.getElementById('pdf_folio').innerText = "#" + Date.now().toString(16).toUpperCase();
-                document.getElementById('pdf_direccion').innerText = `${data.Calle_Sujeto || ''}, ${data.Colonia || ''}\n${data.Ciudad_Municipio || ''}, ${data.Estado || ''}`;
-                document.getElementById('pdf_valor_total').innerText = "$0.00 (PRUEBA)";
-                new QRCode(document.getElementById("qrcode"), { text: "Prueba", width: 64, height: 64 });
-            }
-        }
     </script>
 </body>
 </html>

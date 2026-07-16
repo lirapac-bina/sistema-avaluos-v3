@@ -1393,9 +1393,14 @@
                     if (doc.exists) {
                         const data = doc.data();
                         if (data.estatus_motor === 'COMPLETADO') {
-                            const valorBase = data.resultados_motor.data.valor_final;
-                            minValorCalculado = data.resultados_motor.auditoria_inyeccion.limite_inf || (valorBase * 0.85);
-                            maxValorCalculado = data.resultados_motor.auditoria_inyeccion.limite_sup || (valorBase * 1.20);
+                            const datosMotor = data.resultados_motor.data || {};
+                            const auditoria = data.resultados_motor.auditoria_inyeccion || {};
+                            
+                            const valorBase = datosMotor.valor_final || 0;
+                            
+                            // 🏎️ FÓRMULA 1: Atrapamos los límites exactos sin importar cómo los envíe Python
+                            minValorCalculado = datosMotor.limite_inf || datosMotor.LIMITE_INF || auditoria.limite_inf || (valorBase * 0.85);
+                            maxValorCalculado = datosMotor.limite_sup || datosMotor.LIMITE_SUP || auditoria.limite_sup || (valorBase * 1.20);
                             
                             document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
                             document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
