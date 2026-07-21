@@ -169,35 +169,72 @@
 
             <div class="card-bloque">
                 <div class="card-header"><span class="material-symbols-rounded icon">map</span><h2>1. Identificación y Ubicación</h2></div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                
+                <!-- Buscador Principal -->
+                <div class="mb-6">
+                    <label class="text-indigo-900 dark:text-indigo-300 font-black text-[11px] uppercase tracking-wider mb-1.5 block">Calle y Número (Buscador Automático)</label>
+                    <div class="relative flex items-center">
+                        <span class="material-symbols-rounded absolute left-3 text-indigo-500 pointer-events-none z-10">search</span>
+                        <!-- style inline inquebrantable para el padding de la lupa -->
+                        <input type="text" name="Calle_Sujeto" id="est-calle" onblur="window.procesarCalle(this)" placeholder="Ej: Avenida Camarones Cuarenta y tres" class="font-bold text-indigo-900 dark:text-indigo-100 border-indigo-200 focus:border-indigo-500 w-full shadow-sm" style="padding-left: 2.5rem !important;">
+                    </div>
+                    <p class="text-[9px] text-amber-600 dark:text-amber-400 font-bold mt-1">⚠️ El sistema autocompletará las abreviaturas y convertirá números a letras (Requisito Motor EME).</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div><label>Tipo de Inmueble</label><select name="Tipo_Inmueble" id="est-tipo" onchange="window.aplicarLogicaInteligente()"><option value="Casa">Casa Habitación</option><option value="Departamento">Departamento</option><option value="Terreno">Terreno</option></select></div>
                     <div><label>Uso de Suelo</label><select name="Uso_de_Suelo" id="est-uso-suelo"><option value="Habitacional">Habitacional</option><option value="Comercial">Comercial</option><option value="Industrial">Industrial</option><option value="Mixto">Mixto</option><option value="Equipamiento">Equipamiento</option><option value="Campestre">Campestre</option><option value="En Breña">En Breña</option><option value="Rústico/Sin Servicios">Rústico/Sin Servicios</option><option value="Agrario/Agropecuario">Agrario/Agropecuario</option></select></div>
-                    <div><label>Estado</label><input type="text" name="Estado" id="est-estado" readonly></div>
-                    <div><label>Ciudad / Municipio</label><input type="text" name="Ciudad_Municipio" id="est-municipio" readonly></div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                    <div class="md:col-span-1">
                         <label>Código Postal</label>
                         <div class="relative">
-                            <input type="text" name="CP" id="est-cp" maxlength="5" placeholder="Ej. 91000" onkeyup="if(this.value.length === 5) window.buscarCPFirebase(this.value)">
-                            <p id="cp-status" class="absolute -bottom-5 left-0 text-[9px] text-emerald-600 font-bold hidden">Buscando colonias...</p>
+                            <input type="text" name="CP" id="est-cp" maxlength="5" onkeyup="if(this.value.length === 5) window.buscarCPFirebase(this.value)">
+                            <p id="cp-status" class="absolute -bottom-5 left-0 text-[9px] text-emerald-600 font-bold hidden">Buscando...</p>
                         </div>
                     </div>
-                    <div class="md:col-span-1"><label>Colonia / Condominio</label><select name="Colonia" id="est-colonia"><option value="">Escriba el CP o mueva el mapa</option></select></div>
-                    <div class="md:col-span-2"><label>Calle y Número</label><input type="text" name="Calle_Sujeto" id="est-calle" placeholder="Ej: Avenida Siempre Viva"></div>
+                    <div class="md:col-span-2">
+                        <label>Colonia</label>
+                        <div class="flex gap-2">
+                            <!-- El select mantiene el 'name' por defecto -->
+                            <select name="Colonia" id="est-colonia" class="w-full" onchange="window.verificarColoniaManual(this.value)">
+                                <option value="">Seleccione o busque el CP</option>
+                                <option value="OTRA" class="font-bold text-indigo-600">➕ Otra (Escribir manualmente)</option>
+                            </select>
+                            <button type="button" id="btn-colonia-manual" onclick="window.verificarColoniaManual('')" class="hidden shrink-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 rounded-lg text-xs font-bold hover:bg-slate-300 transition-colors">Atrás</button>
+                            <input type="text" id="est-colonia-manual" class="w-full hidden border-amber-400 focus:border-amber-500" placeholder="Escriba la colonia exacta...">
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label>Complejo Condominal (Opcional)</label>
+                        <!-- Le agregué el name para que viaje a Firebase/Python -->
+                        <input type="text" name="Complejo_Condominal" id="est-complejo" placeholder="Ej: Privada Las Lomas">
+                    </div>
+                </div>
+
+                <!-- Campos de Estado y Municipio LIBERADOS de readonly -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label>Estado</label><input type="text" name="Estado" id="est-estado"></div>
+                    <div><label>Ciudad / Municipio</label><input type="text" name="Ciudad_Municipio" id="est-municipio"></div>
                 </div>
 
                 <div class="mt-6">
-                    <label class="flex items-center gap-1"><span class="material-symbols-rounded text-sm">my_location</span> Microlote Interactivo (Arrastre el pin o pegue coordenadas)</label>
-                    <div class="relative h-64 w-full rounded-xl border-2 border-slate-300 dark:border-slate-600 overflow-hidden shadow-inner mb-3">
+                    <label class="flex items-center gap-1 mb-1"><span class="material-symbols-rounded text-sm">my_location</span> Microlote Interactivo</label>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 font-medium flex items-center gap-1">
+                        <span class="material-symbols-rounded text-[14px] text-indigo-500">info</span> 
+                        Mueva el pin para ajustar la ubicación o pegue sus coordenadas decimales para centrar el mapa.
+                    </p>
+                    
+                    <input type="text" name="Geolocalizacion_Google" id="est-coords" onchange="window.sincronizarTextoAMapa(this.value)" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-mono text-center outline-none focus:border-emerald-500 font-bold mb-3 shadow-sm" placeholder="Ej: 19.432600, -99.133200">
+                    
+                    <div class="relative h-64 w-full rounded-xl border-2 border-slate-300 dark:border-slate-600 overflow-hidden shadow-inner">
                         <div id="map" class="w-full h-full bg-slate-100"></div>
                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
                             <span class="material-symbols-rounded text-[40px] text-rose-600 drop-shadow-md">location_on</span>
                             <div class="w-4 h-1.5 bg-black/30 rounded-[100%] blur-[1px] -mt-2 z-10"></div>
                         </div>
                     </div>
-                    <input type="text" name="Geolocalizacion_Google" id="est-coords" onchange="window.sincronizarTextoAMapa(this.value)" placeholder="Ej: 19.432600, -99.133200" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-mono text-center outline-none focus:border-emerald-500 font-bold">
                 </div>
             </div>
 
@@ -221,9 +258,11 @@
                     <div><label>Conservación</label><select name="Estado_Conservacion" id="est-conservacion" onchange="window.aplicarLogicaInteligente(); window.aplicarFiltroRemodelacion();"><option value="Ninguna">Ninguna</option><option value="Bueno" selected>Bueno</option><option value="Nuevo">Nuevo</option><option value="Excelente/Remodelado">Excelente/Remodelado</option><option value="Regular">Regular</option><option value="Malo/Ruina">Malo/Ruina</option></select></div>
                     <div><label>Nivel del Inmueble</label><input type="number" name="Nivel_del_Inmueble" value="0"></div>
                     <div><label>Niveles Totales Edif.</label><input type="number" name="Total_Niveles_Edificio" value="0"></div>
-                    <div><label>Amenidades Edif.</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
-                    <div><label>Elevador</label><select name="Elevador"><option value="Ninguna">Ninguna</option><option value="Si">Si</option><option value="No">No</option></select></div>
+                    <!-- 🚀 FIX: Valores "Si" corregidos a "Sí" con tilde ortográfica para match en Python -->
+                    <div><label>Amenidades</label><select name="Cuenta_con_AmenIDADES"><option value="Ninguna">Ninguna</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>Elevador</label><select name="Elevador"><option value="Ninguna">Ninguna</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
                 </div>
+            </div>
             </div>
 
             <div class="card-bloque">
@@ -292,10 +331,11 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div><label>Años desde Remodelación</label><input type="number" name="Anos_desde_Remodelacion" value="0"></div>
                     <div><label>Porcentaje Avance: <span id="val_avance" class="text-emerald-600 dark:text-emerald-400">0</span>%</label><input type="range" name="Porcentaje_Avance" min="0" max="100" value="0" oninput="document.getElementById('val_avance').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
                     <div><label>Altura Techos</label><select name="Altura_Techos"><option value="Ninguna" selected>Ninguna</option><option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option><option value="Estandar (<2.50m)">Estándar (<2.50m)</option><option value="Doble Altura / Diseno">Doble Altura / Diseño</option></select></div>
+                    <!-- 🚀 FIX: Restaurado el valor default pericial al 2% -->
                     <div><label>Negociación Final: <span id="val_negociacion" class="text-emerald-600 dark:text-emerald-400">2</span>%</label><input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" oninput="document.getElementById('val_negociacion').innerText = this.value" class="w-full mt-2 accent-emerald-600"></div>
                     <div class="md:col-span-4 mt-2">
                         <label>Notas Particulares (PDF - Pag. 4 u 8)</label>
@@ -309,7 +349,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-3">
                     <div>
                         <label>Verticalidad Premium (Torres Lujo)</label>
-                        <select name="Verticalidad_Premium"><option value="Ninguna" selected>No Aplica</option><option value="Si">Sí</option><option value="No">No</option></select>
+                        <!-- 🚀 FIX: "Si" corregido a "Sí" con tilde -->
+                        <select name="Verticalidad_Premium"><option value="Ninguna" selected>Ninguna</option><option value="Sí">Sí</option><option value="No">No</option></select>
                     </div>
                 </div>
             </div>
@@ -426,10 +467,6 @@
         <button type="button" onclick="window.limpiarBorrador()" class="px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center" title="Limpiar Formulario (Reset)">
             <span class="material-symbols-rounded">delete_sweep</span>
         </button>
-        
-        <button type="button" onclick="window.guardarProgresoLocalManual()" class="px-6 py-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 font-bold rounded-xl shadow-sm transition-colors active:scale-95 flex items-center justify-center gap-2" title="Guardar Borrador">
-            <span class="material-symbols-rounded">save</span> <span class="hidden sm:inline">Guardar</span>
-        </button>
 
         <button type="button" id="btn_ejecutar_avm" onclick="window.enviarDictamenPrevio()" class="max-w-2xl w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-xl shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-3 transition-all active:scale-95 uppercase tracking-widest text-sm border border-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="material-symbols-rounded text-xl animate-pulse">rocket_launch</span> Ejecutar Algoritmo AVM
@@ -490,9 +527,38 @@
                 <div><label>Construcción (m²)</label><input type="number" id="mt_const" placeholder="0"></div>
                 <div><label>Niveles</label><input type="number" id="mt_niveles" placeholder="0"></div>
                 <div><label>Edad (Años)</label><input type="number" id="mt_edad" placeholder="0"></div>
-                <div><label>Estado Conservación</label><select id="mt_estado"><option value="Bueno">Bueno</option><option value="Excelente">Excelente/Nuevo</option><option value="Regular">Regular</option><option value="Malo">Malo</option></select></div>
-                <div><label>Ubicación</label><select id="mt_ubicacion"><option value="Intermedio">Intermedio</option><option value="Esquina">Esquina</option><option value="Frente a parque">Frente a parque</option></select></div>
-                <div class="sm:col-span-2"><label>Comparación de Zona (Respecto al sujeto)</label><select id="mt_zona"><option value="Igual">Igual / Similar</option><option value="Mejor">Mejor (Sobrevalorada)</option><option value="Peor">Peor (Infravalorada)</option></select></div>
+                
+                <!-- 🚀 FIX: Homologación estricta de opciones con V20 -->
+                <div>
+                    <label>Estado Conservación</label>
+                    <select id="mt_estado">
+                        <option value="Bueno">Bueno</option>
+                        <option value="Nuevo">Nuevo</option>
+                        <option value="Excelente">Excelente</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Malo">Malo</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label>Ubicación</label>
+                    <select id="mt_ubicacion">
+                        <option value="Intermedio">Intermedio</option>
+                        <option value="Esquina">Esquina</option>
+                        <option value="Cabecera">Cabecera</option>
+                        <option value="Dos frentes">Dos frentes</option>
+                    </select>
+                </div>
+                
+                <div class="sm:col-span-2">
+                    <label>Comparación de Zona (Respecto al sujeto)</label>
+                    <select id="mt_zona">
+                        <option value="Igual">Igual / Similar</option>
+                        <option value="Mejor que el sujeto">Mejor (Sobrevalorada)</option>
+                        <option value="Peor que el sujeto">Peor (Infravalorada)</option>
+                    </select>
+                </div>
+                
                 <div class="sm:col-span-2"><label>Enlace / Link (Opcional)</label><input type="text" id="mt_link" placeholder="URL de Inmuebles24, Vivanuncios..."></div>
             </div>
             
@@ -641,13 +707,13 @@
                         if(coords && coords.includes(',')){
                             const pts = coords.split(','); map.setCenter({lat: parseFloat(pts[0]), lng: parseFloat(pts[1])});
                         } else { map.setCenter({ lat: 19.5332, lng: -96.9271 }); }
-                    } // <-- Esta es la llave mágica que me faltó ponerte
+                    }
                 }
             }, 300);
 
             window.aplicarVisibilidadPerfiles();
             window.guardarProgresoLocal();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // 🚀 FIX: Se eliminó el 'window.scrollTo' para mantener la fluidez de la interfaz sin saltos
         };
 
         // --- 4. MAPA Y COMPONENTES VISUALES ---
@@ -674,6 +740,47 @@
             input.value = parseInt(valor, 10).toLocaleString('en-US');
         };
 
+        // --- 4.1 TRADUCTOR LÉXICO (REQUISITO MOTOR EME V20) ---
+        window.numeroALetras = function(num) {
+            const unidades = ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+            const especiales = {
+                10: "DIEZ", 11: "ONCE", 12: "DOCE", 13: "TRECE", 14: "CATORCE", 15: "QUINCE",
+                20: "VEINTE", 30: "TREINTA", 40: "CUARENTA", 50: "CINCUENTA", 60: "SESENTA", 
+                70: "SETENTA", 80: "OCHENTA", 90: "NOVENTA"
+            };
+            if (num in especiales) return especiales[num];
+            if (num < 10) return unidades[num];
+            if (num > 15 && num < 20) return "DIECI" + unidades[num % 10];
+            if (num > 20 && num < 30) return "VEINTI" + unidades[num % 10];
+            if (num > 30 && num < 100) {
+                let decena = Math.floor(num / 10) * 10;
+                let unidad = num % 10;
+                return especiales[decena] + " Y " + unidades[unidad];
+            }
+            return num.toString();
+        };
+
+        window.procesarCalle = function(input) {
+            let texto = input.value;
+            if (!texto) return;
+
+            // 1. Limpieza de Abreviaturas críticas
+            texto = texto.replace(/\bav\b\.?/gi, "Avenida");
+            texto = texto.replace(/\bcalz\b\.?/gi, "Calzada");
+            texto = texto.replace(/\bcol\b\.?/gi, "Colonia");
+            texto = texto.replace(/\bc\b\.?/gi, "Calle");
+            texto = texto.replace(/\bno\b\.?/gi, "Número");
+            texto = texto.replace(/\bn°\b/gi, "Número");
+
+            // 2. Conversión de Números (Máximo 2 dígitos para calles típicas)
+            texto = texto.replace(/\b\d{1,2}\b/g, function(match) {
+                return window.numeroALetras(parseInt(match, 10));
+            });
+
+            // 3. Forzar Mayúsculas
+            input.value = texto.toUpperCase();
+        };
+
         window.inicializarMapa = function() {
             if(mapLoaded || typeof google === 'undefined') return;
             geocoder = new google.maps.Geocoder();
@@ -689,20 +796,16 @@
                         document.getElementById('est-coords').value = `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
                         geocoder.geocode({ location: pos }, (results, status) => {
                             if (status === "OK" && results[0]) {
-                                let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                                let est = "", calle = "", num = "", cp = "";
                                 results[0].address_components.forEach(comp => {
                                     if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
-                                    if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
-                                    if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
-                                    if (comp.types.includes("locality")) loc = comp.long_name;
                                     if (comp.types.includes("route")) calle = comp.long_name;
                                     if (comp.types.includes("street_number")) num = comp.long_name;
                                     if (comp.types.includes("postal_code")) cp = comp.long_name;
                                 });
-                                if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
-                                let ciudadFinal = muni || admin3 || loc || "";
+                                // 🚀 FIX: Prohibimos a Google Maps autocompletar el Municipio para evitar falsos positivos (Fraccionamientos).
+                                // Se confía en la captura manual o en el autocompletado por Código Postal desde Firebase.
                                 const elEst = document.querySelector('input[name="Estado"]'); if(elEst && est) elEst.value = est;
-                                const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun && ciudadFinal) elMun.value = ciudadFinal;
                                 const elDir = document.querySelector('input[name="Calle_Sujeto"]'); 
                                 if(elDir && calle) elDir.value = (calle + " " + num).trim();
                                 const elCp = document.querySelector('input[name="CP"]');
@@ -720,23 +823,18 @@
                 document.getElementById('est-coords').value = `${c.lat().toFixed(6)},${c.lng().toFixed(6)}`;
                 geocoder.geocode({ location: { lat: c.lat(), lng: c.lng() } }, (results, status) => {
                     if (status === "OK" && results[0]) {
-                        let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                        let est = "", calle = "", num = "", cp = "";
                         results[0].address_components.forEach(comp => {
                             if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
-                            if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
-                            if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
-                            if (comp.types.includes("locality")) loc = comp.long_name;
                             if (comp.types.includes("route")) calle = comp.long_name;
                             if (comp.types.includes("street_number")) num = comp.long_name;
                             if (comp.types.includes("postal_code")) cp = comp.long_name;
                         });
-                        if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
-                        let ciudadFinal = muni || admin3 || loc || "";
                         const elEst = document.querySelector('input[name="Estado"]'); if(elEst && est) elEst.value = est;
-                        const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun && ciudadFinal) elMun.value = ciudadFinal;
                         const elDir = document.querySelector('input[name="Calle_Sujeto"]'); 
                         if(elDir && document.activeElement !== elDir && calle) elDir.value = (calle + " " + num).trim();
                         const elCp = document.querySelector('input[name="CP"]');
+                        // 🚀 FIX: El CP disparará la búsqueda en Firebase y ese será el que ponga el municipio oficial
                         if(cp && elCp && elCp.value !== cp) { elCp.value = cp; window.buscarCPFirebase(cp); }
                     }
                 });
@@ -756,18 +854,60 @@
             mapLoaded = true;
         };
 
+        // --- CONTROL DE COLONIA MANUAL ---
+        window.verificarColoniaManual = function(val) {
+            const select = document.getElementById('est-colonia');
+            const input = document.getElementById('est-colonia-manual');
+            const btn = document.getElementById('btn-colonia-manual');
+            
+            if (val === 'OTRA') {
+                // Ocultamos el select y le quitamos el atributo name para que no viaje al backend
+                select.classList.add('hidden');
+                select.removeAttribute('name'); 
+                
+                // Mostramos el input de texto y le asignamos el atributo name "Colonia"
+                input.classList.remove('hidden');
+                input.setAttribute('name', 'Colonia'); 
+                input.focus();
+                btn.classList.remove('hidden');
+            } else {
+                // Revertimos la acción (modo lista)
+                input.classList.add('hidden');
+                input.classList.remove('border-rose-500', 'bg-rose-50'); // Limpiamos error si lo hubo
+                input.removeAttribute('name'); 
+                input.value = '';
+                
+                select.classList.remove('hidden');
+                select.setAttribute('name', 'Colonia'); 
+                select.value = val;
+                btn.classList.add('hidden');
+            }
+        };
+
+        // --- ACTUALIZACIÓN DE buscarCPFirebase ---
         window.buscarCPFirebase = async function(cp, suggestedColonia = null) {
             const status = document.getElementById('cp-status');
-            const selectColonia = document.querySelector('select[name="Colonia"]');
+            const selectColonia = document.getElementById('est-colonia');
             if(status) { status.innerText = "Buscando..."; status.classList.remove('hidden'); }
             try {
                 const doc = await window.appDb.collection('codigos_postales').doc(cp).get();
-                if(selectColonia) selectColonia.innerHTML = '';
+                
+                if(selectColonia) {
+                    // 1. Limpiamos y aseguramos que la opción manual esté SIEMPRE ARRIBA
+                    // Usamos un diseño tipográfico limpio con fondo tenue para destacarlo
+                    selectColonia.innerHTML = `
+                        <option value="">-- Seleccione la colonia --</option>
+                        <option value="OTRA" class="font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50">+ Escribir colonia manualmente</option>
+                    `;
+                }
+
                 if (doc.exists) {
                     const data = doc.data();
                     if(data.municipio) document.querySelector('input[name="Ciudad_Municipio"]').value = data.municipio;
                     if(data.latitud && data.longitud && map) map.setCenter({ lat: parseFloat(data.latitud), lng: parseFloat(data.longitud) });
+                    
                     if (data.colonias && selectColonia) {
+                        // 2. Iteramos y agregamos el resto de las colonias debajo
                         data.colonias.forEach(col => selectColonia.innerHTML += `<option value="${col}">${col}</option>`);
                         if (suggestedColonia) {
                             const found = data.colonias.find(c => c.toLowerCase().includes(suggestedColonia.toLowerCase()));
@@ -776,69 +916,35 @@
                     }
                     if(status) status.classList.add('hidden');
                 } else {
-                    if(selectColonia) selectColonia.innerHTML = '<option value="">Escriba la colonia...</option>';
+                    if(selectColonia) {
+                        selectColonia.innerHTML = `
+                            <option value="">Escriba la colonia...</option>
+                            <option value="OTRA" class="font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50">+ Escribir colonia manualmente</option>
+                        `;
+                    }
                     if(status) status.innerText = "CP no registrado.";
                 }
             } catch (e) { console.error(e); }
         };
 
-        // --- 4.5. SISTEMA ANTI-PÉRDIDA (GUARDADO MANUAL) ---
-        window.guardarProgresoLocal = function() {}; // Silencioso apagado
+// --- 4.5. SISTEMA DE SESIÓN ESTRICTO (SIN CACHÉ) ---
+        // 🚀 FIX ARQUITECTÓNICO: Se neutralizan las funciones de guardado para erradicar datos fantasma.
+        window.guardarProgresoLocal = function() {}; 
 
         window.guardarProgresoLocalManual = function() {
-            const formElements = document.getElementById('form-eme').elements;
-            const data = {};
-            for(let el of formElements) {
-                if(el.name) {
-                    if (el.type === 'checkbox') data[el.name] = el.checked;
-                    else data[el.name] = el.value;
-                }
-            }
-            localStorage.setItem('avm_leezar_draft', JSON.stringify(data));
-            
-            const btn = document.querySelector('button[title="Guardar Borrador"]');
-            const icon = btn.querySelector('span.material-symbols-rounded');
-            const originalClass = btn.className;
-            
-            btn.className = "px-6 py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2";
-            icon.innerText = "check_circle";
-            
-            setTimeout(() => { btn.className = originalClass; icon.innerText = "save"; }, 2000);
+            console.warn("Función deshabilitada por arquitectura. El sistema opera en tiempo real sin caché.");
         };
 
         window.cargarProgresoLocal = function() {
-            const draft = localStorage.getItem('avm_leezar_draft');
-            if(draft) {
-                try {
-                    const data = JSON.parse(draft);
-                    const formElements = document.getElementById('form-eme').elements;
-                    for(let el of formElements) {
-                        if(el.name && data[el.name] !== undefined) {
-                            if (el.type === 'checkbox') el.checked = data[el.name];
-                            else el.value = data[el.name];
-                        }
-                    }
-                    for(let i=1; i<=6; i++) {
-                        const precioEl = document.getElementById('h_t'+i+'_precio');
-                        if(precioEl && parseFloat(precioEl.value) > 0) {
-                            const resumen = document.getElementById('resumen-t'+i);
-                            const indicador = document.getElementById('indicador-t'+i);
-                            const card = document.getElementById('card-testigo-'+i);
-                            if(resumen) {
-                                resumen.innerText = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precioEl.value);
-                                resumen.classList.replace('text-slate-400', 'text-emerald-500');
-                                if(indicador) indicador.classList.replace('bg-slate-300', 'bg-emerald-500');
-                                if(card) { card.classList.add('border-emerald-500'); card.classList.replace('dark:border-slate-700', 'dark:border-emerald-500'); }
-                            }
-                        }
-                    }
-                } catch(e) { console.warn("Error cargando borrador.", e); }
+            // Asesino de Caché: Si el navegador guardó basura de versiones anteriores, la purga al iniciar.
+            if(localStorage.getItem('avm_leezar_draft')) {
+                localStorage.removeItem('avm_leezar_draft');
+                console.log("Caché residual purgado. Sesión inmaculada lista.");
             }
         };
 
         window.limpiarBorrador = function() {
             if(confirm("⚠️ ¿Estás seguro de limpiar todo el formulario? Se perderá toda la información capturada y los testigos.")) {
-                localStorage.removeItem('avm_leezar_draft');
                 document.getElementById('form-eme').reset();
                 
                 for(let i=1; i<=6; i++) {
@@ -863,20 +969,15 @@
                                 if (geocoder) {
                                     geocoder.geocode({ location: pos }, (results, status) => {
                                         if (status === "OK" && results[0]) {
-                                            let est = "", calle = "", num = "", cp = "", muni = "", admin3 = "", loc = "";
+                                            let est = "", calle = "", num = "", cp = "";
                                             results[0].address_components.forEach(comp => {
                                                 if (comp.types.includes("administrative_area_level_1")) est = comp.long_name;
-                                                if (comp.types.includes("administrative_area_level_2")) muni = comp.long_name;
-                                                if (comp.types.includes("administrative_area_level_3")) admin3 = comp.long_name;
-                                                if (comp.types.includes("locality")) loc = comp.long_name;
                                                 if (comp.types.includes("route")) calle = comp.long_name;
                                                 if (comp.types.includes("street_number")) num = comp.long_name;
                                                 if (comp.types.includes("postal_code")) cp = comp.long_name;
                                             });
-                                            if(loc.toUpperCase().includes("FRACCIONAMIENTO")) loc = "";
-                                            let ciudadFinal = muni || admin3 || loc || "";
+                                            // 🚀 FIX: Limpiado el overwrite de Google Maps sobre la Ciudad_Municipio
                                             const elEst = document.querySelector('input[name="Estado"]'); if(elEst) elEst.value = est;
-                                            const elMun = document.querySelector('input[name="Ciudad_Municipio"]'); if(elMun) elMun.value = ciudadFinal;
                                             const elDir = document.querySelector('input[name="Calle_Sujeto"]'); if(elDir) elDir.value = (calle + " " + num).trim();
                                             const elCp = document.querySelector('input[name="CP"]'); if(elCp && cp) { elCp.value = cp; window.buscarCPFirebase(cp); }
                                         }
@@ -911,15 +1012,16 @@
         };
 
         // --- LÓGICA INTELIGENTE (CLON BÓVEDA EME) ---
+// --- LÓGICA INTELIGENTE (CLON BÓVEDA EME) ---
         window.aplicarLogicaInteligente = function() {
             const tipo = document.getElementById('est-tipo')?.value;
             const isTerreno = (tipo === 'Terreno');
             const isDepa = (tipo === 'Departamento');
             const isCasa = (tipo === 'Casa');
             
-            // 1. Mostrar/Ocultar Verticalidad
+            // 🚀 FIX: Mostrar Verticalidad tanto en Departamentos como en Casas
             const secVerticalidad = document.getElementById('seccion_verticalidad');
-            if(secVerticalidad) { isDepa ? secVerticalidad.classList.remove('hidden') : secVerticalidad.classList.add('hidden'); }
+            if(secVerticalidad) { (isDepa || isCasa) ? secVerticalidad.classList.remove('hidden') : secVerticalidad.classList.add('hidden'); }
 
             // 2. Reset General de Bloqueos
             document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
@@ -928,9 +1030,14 @@
 
             // 3A. Reglas de Bloqueo Departamentos
             const lblNivelesEdif = document.querySelector('input[name="Total_Niveles_Edificio"]')?.previousElementSibling;
+            const lblNivelInmueble = document.querySelector('input[name="Nivel_del_Inmueble"]')?.previousElementSibling;
+            
             if (isDepa) {
-                if(lblNivelesEdif) lblNivelesEdif.innerText = "Niveles Totales Edif.";
-                const camposTerreno = ['Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Ubicacion_en_Manzana', 'Frente_a', 'Topografia'];
+                if(lblNivelesEdif) lblNivelesEdif.innerText = "Niveles Totales Torre";
+                if(lblNivelInmueble) lblNivelInmueble.innerText = "Nivel del Inmueble";
+                
+                // 🚀 FIX: Censuramos TODO el bloque de terreno como lo hace estrictamente EME V20
+                const camposTerreno = ['Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Topografia', 'Ubicacion_en_Manzana', 'Frente_a'];
                 camposTerreno.forEach(name => {
                     const el = document.querySelector(`[name="${name}"]`);
                     if(el) { el.disabled = true; if(el.type === 'number') el.value = 0; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
@@ -939,22 +1046,25 @@
 
             // 3B. Reglas de Bloqueo CASAS (El Truco UX)
             if (isCasa) {
-                if(lblNivelesEdif) lblNivelesEdif.innerText = "Niveles de la Casa";
-                const camposDepa = ['Elevador', 'Cuenta_con_AmenIDADES', 'Nivel_del_Inmueble'];
+                if(lblNivelesEdif) lblNivelesEdif.innerText = "Plantas Construidas";
+                if(lblNivelInmueble) lblNivelInmueble.innerText = "Planta de Desplante";
+                
+                // 🚀 FIX: Solo bloqueamos el Elevador. Nivel_del_Inmueble queda libre para que el usuario ponga 0.
+                const camposDepa = ['Elevador'];
                 camposDepa.forEach(name => {
                     const el = document.querySelector(`[name="${name}"]`);
-                    if(el) { el.disabled = true; if(el.type === 'number') el.value = 1; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
+                    if(el) { el.disabled = true; if(el.type === 'number') el.value = 0; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
                 });
-            }   
+            }
 
             // 4. Reglas de Bloqueo Terrenos (Infraestructura activa, cero acabados)
             if (isTerreno) {
                 const camposExceptuadosTerreno = [
-                    'Tipo_Inmueble', 'Uso_de_Suelo', 'Estado', 'Ciudad_Municipio', 'Colonia', 'Calle_Sujeto', 'CP', 'Geolocalizacion_Google',
-                    'Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Topografia', 'Ubicacion_en_Manzana', 'Frente_a',
+                    'Tipo_Inmueble', 'Uso_de_Suelo', 'Estado', 'Ciudad_Municipio', 'Colonia', 'Complejo_Condominal', 'Calle_Sujeto', 'CP', 'Geolocalizacion_Google',
+                    'Superficie_Terreno', 'Frente_m', 'Fondo_m', 'Topografia', 'Ubicacion_en_Manzana', 'Frente_a', 'Clase_Inmueble', 'Calidad_Acabados',
                     'Tipo_de_Calle', 'Tipo_de_Acceso_Complejo', 'Red_de_Agua', 'Tipo_de_Drenaje', 'Senalizacion_Nomenclatura', 'Suministro_Servicios', 'Amenidades_Urbanas', 'Conectividad', 'Caso_Atipico_Plusvalia',
                     'Certeza_Juridica', 'Regimen_Propiedad', 'Tipo_de_Vigilancia', 'Cuota_Mantenimiento', 'Colindancia', 'Amenidades_Entorno_Abierto', 'Notas_Particulares',
-                    'Factor_Negociacion_Final', 'Porcentaje_Avance' // <-- SALVAMOS ESTOS DOS DEL BLOQUEO PARA PYTHON
+                    'Factor_Negociacion_Final', 'Porcentaje_Avance'
                 ];
                 
                 document.querySelectorAll('#form-eme input, #form-eme select, #form-eme textarea').forEach(el => {
@@ -965,6 +1075,16 @@
                         if(el.tagName === 'SELECT') el.value = 'Ninguna';
                     }
                 });
+            }
+
+            // RESTAURACIÓN INTELIGENTE DE AVANCE DE OBRA
+            if (!isTerreno) {
+                const inputAvance = document.querySelector('input[name="Porcentaje_Avance"]');
+                const vAvance = document.getElementById('val_avance');
+                if (inputAvance && inputAvance.value === "0") {
+                    inputAvance.value = "100";
+                    if (vAvance) vAvance.innerText = "100";
+                }
             }
 
             // 5. Aplicar Filtros Secundarios (Aires y Remodelaciones)
@@ -984,55 +1104,82 @@
             window.guardarProgresoLocal(); 
         };
 
-        window.aplicarFiltroAires = function() {
-            const tipoAire = document.querySelector('select[name="Tipo_Aire_Acondicionado"]');
-            const numAires = document.querySelector('input[name="Num_Equipos_Aire"]');
-            const contenedorNum = numAires ? numAires.closest('div') : null;
-            if(tipoAire && (tipoAire.value === "Ninguno" || tipoAire.value === "Ninguna" || tipoAire.value === "")) {
-                if(contenedorNum) contenedorNum.classList.add('hidden');
-                if(numAires) numAires.value = 0;
-            } else {
-                if(contenedorNum) contenedorNum.classList.remove('hidden');
-            }
-        };
-
-        window.aplicarFiltroRemodelacion = function() {
-            const alcanceSelect = document.querySelector('select[name="Alcance_Remodelacion"]');
-            const inputAnos = document.querySelector('input[name="Anos_desde_Remodelacion"]');
-            const inputAvance = document.querySelector('input[name="Porcentaje_Avance"]');
-            const panelMejoras = document.getElementById('panel_mejoras');
-            const isTerreno = document.getElementById('est-tipo')?.value === 'Terreno';
-
-            if (!alcanceSelect) return;
-
-            if (isTerreno || alcanceSelect.value === "Nula" || alcanceSelect.value === "Ninguna" || alcanceSelect.value === "") {
-                if (inputAnos) inputAnos.closest('div').classList.add('hidden');
-                if (inputAvance) inputAvance.closest('div').classList.add('hidden'); 
-                if (panelMejoras) panelMejoras.classList.add('hidden');
-                
-                // Inyectamos valores por defecto seguros para Python
-                if (inputAnos) inputAnos.value = 0;
-                if (inputAvance) { inputAvance.value = 100; document.getElementById('val_avance').innerText = "100"; }
-                if (panelMejoras) { panelMejoras.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; }); }
-            } else {
-                if (inputAnos) inputAnos.closest('div').classList.remove('hidden');
-                if (inputAvance) inputAvance.closest('div').classList.remove('hidden');
-                if (panelMejoras) panelMejoras.classList.remove('hidden');
-            }
-        };
-
+        // --- CONTROL INTELIGENTE DE PANELES Y PERFILES ---
         window.aplicarVisibilidadPerfiles = function() {
             const val = document.getElementById('perfil_usuario')?.value || "4";
             const toggleClass = (id, action) => { const el = document.getElementById(id); if(el) el.classList[action]('hidden'); };
-            const isDepa = document.getElementById('est-tipo')?.value === 'Departamento';
+            const tipo = document.getElementById('est-tipo')?.value;
+            const isDepa = (tipo === 'Departamento');
+            const isCasa = (tipo === 'Casa');
             
-            toggleClass('seccion-archivos', 'add'); toggleClass('seccion-valuador', 'add'); toggleClass('seccion_muestreo_manual', 'add'); toggleClass('grupo_id_eme', 'add');
+            // 1. Ocultar paneles secundarios por defecto
+            toggleClass('seccion-archivos', 'add'); 
+            toggleClass('seccion-valuador', 'add'); 
+            toggleClass('seccion_muestreo_manual', 'add'); 
+            toggleClass('grupo_id_eme', 'add');
             
-            if(val === "1") { toggleClass('seccion_verticalidad', 'add'); } else { if(isDepa) toggleClass('seccion_verticalidad', 'remove'); }
+            // 2. Localizar el contenedor completo de "Notas Particulares" para ocultarlo limpiamente
+            const txtNotas = document.querySelector('textarea[name="Notas_Particulares"]');
+            const contNotas = txtNotas ? txtNotas.closest('div') : null;
+            
+            // 3. Lógica específica por Perfil
+            if(val === "1") { 
+                // PERFIL 1: Modo AVM Puro. 
+                toggleClass('seccion_verticalidad', 'add'); 
+                if (contNotas) contNotas.classList.add('hidden');
+                if (txtNotas) txtNotas.value = ""; 
 
-            if(val === "2") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'add'); } 
-            else if(val === "3") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); } 
-            else if(val === "4") { toggleClass('seccion_muestreo_manual', 'remove'); toggleClass('seccion-archivos', 'remove'); toggleClass('seccion-valuador', 'remove'); toggleClass('grupo_cedula', 'remove'); toggleClass('grupo_id_eme', 'remove'); }
+                // Sanitización Física Estricta de Testigos
+                document.querySelectorAll('#testigos-hidden-data input').forEach(el => {
+                    el.disabled = true;
+                    if (el.name.includes('Estado')) el.value = 'Bueno';
+                    else if (el.name.includes('Ubicacion')) el.value = 'Intermedio';
+                    else if (el.name.includes('Zona')) el.value = 'Igual';
+                    else if (el.name.includes('Link')) el.value = '';
+                    else el.value = '0'; 
+                });
+                
+                // Reseteo visual de tarjetas
+                for(let i=1; i<=6; i++) {
+                    const resumen = document.getElementById('resumen-t'+i);
+                    const indicador = document.getElementById('indicador-t'+i);
+                    const card = document.getElementById('card-testigo-'+i);
+                    if(resumen) { resumen.innerText = "Sin capturar"; resumen.classList.remove('text-emerald-500'); resumen.classList.add('text-slate-400'); }
+                    if(indicador) { indicador.classList.remove('bg-emerald-500'); indicador.classList.add('bg-slate-300', 'dark:bg-slate-600'); }
+                    if(card) { card.classList.remove('border-emerald-500', 'dark:border-emerald-500'); card.classList.add('dark:border-slate-700'); }
+                }
+
+            } else { 
+                // PERFILES 2, 3 y 4: Modos Periciales
+                // 🚀 FIX: Reactivamos Verticalidad para Depa Y Casa en perfiles avanzados
+                if (isDepa || isCasa) toggleClass('seccion_verticalidad', 'remove'); 
+                if (contNotas) contNotas.classList.remove('hidden');
+
+                // Reactivación de inputs de testigos para inyección manual
+                document.querySelectorAll('#testigos-hidden-data input').forEach(el => {
+                    el.disabled = false;
+                });
+            }
+
+            if(val === "2") { 
+                toggleClass('seccion_muestreo_manual', 'remove'); 
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'add'); 
+            } 
+            else if(val === "3") { 
+                toggleClass('seccion_muestreo_manual', 'remove'); 
+                toggleClass('seccion-archivos', 'remove'); 
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'remove'); 
+            } 
+            else if(val === "4") { 
+                toggleClass('seccion_muestreo_manual', 'remove'); 
+                toggleClass('seccion-archivos', 'remove'); 
+                toggleClass('seccion-valuador', 'remove'); 
+                toggleClass('grupo_cedula', 'remove'); 
+                toggleClass('grupo_id_eme', 'remove'); 
+            }
+            
             window.guardarProgresoLocal();
         };
 
@@ -1284,20 +1431,19 @@
 
             const formElementsArr = Array.from(document.getElementById('form-eme').elements);
             formElementsArr.forEach(el => {
-                if (el.disabled || el.type === 'hidden' || el.closest('.hidden') || el.type === 'checkbox' || el.name === 'Notas_Particulares' || el.name === 'Espacios_Exteriores_Lista' || el.name === 'Amenidades_Entorno_Abierto' || el.name === 'Mantenimiento_Reciente_Lista') return;
+                if (el.disabled || el.type === 'hidden' || el.closest('.hidden') || el.type === 'checkbox' || el.name === 'Notas_Particulares' || el.name === 'Espacios_Exteriores_Lista' || el.name === 'Amenidades_Entorno_Abierto' || el.name === 'Mantenimiento_Reciente_Lista' || el.name === 'Complejo_Condominal') return;
                 if (!el.name && !el.id) return;
                 
                 let val = el.value.trim();
                 
                 if (val === "" || val === "Ninguna" || val === "Ninguno") {
-                    // SE AGREGÓ Amenidades_Urbanas y Uso_de_Suelo para que no den error
-                    const permitenNinguno = ['Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Amenidades_Urbanas', 'Uso_de_Suelo', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
+                    // 🚀 FIX: Se agregó Cuenta_con_AmenIDADES a la lista blanca
+                    const permitenNinguno = ['Cuenta_con_AmenIDADES', 'Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Amenidades_Urbanas', 'Uso_de_Suelo', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia', 'Calidad_Madera', 'Acabados_Cocina'];
                     if (permitenNinguno.includes(el.name)) return;
                     marcarError(el);
                 } 
                 else if (el.type === 'number' || camposNumericosEstrictos.includes(el.name)) {
                     let valorLimpio = typeof val === 'string' ? val.replace(/,/g, '') : val;
-                    // Si el usuario deja la cuota vacía, el sistema asume 0 automáticamente y no da error
                     if (valorLimpio === "") valorLimpio = "0"; 
                     
                     const num = parseFloat(valorLimpio);
@@ -1340,17 +1486,24 @@
                                    el.name === 'Porcentaje_Avance' ||
                                    (el.name.startsWith('EME_CP_T') && (el.name.includes('Precio') || el.name.includes('Sup_') || el.name.includes('Niveles') || el.name.includes('Edad')));
 
-                if(el.disabled) { 
+if(el.disabled) { 
                     const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
                     
                     if (camposValuador.includes(el.name)) {
                         parametros[el.name] = "";
                     } else if (el.name === 'Porcentaje_Avance') {
-                        parametros[el.name] = 100; // El motor exige 100% en terreno para no tronar
+                        parametros[el.name] = 100; 
                     } else if (el.name === 'Factor_Negociacion_Final') {
-                        parametros[el.name] = parseFloat(el.value) || 2; // Respetar su valor o mandar 2%
+                        parametros[el.name] = parseFloat(el.value) || 2; 
                     } else {
-                        parametros[el.name] = (el.type === 'checkbox') ? false : (esNumerico ? 0 : "Ninguna"); 
+                        // 🚀 FIX: Respetamos el valor asignado por la Lógica Inteligente (Ej: Nivel 1 en Casas) en lugar de forzar a 0.
+                        if (el.type === 'checkbox') {
+                            parametros[el.name] = el.checked;
+                        } else if (esNumerico) {
+                            parametros[el.name] = parseFloat(el.value) || 0;
+                        } else {
+                            parametros[el.name] = el.value || "Ninguna";
+                        }
                     }
                 } 
                 else {
@@ -1359,24 +1512,43 @@
                         let valorLimpio = typeof el.value === 'string' ? el.value.replace(/[^0-9.-]+/g, '') : el.value;
                         parametros[el.name] = parseFloat(valorLimpio) || 0; 
                     } 
-                    else { parametros[el.name] = el.value; } // Igual que Bóveda V20: si está vacío se envía "" y Python lo ignora inteligentemente
+                    else { 
+                        // 🚀 FIX ARQUITECTÓNICO: Diccionario estricto para valores vacíos según V20
+                        if (el.tagName === 'SELECT' && el.value.trim() === "") {
+                            const usanNinguno = ['Caso_Atipico_Plusvalia', 'Tipo_Aire_Acondicionado'];
+                            const usanNula = ['Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
+                            if (usanNinguno.includes(el.name)) parametros[el.name] = "Ninguno";
+                            else if (usanNula.includes(el.name)) parametros[el.name] = "Nula";
+                            else parametros[el.name] = "Ninguna";
+                        } else {
+                            parametros[el.name] = el.value; 
+                        }
+                    }
                 }
             }
             
             parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
             parametros["Geolocalizacion_Google"] = coords;
             
-            // 🛡️ PARCHE DE NIVELES Y TERRENOS
+            // 🛡️ PARCHE DE NIVELES Y TERRENOS (V20 STRICT MODE)
             if (parametros["Tipo_Inmueble"] === "Departamento") {
                 if (!parametros["Nivel_del_Inmueble"] || parametros["Nivel_del_Inmueble"] === 0) parametros["Nivel_del_Inmueble"] = 1;
                 if (!parametros["Total_Niveles_Edificio"] || parametros["Total_Niveles_Edificio"] === 0) parametros["Total_Niveles_Edificio"] = 3;
             } else if (parametros["Tipo_Inmueble"] === "Terreno") {
                 parametros["Porcentaje_Avance"] = 100;
                 parametros["Factor_Negociacion_Final"] = parametros["Factor_Negociacion_Final"] || 2;
+                parametros["Verticalidad_Premium"] = "Ninguna";
             }
-            
+            // 🚀 FIX: Se eliminó la inyección forzada de "Ninguna" para Casa, permitiendo que viaje la selección real del valuador.
+
             // Atrapamos el perfil real desde fuera del formulario
             parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
+
+            // 🏗️ CONCATENAR COMPLEJO CONDOMINAL A LA CALLE (Si el usuario lo llenó)
+            const inputComplejo = document.getElementById('est-complejo');
+            if (inputComplejo && inputComplejo.value.trim() !== "") {
+                parametros["Calle_Sujeto"] = parametros["Calle_Sujeto"] + ", " + inputComplejo.value.trim();
+            }
 
             ultimaBusqueda = parametros;
 
@@ -1402,6 +1574,10 @@
                             minValorCalculado = datosMotor.limite_inf || datosMotor.LIMITE_INF || auditoria.limite_inf || (valorBase * 0.85);
                             maxValorCalculado = datosMotor.limite_sup || datosMotor.LIMITE_SUP || auditoria.limite_sup || (valorBase * 1.20);
                             
+                            // 🚀 FIX ARQUITECTÓNICO: Se eliminó Object.assign para NO contaminar el payload.
+                            // Si el Perfil 2 no envía mercado manual, el PDF saldrá con la tabla en blanco, 
+                            // copiando exactamente la penalización visual del Motor V20 original.
+
                             document.getElementById('lbl_limite_inf').innerText = formatoMoneda.format(minValorCalculado);
                             document.getElementById('lbl_limite_sup').innerText = formatoMoneda.format(maxValorCalculado);
                             document.getElementById('slider_conclusion_valor').value = 50;
@@ -1474,12 +1650,28 @@
             try {
                 const idToken = await authUser.getIdToken(true);
 
-                // Enviamos vacío si no hay foto (Python detecta el vacío y renderiza el PDF corto)
-                ultimaBusqueda["foto_base64"] = base64FotoPortada || "";
-                ultimaBusqueda["anexo_croquis"] = ""; 
-                ultimaBusqueda["anexo_evidencia"] = ""; 
-                ultimaBusqueda["fotos_adicionales"] = arrayFotosAnexos.filter(f => f.tipo === 'foto').map(f => ({ base64: f.base64, descripcion: f.texto }));
-                ultimaBusqueda["anexos_adicionales"] = arrayFotosAnexos.filter(a => a.tipo === 'anexo').map(a => ({ base64: a.base64, titulo: a.texto }));
+                // 🚀 FIX ARQUITECTÓNICO: Mapeo plano exacto a las etiquetas de Google Slides V20
+                ultimaBusqueda["FOTO_FACHADA_PRINCIPAL"] = base64FotoPortada || "";
+                
+                // Mapeo de hasta 6 fotos interiores (FOTO_1, DESC_1, etc.)
+                const fotosInteriores = arrayFotosAnexos.filter(f => f.tipo === 'foto');
+                for (let i = 0; i < 6; i++) {
+                    ultimaBusqueda[`FOTO_${i+1}`] = fotosInteriores[i] ? fotosInteriores[i].base64 : "";
+                    ultimaBusqueda[`DESC_${i+1}`] = fotosInteriores[i] ? fotosInteriores[i].texto : "";
+                }
+
+                // Mapeo de anexos (ANEXO_IMG, ANEXO_TITULO) - Extrae el primero para el formato actual
+                const anexos = arrayFotosAnexos.filter(a => a.tipo === 'anexo');
+                ultimaBusqueda["ANEXO_IMG"] = anexos[0] ? anexos[0].base64 : "";
+                ultimaBusqueda["ANEXO_TITULO"] = anexos[0] ? anexos[0].texto : "";
+
+                // Limpieza de llaves viejas para que el Firewall de Python no marque "alertas sospechosas"
+                delete ultimaBusqueda["foto_base64"];
+                delete ultimaBusqueda["fotos_adicionales"];
+                delete ultimaBusqueda["anexos_adicionales"];
+                delete ultimaBusqueda["anexo_croquis"];
+                delete ultimaBusqueda["anexo_evidencia"];
+
                 ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
                 ultimaBusqueda["valor_comercial_rango"] = parseFloat(valorElegido);
 
@@ -1570,32 +1762,35 @@
             if(typeof window.cargarProgresoLocal === 'function') window.cargarProgresoLocal();
 
             setTimeout(() => {
-                if(typeof window.aplicarLogicaInteligente === 'function') window.aplicarLogicaInteligente();
-                if(typeof window.aplicarVisibilidadPerfiles === 'function') window.aplicarVisibilidadPerfiles();
-                if(typeof window.aplicarFiltroAires === 'function') window.aplicarFiltroAires();
-                
                 document.querySelectorAll('.card-header h2').forEach(h2 => { h2.innerText = h2.innerText.replace(/^\d+\.\s*/, ''); });
                 document.querySelectorAll('input, textarea').forEach(el => {
                     el.removeAttribute('placeholder'); 
                     if(el.type === 'number' && (el.value === "0" || el.value === 0)) { el.value = ""; }
                 });
 
+                // 🚀 FIX: Forzar a que TODOS los selects inicien en "-- Seleccione --"
                 document.querySelectorAll('select').forEach(el => {
-                    // Campos que tienen permitido usar "Ninguna" o valores por defecto reales
-                    const exentos = ['perfil_usuario', 'est-tipo', 'Uso_de_Suelo', 'Caso_Atipico_Plusvalia', 'Verticalidad_Premium', 'Amenidades_Interiores', 'Amenidades_Urbanas', 'Tipo_Aire_Acondicionado', 'Proteccion_Termica', 'Conectividad', 'Estado_de_Humedades', 'Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
-                    if(!exentos.includes(el.id || el.name)) {
-                        const primera = el.options[0];
-                        if(primera && (primera.value === "Ninguna" || primera.value === "Ninguno" || primera.value === "")) {
-                            primera.value = ""; primera.innerText = "-- Seleccione --"; primera.disabled = true;
-                            if(el.value === "Ninguna" || el.value === "Ninguno" || el.value === "") primera.selected = true; 
-                        } else {
-                            const nuevaOpcion = document.createElement('option');
-                            nuevaOpcion.value = ""; nuevaOpcion.innerText = "-- Seleccione --"; nuevaOpcion.disabled = true;
-                            el.insertBefore(nuevaOpcion, el.firstChild);
-                            if(el.value === el.options[1].value) { nuevaOpcion.selected = true; el.value = ""; }
-                        }
+                    // El único que no tocamos es el selector oculto del perfil
+                    if(el.id !== 'perfil_usuario') {
+                        const nuevaOpcion = document.createElement('option');
+                        nuevaOpcion.value = ""; 
+                        nuevaOpcion.innerText = "-- Seleccione --"; 
+                        nuevaOpcion.disabled = true;
+                        nuevaOpcion.selected = true;
+                        
+                        // Quitamos la selección forzada que venía en el HTML original
+                        Array.from(el.options).forEach(opt => opt.selected = false);
+                        
+                        // Insertamos al inicio y forzamos el valor de la caja a vacío
+                        el.insertBefore(nuevaOpcion, el.firstChild);
+                        el.value = "";
                     }
                 });
+
+                // Ahora sí aplicamos la lógica, ya que todo está reseteado
+                if(typeof window.aplicarLogicaInteligente === 'function') window.aplicarLogicaInteligente();
+                if(typeof window.aplicarVisibilidadPerfiles === 'function') window.aplicarVisibilidadPerfiles();
+                if(typeof window.aplicarFiltroAires === 'function') window.aplicarFiltroAires();
             }, 500); 
         });
     </script>

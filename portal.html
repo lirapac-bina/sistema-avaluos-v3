@@ -577,9 +577,21 @@
         // 1. SEGURIDAD (CERO TRUST + VAULT + SESIÓN)
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
+            // ✅ NUEVO: Validación estricta del parámetro ID
+            if (!expedienteId) {
+                document.getElementById('global-loader-text').innerText = "Enlace inválido o incompleto.";
+                document.getElementById('global-loader').classList.remove('hidden');
+                document.getElementById('global-loader').classList.add('flex');
+                
+                // Ocultamos el spinner de carga para que solo quede el texto de error
+                const spinner = document.querySelector('#global-loader .animate-spin');
+                if(spinner) spinner.classList.add('hidden');
+                return; // Detenemos la ejecución de la página
+            }
+
             // 🔥 FIX: Revisamos si tenemos el PIN guardado, no solo un "true"
             const savedPin = localStorage.getItem('auth_pin_' + expedienteId);
-            if (expedienteId && savedPin) {
+            if (savedPin) {
                 document.getElementById('securityLock').classList.add('hidden');
                 document.getElementById('loading-card').classList.remove('hidden');
                 cargarDatosEnSesion(savedPin); 
