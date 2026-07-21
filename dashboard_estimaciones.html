@@ -281,7 +281,8 @@
 
         // CARGAR HISTORIAL DE EXPEDIENTES (V4.1 Sincronizada con Python y Fallbacks)
         function cargarExpedientes(user) {
-            unsubscribeExpedientes = db.collection('expedientes_avaluos')
+            // 🚀 FIX ARQUITECTÓNICO: Apuntamos exclusivamente a la base de datos de AVMs
+            unsubscribeExpedientes = db.collection('historial_estimaciones')
                 .onSnapshot(snapshot => {
                     const tbody = document.getElementById('tabla-expedientes');
                     let html = '';
@@ -306,17 +307,22 @@
                     misFolios.forEach(doc => {
                         const data = doc.data();
                         const idCorto = doc.id.substring(doc.id.indexOf('_')+1);
+                        const motorData = data.resultados_motor?.data || data.resultados_motor || {};
                         
-                        // 🕒 1. SINCRONIZACIÓN DE TIEMPO EXACTO CON EL PDF
+                        // 🚀 FIX ARQUITECTÓNICO: 1. EXTRACCIÓN DEL HASH OFICIAL Y FECHA EXACTA DEL MOTOR V20
+                        const folioOficial = data.hash_id || motorData.HASH_ID || motorData.hash_id || idCorto.substring(0,8).toUpperCase();
+                        
                         let fechaDashboard, horaDashboard;
-                        if (data.resultados_motor && data.resultados_motor.data && data.resultados_motor.data.FECHA_AVALUO) {
-                            const pyDate = data.resultados_motor.data.FECHA_AVALUO.split(' ');
-                            fechaDashboard = pyDate[0]; 
-                            horaDashboard = pyDate[1] || '';  
+                        const pyDateStr = motorData.FECHA_AVALUO || motorData.fecha_avaluo || data.fecha_avaluo;
+                        
+                        if (pyDateStr) {
+                            const pyDateParts = pyDateStr.split(' ');
+                            fechaDashboard = pyDateParts[0]; 
+                            horaDashboard = pyDateParts.length > 1 ? pyDateParts[1] : '';  
                         } else {
                             const dateObj = new Date(parseInt(idCorto));
-                            fechaDashboard = dateObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
-                            horaDashboard = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                            fechaDashboard = dateObj.toLocaleDateString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                            horaDashboard = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                         }
 
                         // 🔥 EL ESCUDO DEFINITIVO PARA LEER PARÁMETROS
@@ -359,15 +365,15 @@
                         let valorCierreFormateado = '---';
                         if (data.valor_comercial_rango) {
                             valorCierreFormateado = formatoMoneda.format(data.valor_comercial_rango);
-                        } else if (data.resultados_motor && data.resultados_motor.data && data.resultados_motor.data.valor_final) {
-                            valorCierreFormateado = formatoMoneda.format(data.resultados_motor.data.valor_final);
+                        } else if (motorData.valor_final) {
+                            valorCierreFormateado = formatoMoneda.format(motorData.valor_final);
                         }
                         
                         const estatusGeneral = data.estatus_pdf || data.estatus_motor || 'PROCESANDO';
                         
                         const finalUrl = data.pdf_url || 
                                          (data.resultados_motor && data.resultados_motor.auditoria_inyeccion && data.resultados_motor.auditoria_inyeccion.pdf_url) || 
-                                         (data.resultados_motor && data.resultados_motor.pdf_url);
+                                         motorData.pdf_url;
 
                         let badgeEstatus = '';
                         let btnAccion = '';
@@ -399,10 +405,11 @@
                             btnAccion = `<button disabled class="bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 text-xs font-bold px-4 py-2 rounded-lg cursor-not-allowed">Procesando...</button>`;
                         }
 
+                        // 🚀 INYECCIÓN DEL FOLIO OFICIAL AQUÍ (en vez del idCorto)
                         html += `
                         <tr class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td class="p-4">
-                                <p class="font-bold text-slate-800 dark:text-slate-200 text-xs">#${idCorto.substring(0,8)}</p>
+                                <p class="font-bold text-slate-800 dark:text-slate-200 text-xs">#${folioOficial}</p>
                                 <p class="text-[10px] text-slate-500 font-semibold uppercase">${fechaDashboard} <span class="text-indigo-500 ml-1 font-bold">${horaDashboard}</span></p>
                             </td>
                             <td class="p-4 max-w-[250px]">

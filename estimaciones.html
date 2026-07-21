@@ -665,6 +665,20 @@
                             const cr = document.getElementById('user-credits');
                             if (cr) cr.innerText = authUser.creditos;
                             if(headerRole) headerRole.innerText = userData.rol || 'Valuador';
+
+                            // 🚀 FIX ARQUITECTÓNICO: Inyección automática de datos del perito en la Sección 9
+                            const inNombre = document.querySelector('input[name="Nombre_Valuador"]');
+                            const inCorreo = document.querySelector('input[name="Correo_Valuador"]');
+                            const inCedula = document.querySelector('input[name="Cedula_Valuador"]');
+                            const inTel = document.querySelector('input[name="Telefono_Valuador"]');
+                            const inEmeId = document.querySelector('input[name="EME_ID"]');
+
+                            // Respetamos lo que haya tecleado, pero si está vacío, lo autocompletamos con la BD
+                            if (inNombre && !inNombre.value) inNombre.value = userData.nombre_completo || userData.nombre || user.displayName || '';
+                            if (inCorreo && !inCorreo.value) inCorreo.value = userData.correo || userData.email || user.email || '';
+                            if (inCedula && !inCedula.value) inCedula.value = userData.cedula || '';
+                            if (inTel && !inTel.value) inTel.value = userData.telefono || '';
+                            if (inEmeId && !inEmeId.value) inEmeId.value = userData.eme_id || userData.codigo_eme || '';
                         }
                     });
                     // El mapa ya no arranca aquí, arranca cuando el modal desaparezca
@@ -1365,35 +1379,82 @@
             window.hideLoader();
         };
 
-        window.renderizarMiniaturasDropzone = function() {
+window.renderizarMiniaturasDropzone = function() {
             const contFotos = document.getElementById('contenedor_thumbnails_fotos');
             const contAnexos = document.getElementById('contenedor_thumbnails_anexos');
             
-            // 📸 CAJA VERDE: Carrusel limpio sin textos
+            // 📸 1. TARJETAS DE FOTOS INTERIORES
             if(contFotos) {
+                contFotos.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto custom-scroll mt-4 empty:hidden w-full px-1";
+                const presets = ['Fotografía complementaria', 'Fachada Frontal / Exterior', 'Sala / Comedor', 'Cocina Equipada', 'Recámara Principal', 'Recámara Secundaria', 'Baño Completo', 'Fachada Posterior / Patio'];
+                
                 const fotos = arrayFotosAnexos.filter(d => d.tipo === 'foto');
-                contFotos.innerHTML = fotos.map(doc => `
-                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 rounded-xl shadow-sm relative group aspect-video overflow-hidden animate-fade-in">
-                        <img src="${doc.preview}" class="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105">
-                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="absolute top-1 right-1 bg-rose-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-rose-600 z-10">✖</button>
+                contFotos.innerHTML = fotos.map((doc, index) => {
+                    const isExtra = index >= 6;
+                    const borderClass = isExtra ? 'border-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.15)]' : 'border-emerald-500 shadow-sm';
+                    const badge = isExtra 
+                        ? `<div class="text-[9px] text-rose-600 font-bold flex items-center gap-1 mb-1"><span class="material-symbols-rounded text-[12px]">warning</span> Omitida en PDF (Límite 6)</div>`
+                        : `<div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mb-1"><span class="material-symbols-rounded text-[12px]">check_circle</span> Válida para PDF (Foto ${index + 1})</div>`;
+
+                    const isCustom = !presets.includes(doc.texto) && doc.texto !== '';
+                    
+                    return `
+                    <div class="border-2 ${borderClass} bg-white dark:bg-slate-800 p-2.5 rounded-xl flex items-center gap-3 animate-fade-in transition-all">
+                        <div class="w-16 h-16 shrink-0 relative rounded-lg overflow-hidden border border-slate-200 shadow-inner">
+                            <!-- 🚀 FIX: Miniatura reparada respetando Base64 nativo -->
+                            <img src="${doc.preview}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            ${badge}
+                            <div class="w-full flex gap-1">
+                                <select class="w-full text-[9px] font-semibold p-1.5 bg-slate-50 border border-slate-300 rounded text-slate-700 outline-none focus:border-emerald-500 cursor-pointer shadow-sm ${isCustom ? 'hidden' : ''}" onchange="if(this.value==='OTRA'){ this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.focus(); window.actualizarTextoDoc('${doc.id}', ''); } else { window.actualizarTextoDoc('${doc.id}', this.value); }">
+                                    ${presets.map(p => `<option value="${p}" ${doc.texto === p ? 'selected' : ''}>${p}</option>`).join('')}
+                                    <option value="OTRA" class="font-bold text-emerald-600">➕ Texto libre...</option>
+                                </select>
+                                <input type="text" class="w-full text-[9px] font-semibold p-1.5 bg-white border border-emerald-400 rounded text-slate-700 outline-none focus:border-emerald-600 shadow-sm ${isCustom ? '' : 'hidden'}" placeholder="Escriba etiqueta..." value="${isCustom ? doc.texto : ''}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)">
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="bg-[#f43f5e] hover:bg-rose-600 text-white w-12 h-12 rounded-lg shrink-0 flex flex-col items-center justify-center shadow-md active:scale-95 transition-colors" title="Eliminar">
+                            <span class="material-symbols-rounded text-lg mb-0.5">delete</span>
+                            <span class="text-[7px] font-black tracking-widest uppercase">Quitar</span>
+                        </button>
                     </div>
-                `).join('');
+                `}).join('');
             }
             
-            // 📂 CAJA AMARILLA: Anexos con título
+            // 📂 2. TARJETAS DE ANEXOS (Limpias y con Texto Libre)
             if(contAnexos) {
+                contAnexos.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto custom-scroll mt-4 empty:hidden w-full px-1";
+                
                 const anexos = arrayFotosAnexos.filter(d => d.tipo === 'anexo');
-                contAnexos.innerHTML = anexos.map(doc => `
-                    <div class="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700/50 p-2 rounded-xl shadow-sm flex items-center gap-2 animate-fade-in">
-                        <img src="${doc.preview}" class="h-8 w-8 object-cover rounded shrink-0">
-                        <div class="flex-1 min-w-0">
-                            <input type="text" class="w-full text-[10px] p-1 border-b border-transparent hover:border-slate-200 focus:border-amber-500 bg-transparent outline-none text-slate-700 dark:text-slate-200 truncate font-bold" value="${doc.texto}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)" placeholder="Ej: Plano o Predial">
+                contAnexos.innerHTML = anexos.map((doc, index) => {
+                    const isExtra = index >= 1; 
+                    const borderClass = isExtra ? 'border-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.15)]' : 'border-amber-500 shadow-sm';
+                    const badge = isExtra 
+                        ? `<div class="text-[9px] text-rose-600 font-bold flex items-center gap-1 mb-1"><span class="material-symbols-rounded text-[12px]">warning</span> Se omitirá (Límite 1)</div>`
+                        : `<div class="text-[9px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 mb-1"><span class="material-symbols-rounded text-[12px]">verified</span> Anexo Oficial Principal</div>`;
+
+                    // 🚀 FIX: Nada hardcodeado. Puramente texto libre.
+                    const textoValor = (doc.texto === 'Anexo' || doc.texto === 'foto') ? '' : doc.texto;
+
+                    return `
+                    <div class="border-2 ${borderClass} bg-white dark:bg-slate-800 p-2.5 rounded-xl flex items-center gap-3 animate-fade-in transition-all">
+                        <div class="w-16 h-16 shrink-0 relative rounded-lg overflow-hidden border border-slate-200 shadow-inner">
+                            <img src="${doc.preview}" class="w-full h-full object-cover">
                         </div>
-                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1.5 rounded-lg transition-colors shrink-0"><span class="material-symbols-rounded text-sm">delete</span></button>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            ${badge}
+                            <input type="text" class="w-full text-[10px] font-bold p-1.5 bg-slate-50 border border-slate-300 rounded text-slate-700 outline-none focus:border-amber-500 shadow-sm" value="${textoValor}" onchange="window.actualizarTextoDoc('${doc.id}', this.value)" placeholder="Ej: Plano / Referencia">
+                        </div>
+                        <button type="button" onclick="window.eliminarDoc('${doc.id}')" class="bg-[#f43f5e] hover:bg-rose-600 text-white w-12 h-12 rounded-lg shrink-0 flex flex-col items-center justify-center shadow-md active:scale-95 transition-colors">
+                            <span class="material-symbols-rounded text-lg mb-0.5">delete</span>
+                            <span class="text-[7px] font-black tracking-widest uppercase">Quitar</span>
+                        </button>
                     </div>
-                `).join('');
+                `}).join('');
             }
         };
+
         window.actualizarTextoDoc = function(id, val) { const doc = arrayFotosAnexos.find(d => d.id === id); if(doc) doc.texto = val; };
         window.eliminarDoc = function(id) { arrayFotosAnexos = arrayFotosAnexos.filter(d => d.id !== id); window.renderizarMiniaturasDropzone(); };
 
@@ -1674,6 +1735,13 @@ if(el.disabled) {
 
                 ultimaBusqueda["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
                 ultimaBusqueda["valor_comercial_rango"] = parseFloat(valorElegido);
+
+                // 🚀 FIX ARQUITECTÓNICO: ESTE ES EL ESLABÓN PERDIDO.
+                // Si no guardamos esto en Firebase, el Visor jamás sabrá qué perfil es ni verá las fotos.
+                await window.appDb.collection('expedientes_avaluos').doc(window.expedienteMotorActivo).set({
+                    parametros_motor: ultimaBusqueda,
+                    perfil_solicitante: ultimaBusqueda["perfil_solicitante"]
+                }, { merge: true });
 
                 window.showLoader("Generando Dictamen Oficial", "Consumiendo crédito y procesando documento...");
 

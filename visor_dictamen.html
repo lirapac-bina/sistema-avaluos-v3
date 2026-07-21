@@ -55,8 +55,8 @@
         <button onclick="window.close()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all uppercase tracking-widest text-xs">Cerrar</button>
     </div>
 
+    <!-- ================= PÁGINA 1: CARÁTULA Y VALORES ================= -->
     <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
-        
         <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
             
             <div class="w-full flex h-3 mb-6 relative z-10">
@@ -88,9 +88,7 @@
             </div>
 
             <div class="mb-6 relative z-10">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">
-                    Conclusión de Valor
-                </h3>
+                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">Conclusión de Valor</h3>
                 
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
@@ -124,9 +122,7 @@
             </div>
 
             <div class="mb-6 relative z-10">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">
-                    El Genoma del Inmueble
-                </h3>
+                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">El Genoma del Inmueble</h3>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Construcción</p><p class="text-[10px] font-bold text-slate-700" id="pdf_const">0 m²</p></div>
                     <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Terreno</p><p class="text-[10px] font-bold text-slate-700" id="pdf_terr">0 m²</p></div>
@@ -137,21 +133,31 @@
                 </div>
             </div>
 
-            <div class="relative z-10 flex-1 flex flex-col">
-                <div class="w-full h-full min-h-[200px] bg-slate-100 rounded-xl border border-slate-300 overflow-hidden shadow-sm relative">
-                    <iframe id="pdf_iframe_mapa" width="100%" height="100%" frameborder="0" style="border:0;" src="" loading="lazy"></iframe>
+            <div class="relative z-10 flex-1 grid grid-cols-2 gap-4">
+                <!-- FOTOGRAFÍA DE PORTADA -->
+                <div class="flex flex-col">
+                    <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">home</span> Fotografía del Inmueble</h3>
+                    <div class="w-full h-full min-h-[170px] bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-sm flex items-center justify-center relative">
+                        <img id="pdf_foto_portada" src="" class="w-full h-full object-cover hidden z-10">
+                        <span id="pdf_foto_portada_placeholder" class="text-slate-400 text-[9px] font-bold uppercase tracking-widest absolute">Sin fotografía</span>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center mt-1.5 px-1">
-                    <p class="text-[8px] text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-sm">pin_drop</span> Coordenadas Decimales: <span id="pdf_coords" class="text-slate-700 font-mono font-semibold">0.000000, 0.000000</span></p>
-                    <p class="text-[8px] text-slate-400 italic">Nota: El mapa muestra la ubicación del sujeto.</p>
+                <!-- MAPA DE UBICACIÓN -->
+                <div class="flex flex-col">
+                    <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">map</span> Ubicación y Entorno</h3>
+                    <div class="w-full h-full min-h-[170px] bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-sm">
+                        <iframe id="pdf_iframe_mapa" width="100%" height="100%" frameborder="0" style="border:0;" src="" loading="lazy"></iframe>
+                    </div>
+                    <div class="flex justify-end items-center mt-1 px-1">
+                        <p class="text-[7px] text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-[10px]">pin_drop</span> Coordenadas: <span id="pdf_coords" class="text-slate-700 font-mono font-semibold">0.000000, 0.000000</span></p>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-        </div> </div>
-
-
+    <!-- ================= PÁGINA 2: MATRICES Y DECLARACIONES ================= -->
     <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
-        
         <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
             
             <div class="w-full flex h-3 mb-6 relative z-10">
@@ -160,9 +166,8 @@
                 <div class="w-1/4 bg-[#eab308]"></div>
             </div>
 
-            <div class="flex justify-between items-end w-full border-b border-slate-300 pb-3 mb-6 relative z-10">
-                <h3 class="text-sm font-bold text-indigo-900 tracking-widest uppercase mb-1">Matriz de Homologación Automatizada</h3>
-                
+            <div class="flex justify-between items-end w-full border-b border-slate-300 pb-2 mb-4 relative z-10">
+                <h3 class="text-xs font-bold text-indigo-900 tracking-widest uppercase mb-1">Matrices de Homologación</h3>
                 <div class="text-right flex flex-col justify-end">
                     <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
                     <p class="text-xs font-mono font-bold text-slate-700" id="pdf_folio_2">#CARGANDO...</p>
@@ -171,48 +176,79 @@
                 </div>
             </div>
 
-            <div class="mb-6 relative z-10">
+            <!-- MERCADO AUTOMATIZADO -->
+            <div class="mb-4 relative z-10">
+                <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mercado Automatizado</p>
                 <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                    <table class="w-full text-[10px] text-center">
-                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[8px] border-b border-slate-200">
-                            <tr><th class="py-2.5">ID</th><th>Valor Oferta</th><th>m² Const.</th><th>Edad</th><th>Factor Res.</th><th>Homologado/m²</th></tr>
+                    <table class="w-full text-[9px] text-center">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[7px] border-b border-slate-200">
+                            <tr><th class="py-1.5">ID</th><th>Valor Oferta</th><th>m² Const.</th><th>Edad</th><th>Factor Res.</th><th>Homologado/m²</th></tr>
                         </thead>
-                        <tbody id="pdf_tabla_testigos" class="text-slate-700 font-medium divide-y divide-slate-100">
-                            </tbody>
+                        <tbody id="pdf_tabla_testigos_auto" class="text-slate-700 font-medium divide-y divide-slate-100"></tbody>
                     </table>
-                    <div class="bg-slate-50 p-2 border-t border-slate-200 flex justify-between items-center text-[8px]">
-                        <span class="font-semibold text-slate-600 uppercase tracking-wider">Calidad de la Muestra (CV): <span id="pdf_cv" class="text-indigo-700 font-bold text-xs">0.00%</span></span>
+                    <div class="bg-slate-50 p-1.5 border-t border-slate-200 flex justify-between items-center text-[7px]">
+                        <span class="font-semibold text-slate-600 uppercase tracking-wider">Calidad de la Muestra (CV): <span id="pdf_cv" class="text-indigo-700 font-bold text-[9px]">0.00%</span></span>
                         <span class="font-bold text-emerald-600 uppercase tracking-wider">MUESTRA CONFIABLE ✅</span>
                     </div>
                 </div>
             </div>
 
-            <div class="mb-6 relative z-10 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 border-b border-slate-200 pb-1">Declaraciones y Advertencias</h3>
-                <div class="text-[8px] text-slate-600 text-justify leading-relaxed space-y-1.5 font-medium">
-                    <p><strong class="font-semibold text-slate-800">OBJETO DEL DICTAMEN:</strong> Este documento presenta una estimación de valor automatizada, generada mediante algoritmos propietarios de inteligencia pericial y procesamiento de datos masivos (Big Data) del mercado inmobiliario local.</p>
-                    <p><strong class="font-semibold text-slate-800">METODOLOGÍA:</strong> Se emplea el Enfoque Comparativo de Mercado, aplicando factores de homologación por zona, superficie, edad, estado de conservación y características específicas. Este proceso se realiza en estricto apego a las Normas Internacionales de Valuación (IVS) y a los criterios técnicos vigentes de la Sociedad Hipotecaria Federal (SHF).</p>
-                    <p><strong class="font-semibold text-slate-800">VIGENCIA:</strong> Dada la dinámica y volatilidad del mercado inmobiliario, los valores presentados reflejan las condiciones exactas al momento de la consulta. Para fines de referencia técnica, se establece que la utilidad de este reporte caduca irrevocablemente a los 6 meses de su fecha de emisión.</p>
-                    <p><strong class="font-semibold text-slate-800">DESCARGO DE RESPONSABILIDAD:</strong> Este documento constituye una herramienta tecnológica de soporte analítico y no sustituye en ningún caso a un avalúo formal emitido por un perito valuador certificado. La veracidad y exactitud de la información capturada en la plataforma son responsabilidad exclusiva del usuario; por lo tanto, no se asume responsabilidad legal ni técnica por discrepancias derivadas de los datos ingresados.</p>
+            <!-- MERCADO MANUAL -->
+            <div id="seccion_mercado_manual" class="mb-4 relative z-10 hidden">
+                <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mercado Manual (Valuador)</p>
+                <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-2">
+                    <table class="w-full text-[9px] text-center">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[7px] border-b border-slate-200">
+                            <tr><th class="py-1.5">ID</th><th>Valor Oferta</th><th>m² Const.</th><th>Edad</th><th>Factor Res.</th><th>Homologado/m²</th></tr>
+                        </thead>
+                        <tbody id="pdf_tabla_testigos_manual" class="text-slate-700 font-medium divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                    <p class="text-[8px] font-bold text-indigo-900 uppercase tracking-widest mb-1 border-b border-slate-100 pb-1">Evidencia Digital Mercado Manual</p>
+                    <div id="pdf_links_manuales" class="grid grid-cols-2 gap-1 text-[7px] text-indigo-600 font-medium truncate"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 relative z-10 mt-auto pt-4 border-t border-slate-200 pb-6">
+            <!-- DECLARACIONES Y VALUADOR -->
+            <div class="mb-4 relative z-10 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 border-b border-slate-200 pb-1">Declaraciones y Advertencias</h3>
+                <div class="text-[7px] text-slate-600 text-justify leading-relaxed space-y-1 font-medium">
+                    <p><strong>OBJETO:</strong> Estimación automatizada mediante algoritmos de inteligencia pericial (Big Data).</p>
+                    <p><strong>METODOLOGÍA:</strong> Enfoque Comparativo de Mercado con factores de homologación, apegado a Normas IVS y criterios SHF.</p>
+                    <p><strong>VIGENCIA Y DESCARGO:</strong> Caduca a los 6 meses. Es una herramienta de soporte analítico. La veracidad de los datos capturados es responsabilidad exclusiva del usuario.</p>
+                </div>
+                
+                <div id="seccion_datos_valuador" class="mt-2 pt-2 border-t border-slate-200 hidden">
+                    <p class="text-[8px] font-bold text-slate-800 uppercase mb-1">Dictamen Comercial Realizado Por:</p>
+                    <div class="grid grid-cols-2 gap-2 text-[8px] text-slate-700">
+                        <p><strong>Nombre:</strong> <span id="pdf_val_nombre">---</span></p>
+                        <p><strong>Cédula / ID:</strong> <span id="pdf_val_cedula">---</span></p>
+                        <p><strong>Correo:</strong> <span id="pdf_val_correo">---</span></p>
+                        <p><strong>Teléfono:</strong> <span id="pdf_val_tel">---</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER FIRMA Y QR -->
+            <div class="grid grid-cols-2 gap-4 relative z-10 mt-auto pt-2 border-t border-slate-200 pb-4">
                 <div class="flex items-start gap-3">
-                    <div id="qrcode" class="p-1.5 bg-white border border-slate-200 rounded shadow-sm shrink-0"></div>
+                    <div id="qrcode" class="p-1 bg-white border border-slate-200 rounded shadow-sm shrink-0"></div>
                     <div>
-                        <h4 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Sello de Integridad Digital</h4>
-                        <p class="text-[7px] text-slate-500 font-medium leading-relaxed">Escanee el código QR con la cámara de su dispositivo móvil para validar la autenticidad inalterable de este dictamen directamente en los servidores de Ingeniería Leezar.</p>
+                        <h4 class="text-[8px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Sello de Integridad Digital</h4>
+                        <p class="text-[6px] text-slate-500 font-medium leading-relaxed">Escanee el código QR para validar la autenticidad inalterable de este dictamen en los servidores EME.</p>
                     </div>
                 </div>
                 <div class="text-right flex flex-col justify-center">
-                    <h4 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Firma Electrónica del AVM EME</h4>
-                    <p class="text-sm font-mono font-bold text-slate-800" id="pdf_hash_firma">#CARGANDO...</p>
-                    <p class="text-[7px] font-semibold text-slate-500 mt-1 uppercase">Creado por: Ingeniería Leezar S.A. de C.V.</p>
+                    <h4 class="text-[8px] font-bold text-indigo-900 uppercase tracking-widest mb-0.5">Firma Electrónica EME</h4>
+                    <p class="text-xs font-mono font-bold text-slate-800" id="pdf_hash_firma_2">#CARGANDO...</p>
+                    <p class="text-[6px] font-semibold text-slate-500 mt-1 uppercase">Creado por: Ingeniería Leezar S.A. de C.V.</p>
                 </div>
             </div>
-
-        </div> <div class="w-full bg-[#000000] text-white p-3 relative flex items-center justify-between shadow-md mt-auto z-20 h-16 shrink-0 border-t-2 border-indigo-900">
+        </div> 
+        
+        <!-- BANDA INFERIOR -->
+        <div class="w-full bg-[#000000] text-white p-3 relative flex items-center justify-between shadow-md mt-auto z-20 h-16 shrink-0 border-t-2 border-indigo-900">
             <div class="absolute left-0 top-0 bottom-0 w-2 bg-[#b91c1c]"></div>
             <div class="ml-4 text-[7px] font-medium leading-relaxed tracking-widest text-slate-300">
                 <p>www.centrointegralinmobiliarioeme.com | www.emeavaluos.com</p>
@@ -224,9 +260,9 @@
                 <div class="w-32 h-1.5 bg-[#eab308]"></div>
             </div>
         </div>
-
     </div>
 
+    <!-- CONTENEDOR PARA PÁGINAS EXTRA (FOTOS / ANEXOS) -->
     <div id="contenedor_paginas_fotos"></div>
 
     <script>
@@ -236,33 +272,41 @@
             const urlParams = new URLSearchParams(window.location.search);
             let expedienteId = urlParams.get('id');
 
-            if(!expedienteId) { alert("Modo de Prueba: No se detectó un ID oficial en la URL."); return; }
+            if(!expedienteId) { 
+                document.body.innerHTML = `<h1 class="text-center mt-20 text-rose-600 font-bold">Error: No se detectó un ID oficial.</h1>`; 
+                return; 
+            }
 
             try {
-                const doc = await db.collection('expedientes_avaluos').doc(expedienteId).get();
-                if (!doc.exists) { document.body.innerHTML = `<h1 class="text-center mt-20 text-rose-600 font-bold">Error 404: Documento no encontrado</h1>`; return; }
+                // 🚀 APUNTA CORRECTAMENTE AL HISTORIAL DE ESTIMACIONES
+                const doc = await db.collection('historial_estimaciones').doc(expedienteId).get();
+                if (!doc.exists) { 
+                    document.body.innerHTML = `<h1 class="text-center mt-20 text-rose-600 font-bold">Error 404: Documento no encontrado</h1>`; 
+                    return; 
+                }
 
                 const data = doc.data();
-                const parametros = data.parametros_motor || {};
+                
+                // 🚀 FIX ARQUITECTÓNICO: Soporte absoluto para la estructura anterior (datos_inmueble) y la nueva (parametros_motor)
+                const parametros = data.parametros_motor || data.datos_inmueble || data.parametros_historico || {};
                 const resultados = data.resultados_motor?.data || data.resultados_motor || {};
                 const formMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
                 const formMonedaDec = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
                 
-                // 1. CARÁTULA, FOLIOS Y FECHAS
+                // 1. CARÁTULA Y DATOS BÁSICOS
                 const folioHash = "#" + (data.hash_id || resultados.HASH_ID || expedienteId.split('_')[1] || "000");
                 document.getElementById('pdf_folio_1').innerText = folioHash;
                 document.getElementById('pdf_folio_2').innerText = folioHash;
-                document.getElementById('pdf_hash_firma').innerText = folioHash;
+                document.getElementById('pdf_hash_firma_2').innerText = folioHash;
                 
-                const fechaEmi = resultados.FECHA_AVALUO || resultados.fecha_avaluo || new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+                const fechaEmi = resultados.FECHA_AVALUO || resultados.fecha_avaluo || data.fecha_avaluo || new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
                 document.getElementById('pdf_fecha_1').innerText = fechaEmi;
                 document.getElementById('pdf_fecha_2').innerText = fechaEmi;
                 
-                // Dirección
                 document.getElementById('pdf_calle_portada').innerText = parametros.Calle_Sujeto || 'Dirección no especificada';
                 document.getElementById('pdf_colonia_portada').innerText = `${parametros.Colonia || ''}, ${parametros.Ciudad_Municipio || ''}, ${parametros.Estado || ''}, C.P. ${parametros.CP || ''}`;
 
-                // 2. MATEMÁTICAS
+                // 2. CÁLCULOS MATEMÁTICOS
                 const valorMotor = resultados.valor_final || resultados.VALOR_FINAL || 0;
                 document.getElementById('pdf_valor_motor').innerText = formMonedaDec.format(valorMotor);
                 
@@ -272,67 +316,54 @@
                 document.getElementById('pdf_valor_unitario').innerText = formMoneda.format(resultados.valor_unitario || resultados.VALOR_UNITARIO || 0) + ' / m²';
                 document.getElementById('pdf_renta').innerText = formMoneda.format(resultados.renta_mensual || resultados.RENTA_MENSUAL || 0) + ' / mes';
                 
-                // Termómetro Zonal
                 const termoZonal = parseFloat(resultados.termometro_zonal || resultados.TERMOMETRO_ZONAL || 0);
                 document.getElementById('pdf_termometro').innerText = formMoneda.format(termoZonal) + ' / m² / mes';
                 
-                // Rango Automatizado
                 const limInf = parseFloat(resultados.limite_inf || resultados.LIMITE_INF || 0);
                 const limSup = parseFloat(resultados.limite_sup || resultados.LIMITE_SUP || 0);
                 document.getElementById('pdf_rango').innerText = formMoneda.format(limInf) + ' - ' + formMoneda.format(limSup);
 
-                // 3. GENOMA FÍSICO
+                // 3. GENOMA DEL INMUEBLE
                 document.getElementById('pdf_terr').innerText = (parametros.Superficie_Terreno || 0) + ' m²';
                 document.getElementById('pdf_const').innerText = (parametros.Superficie_Construccion || 0) + ' m²';
                 document.getElementById('pdf_clase').innerText = parametros.Clase_Inmueble || 'Ninguna';
                 document.getElementById('pdf_estado').innerText = parametros.Estado_Conservacion || 'Ninguna';
-                
-                const edadCro = parametros.Edad_Anos || 0;
-                document.getElementById('pdf_edad_cron').innerText = edadCro;
+                document.getElementById('pdf_edad_cron').innerText = parametros.Edad_Anos || 0;
                 
                 let txtNiveles = parametros.Total_Niveles_Edificio || parametros.Nivel_del_Inmueble || 0;
                 if (parametros.Tipo_Inmueble === 'Departamento') txtNiveles = `${parametros.Nivel_del_Inmueble} de ${parametros.Total_Niveles_Edificio}`;
                 if (parametros.Tipo_Inmueble === 'Terreno') txtNiveles = "N/A";
                 document.getElementById('pdf_niveles').innerText = txtNiveles;
 
-                // 4. MAPA DE GOOGLE (IFRAME NATIVO Y BLINDADO)
-                let latVal = 19.4326;
-                let lngVal = -99.1332;
+                // 4. EL MAPA
+                let latVal = 19.4326; let lngVal = -99.1332;
+                const geo = parametros.Geolocalizacion_Google;
+                if (geo && typeof geo === 'string' && geo.includes(',')) {
+                    const partes = geo.split(',');
+                    latVal = parseFloat(partes[0].trim()); lngVal = parseFloat(partes[1].trim());
+                }
+                document.getElementById('pdf_coords').innerText = `${latVal.toFixed(6)}, ${lngVal.toFixed(6)}`;
+                document.getElementById('pdf_iframe_mapa').src = `https://maps.google.com/maps?q=${latVal},${lngVal}&hl=es&z=17&output=embed`;
 
-                if (parametros.Geolocalizacion_Google) {
-                    if (typeof parametros.Geolocalizacion_Google === 'string' && parametros.Geolocalizacion_Google.includes(',')) {
-                        const partes = parametros.Geolocalizacion_Google.split(',');
-                        latVal = parseFloat(partes[0].trim());
-                        lngVal = parseFloat(partes[1].trim());
-                    } else if (parametros.Geolocalizacion_Google.lat && parametros.Geolocalizacion_Google.lng) {
-                        latVal = parseFloat(parametros.Geolocalizacion_Google.lat);
-                        lngVal = parseFloat(parametros.Geolocalizacion_Google.lng);
-                    } else if (parametros.Geolocalizacion_Google.latitude && parametros.Geolocalizacion_Google.longitude) {
-                        latVal = parseFloat(parametros.Geolocalizacion_Google.latitude);
-                        lngVal = parseFloat(parametros.Geolocalizacion_Google.longitude);
-                    }
-                } else if (data.ubicacion) {
-                    if (data.ubicacion.latitude) { latVal = parseFloat(data.ubicacion.latitude); lngVal = parseFloat(data.ubicacion.longitude); }
-                    else if (data.ubicacion.lat) { latVal = parseFloat(data.ubicacion.lat); lngVal = parseFloat(data.ubicacion.lng); }
+// 5. INTELIGENCIA DE PERFILES Y AUTO-DETECCIÓN FORENSE
+                let perfilActivo = parseInt(data.perfil_solicitante) || parseInt(parametros.perfil_solicitante) || parseInt(parametros.PERFIL_SOLICITANTE) || 1;
+                
+                // 🚀 RASTREADOR UNIVERSAL DE FOTOS (Busca en la BD actual e histórica)
+                const fotoFachadaReal = parametros.FOTO_FACHADA_PRINCIPAL || parametros.foto_fachada || parametros.fachada || data.foto_fachada_base64 || data.foto_fachada || '';
+                
+                // 🚀 MOTOR DE DETECCIÓN BLINDADO: Si el documento trae FOTOS o ANEXOS, forzamos Perfil 4
+                if (fotoFachadaReal || parametros.FOTO_1 || parametros.foto_1 || data.foto_1 || parametros.ANEXO_IMG) {
+                    perfilActivo = 4;
                 }
 
-                if(isNaN(latVal)) latVal = 19.4326;
-                if(isNaN(lngVal)) lngVal = -99.1332;
-
-                const coordsStr = `${latVal.toFixed(6)}, ${lngVal.toFixed(6)}`;
-                document.getElementById('pdf_coords').innerText = coordsStr;
-                
-                // Usamos el embed genérico de Google Maps, el cual no requiere API Key ni Billing y carga perfectamente.
-                const mapUrl = `https://maps.google.com/maps?q=${latVal},${lngVal}&hl=es&z=17&output=embed`;
-                document.getElementById('pdf_iframe_mapa').src = mapUrl;
-
-                // 5. MATRIZ DE HOMOLOGACIÓN EN VIVO
-                let htmlTabla = '';
+                // ---> A) MATRIZ AUTOMÁTICA
+                let htmlAuto = ''; let contAuto = 0;
                 for(let i=1; i<=6; i++) {
                     const oferta = resultados[`t${i}_oferta`] || resultados[`T${i}_OFERTA`] || 0;
                     if(oferta > 0) {
-                        htmlTabla += `<tr>
-                            <td class="py-1.5 font-bold text-slate-700">T${i}</td>
+                        contAuto++;
+                        htmlAuto += `<tr>
+                            <td class="py-1 font-bold text-slate-700">T${i}</td>
                             <td class="font-bold">${formMoneda.format(oferta)}</td>
                             <td>${resultados[`t${i}_m2`] || resultados[`T${i}_M2`] || 0}</td>
                             <td>${resultados[`t${i}_edad`] || resultados[`T${i}_EDAD`] || 'N/A'}</td>
@@ -341,22 +372,128 @@
                         </tr>`;
                     }
                 }
-                if(htmlTabla === '') htmlTabla = `<tr><td colspan="6" class="py-3 text-[9px] text-slate-400 italic font-semibold">Análisis Físico/Residual aplicado (Sin testigos de mercado directo)</td></tr>`;
-                document.getElementById('pdf_tabla_testigos').innerHTML = htmlTabla;
-                
-                // Formateo del CV a 2 decimales exactos
-                const cvValue = parseFloat(resultados.cv || resultados.COEFICIENTE_VARIACION || 0);
-                document.getElementById('pdf_cv').innerText = cvValue.toFixed(2) + '%';
+                if(contAuto === 0) htmlAuto = `<tr><td colspan="6" class="py-2 text-[8px] text-slate-400 italic font-semibold">Análisis Físico/Residual (Sin mercado web)</td></tr>`;
+                document.getElementById('pdf_tabla_testigos_auto').innerHTML = htmlAuto;
+                document.getElementById('pdf_cv').innerText = parseFloat(resultados.cv || resultados.COEFICIENTE_VARIACION || 0).toFixed(2) + '%';
 
-                // 6. QR CRIPTOGRÁFICO
+                // ---> B) MERCADO MANUAL
+                if (perfilActivo >= 2) {
+                    const secMercadoManual = document.getElementById('seccion_mercado_manual');
+                    if (secMercadoManual) secMercadoManual.classList.remove('hidden');
+                    
+                    let htmlManual = ''; let htmlLinks = ''; let contMan = 0;
+                    
+                    for(let i=1; i<=6; i++) {
+                        const ofMan = resultados[`t${i}_oferta_man`] || resultados[`T${i}_OFERTA_MAN`] || parametros[`EME_CP_T${i}_Precio`] || 0;
+                        if(ofMan > 0) {
+                            contMan++;
+                            htmlManual += `<tr>
+                                <td class="py-1 font-bold text-slate-700">M${i}</td>
+                                <td class="font-bold">${formMoneda.format(ofMan)}</td>
+                                <td>${resultados[`t${i}_m2_man`] || resultados[`T${i}_M2_MAN`] || parametros[`EME_CP_T${i}_Sup_Construccion`] || 0}</td>
+                                <td>${resultados[`t${i}_edad_man`] || resultados[`T${i}_EDAD_MAN`] || parametros[`EME_CP_T${i}_Edad`] || 'N/A'}</td>
+                                <td>${parseFloat(resultados[`t${i}_factor_man`] || resultados[`T${i}_FACTOR_MAN`] || 0).toFixed(4)}</td>
+                                <td class="font-semibold text-emerald-700">${formMoneda.format(resultados[`t${i}_hom_man`] || resultados[`T${i}_HOM_MAN`] || 0)}</td>
+                            </tr>`;
+                            const link = resultados[`link_${i}`] || resultados[`LINK_${i}`] || parametros[`EME_CP_T${i}_Link`] || '';
+                            if(link) htmlLinks += `<a href="${link}" target="_blank" class="hover:underline">M${i}: ${link}</a>`;
+                        }
+                    }
+                    if(contMan === 0) {
+                        htmlManual = `<tr><td colspan="6" class="py-2 text-[8px] text-slate-400 italic font-semibold">Sin mercado manual registrado</td></tr>`;
+                        htmlLinks = `<span class="text-slate-400 italic">Sin enlaces adjuntos</span>`;
+                    }
+                    document.getElementById('pdf_tabla_testigos_manual').innerHTML = htmlManual;
+                    document.getElementById('pdf_links_manuales').innerHTML = htmlLinks;
+                }
+
+                // ---> C) REPORTES COMPLETOS Y FOTOGRAFÍAS
+                if (perfilActivo >= 3) {
+                    const secDatosVal = document.getElementById('seccion_datos_valuador');
+                    if(secDatosVal) secDatosVal.classList.remove('hidden');
+                    
+                    const valNombre = document.getElementById('pdf_val_nombre');
+                    if(valNombre) valNombre.innerText = parametros.Nombre_Valuador || '---';
+                    
+                    const valCorreo = document.getElementById('pdf_val_correo');
+                    if(valCorreo) valCorreo.innerText = parametros.Correo_Valuador || '---';
+                    
+                    const valTel = document.getElementById('pdf_val_tel');
+                    if(valTel) valTel.innerText = parametros.Telefono_Valuador || '---';
+                    
+                    const valCed = document.getElementById('pdf_val_cedula');
+                    if(valCed) valCed.innerText = (parametros.Cedula_Valuador || '') + (parametros.EME_ID ? ` / ${parametros.EME_ID}` : '');
+
+                    // 🚀 INYECCIÓN DE LA FOTO EN LA PORTADA (PÁGINA 1)
+                    if (fotoFachadaReal && fotoFachadaReal.length > 50) {
+                        const imgPortada = document.getElementById('pdf_foto_portada');
+                        const phPortada = document.getElementById('pdf_foto_portada_placeholder');
+                        if(imgPortada) {
+                            imgPortada.src = `data:image/jpeg;base64,${fotoFachadaReal}`;
+                            imgPortada.classList.remove('hidden');
+                            if(phPortada) phPortada.classList.add('hidden');
+                        }
+                    }
+
+                    let vDomHTML = '';
+                    let tempGridFotos = '';
+                    let fotosContadas = 0;
+
+                    // FOTOS INTERIORES (Rastrea todas las llaves históricas posibles)
+                    for(let i=1; i<=6; i++) {
+                        const fotoBase64 = parametros[`FOTO_${i}`] || parametros[`foto_${i}`] || data[`foto_${i}`] || '';
+                        const fotoDesc = parametros[`DESC_${i}`] || parametros[`desc_${i}`] || `FOTOGRAFÍA INTERIOR ${i}`;
+                        
+                        if (fotoBase64 && fotoBase64.length > 50) {
+                            fotosContadas++;
+                            tempGridFotos += `
+                            <div class="border-2 border-[#0a2342] rounded-lg overflow-hidden flex flex-col h-56 shadow-sm bg-white">
+                                <div class="bg-slate-100 p-1.5 border-b border-[#0a2342] text-[9px] font-bold text-center text-slate-700 uppercase tracking-widest">${fotoDesc}</div>
+                                <img src="data:image/jpeg;base64,${fotoBase64}" class="w-full h-full object-cover">
+                            </div>`;
+                        }
+                    }
+
+                    if (fotosContadas > 0) {
+                        vDomHTML += `
+                        <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
+                            <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
+                                <h3 class="text-sm font-bold text-indigo-900 tracking-widest uppercase mb-4 border-b border-slate-300 pb-2">Reporte Fotográfico</h3>
+                                <div class="grid grid-cols-2 gap-4">${tempGridFotos}</div>
+                            </div>
+                        </div>`;
+                    }
+
+                    // ANEXOS
+                    if (parametros.ANEXO_IMG && parametros.ANEXO_IMG.length > 50) {
+                        vDomHTML += `
+                        <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
+                            <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
+                                <h3 class="text-sm font-bold text-indigo-900 tracking-widest uppercase mb-4 border-b border-slate-300 pb-2">Documentos Anexos: ${parametros.ANEXO_TITULO || 'Referencia Técnica'}</h3>
+                                <div class="flex-1 border-2 border-[#0a2342] rounded-lg overflow-hidden p-2 flex items-center justify-center bg-slate-50 shadow-inner">
+                                    <img src="data:image/jpeg;base64,${parametros.ANEXO_IMG}" class="max-w-full max-h-[850px] object-contain shadow-md">
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+
+                    document.getElementById('contenedor_paginas_fotos').innerHTML = vDomHTML;
+                }
+
+                // 6. CÓDIGO QR
                 setTimeout(() => {
-                    new QRCode(document.getElementById("qrcode"), { 
-                        text: window.location.href, width: 60, height: 60, colorDark : "#312e81", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
-                    });
+                    const qrContainer = document.getElementById("qrcode");
+                    if (qrContainer) {
+                        qrContainer.innerHTML = ''; // Limpiar por si acaso
+                        new QRCode(qrContainer, { 
+                            text: window.location.href, width: 60, height: 60, colorDark : "#312e81", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+                        });
+                    }
                 }, 100);
 
-            } catch (error) { alert("Error al cargar bóveda: " + error); }
+            } catch (error) { 
+                console.error("Error en renderizado:", error);
+                alert("Error de renderizado de visor. Consulte consola."); 
+            }
         });
     </script>
-</body>
-</html>
