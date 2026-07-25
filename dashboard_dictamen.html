@@ -164,9 +164,14 @@
                         badgeEstatus = `<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-200">Error / Pendiente</span>`;
                     }
 
-                    const botonAccion = doc.pdf_url 
-                        ? `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`
-                        : `<span class="text-gray-400 text-xs font-bold flex items-center gap-1"><span class="material-symbols-rounded text-sm">lock</span> Archivo Dañado</span>`;
+                    let botonAccion = '';
+                    if (doc.estatus === 'forjando' || doc.estatus_pdf === 'forjando' || (!doc.pdf_url && doc.estatus !== 'error' && doc.estatus_pdf !== 'error')) {
+                        botonAccion = `<span class="text-yellow-600 dark:text-yellow-400 font-bold text-xs flex items-center gap-1 animate-pulse"><span class="material-symbols-rounded text-sm animate-spin">sync</span> En Proceso...</span>`;
+                    } else if (doc.pdf_url) {
+                        botonAccion = `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`;
+                    } else {
+                        botonAccion = `<span class="text-red-500 text-xs font-bold flex items-center gap-1" title="${doc.error_pdf || 'Error al generar PDF'}"><span class="material-symbols-rounded text-sm">lock</span> Archivo Dañado</span>`;
+                    }
 
                     // Redondeamos matemáticamente el valor y le quitamos los decimales visuales
                     const valorComercial = doc.valor_comercial || 0;
