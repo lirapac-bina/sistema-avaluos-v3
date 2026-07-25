@@ -219,10 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" title="Tablero de Trabajo" class="${opBase} ${file.includes('dashboard') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('dashboard') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">dashboard</span><span class="sidebar-text">Tablero de Trabajo</span></a></li>`;
     if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" title="Gestión de Expedientes" class="${opBase} ${file.includes('gestion') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('gestion') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">folder_shared</span><span class="sidebar-text">Expedientes</span></a></li>`;
-    if(accesosRuta.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" title="Mesa de Control" class="${opBase} ${file.includes('revision') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('revision') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">fact_check</span><span class="sidebar-text">Mesa de Control</span></a></li>`;
-    
-    // NUEVO MÓDULO: SIMULADOR PERICIAL EME
-    menuOperacionesHTML += `<li><a href="dictamen_eme.html" title="Simulador AvEME" class="${opBase} ${file.includes('dictamen_eme') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('dictamen_eme') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">calculate</span><span class="sidebar-text">Simulador AvEME</span></a></li>`;
+    // Se eliminó la Mesa de Control y el Simulador AvEME del menú lateral para optimizar la navegación
 
     let menuTecnicoHTML = '';
     const tecBase = "w-full flex items-center px-4 py-2.5 font-medium text-sm rounded-lg group transition-all";
@@ -245,6 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <div id="mobile-header" class="bg-white/90 border-b border-slate-200 dark:bg-[#0b1121]/90 dark:border-slate-800 transition-colors">
         <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="material-symbols-rounded text-2xl text-slate-700 dark:text-white">menu</span></button>
+            <!-- Logo EME en la versión Móvil -->
+            <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="Logo EME" class="h-6 w-auto object-contain">
             <span class="font-extrabold text-lg text-slate-800 dark:text-white tracking-tight">SISTEMA AVALÚOS</span>
         </div>
         <div onclick="abrirMiPerfil()" class="cursor-pointer">${avatarHTML}</div>
@@ -253,11 +252,12 @@ document.addEventListener("DOMContentLoaded", () => {
     <aside id="app-sidebar" class="bg-white border-r border-gray-200 dark:bg-[#0b1121] dark:border-slate-800 flex flex-col transition-all duration-300">
         
         <div class="h-20 flex items-center px-4 shrink-0 md:flex hidden justify-between sidebar-header">
-            <div class="flex items-center">
-                <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center shadow-lg shadow-teal-500/30 shrink-0">
-                    <span class="material-symbols-rounded text-white text-xl">apartment</span>
+            <div class="flex items-center gap-3">
+                <!-- Logo EME en la versión de Escritorio con marco estilizado -->
+                <div class="bg-white p-1 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                    <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="Logo EME" class="h-8 w-auto object-contain">
                 </div>
-                <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white ml-3 sidebar-logo-text">SISTEMA <span class="text-teal-500">AVALÚOS</span></h1>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white sidebar-logo-text">SISTEMA <span class="text-teal-500">AVALÚOS</span></h1>
             </div>
             
             <button id="sidebar-toggle-btn" onclick="toggleDesktopSidebar()" class="text-slate-400 hover:text-teal-600 transition-all p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Contraer/Expandir menú">
