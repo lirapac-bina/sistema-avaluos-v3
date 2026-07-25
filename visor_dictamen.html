@@ -55,8 +55,69 @@
         <button onclick="window.close()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all uppercase tracking-widest text-xs">Cerrar</button>
     </div>
 
-    <!-- ================= PÁGINA 1: CARÁTULA Y VALORES ================= -->
-    <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-4">
+<!-- ================= PÁGINA 1: PORTADA ================= -->
+    <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden">
+        <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
+            
+            <!-- Barra superior -->
+            <div class="w-full flex h-3 mb-8 relative z-10">
+                <div class="w-1/4 bg-[#0a2342]"></div>
+                <div class="w-1/2 bg-[#b91c1c]"></div>
+                <div class="w-1/4 bg-[#eab308]"></div>
+            </div>
+
+            <!-- 1. Encabezado (Logo EME, Título y Folio) -->
+            <div class="relative z-10 mb-8 w-full">
+                <!-- Textos centrados -->
+                <div class="flex flex-col items-center justify-center text-center pt-2">
+                    <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="EME Logo" class="h-24 object-contain mb-4">
+                    <h1 class="text-3xl font-black text-indigo-900 tracking-tight leading-none mb-2">DICTAMEN DE VALOR COMERCIAL</h1>
+                    <p class="text-slate-500 font-bold tracking-widest uppercase text-[10px]">Modelo de Valuación Automatizada EME | Todos los derechos reservados</p>
+                </div>
+                
+                <!-- IDs RESTAURADOS PARA QUE EL JAVASCRIPT NO FALLE -->
+                <div class="absolute top-0 right-0 text-right">
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
+                    <p class="text-sm font-mono font-bold text-slate-700" id="pdf_folio_1">#CARGANDO...</p>
+                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mt-1 mb-0.5">Fecha de Emisión</p>
+                    <p class="text-[10px] font-semibold text-slate-700" id="pdf_fecha_1">--/--/----</p>
+                </div>
+            </div>
+
+            <!-- 2. Fotografía de Portada (Flex-1 para abarcar lo disponible) -->
+            <div class="flex-1 relative z-10 mb-8 min-h-[400px]">
+                <div class="w-full h-full bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-md flex items-center justify-center relative">
+                    <img id="pdf_foto_portada" src="" class="w-full h-full object-cover hidden z-10">
+                    <span id="pdf_foto_portada_placeholder" class="text-slate-400 text-xs font-bold uppercase tracking-widest absolute flex flex-col items-center gap-2">
+                        <span class="material-symbols-rounded text-4xl">home</span> SIN FOTOGRAFÍA
+                    </span>
+                </div>
+            </div>
+
+            <!-- 3. Dirección -->
+            <div class="mb-6 relative z-10 text-center">
+                <h2 class="text-2xl font-bold text-slate-800 leading-snug mb-1 uppercase tracking-wide" id="pdf_calle_portada">Cargando dirección...</h2>
+                <p class="text-base font-semibold text-slate-500 uppercase" id="pdf_colonia_portada">...</p>
+            </div>
+        </div>
+
+        <!-- BANDA INFERIOR (FOOTER PÁGINA 1) -->
+        <div class="w-full bg-[#000000] text-white p-3 relative flex items-center justify-between shadow-md mt-auto z-20 h-16 shrink-0 border-t-2 border-indigo-900">
+            <div class="absolute left-0 top-0 bottom-0 w-2 bg-[#b91c1c]"></div>
+            <div class="ml-4 text-[7px] font-medium leading-relaxed tracking-widest text-slate-300">
+                <p>www.centrointegralinmobiliarioeme.com | www.emeavaluos.com</p>
+                <p>eme@centrointegralinmobiliarioeme.com | eme@emeavaluos.com</p>
+                <p class="text-slate-400 mt-0.5">Contacto: 99.991.45.15.75 | 99.81.62.81.94 | 55.16.36.80.39 | 81.85.26.28.85</p>
+            </div>
+            <div class="flex flex-col items-end h-full justify-between py-1 px-4">
+                <div class="w-8 h-8 bg-[#0a2342] shadow-sm mb-1 rounded-sm"></div>
+                <div class="w-32 h-1.5 bg-[#eab308]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PÁGINA 2: CONCLUSIÓN, GENOMA Y MAPA ================= -->
+    <div class="hoja-carta papel-seguridad flex flex-col relative overflow-hidden pb-0">
         <div class="px-[2cm] pt-[2cm] print:px-[1.5cm] print:pt-[1.5cm] flex-1 flex flex-col">
             
             <div class="w-full flex h-3 mb-6 relative z-10">
@@ -65,93 +126,85 @@
                 <div class="w-1/4 bg-[#eab308]"></div>
             </div>
 
-            <div class="flex justify-between items-center mb-6 relative z-10 border-b border-slate-300 pb-4">
-                <div class="flex items-center gap-6">
-                    <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="EME Logo" class="h-24 object-contain shrink-0">
-                    <div class="flex flex-col justify-center">
-                        <h1 class="text-2xl font-bold text-indigo-900 tracking-tight leading-none mb-1">DICTAMEN DE VALOR COMERCIAL</h1>
-                        <p class="text-slate-500 font-medium tracking-widest uppercase text-[8px]">Modelo de Valuación Automatizada EME | Todos los derechos reservados</p>
+            <!-- Conclusión de Valor -->
+            <div class="mb-6 relative z-10">
+                <div class="flex justify-between items-end border-b border-slate-300 pb-2 mb-4">
+                    <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest flex items-center gap-2">Conclusión de Valor</h3>
+                    <div class="text-right flex flex-col justify-end">
+                        <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
+                        <!-- Usamos una clase temporal en lugar de id para no duplicar el id de la portada y no romper JS por ahora -->
+                        <p class="text-xs font-mono font-bold text-slate-700">Ver Portada</p>
                     </div>
                 </div>
                 
-                <div class="text-right flex flex-col justify-end">
-                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Folio de Dictamen</p>
-                    <p class="text-sm font-mono font-bold text-slate-700" id="pdf_folio_1">#CARGANDO...</p>
-                    <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-widest mt-1.5 mb-0.5">Fecha de Emisión</p>
-                    <p class="text-xs font-semibold text-slate-700" id="pdf_fecha_1">--/--/----</p>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-center">
+                        <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Valor Automatizado</p>
+                        <h2 class="text-2xl font-bold text-slate-700" id="pdf_valor_motor">$0.00</h2>
+                    </div>
+                    <div class="bg-indigo-900 rounded-xl p-4 text-white border border-indigo-950 text-center shadow-md">
+                        <p class="text-[10px] font-semibold text-indigo-300 uppercase tracking-widest mb-1">Valor Comercial Concluido</p>
+                        <h2 class="text-2xl font-bold text-amber-400" id="pdf_valor_cierre">$0.00</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Unitario</p>
+                        <p class="text-[12px] font-bold text-indigo-900" id="pdf_valor_unitario">$0 / m²</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Renta Estimada</p>
+                        <p class="text-[12px] font-bold text-rose-600" id="pdf_renta">$0 / mes</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Termómetro Zonal</p>
+                        <p class="text-[12px] font-bold text-slate-700" id="pdf_termometro">$0 / m² / mes</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-center shadow-sm">
+                        <p class="text-[8px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rango Automatizado</p>
+                        <p class="text-[11px] font-bold text-slate-700 mt-1" id="pdf_rango">$0 - $0</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-5 relative z-10">
-                <h2 class="text-lg font-bold text-slate-800 leading-snug mb-0.5 uppercase tracking-wide" id="pdf_calle_portada">Cargando dirección...</h2>
-                <p class="text-xs font-medium text-slate-500 uppercase" id="pdf_colonia_portada">...</p>
-            </div>
-
+            <!-- Genoma del Inmueble -->
             <div class="mb-6 relative z-10">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">Conclusión de Valor</h3>
-                
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
-                        <p class="text-[8px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Valor Comercial Automatizado</p>
-                        <h2 class="text-xl font-bold text-slate-700" id="pdf_valor_motor">$0.00</h2>
-                    </div>
-                    <div class="bg-indigo-900 rounded-lg p-3 text-white border border-indigo-950 text-center shadow-md">
-                        <p class="text-[8px] font-semibold text-indigo-300 uppercase tracking-widest mb-1">Valor Comercial Concluido</p>
-                        <h2 class="text-xl font-bold text-amber-400" id="pdf_valor_cierre">$0.00</h2>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
-                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Unitario Auto.</p>
-                        <p class="text-[10px] font-bold text-indigo-900" id="pdf_valor_unitario">$0 / m²</p>
-                    </div>
-                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
-                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Renta Est. Mensual</p>
-                        <p class="text-[10px] font-bold text-rose-600" id="pdf_renta">$0 / mes</p>
-                    </div>
-                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
-                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Termómetro Medio Zonal</p>
-                        <p class="text-[10px] font-bold text-slate-700" id="pdf_termometro">$0 / m² / mes</p>
-                    </div>
-                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
-                        <p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rango Automatizado</p>
-                        <p class="text-[9px] font-bold text-slate-700 mt-1" id="pdf_rango">$0 - $0</p>
-                    </div>
+                <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-widest mb-3 flex items-center gap-2 border-b border-slate-200 pb-1">El Genoma del Inmueble</h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Construcción</p><p class="text-sm font-bold text-slate-700" id="pdf_const">0 m²</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Terreno</p><p class="text-sm font-bold text-slate-700" id="pdf_terr">0 m²</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Edad Cronológica</p><p class="text-sm font-bold text-slate-700" id="pdf_edad_cron">0</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Clase Inmueble</p><p class="text-sm font-bold text-slate-700 truncate" id="pdf_clase">Ninguna</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Conservación</p><p class="text-sm font-bold text-slate-700 truncate" id="pdf_estado">Ninguna</p></div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Niveles</p><p class="text-sm font-bold text-slate-700" id="pdf_niveles">0</p></div>
                 </div>
             </div>
 
-            <div class="mb-6 relative z-10">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-slate-200 pb-1">El Genoma del Inmueble</h3>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Construcción</p><p class="text-[10px] font-bold text-slate-700" id="pdf_const">0 m²</p></div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Terreno</p><p class="text-[10px] font-bold text-slate-700" id="pdf_terr">0 m²</p></div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Edad Cronológica</p><p class="text-[10px] font-bold text-slate-700" id="pdf_edad_cron">0</p></div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Clase Inmueble</p><p class="text-[10px] font-bold text-slate-700 truncate" id="pdf_clase">Ninguna</p></div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Conservación</p><p class="text-[10px] font-bold text-slate-700 truncate" id="pdf_estado">Ninguna</p></div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="text-[7px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Niveles</p><p class="text-[10px] font-bold text-slate-700" id="pdf_niveles">0</p></div>
+            <!-- Mapa de Ubicación -->
+            <div class="relative z-10 flex-1 flex flex-col min-h-[250px] mb-4">
+                <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-widest mb-2 flex items-center gap-1"><span class="material-symbols-rounded text-lg">map</span> Ubicación y Entorno</h3>
+                <div class="w-full flex-1 bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-sm">
+                    <iframe id="pdf_iframe_mapa" width="100%" height="100%" frameborder="0" style="border:0;" src="" loading="lazy"></iframe>
+                </div>
+                <div class="flex justify-between items-center mt-2 px-1">
+                    <p class="text-[8px] text-slate-400 italic">Nota: El mapa muestra la ubicación del sujeto.</p>
+                    <p class="text-[9px] text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-[12px]">pin_drop</span> Coordenadas decimales: <span id="pdf_coords" class="text-slate-700 font-mono font-semibold">0.000000, 0.000000</span></p>
                 </div>
             </div>
+        </div>
 
-            <div class="relative z-10 flex-1 grid grid-cols-2 gap-4">
-                <!-- FOTOGRAFÍA DE PORTADA -->
-                <div class="flex flex-col">
-                    <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">home</span> Fotografía del Inmueble</h3>
-                    <div class="w-full h-full min-h-[170px] bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-sm flex items-center justify-center relative">
-                        <img id="pdf_foto_portada" src="" class="w-full h-full object-cover hidden z-10">
-                        <span id="pdf_foto_portada_placeholder" class="text-slate-400 text-[9px] font-bold uppercase tracking-widest absolute">Sin fotografía</span>
-                    </div>
-                </div>
-                <!-- MAPA DE UBICACIÓN -->
-                <div class="flex flex-col">
-                    <h3 class="text-[9px] font-bold text-indigo-900 uppercase tracking-widest mb-1.5 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">map</span> Ubicación y Entorno</h3>
-                    <div class="w-full h-full min-h-[170px] bg-slate-50 rounded-xl border border-slate-300 overflow-hidden shadow-sm">
-                        <iframe id="pdf_iframe_mapa" width="100%" height="100%" frameborder="0" style="border:0;" src="" loading="lazy"></iframe>
-                    </div>
-                    <div class="flex justify-end items-center mt-1 px-1">
-                        <p class="text-[7px] text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-rounded text-[10px]">pin_drop</span> Coordenadas: <span id="pdf_coords" class="text-slate-700 font-mono font-semibold">0.000000, 0.000000</span></p>
-                    </div>
-                </div>
+        <!-- BANDA INFERIOR (FOOTER PÁGINA 2) -->
+        <div class="w-full bg-[#000000] text-white p-3 relative flex items-center justify-between shadow-md mt-auto z-20 h-16 shrink-0 border-t-2 border-indigo-900">
+            <div class="absolute left-0 top-0 bottom-0 w-2 bg-[#b91c1c]"></div>
+            <div class="ml-4 text-[7px] font-medium leading-relaxed tracking-widest text-slate-300">
+                <p>www.centrointegralinmobiliarioeme.com | www.emeavaluos.com</p>
+                <p>eme@centrointegralinmobiliarioeme.com | eme@emeavaluos.com</p>
+                <p class="text-slate-400 mt-0.5">Contacto: 99.991.45.15.75 | 99.81.62.81.94 | 55.16.36.80.39 | 81.85.26.28.85</p>
+            </div>
+            <div class="flex flex-col items-end h-full justify-between py-1 px-4">
+                <div class="w-8 h-8 bg-[#0a2342] shadow-sm mb-1 rounded-sm"></div>
+                <div class="w-32 h-1.5 bg-[#eab308]"></div>
             </div>
         </div>
     </div>

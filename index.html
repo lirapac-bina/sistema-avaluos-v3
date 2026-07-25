@@ -138,6 +138,24 @@
                 </button>
             </div>
 
+            <!-- BLOQUE 5: Dictamen de Valor Comercial AvEME -->
+            <button id="btn-dictamen-aveme" onclick="iniciarSesionDictamenAvEME()" class="group glass-card rounded-3xl p-6 text-left hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(13,148,136,0.15)] hover:border-teal-200 transition-all duration-300 fade-in-up delay-400 relative overflow-hidden flex flex-col sm:col-span-2 lg:col-span-1">
+                <div class="absolute inset-0 bg-gradient-to-br from-teal-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4 group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300 shadow-inner relative z-10 shrink-0">
+                    <span class="material-symbols-rounded text-2xl">contract</span>
+                </div>
+                
+                <div class="w-full relative z-10">
+                    <h2 class="text-xl font-black text-slate-800 mb-0.5">AvEME</h2>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dictamen de Valor Comercial</p>
+                </div>
+                
+                <div class="mt-4 flex items-center text-xs font-bold text-teal-600 gap-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                    Acceder al Motor <span class="material-symbols-rounded text-[14px]">arrow_forward</span>
+                </div>
+            </button>
+
         </div>
 
         <div class="mt-12 fade-in-up delay-400 flex flex-col items-center">
@@ -182,6 +200,36 @@
                 
                 if (data.authUrl) {
                     window.location.href = data.authUrl + `&state=${state}`; // Inyectamos el candado a la URL
+                } else throw new Error('Sin URL de autorización');
+            } catch (error) {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                errorText.innerText = "Error: Sistema de autenticación no disponible.";
+                errorDiv.classList.remove('hidden');
+                setTimeout(() => errorDiv.classList.add('hidden'), 4000);
+            }
+        }
+
+        // --- Lógica de Autenticación Dictamen AvEME (Módulo Aislado) ---
+        async function iniciarSesionDictamenAvEME() {
+            const errorDiv = document.getElementById('error-msg');
+            const errorText = document.getElementById('error-text');
+            const btn = document.getElementById('btn-dictamen-aveme');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = '<div class="flex items-center justify-center h-full w-full text-teal-600"><span class="material-symbols-rounded animate-spin text-3xl">sync</span></div>';
+            btn.disabled = true;
+
+            try {
+                const state = generarStateSeguro(); 
+                const response = await fetch('/.netlify/functions/auth-start');
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const data = await response.json();
+                
+                if (data.authUrl) {
+                    // Etiqueta en memoria para que el enrutador sepa a dónde llevarnos
+                    sessionStorage.setItem('modulo_destino', 'dictamen_aveme');
+                    window.location.href = data.authUrl + `&state=${state}`; 
                 } else throw new Error('Sin URL de autorización');
             } catch (error) {
                 btn.innerHTML = originalContent;

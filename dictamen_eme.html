@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Pericial EME | Ingeniería Leezar</title>
+    <!-- Evita el error 404 del Favicon -->
+    <link rel="icon" href="data:,">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: {
+                            primary: '#0f4c81',
+                            success: '#059669', /* emerald-600 */
+                            accent1: '#0d9488', /* teal-600 */
+                            accent2: '#4f46e5', /* indigo-600 */
+                            darkBg: '#0f172a',
+                            darkCard: '#1e293b',
+                            darkBorder: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Estilos Base Adicionales (Procesados por Tailwind) -->
+    <style type="text/tailwindcss">
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        .leezar-input {
+            @apply w-full p-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-leezar-darkBorder rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-leezar-accent1 transition-all;
+        }
+        .leezar-label {
+            @apply block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide;
+        }
+        .leezar-input:disabled {
+            @apply bg-gray-100 dark:bg-slate-900 text-gray-500 cursor-not-allowed opacity-70;
+        }
+        
+        /* 🎯 Ocultar flechas numéricas en Chrome, Safari, Edge */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        /* 🎯 Ocultar flechas numéricas en Firefox */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-leezar-darkBg text-gray-900 dark:text-gray-100 antialiased min-h-screen p-6">
+
+    <!-- Dependencia Exclusiva AvEME -->
+    <script src="js/layout_aveme.js"></script>
+
+    <div class="max-w-6xl mx-auto bg-white dark:bg-leezar-darkCard rounded-lg shadow-lg border border-gray-200 dark:border-leezar-darkBorder p-8">
+        
+        <header class="mb-8 border-b border-gray-200 dark:border-leezar-darkBorder pb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-leezar-primary dark:text-leezar-accent1 uppercase tracking-wide">
+                    MOTOR PERICIAL EME
+                </h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
+                    Ecosistema Leezar
+                </p>
+            </div>
+            
+            <!-- Badge de Estado del Motor -->
+            <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-full text-red-700 dark:text-red-400 text-xs font-bold tracking-wider shadow-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                MOTOR Versión 20.6 ACTIVO
+            </div>
+        </header>   
+
+        <!-- Selector Dinámico de Perfiles -->
+        <section id="sec_selector_perfil" class="mb-8 max-w-xl mx-auto bg-gray-50 dark:bg-slate-800 p-6 rounded border border-leezar-accent1 shadow-sm transition-all duration-300">
+            <label class="block text-center text-leezar-primary dark:text-leezar-accent1 font-bold mb-3">
+                SELECCIÓN DE PERFIL DE USUARIO
+            </label>
+            <select id="perfil_usuario" class="leezar-input text-center font-bold" onchange="aplicarLogicaPerfiles()">
+                <option value="1">Perfil 1: Usuario Convencional (Automatizado)</option>
+                <option value="2">Perfil 2: Inmobiliaria / Bróker (Híbrido)</option>
+                <option value="3">Perfil 3: Valuador Independiente (Validación Física)</option>
+                <option value="4">Perfil 4: Perito Certificado EME (Uso Interno)</option>
+            </select>
+        </section>
+
+        <!-- Contenedor Principal del Formulario (A integrar en el siguiente paso) -->
+        <form id="form-eme" class="space-y-8">
+            <!-- FASE 1: IDENTIFICACIÓN Y UBICACIÓN -->
+<section id="sec_fase_1" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+        1. IDENTIFICACIÓN Y UBICACIÓN
+    </h2>
+    
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div>
+            <label class="leezar-label">Tipo de Inmueble</label>
+            <select name="Tipo_Inmueble" id="tipo_inmueble" class="leezar-input" onchange="ajustarFormulario()">
+                <option value="Casa">Casa</option>
+                <option value="Departamento">Departamento</option>
+                <option value="Terreno">Terreno</option>
+            </select>
+        </div>
+        <div>
+            <label class="leezar-label">Uso de Suelo</label>
+            <select name="Uso_de_Suelo" id="uso_suelo" class="leezar-input">
+                <option value="Habitacional">Habitacional</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Industrial">Industrial</option>
+                <option value="Mixto">Mixto</option>
+            </select>
+        </div>
+        <div>
+            <label class="leezar-label">Estado</label>
+            <input type="text" name="Estado" id="txt_estado" class="leezar-input">
+        </div>
+        <div>
+            <label class="leezar-label">Ciudad / Municipio</label>
+            <input type="text" name="Ciudad_Municipio" id="txt_ciudad" class="leezar-input">
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="leezar-label">Colonia / Complejo Condominal</label>
+            <input type="text" name="Colonia" id="txt_colonia" class="leezar-input">
+            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-semibold">💡 Sugerencia: Anexe colonia y condominio si lo conoce.</p>
+        </div>
+        <div>
+            <label class="leezar-label">Calle Sujeto</label>
+            <input type="text" name="Calle_Sujeto" id="txt_calle" class="leezar-input uppercase" onblur="procesarCalle(this)">
+            <p class="text-xs text-red-500 mt-1 font-semibold">⚠️ Evite abreviaturas. Los números de calle se escribirán en letras.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+            <label class="leezar-label">Código Postal</label>
+            <input type="text" name="CP" id="txt_cp" class="leezar-input">
+        </div>
+        <div>
+            <label class="leezar-label">Geolocalización (Lat, Lng)</label>
+            <input type="text" name="Geolocalizacion_Google" id="coordenadas_google" class="leezar-input font-mono text-sm" onchange="sincronizarTextoAMapa()">
+        </div>
+    </div>
+
+    <!-- Módulo de Mapa Interactivo Leaflet -->
+    <div class="w-full mb-4">
+        <label class="leezar-label text-leezar-accent1">🗺️ MICROLOTE DE UBICACIÓN INTERACTIVA (Arrastre el Pin)</label>
+        <!-- z-0 es crucial para que el mapa no flote sobre los modales (z-50) de Tailwind -->
+        <div id="map" class="h-80 w-full rounded-lg border-2 border-gray-300 dark:border-leezar-darkBorder z-0 shadow-inner"></div>
+    </div>
+
+    <!-- Carga de Fachada (Solo Perfiles 3 y 4) -->
+    <div id="seccion_carga_fachada" class="hidden mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <label class="leezar-label text-yellow-600 dark:text-yellow-400">📷 Foto de Fachada (Portada P3/P4)</label>
+        <div class="flex items-center gap-4 mt-2">
+            <input type="file" id="foto_fachada" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors" onchange="procesarFoto()">
+            <img id="img_preview" src="" class="hidden w-24 h-24 object-cover rounded border-2 border-leezar-accent1 shadow-sm">
+        </div>
+    </div>
+</section>
+
+<!-- FASE 2: CARACTERÍSTICAS DEL TERRENO -->
+<section id="sec_fase_2" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+        2. CARACTERÍSTICAS DEL TERRENO
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+            <label class="leezar-label">Superficie Terreno (m²)</label>
+            <input type="number" name="Superficie_Terreno" id="num_superficie_terreno" class="leezar-input grp-terreno" value="0" min="0">
+        </div>
+        <div>
+            <label class="leezar-label">Frente (m)</label>
+            <input type="number" name="Frente_m" id="num_frente" class="leezar-input grp-terreno" value="0" min="0">
+        </div>
+        <div>
+            <label class="leezar-label">Fondo (m)</label>
+            <input type="number" name="Fondo_m" id="num_fondo" class="leezar-input grp-terreno" value="0" min="0">
+        </div>
+        <div>
+            <label class="leezar-label">Ubicación en Manzana</label>
+            <select name="Ubicacion_en_Manzana" class="leezar-input grp-terreno">
+                <option value="Ninguna">Ninguna</option>
+                <option value="Un frente">Un frente</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Esquina">Esquina</option>
+                <option value="Dos frentes no contiguos">Dos frentes no contiguos</option>
+                <option value="Cabecera de manzana">Cabecera de manzana</option>
+            </select>
+        </div>
+        <div>
+            <label class="leezar-label">Frente a</label>
+            <select name="Frente_a" class="leezar-input grp-terreno">
+                <option value="Ninguna">Ninguna</option>
+                <option value="Calle">Calle</option>
+                <option value="Carretera">Carretera</option>
+                <option value="Avenida">Avenida</option>
+                <option value="Cerrada">Cerrada</option>
+                <option value="Andador">Andador</option>
+                <option value="Servidumbre de paso">Servidumbre de paso</option>
+                <option value="Sin acceso">Sin acceso</option>
+                <option value="Privada">Privada</option>
+            </select>
+        </div>
+        <div>
+            <label class="leezar-label">Topografía</label>
+            <select name="Topografia" class="leezar-input grp-terreno">
+                <option value="Ninguna">Ninguna</option>
+                <option value="Plano">Plano</option>
+                <option value="Pendiente Ligera">Pendiente Ligera</option>
+                <option value="Accidentado/Barranco">Accidentado/Barranco</option>
+            </select>
+        </div>
+</div>
+    </section>
+
+    <!-- FASE 3: CARACTERÍSTICAS DE CONSTRUCCIÓN -->
+    <section id="sec_fase_3" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            3. CARACTERÍSTICAS DE CONSTRUCCIÓN
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="leezar-label">Sup. Construcción (m²)</label>
+                <input type="number" name="Superficie_Construccion" id="num_sup_const" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">Edad (Años)</label>
+                <input type="number" name="Edad_Anos" id="num_edad" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">Estado Conservación</label>
+                <select name="Estado_Conservacion" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Bueno">Bueno</option>
+                    <option value="Nuevo">Nuevo</option>
+                    <option value="Excelente/Remodelado">Excelente/Remodelado</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Malo/Ruina">Malo/Ruina</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Nivel del Inmueble</label>
+                <input type="number" name="Nivel_del_Inmueble" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">Total Niveles Edificio</label>
+                <input type="number" name="Total_Niveles_Edificio" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">Cuenta con Amenidades</label>
+                <select name="Cuenta_con_AmenIDADES" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Si">Si</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Elevador</label>
+                <select name="Elevador" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Si">Si</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- FASE 4: EQUIPAMIENTO Y CATEGORÍA -->
+    <section id="sec_fase_4" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            4. EQUIPAMIENTO Y CATEGORÍA (BASE)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="leezar-label">No. Recámaras</label>
+                <input type="number" name="No_Recamaras" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">No. Baños</label>
+                <input type="number" name="No_Banos" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">No. Estacionamientos</label>
+                <input type="number" name="No_Estacionamientos" class="leezar-input grp-const" value="0" min="0">
+            </div>
+            <div>
+                <label class="leezar-label">Clase Inmueble</label>
+                <select name="Clase_Inmueble" id="sel_clase" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Clase Media">Clase Media</option>
+                    <option value="Interés Social">Interés Social</option>
+                    <option value="Semilujo">Semilujo</option>
+                    <option value="Residencial">Residencial</option>
+                    <option value="Lujo">Lujo</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Calidad Acabados</label>
+                <select name="Calidad_Acabados" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Estándar">Estándar</option>
+                    <option value="Económicos">Económicos</option>
+                    <option value="Semilujo">Semilujo</option>
+                    <option value="Lujo">Lujo</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+<!-- FASE 5: CAPA ADN E INFRAESTRUCTURA -->
+    <section id="sec_fase_5" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            5. CAPA ADN E INFRAESTRUCTURA
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="leezar-label">Tipo de Calle</label>
+                <select name="Tipo_de_Calle" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Asfalto">Asfalto</option>
+                    <option value="Terraceria">Terraceria</option>
+                    <option value="Adoquin">Adoquin</option>
+                    <option value="Concreto Hidraulico">Concreto Hidraulico</option>
+                    <option value="Calle de Piedra">Calle de Piedra</option>
+                    <option value="Piedra">Piedra</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo de Acceso Complejo</label>
+                <select name="Tipo_de_Acceso_Complejo" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Pluma TAG">Pluma TAG</option>
+                    <option value="Abierto">Abierto</option>
+                    <option value="Porton Electrico">Porton Electrico</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Red de Agua</label>
+                <select name="Red_de_Agua" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Conexion al Inmueble">Conexion al Inmueble</option>
+                    <option value="Pozo de Agua">Pozo de Agua</option>
+                    <option value="Planta de Tratamiento Dentro Complejo">Planta de Tratamiento Dentro Complejo</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo de Drenaje</label>
+                <select name="Tipo_de_Drenaje" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Conexion a Red">Conexion a Red</option>
+                    <option value="Fosa Septica">Fosa Septica</option>
+                    <option value="Resumidero">Resumidero</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Señalización Nomenclatura</label>
+                <select name="Senalizacion_Nomenclatura" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Completa">Completa</option>
+                    <option value="Inexistente">Inexistente</option>
+                    <option value="Solo Nomenclatura">Solo Nomenclatura</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Suministro Servicios</label>
+                <select name="Suministro_Servicios" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Subterraneos">Subterraneos</option>
+                    <option value="Aereos">Aereos</option>
+                    <option value="Mixtos">Mixtos</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Amenidades Urbanas</label>
+                <select name="Amenidades_Urbanas" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Parque Privado">Parque Privado</option>
+                    <option value="Parque Publico">Parque Publico</option>
+                    <option value="Casa Club">Casa Club</option>
+                    <option value="Canchas Deportivas">Canchas Deportivas</option>
+                    <option value="Acceso a Playa">Acceso a Playa</option>
+                    <option value="Muelle">Muelle</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="leezar-label">Tipo de Techos</label>
+                <select name="Tipo_de_Techos" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Losacero">Losacero</option>
+                    <option value="Provisional">Provisional</option>
+                    <option value="Lamina o techumbre ligera">Lamina o techumbre ligera</option>
+                    <option value="Losa de concreto">Losa de concreto</option>
+                    <option value="Vigueta y bovedilla">Vigueta y bovedilla</option>
+                    <option value="Estructura metalica">Estructura metalica</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Material de Muros</label>
+                <select name="Material_de_Muros" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Tablaroca">Tablaroca</option>
+                    <option value="Provisionales">Provisionales</option>
+                    <option value="Tablacemento">Tablacemento</option>
+                    <option value="De block">De block</option>
+                    <option value="De tabique">De tabique</option>
+                    <option value="Prefabricados">Prefabricados</option>
+                    <option value="De concreto">De concreto</option>
+                    <option value="De piedra">De piedra</option>
+                    <option value="De adobe">De adobe</option>
+                    <option value="De madera">De madera</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Acabado de Pisos</label>
+                <select name="Acabado_de_Pisos" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Porcelanatos">Porcelanatos</option>
+                    <option value="Tierra">Tierra</option>
+                    <option value="Cemento">Cemento</option>
+                    <option value="Ceramicos">Ceramicos</option>
+                    <option value="Maderas">Maderas</option>
+                    <option value="Marmol / Gama Alta">Marmol / Gama Alta</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Calidad Madera</label>
+                <select name="Calidad_Madera" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="MDF/Pino">MDF/Pino</option>
+                    <option value="Cedro/Caoba">Cedro/Caoba</option>
+                    <option value="Encino/Roble">Encino/Roble</option>
+                    <option value="Sin Madera">Sin Madera</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Acabados Cocina</label>
+                <select name="Acabados_Cocina" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Granito">Granito</option>
+                    <option value="Nula">Nula</option>
+                    <option value="Barra de Concreto">Barra de Concreto</option>
+                    <option value="MDF">MDF</option>
+                    <option value="Cuarzo">Cuarzo</option>
+                    <option value="Tarja">Tarja</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo Portón Propiedad</label>
+                <select name="Tipo_de_Porton_Propiedad" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Sin Porton">Sin Porton</option>
+                    <option value="Electrico">Electrico</option>
+                    <option value="Herreria">Herreria</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Madera">Madera</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo Estacionamiento</label>
+                <select name="Tipo_de_Estacionamiento" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Subterraneo">Subterraneo</option>
+                    <option value="Abierto">Abierto</option>
+                    <option value="En Bateria">En Bateria</option>
+                    <option value="Techado">Techado</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo Aire Acondicionado</label>
+                <select name="Tipo_Aire_Acondicionado" class="leezar-input grp-const">
+                    <option value="Ninguno">Ninguno</option>
+                    <option value="Minisplit Inverter">Minisplit Inverter</option>
+                    <option value="Minisplit">Minisplit</option>
+                    <option value="Cassette">Cassette</option>
+                    <option value="Fan and Coil">Fan and Coil</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Num Equipos Aire</label>
+                <input type="number" name="Num_Equipos_Aire" class="leezar-input grp-const" value="0">
+            </div>
+            <div>
+                <label class="leezar-label">Amenidades Interiores</label>
+                <select name="Amenidades_Interiores" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Bodega">Bodega</option>
+                    <option value="Cuarto de Servicio">Cuarto de Servicio</option>
+                    <option value="Estudio">Estudio</option>
+                    <option value="Gimnasio Privado">Gimnasio Privado</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Protección Térmica</label>
+                <select name="Proteccion_Termica" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Vidrio Doble (Duovent)">Vidrio Doble (Duovent)</option>
+                    <option value="Vidrio Sencillo">Vidrio Sencillo</option>
+                    <option value="Muros Aislados">Muros Aislados</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="leezar-label">Espacios Exteriores Lista</label>
+                <input type="text" name="Espacios_Exteriores_Lista" class="leezar-input">
+            </div>
+            <div>
+                <label class="leezar-label">Caso Atípico Plusvalía</label>
+                <select name="Caso_Atipico_Plusvalia" class="leezar-input">
+                    <option value="Ninguno">Ninguno</option>
+                    <option value="Vista al Mar">Vista al Mar</option>
+                    <option value="Primera Fila al Mar">Primera Fila al Mar</option>
+                    <option value="Frente a Laguna">Frente a Laguna</option>
+                    <option value="Dentro de Centro Comercial">Dentro de Centro Comercial</option>
+                    <option value="Vista a la Laguna">Vista a la Laguna</option>
+                    <option value="Vista a la Marina">Vista a la Marina</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Conectividad</label>
+                <select name="Conectividad" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Fibra Optica">Fibra Optica</option>
+                    <option value="Satelital">Satelital</option>
+                    <option value="Cobre">Cobre</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- FASE 6: PARÁMETROS CRÍTICOS (MATRIZ 0.3) -->
+    <section id="sec_fase_6" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            6. PARÁMETROS CRÍTICOS (MATRIZ 0.3)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="leezar-label">Certeza Jurídica</label>
+                <select name="Certeza_Juridica" class="leezar-input">
+                    <option value="Escritura Publica">Escritura Publica</option>
+                    <option value="Ejidal">Ejidal</option>
+                    <option value="Certificado Parcelario">Certificado Parcelario</option>
+                    <option value="Posesion">Posesion</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Régimen Propiedad</label>
+                <select name="Regimen_Propiedad" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Privada Condominal">Privada Condominal</option>
+                    <option value="Privada Normal (Asociacion)">Privada Normal (Asociacion)</option>
+                    <option value="Privada Copropiedad">Privada Copropiedad</option>
+                    <option value="Individual">Individual</option>
+                    <option value="Sin Regimen">Sin Regimen</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Tipo de Vigilancia</label>
+                <select name="Tipo_de_Vigilancia" class="leezar-input">
+                    <option value="Nula">Nula</option>
+                    <option value="Privada (Caseta)">Privada (Caseta)</option>
+                    <option value="Publica">Publica</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Cuota Mantenimiento</label>
+                <input type="number" name="Cuota_Mantenimiento" class="leezar-input" value="0">
+            </div>
+            <div>
+                <label class="leezar-label">Colindancia</label>
+                <select name="Colindancia" class="leezar-input">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Habitacional">Habitacional</option>
+                    <option value="Comercial Ruidosa">Comercial Ruidosa</option>
+                    <option value="Baldio/Zona Degradada">Baldio/Zona Degradada</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Amenidades Entorno Abierto</label>
+                <input type="text" name="Amenidades_Entorno_Abierto" class="leezar-input">
+            </div>
+            
+            <div>
+                <label class="leezar-label">Mantenimiento Reciente Lista</label>
+                <input type="text" name="Mantenimiento_Reciente_Lista" class="leezar-input grp-const">
+            </div>
+            <div>
+                <label class="leezar-label">Estado de Humedades</label>
+                <select name="Estado_de_Humedades" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Inexistente">Inexistente</option>
+                    <option value="Salitre leve">Salitre leve</option>
+                    <option value="Humedad Estructural">Humedad Estructural</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label">Alcance Remodelación</label>
+                <select name="Alcance_Remodelacion" class="leezar-input grp-const">
+                    <option value="Nula">Nula</option>
+                    <option value="Solo Estetica">Solo Estetica</option>
+                    <option value="Instalaciones y Acabados">Instalaciones y Acabados</option>
+                    <option value="Integral">Integral</option>
+                </select>
+            </div>
+        </div>
+        
+        <h3 class="text-md font-bold text-leezar-primary dark:text-leezar-accent1 mb-3">🛡️ SELECCIÓN DE MEJORAS (Marca las casillas que apliquen)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 bg-gray-50 dark:bg-slate-700 p-4 rounded-lg">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="cambio_pisos" class="w-4 h-4 text-leezar-primary grp-const"> cambio_pisos</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="cambio_pisos_instalaciones" class="w-4 h-4 text-leezar-primary grp-const"> cambio_pisos_instalaciones</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="techado_cochera" class="w-4 h-4 text-leezar-primary grp-const"> techado_cochera</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="remodelacion_cocina" class="w-4 h-4 text-leezar-primary grp-const"> remodelacion_cocina</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="ampliacion_habitaciones" class="w-4 h-4 text-leezar-primary grp-const"> ampliacion_habitaciones</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="ampliacion_piso" class="w-4 h-4 text-leezar-primary grp-const"> ampliacion_piso</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="remodelacion_parcial" class="w-4 h-4 text-leezar-primary grp-const"> remodelacion_parcial</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input type="checkbox" name="remodelacion_completa" class="w-4 h-4 text-leezar-primary grp-const"> remodelacion_completa</label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="leezar-label">Años desde Remodelación</label>
+                <input type="number" name="Anos_desde_Remodelacion" class="leezar-input grp-const" value="0">
+            </div>
+            <div>
+                <label class="leezar-label flex justify-between">
+                    <span>Porcentaje Avance</span>
+                    <span id="lbl_avance" class="text-leezar-accent1">100%</span>
+                </label>
+                <input type="range" name="Porcentaje_Avance" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-leezar-primary mt-2 grp-const" min="0" max="100" value="100" oninput="document.getElementById('lbl_avance').innerText = this.value + '%'">
+            </div>
+            <div>
+                <label class="leezar-label">Altura Techos</label>
+                <select name="Altura_Techos" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Media (2.70m a 3.00m)">Media (2.70m a 3.00m)</option>
+                    <option value="Estandar (<2.50m)">Estandar (&lt;2.50m)</option>
+                    <option value="Doble Altura / Diseno">Doble Altura / Diseno</option>
+                </select>
+            </div>
+            <div>
+                <label class="leezar-label flex justify-between">
+                    <span>Factor Negociación Final</span>
+                    <span id="lbl_negociacion" class="text-leezar-accent1">2%</span>
+                </label>
+                <input type="range" name="Factor_Negociacion_Final" min="2" max="10" value="2" step="0.1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-leezar-primary mt-2" oninput="document.getElementById('lbl_negociacion').innerText = this.value + '%'">
+            </div>
+            
+            <div class="col-span-1 md:col-span-2 lg:col-span-4 mt-4">
+                <label class="leezar-label">📝 Notas Particulares y Observaciones del Valuador</label>
+                <textarea name="Notas_Particulares" class="leezar-input" rows="4"></textarea>
+            </div>
+        </div>
+    </section>
+
+<!-- FASE 7: ESPECIFICACIONES DE VERTICALIDAD -->
+    <section id="sec_fase_7" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+            7. ESPECIFICACIONES DE VERTICALIDAD
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="leezar-label">Verticalidad Premium</label>
+                <select name="Verticalidad_Premium" class="leezar-input grp-const">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Si">Si</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- FASE 8: EVIDENCIA FOTOGRÁFICA Y ANEXOS -->
+    <section id="sec_fase_8" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
+            <span class="material-symbols-rounded">photo_camera</span>
+            8. EVIDENCIA FOTOGRÁFICA Y ANEXOS
+        </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">Cargue los archivos correspondientes. Las imágenes se optimizan y guardan en memoria automáticamente para no saturar la red.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Zona 1: Portada -->
+            <div>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">image</span>
+                    <label class="leezar-label !text-center">Fachada / Portada</label>
+                    <p class="text-xs text-gray-500 mb-3">Sube 1 imagen principal (.jpg, .png)</p>
+                    <input type="file" id="foto_portada" accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_portada', true)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                </div>
+                <!-- Miniatura Portada -->
+                <div id="preview_portada" class="mt-4 grid grid-cols-1 gap-2"></div>
+            </div>
+
+            <!-- Zona 2: Interiores -->
+            <div>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">photo_library</span>
+                    <label class="leezar-label !text-center">Fotos Interiores</label>
+                    <p class="text-xs text-gray-500 mb-3">Sube múltiples imágenes (.jpg, .png)</p>
+                    <input type="file" id="fotos_interiores" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_interiores', false)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                </div>
+                <!-- Miniaturas Interiores -->
+                <div id="preview_interiores" class="mt-4 grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <!-- Zona 3: Anexos -->
+            <div>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">schema</span>
+                    <label class="leezar-label !text-center">Planos y Anexos</label>
+                    <p class="text-xs text-gray-500 mb-3">Croquis, predial o mapas (.jpg, .png)</p>
+                    <input type="file" id="fotos_anexos" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_anexos', false)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                </div>
+                <!-- Miniaturas Anexos -->
+                <div id="preview_anexos" class="mt-4 grid grid-cols-2 gap-2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 👤 CREDENCIALES DEL EMISOR DEL DICTAMEN -->
+    <section id="seccion_datos_valuador" class="hidden bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
+            <span class="material-symbols-rounded">badge</span>
+            CREDENCIALES DEL EMISOR DEL DICTAMEN
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="leezar-label">Nombre del Valuador</label>
+                <input type="text" name="Nombre_Valuador" id="txt_nombre_valuador" class="leezar-input">
+            </div>
+            <div id="grupo_cedula">
+                <label class="leezar-label">Cédula Profesional</label>
+                <input type="text" name="Cedula_Valuador" id="txt_cedula_valuador" class="leezar-input">
+            </div>
+            <div id="grupo_id_eme" class="hidden">
+                <label class="leezar-label">Código Acreditación EME</label>
+                <input type="text" name="EME_ID" id="txt_id_eme" class="leezar-input">
+            </div>
+            <div>
+                <label class="leezar-label">Correo de Contacto</label>
+                <input type="text" name="Correo_Valuador" id="txt_correo_valuador" class="leezar-input">
+            </div>
+            <div>
+                <label class="leezar-label">Teléfono de Contacto</label>
+                <input type="text" name="Telefono_Valuador" id="txt_telefono_valuador" class="leezar-input">
+            </div>
+        </div>
+    </section>
+
+    <!-- FASE 9: PANEL DE CONTROL PERICIAL (MUESTREO MANUAL) -->
+    <section id="seccion_muestreo_manual" class="hidden bg-white dark:bg-slate-800 p-6 rounded-lg border-2 border-leezar-accent1 shadow-sm transition-colors duration-300">
+        <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-leezar-accent1 pb-2 flex items-center gap-2">
+            <span class="material-symbols-rounded">manage_search</span>
+            9. PANEL DE CONTROL PERICIAL (MUESTREO MANUAL)
+        </h2>
+        
+        <div id="alerta_minimo_testigos" class="hidden bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500 p-4 mb-6 rounded shadow-sm">
+            <p class="text-sm text-yellow-700 dark:text-yellow-400 font-bold flex items-center gap-2">
+                <span class="material-symbols-rounded">warning</span> NOTA TÉCNICA DE HOMOLOGACIÓN:
+            </p>
+            <p class="text-xs text-yellow-600 dark:text-yellow-500 mt-1">Se requiere cargar un mínimo de <strong>3 testigos activos</strong> (con precio mayor a 0) para activar el modelo pericial de homologación manual. Si se cargan menos de 3, el motor EME descartará la muestra por insuficiencia estadística y se anclará al modelo automatizado de mercado.</p>
+        </div>
+
+        <!-- Contenedor inyectado por JavaScript -->
+        <div id="testigos-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+    </section>
+            
+            <!-- Botón de Acción: Tiempo 1 -->
+            <div class="mt-8 border-t border-gray-200 dark:border-leezar-darkBorder pt-6">
+                <button type="button" id="btn_pre_calcular" onclick="enviarDictamenPrevio()" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-lg tracking-wide">
+                    <span class="material-symbols-rounded text-2xl">bolt</span>
+                    CALCULAR PRE-DICTAMEN
+                </button>
+            </div>
+        </form>
+
+        <!-- SECCIÓN DE CHECKOUT Y RESULTADOS (Tiempo 2) -->
+        <section id="sec_checkout" class="hidden bg-white dark:bg-slate-800 p-8 rounded-lg border-2 border-emerald-500 shadow-2xl text-center max-w-2xl mx-auto mt-8 transform transition-all duration-500">
+            <div class="mb-6 flex justify-center">
+                <span class="material-symbols-rounded text-6xl text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 p-4 rounded-full">task_alt</span>
+            </div>
+            <h2 class="text-3xl font-black text-leezar-primary dark:text-emerald-400 mb-2 uppercase tracking-wide">
+                Cálculo Completado
+            </h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-8 text-lg">
+                El motor pericial ha analizado la propiedad con éxito. Proceda al pago seguro para desbloquear el documento en PDF.
+            </p>
+            
+            <div class="bg-gray-50 dark:bg-slate-900 p-6 rounded border border-gray-200 dark:border-gray-700 mb-8 text-left shadow-inner">
+                <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Resumen de la Operación</h3>
+                <ul class="space-y-3 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    <li class="flex items-center gap-2"><span class="material-symbols-rounded text-leezar-accent1 text-lg">check_circle</span> Validación matemática 100%</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-rounded text-leezar-accent1 text-lg">check_circle</span> Ajuste de mercado consolidado</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-rounded text-leezar-accent1 text-lg">check_circle</span> Cifrado de firma y cédula preparado</li>
+                </ul>
+            </div>
+
+            <button type="button" id="btn_pagar_stripe" onclick="iniciarPagoStripe()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-lg tracking-wide">
+                <span class="material-symbols-rounded text-2xl">lock_open</span>
+                DESBLOQUEAR DICTAMEN (STRIPE)
+            </button>
+            
+            <button type="button" onclick="reiniciarFormulario()" class="mt-6 text-sm text-gray-500 hover:text-leezar-primary dark:hover:text-gray-300 underline font-semibold transition-colors">
+                Cancelar y volver a editar datos
+            </button>
+        </section>
+
+    </div>
+
+    <!-- Módulo de Carga Anti-Clics (Bloqueo de UI) -->
+    <div id="overlay_carga" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center z-[100] transition-opacity duration-300">
+        <div class="bg-white dark:bg-leezar-darkCard p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full border border-leezar-accent1 text-center">
+            <span class="material-symbols-rounded animate-spin text-6xl text-leezar-primary dark:text-leezar-accent1 mb-4">sync</span>
+            <h3 class="text-xl font-black text-leezar-primary dark:text-white mb-2 uppercase tracking-wide">Procesando DICTAMEN</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 font-semibold" id="txt_estado_carga">
+                Conectando al Motor Pericial...
+            </p>
+            <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mt-6 overflow-hidden">
+                <div class="bg-leezar-primary dark:bg-leezar-accent1 h-2 rounded-full animate-pulse w-full"></div>
+            </div>
+        </div>
+    </div>
+
+<!-- Módulo de Feedback Premium -->
+    <div id="modal_feedback" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[110] transition-all duration-300 opacity-0">
+        <div class="bg-white dark:bg-leezar-darkCard p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-4 border-leezar-accent1 transform scale-95 transition-transform duration-300" id="feedback_box">
+            
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 mb-4 shadow-inner">
+                    <span class="material-symbols-rounded text-4xl">celebration</span>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-wide">¡Dictamen Exitoso!</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
+                    Vimos que terminaste tu proceso en AvEME. Para ayudarnos a afinar el proceso, califica tu experiencia aquí:
+                </p>
+            </div>
+            
+            <div id="botones_feedback" class="flex flex-col gap-3">
+                <button onclick="procesarFeedback('excelente')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-emerald-500 hover:bg-emerald-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
+                    <span class="flex items-center gap-2"><span class="text-xl">🟢</span> Me ahorró mucho tiempo</span>
+                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
+                </button>
+                
+                <button onclick="procesarFeedback('detalles')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-yellow-500 hover:bg-yellow-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
+                    <span class="flex items-center gap-2"><span class="text-xl">🟡</span> Funciona, pero hay detalles</span>
+                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
+                </button>
+                
+                <button onclick="procesarFeedback('problemas')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-red-500 hover:bg-red-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
+                    <span class="flex items-center gap-2"><span class="text-xl">🔴</span> Tuve problemas técnicos</span>
+                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
+                </button>
+            </div>
+
+            <!-- Respuesta 1: Excelente -->
+            <div id="respuesta_excelente" class="hidden mt-2 text-center transition-all duration-500 transform translate-y-4 opacity-0">
+                <span class="material-symbols-rounded text-5xl text-emerald-500 mb-2">star</span>
+                <p class="text-emerald-600 dark:text-emerald-400 font-black text-lg mb-2 uppercase tracking-wide">¡Qué excelente noticia!</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-6 font-medium">
+                    Nos alegra mucho saber que el motor pericial te está ahorrando tiempo. ¡Esa es nuestra meta principal!
+                </p>
+                <button onclick="cerrarFeedback()" class="inline-flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl">
+                    <span class="material-symbols-rounded">done_all</span>
+                    Finalizar y Cerrar
+                </button>
+            </div>
+
+            <!-- Respuesta 2/3: Detalles o Problemas -->
+            <div id="respuesta_problemas" class="hidden mt-2 transition-all duration-500 transform translate-y-4 opacity-0">
+                <p class="text-leezar-primary dark:text-leezar-accent1 font-black text-lg mb-2 text-center uppercase tracking-wide">Gracias por avisarnos</p>
+                <label class="leezar-label !text-gray-600 dark:!text-gray-300 !normal-case !mb-3 text-center block">¿Podrías escribirnos aquí mismo en un mensaje qué fue lo que falló o qué le faltó?</label>
+                <textarea id="txt_detalle_feedback" rows="4" class="leezar-input !rounded-xl resize-none shadow-inner"></textarea>
+                <button onclick="enviarFeedbackServidor()" id="btn_enviar_feedback" class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg mt-4 flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">send</span>
+                    Enviar Mensaje
+                </button>
+            </div>
+            
+            <button onclick="cerrarFeedback()" class="mt-6 w-full text-center text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 uppercase tracking-widest font-bold transition-colors">
+                Cerrar sin calificar
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts de Lógica del Feedback -->
+    <script>
+        function mostrarFeedback() {
+            const modal = document.getElementById('modal_feedback');
+            const box = document.getElementById('feedback_box');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); box.classList.remove('scale-95'); }, 10);
+        }
+
+        function cerrarFeedback() {
+            const modal = document.getElementById('modal_feedback');
+            const box = document.getElementById('feedback_box');
+            modal.classList.add('opacity-0'); box.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+                document.getElementById('botones_feedback').classList.remove('hidden');
+                document.getElementById('respuesta_excelente').classList.add('hidden', 'translate-y-4', 'opacity-0');
+                document.getElementById('respuesta_problemas').classList.add('hidden', 'translate-y-4', 'opacity-0');
+                document.getElementById('txt_detalle_feedback').value = '';
+            }, 300);
+        }
+
+        function procesarFeedback(tipo) {
+            document.getElementById('botones_feedback').classList.add('hidden');
+            const objMostrar = tipo === 'excelente' ? document.getElementById('respuesta_excelente') : document.getElementById('respuesta_problemas');
+            objMostrar.classList.remove('hidden');
+            setTimeout(() => { objMostrar.classList.remove('translate-y-4', 'opacity-0'); }, 10);
+        }
+
+        async function enviarFeedbackServidor() {
+            const comentario = document.getElementById('txt_detalle_feedback').value;
+            if (!comentario.trim()) return;
+            const btn = document.getElementById('btn_enviar_feedback');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Enviando...';
+            btn.disabled = true;
+            try {
+                let emailPerito = "Desconocido";
+                const sessionData = localStorage.getItem('leezar_user_active');
+                if (sessionData) emailPerito = JSON.parse(sessionData).email;
+                const ticketActual = typeof ticketActualGlobal !== 'undefined' ? ticketActualGlobal : 'Sin folio';
+                const payload = { email: emailPerito, ticket_id: ticketActual, comentario: comentario };
+                const response = await fetch('/.netlify/functions/guardar-feedback-dictamen', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error("Fallo en la comunicación.");
+                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> ¡Mensaje Recibido!';
+                btn.classList.replace('bg-slate-800', 'bg-emerald-600'); btn.classList.replace('dark:bg-leezar-accent1', 'dark:bg-emerald-600');
+                setTimeout(() => {
+                    cerrarFeedback();
+                    setTimeout(() => {
+                        btn.innerHTML = originalText; btn.disabled = false;
+                        btn.classList.replace('bg-emerald-600', 'bg-slate-800'); btn.classList.replace('dark:bg-emerald-600', 'dark:bg-leezar-accent1');
+                    }, 500);
+                }, 1500);
+            } catch (error) {
+                console.error("Error enviando feedback:", error);
+                btn.innerHTML = '<span class="material-symbols-rounded">error</span> Error al enviar';
+                btn.classList.replace('bg-slate-800', 'bg-red-600'); btn.classList.replace('dark:bg-leezar-accent1', 'dark:bg-red-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    btn.classList.replace('bg-red-600', 'bg-slate-800'); btn.classList.replace('dark:bg-red-600', 'dark:bg-leezar-accent1');
+                }, 2000);
+            }
+        }
+    </script>
+
+    <!-- Scripts Base y Lógica Estricta de Privilegios -->
+    <script>
+        function generarTestigosManuales() {
+            const contenedor = document.getElementById('testigos-container');
+            if (!contenedor) return;
+            contenedor.innerHTML = '';
+            for(let i=1; i<=6; i++) {
+                contenedor.innerHTML += `
+                <div class="border border-gray-200 dark:border-leezar-darkBorder rounded-lg p-4 bg-gray-50 dark:bg-slate-900 shadow-sm hover:border-leezar-accent1 transition-colors">
+                    <h4 class="text-leezar-accent1 font-black mb-3 flex items-center gap-2 text-sm tracking-wide">
+                        <span class="material-symbols-rounded">home_work</span> TESTIGO ${i}
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="leezar-label">Precio</label><input type="number" name="EME_CP_T${i}_Precio" value="0" class="leezar-input"></div>
+                        <div><label class="leezar-label">Sup. Terr.</label><input type="number" name="EME_CP_T${i}_Sup_Terreno" value="0" class="leezar-input"></div>
+                        <div><label class="leezar-label">Sup. Const.</label><input type="number" name="EME_CP_T${i}_Sup_Construccion" value="0" class="leezar-input"></div>
+                        <div><label class="leezar-label">Niveles</label><input type="number" name="EME_CP_T${i}_Niveles" value="0" class="leezar-input"></div>
+                        <div><label class="leezar-label">Edad</label><input type="number" name="EME_CP_T${i}_Edad" value="0" class="leezar-input"></div>
+                        <div>
+                            <label class="leezar-label">Estado</label>
+                            <select name="EME_CP_T${i}_Estado" class="leezar-input">
+                                <option>Bueno</option><option>Nuevo</option><option>Excelente</option><option>Regular</option><option>Malo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="leezar-label">Ubicación</label>
+                            <select name="EME_CP_T${i}_Ubicacion" class="leezar-input">
+                                <option>Intermedio</option><option>Esquina</option><option>Cabecera</option><option>Dos frentes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="leezar-label">Zona</label>
+                            <select name="EME_CP_T${i}_Zona" class="leezar-input">
+                                <option>Igual</option><option>Mejor que el sujeto</option><option>Peor que el sujeto</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="leezar-label">Link de Referencia</label>
+                            <input type="text" name="EME_CP_T${i}_Link" placeholder="URL del testigo (opcional)" class="leezar-input">
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        function aplicarLogicaPerfiles() {
+            const perfil = document.getElementById('perfil_usuario').value;
+            
+            const secValuador = document.getElementById('seccion_datos_valuador');
+            const secTestigos = document.getElementById('seccion_muestreo_manual');
+            const alertaTestigos = document.getElementById('alerta_minimo_testigos');
+            const grupoCedula = document.getElementById('grupo_cedula');
+            const grupoIdEme = document.getElementById('grupo_id_eme');
+            const secFotos = document.getElementById('sec_fase_8'); 
+            
+            const inputNotas = document.querySelector('textarea[name="Notas_Particulares"]');
+            const secNotas = inputNotas ? inputNotas.closest('.col-span-1') || inputNotas.closest('div').parentElement : null;
+
+            if(secValuador) secValuador.classList.add('hidden');
+            if(secTestigos) secTestigos.classList.add('hidden');
+            if(alertaTestigos) alertaTestigos.classList.add('hidden');
+            if(grupoCedula) grupoCedula.classList.add('hidden');
+            if(grupoIdEme) grupoIdEme.classList.add('hidden');
+            if(secFotos) secFotos.classList.add('hidden');
+            if(secNotas) secNotas.classList.add('hidden');
+
+            if (perfil === "1") {
+                // Perfil 1 (Automatizado): No ve fotos, ni testigos, ni notas, ni credenciales.
+            } else if (perfil === "2") {
+                // Perfil 2 (Híbrido): Ve testigos, notas, y sus datos, pero NO fotos ni cédula.
+                if(secNotas) secNotas.classList.remove('hidden');
+                if(secValuador) secValuador.classList.remove('hidden');
+                if(secTestigos) secTestigos.classList.remove('hidden');
+                if(alertaTestigos) alertaTestigos.classList.remove('hidden');
+            } else if (perfil === "3") {
+                // Perfil 3 (Valuador): Ve TODO (Fotos, Notas, Testigos) + Cédula.
+                if(secNotas) secNotas.classList.remove('hidden');
+                if(secValuador) secValuador.classList.remove('hidden');
+                if(secTestigos) secTestigos.classList.remove('hidden');
+                if(alertaTestigos) alertaTestigos.classList.remove('hidden');
+                if(grupoCedula) grupoCedula.classList.remove('hidden');
+                if(secFotos) secFotos.classList.remove('hidden');
+            } else if (perfil === "4") {
+                // Perfil 4 (Certificado): Ve TODO + ID exclusivo EME.
+                if(secNotas) secNotas.classList.remove('hidden');
+                if(secValuador) secValuador.classList.remove('hidden');
+                if(secTestigos) secTestigos.classList.remove('hidden');
+                if(alertaTestigos) alertaTestigos.classList.remove('hidden');
+                if(grupoCedula) grupoCedula.classList.remove('hidden');
+                if(grupoIdEme) grupoIdEme.classList.remove('hidden');
+                if(secFotos) secFotos.classList.remove('hidden');
+            }
+        }
+    </script>
+
+    <!-- Scripts del Mapa Interactivo Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let marker;
+        let base64Foto = "";
+        let emailUsuarioGlobal = ""; 
+        let resultadoMotorGlobal = null; 
+        let ticketActualGlobal = ""; 
+
+        let arrayPortada = null; 
+        let arrayInteriores = [];
+        let arrayAnexos = [];
+
+        function comprimirYMostrarImagen(input, contenedorId, esUnica) {
+            const contenedor = document.getElementById(contenedorId);
+            if (esUnica) { contenedor.innerHTML = ''; arrayPortada = null; }
+            const archivos = input.files;
+
+            for (let i = 0; i < archivos.length; i++) {
+                const archivo = archivos[i];
+                if (!archivo.type.match(/image.*/)) continue;
+
+                const uniqueId = 'img_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                let defaultText = contenedorId === 'preview_portada' ? "Fachada Principal" : (contenedorId === 'preview_anexos' ? "Documento Anexo" : "Fotografía complementaria");
+                
+                const reader = new FileReader();
+                reader.onload = function(readerEvent) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const MAX_WIDTH = 1000; const MAX_HEIGHT = 1000;
+                        let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        const base64Limpio = dataUrl.split(',')[1];
+                        const dataObj = { id: uniqueId, base64: base64Limpio, texto: defaultText };
+                        
+                        if (contenedorId === 'preview_portada') arrayPortada = dataObj;
+                        else if (contenedorId === 'preview_interiores') arrayInteriores.push(dataObj);
+                        else if (contenedorId === 'preview_anexos') arrayAnexos.push(dataObj);
+
+                        const card = document.createElement('div');
+                        card.id = uniqueId;
+                        card.className = "flex flex-col gap-2 p-2 border-2 border-gray-200 dark:border-leezar-darkBorder rounded-lg bg-white dark:bg-slate-800 shadow-sm transition-all hover:border-leezar-accent1";
+                        card.innerHTML = `
+                            <div class="relative group h-24 bg-gray-100 dark:bg-slate-900 rounded overflow-hidden">
+                                <img src="${dataUrl}" class="w-full h-full object-cover">
+                                <button type="button" onclick="eliminarImagenUI('${uniqueId}', '${contenedorId}')" class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow flex items-center gap-1 text-xs font-bold">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </button>
+                            </div>
+                            <input type="text" class="leezar-input !text-xs !p-1.5 focus:ring-1" value="${defaultText}" oninput="actualizarTextoImagen('${uniqueId}', '${contenedorId}', this.value)" placeholder="Descripción...">
+                        `;
+                        contenedor.appendChild(card);
+                    };
+                    img.src = readerEvent.target.result;
+                };
+                reader.readAsDataURL(archivo);
+            }
+            input.value = '';
+        }
+
+        window.eliminarImagenUI = function(id, contenedorId) {
+            document.getElementById(id).remove(); 
+            if (contenedorId === 'preview_portada') { arrayPortada = null; } 
+            else if (contenedorId === 'preview_interiores') { arrayInteriores = arrayInteriores.filter(img => img.id !== id); } 
+            else if (contenedorId === 'preview_anexos') { arrayAnexos = arrayAnexos.filter(img => img.id !== id); }
+        };
+
+        window.actualizarTextoImagen = function(id, contenedorId, texto) {
+            if (contenedorId === 'preview_portada' && arrayPortada && arrayPortada.id === id) { arrayPortada.texto = texto; } 
+            else if (contenedorId === 'preview_interiores') { const img = arrayInteriores.find(i => i.id === id); if (img) img.texto = texto; } 
+            else if (contenedorId === 'preview_anexos') { const img = arrayAnexos.find(i => i.id === id); if (img) img.texto = texto; }
+        };
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            generarTestigosManuales(); 
+            inicializarMapa();
+            await autoDetectarPerfilUsuario();
+            verificarRetornoStripe(); 
+        });
+
+        async function autoDetectarPerfilUsuario() {
+            const selectorPerfil = document.getElementById('perfil_usuario');
+            const opciones = selectorPerfil.options;
+            try {
+                const sessionData = localStorage.getItem('leezar_user_active');
+                if (!sessionData) return; 
+                const activeUser = JSON.parse(sessionData);
+                emailUsuarioGlobal = activeUser.email;
+
+                selectorPerfil.disabled = true;
+                const response = await fetch('/.netlify/functions/manage-usuarios-dictamen');
+                if (!response.ok) throw new Error("Fallo al conectar con la bóveda pericial.");
+                
+                const padron = await response.json();
+                const peritoActivo = padron.find(u => u.id === emailUsuarioGlobal && u.activo === true);
+                let nivelMaximo = 1; 
+
+                if (peritoActivo) {
+                    nivelMaximo = parseInt(peritoActivo.perfil, 10);
+                    selectorPerfil.value = nivelMaximo; 
+                    
+                    const txtNombre = document.getElementById('txt_nombre_valuador');
+                    const txtCedula = document.getElementById('txt_cedula_valuador');
+                    const txtCorreo = document.getElementById('txt_correo_valuador');
+                    const txtTelefono = document.getElementById('txt_telefono_valuador');
+                    const txtIdEme = document.getElementById('txt_id_eme');
+
+                    if (txtNombre) txtNombre.value = peritoActivo.nombre || '';
+                    if (txtCedula) txtCedula.value = peritoActivo.cedula || peritoActivo.cedula_profesional || peritoActivo.Cedula || '';
+                    if (txtCorreo) txtCorreo.value = peritoActivo.id || emailUsuarioGlobal;
+                    if (txtTelefono) txtTelefono.value = peritoActivo.telefono || '';
+                    if (txtIdEme) txtIdEme.value = peritoActivo.eme_id || peritoActivo.codigo_eme || '';
+                    window.firmaPeritoGlobal = peritoActivo.firma_base64 || "";
+                } else {
+                    selectorPerfil.value = "1";
+                }
+
+                for (let i = 0; i < opciones.length; i++) {
+                    const valorOpcion = parseInt(opciones[i].value, 10);
+                    if (valorOpcion > nivelMaximo) {
+                        opciones[i].disabled = true; opciones[i].classList.add('hidden'); 
+                    } else {
+                        opciones[i].disabled = false; opciones[i].classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                selectorPerfil.value = "1"; 
+                for (let i = 1; i < opciones.length; i++) {
+                    opciones[i].disabled = true; opciones[i].classList.add('hidden');
+                }
+            } finally {
+                selectorPerfil.disabled = false;
+                selectorPerfil.classList.remove('cursor-not-allowed', 'opacity-80', 'bg-gray-200', 'dark:bg-slate-700');
+                if (typeof aplicarLogicaPerfiles === 'function') aplicarLogicaPerfiles();
+            }
+        }
+
+        function inicializarMapa() {
+            const centroMX = [19.4326, -99.1332]; 
+            map = L.map('map').setView(centroMX, 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+            marker = L.marker(centroMX, { draggable: true }).addTo(map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude; const lng = position.coords.longitude;
+                    const nuevasCoords = [lat, lng];
+                    map.setView(nuevasCoords, 15); marker.setLatLng(nuevasCoords);
+                    document.getElementById('coordenadas_google').value = lat.toFixed(6) + ", " + lng.toFixed(6);
+                }, () => {});
+            }
+
+            marker.on('dragend', function() {
+                const posicion = marker.getLatLng();
+                document.getElementById('coordenadas_google').value = posicion.lat.toFixed(6) + ", " + posicion.lng.toFixed(6);
+            });
+
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                document.getElementById('coordenadas_google').value = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+            });
+        }
+
+        function sincronizarTextoAMapa() {
+            const inputVal = document.getElementById('coordenadas_google').value;
+            const partes = inputVal.split(',');
+            if (partes.length === 2) {
+                const lat = parseFloat(partes[0].trim()); const lng = parseFloat(partes[1].trim());
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const nuevasCoords = [lat, lng];
+                    map.setView(nuevasCoords, 15); marker.setLatLng(nuevasCoords);
+                }
+            }
+        }
+
+        function procesarCalle(input) {
+            let texto = input.value;
+            if (!texto) return;
+            texto = texto.replace(/\bav\b\.?/gi, "Avenida").replace(/\bcol\b\.?/gi, "Colonia").replace(/\bc\b\.?/gi, "Calle");
+            const unidades = ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+            texto = texto.replace(/\b\d\b/g, match => unidades[parseInt(match)]);
+            input.value = texto.toUpperCase();
+        }
+
+        function ajustarFormulario() {
+            const tipo = document.getElementById('tipo_inmueble').value;
+            const gTerreno = document.querySelectorAll('.grp-terreno');
+            const gConst = document.querySelectorAll('.grp-const');
+
+            document.querySelectorAll('#form-eme input, #form-eme select').forEach(el => { el.disabled = false; });
+
+            if (tipo === 'Departamento') {
+                gTerreno.forEach(el => {
+                    el.disabled = true;
+                    if (el.type === 'number') el.value = '0';
+                    if (el.tagName === 'SELECT') el.value = 'Ninguna';
+                });
+            } else if (tipo === 'Terreno') {
+                const exceptuadosTerreno = ['Amenidades_Urbanas', 'Tipo_de_Vigilancia', 'Colindancia', 'Cuota_Mantenimiento', 'Amenidades_Entorno_Abierto', 'Calidad_Acabados'];
+                gConst.forEach(el => {
+                    const name = el.getAttribute('name');
+                    if (exceptuadosTerreno.includes(name)) return;
+                    el.disabled = true;
+                    if (el.type === 'number' || el.type === 'range') el.value = '0';
+                    if (el.type === 'checkbox') el.checked = false;
+                    if (el.tagName === 'SELECT') el.value = 'Ninguna';
+                });
+            }
+        }
+
+        async function enviarDictamenPrevio() {
+            const overlay = document.getElementById('overlay_carga');
+            const txtCarga = document.getElementById('txt_estado_carga');
+            overlay.classList.remove('hidden'); overlay.classList.add('flex');
+            txtCarga.innerText = "Empaquetando datos del inmueble...";
+
+            const parametros_motor = {};
+            const elementos = document.getElementById('form-eme').elements;
+
+            for (let el of elementos) {
+                if (el.name) {
+                    if (el.disabled) {
+                        parametros_motor[el.name] = (el.type === 'checkbox') ? false : ((el.type === 'number' || el.type === 'range') ? 0 : "Ninguna");
+                    } else {
+                        if (el.type === 'checkbox') parametros_motor[el.name] = el.checked;
+                        else if (el.type === 'number' || el.type === 'range') parametros_motor[el.name] = parseFloat(el.value) || 0;
+                        else parametros_motor[el.name] = el.value;
+                    }
+                }
+            }
+
+            parametros_motor["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
+            parametros_motor["email_perito"] = emailUsuarioGlobal; 
+            parametros_motor["firma_base64"] = window.firmaPeritoGlobal || ""; 
+
+            parametros_motor["foto_base64"] = ""; parametros_motor["fotos_adicionales"] = []; parametros_motor["anexos_adicionales"] = [];
+
+            if (!ticketActualGlobal) { ticketActualGlobal = `ticket_${Date.now()}_${Math.floor(Math.random() * 1000)}`; }
+            const payload = { "parametros_motor": parametros_motor, "ticket_id": ticketActualGlobal };
+
+            try {
+                txtCarga.innerText = "Conectando al Motor V20.6...";
+                const response = await fetch('/.netlify/functions/procesar-dictamen-background', { 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
+                });
+                if (response.status !== 202 && !response.ok) { throw new Error(`El servidor devolvió un error (HTTP ${response.status}).`); }
+
+                txtCarga.innerText = "Procesando matemática profunda...";
+                verificarTicket(ticketActualGlobal);
+            } catch (error) {
+                alert("Error de conexión al iniciar el cálculo: " + error.message);
+                overlay.classList.add('hidden'); overlay.classList.remove('flex');
+            }
+        }
+
+        async function verificarTicket(ticket_id) {
+            const overlay = document.getElementById('overlay_carga');
+            const txtCarga = document.getElementById('txt_estado_carga');
+            try {
+                const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
+                if (!response.ok) { setTimeout(() => verificarTicket(ticket_id), 3000); return; }
+
+                const data = await response.json();
+                if (data.estatus === 'completado') {
+                    resultadoMotorGlobal = data.resultado; ticketActualGlobal = ticket_id; 
+                    overlay.classList.add('hidden'); overlay.classList.remove('flex');
+                    document.getElementById('form-eme').classList.add('hidden');
+                    document.getElementById('sec_selector_perfil').classList.add('hidden');
+                    document.getElementById('sec_checkout').classList.remove('hidden');
+                } else if (data.estatus === 'error') {
+                    throw new Error(data.error || "Fallo en la resolución del motor pericial.");
+                } else {
+                    txtCarga.innerText = "Sincronizando cálculos periciales... por favor espere.";
+                    setTimeout(() => verificarTicket(ticket_id), 3000);
+                }
+            } catch (error) {
+                alert("Error durante el cálculo: " + error.message);
+                overlay.classList.add('hidden'); overlay.classList.remove('flex');
+            }
+        }
+
+        function reiniciarFormulario() {
+            resultadoMotorGlobal = null; ticketActualGlobal = "";
+            document.getElementById('sec_checkout').classList.add('hidden');
+            document.getElementById('form-eme').classList.remove('hidden');
+            document.getElementById('sec_selector_perfil').classList.remove('hidden');
+            document.getElementById('sec_fase_1').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function iniciarPagoStripe() {
+            if (!ticketActualGlobal) { alert("Error estructural: No se detectó un ticket de cálculo activo."); return; }
+            const btn = document.getElementById('btn_pagar_stripe');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-2xl">sync</span> GENERANDO SESIÓN SEGURA...';
+            btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const parametros_motor = {};
+            const elementos = document.getElementById('form-eme').elements;
+            for (let el of elementos) {
+                if (el.name) {
+                    if (el.disabled) {
+                        parametros_motor[el.name] = (el.type === 'checkbox') ? false : ((el.type === 'number' || el.type === 'range') ? 0 : "Ninguna");
+                    } else {
+                        if (el.type === 'checkbox') parametros_motor[el.name] = el.checked;
+                        else if (el.type === 'number' || el.type === 'range') parametros_motor[el.name] = parseFloat(el.value) || 0;
+                        else parametros_motor[el.name] = el.value;
+                    }
+                }
+            }
+            parametros_motor["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
+            parametros_motor["email_perito"] = emailUsuarioGlobal;
+            parametros_motor["firma_base64"] = window.firmaPeritoGlobal || ""; 
+            
+            parametros_motor["foto_base64"] = arrayPortada ? arrayPortada.base64 : "";
+            parametros_motor["fotos_adicionales"] = arrayInteriores.map(foto => ({ "base64": foto.base64, "descripcion": foto.texto }));
+            parametros_motor["anexos_adicionales"] = arrayAnexos.map(anexo => ({ "base64": anexo.base64, "titulo": anexo.texto }));
+
+            localStorage.setItem('leezar_memoria_completa', JSON.stringify(parametros_motor));
+
+            const payload = {
+                ticket_id: ticketActualGlobal, email: emailUsuarioGlobal,
+                returnUrl: window.location.origin + window.location.pathname,
+                perfil_usuario: parseInt(document.getElementById('perfil_usuario').value, 10)
+            };
+
+            try {
+                const response = await fetch('/.netlify/functions/create-checkout-dictamen', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) throw new Error(data.error || "Error al generar la pasarela.");
+                window.location.href = data.url;
+            } catch (error) {
+                alert("Error de conexión con Stripe: " + error.message);
+                btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        async function verificarRetornoStripe() {
+            const params = new URLSearchParams(window.location.search);
+            const success = params.get('success'); const session_id = params.get('session_id'); const ticket_id = params.get('ticket_id');
+
+            if (success === 'true' && session_id && ticket_id) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                document.getElementById('form-eme').classList.add('hidden');
+                document.getElementById('sec_selector_perfil').classList.add('hidden');
+                
+                const secCheckout = document.getElementById('sec_checkout');
+                secCheckout.classList.remove('hidden');
+                secCheckout.classList.replace('border-emerald-500', 'border-leezar-primary');
+                
+                secCheckout.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-6 text-leezar-primary">
+                        <span class="material-symbols-rounded animate-spin text-5xl mb-4">sync</span>
+                        <p class="text-sm font-bold tracking-widest uppercase">Abriendo Bóveda de Forjado...</p>
+                    </div>
+                `;
+
+                try {
+                    const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
+                    const data = await response.json();
+                    if (data.estatus !== 'completado') throw new Error("Ticket no completado en base de datos.");
+                    
+                    resultadoMotorGlobal = data.resultado; ticketActualGlobal = ticket_id;
+
+                    const valorBase = resultadoMotorGlobal.data ? resultadoMotorGlobal.data.valor_final : 0;
+                    const minValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_inf) ? resultadoMotorGlobal.auditoria_inyeccion.limite_inf : (valorBase * 0.85);
+                    const maxValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_sup) ? resultadoMotorGlobal.auditoria_inyeccion.limite_sup : (valorBase * 1.15);
+                    const valorPromedio = (minValor + maxValor) / 2;
+                    
+                    window.valorCierreCalculado = valorPromedio;
+                    const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
+
+                    secCheckout.innerHTML = `
+                        <div class="mb-6 flex justify-center"><span class="material-symbols-rounded text-6xl text-white bg-leezar-primary p-4 rounded-full shadow-lg">workspace_premium</span></div>
+                        <h2 class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 mb-2 uppercase tracking-wide">EMISIÓN DE DICTAMEN</h2>
+                        <div class="bg-gray-50 dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-8 text-left shadow-inner">
+                            <h3 class="text-md font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 flex items-center gap-2"><span class="material-symbols-rounded">tune</span> CONCLUIR VALOR PERICIAL</h3>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div><label class="leezar-label text-center">Rango Mínimo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(minValor)}" readonly></div>
+                                <div><label class="leezar-label text-center">Rango Máximo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(maxValor)}" readonly></div>
+                            </div>
+                            <div class="text-center mt-6">
+                                <label class="leezar-label text-lg">Valor Seleccionado</label>
+                                <span id="lbl_valor_cierre" class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 tracking-wide">${formatoMoneda.format(valorPromedio)}</span>
+                            </div>
+                            <input type="range" id="slider_conclusion" class="w-full h-3 bg-gray-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-leezar-primary mt-4 shadow-inner" min="0" max="100" value="50" oninput="actualizarValorCierreUI(this.value, ${minValor}, ${maxValor})">
+                        </div>
+                        <button type="button" id="btn_forjar_pdf" onclick="ejecutarForjadoFinal('${ticket_id}', '${session_id}')" class="w-full bg-leezar-primary hover:bg-blue-800 text-white font-black py-5 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-xl tracking-wide mb-4">
+                            <span class="material-symbols-rounded text-3xl">picture_as_pdf</span> DESCARGAR DICTAMEN
+                        </button>
+                        
+                        <!-- 🎯 Botón oculto inicialmente con la clase 'hidden' -->
+                        <a href="dashboard_dictamen.html" id="btn_retorno_dashboard" class="hidden items-center justify-center gap-2 w-full text-sm font-bold text-gray-500 hover:text-leezar-accent1 dark:text-gray-400 dark:hover:text-emerald-400 uppercase tracking-widest transition-all p-3 border-2 border-transparent hover:border-leezar-accent1 dark:hover:border-emerald-400 rounded-lg">
+                            <span class="material-symbols-rounded text-xl">dashboard</span>
+                            Ir al Dashboard de Dictámenes
+                        </a>
+                    `;
+                } catch (error) {
+                    secCheckout.innerHTML = `<div class="p-6 text-center"><span class="material-symbols-rounded text-6xl text-red-500 mb-2">error</span><p class="text-red-500 font-bold text-lg mb-2">Error de conexión segura</p><p class="text-sm text-gray-600 dark:text-gray-400">${error.message}</p></div>`;
+                }
+            } else if (params.get('canceled') === 'true') {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                alert("La operación de pago fue cancelada.");
+            }
+        }
+        
+        window.actualizarValorCierreUI = function(porcentaje, min, max) {
+            const valor = min + ((max - min) * (porcentaje / 100));
+            const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
+            document.getElementById('lbl_valor_cierre').innerText = formatoMoneda.format(valor);
+            window.valorCierreCalculado = valor; 
+        };
+        
+        window.ejecutarForjadoFinal = async function(ticket_id, session_id) {
+            const btn = document.getElementById('btn_forjar_pdf');
+            const slider = document.getElementById('slider_conclusion');
+            const originalText = btn.innerHTML;
+            
+            if (slider) { slider.disabled = true; slider.classList.add('opacity-50', 'cursor-not-allowed'); }
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-3xl">sync</span> COMPILANDO EXPEDIENTE OFICIAL...';
+            btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            try {
+                const parametros_motor = JSON.parse(localStorage.getItem('leezar_memoria_completa') || '{}');
+                parametros_motor["valor_comercial_rango"] = window.valorCierreCalculado; 
+
+                const payload = { ticket_id: ticket_id, session_id: session_id, parametros_motor: parametros_motor };
+
+                await fetch('/.netlify/functions/generar-pdf-final-background', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+
+                verificarTicketPDF(ticket_id, btn, originalText);
+            } catch (error) {
+                alert("Error de conexión al solicitar el PDF.");
+                restaurarBotonPDF(btn, originalText);
+            }
+        };
+
+        async function verificarTicketPDF(ticket_id, btn, originalText) {
+            try {
+                const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
+                const data = await response.json();
+
+                if (data.estatus_pdf === 'completado') {
+                    localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
+                    btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
+                    btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
+                    
+                    // 🎯 Revelar el botón de retorno al dashboard
+                    const btnRetorno = document.getElementById('btn_retorno_dashboard');
+                    if(btnRetorno) {
+                        btnRetorno.classList.remove('hidden');
+                        btnRetorno.classList.add('inline-flex');
+                    }
+
+                    window.open(data.pdf_url, '_blank');
+                    setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
+                } else if (data.estatus_pdf === 'error') {
+                    alert("Error al compilar el PDF: " + data.error_pdf);
+                    restaurarBotonPDF(btn, originalText);
+                } else {
+                    setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
+                }
+            } catch (error) {
+                setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
+            }
+        }
+
+        function restaurarBotonPDF(btn, textoOriginal) {
+            btn.innerHTML = textoOriginal; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            const slider = document.getElementById('slider_conclusion');
+            if (slider) { slider.disabled = false; slider.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        }
+    </script>
+    </body>
+</html>

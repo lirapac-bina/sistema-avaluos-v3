@@ -1063,12 +1063,8 @@
                 if(lblNivelesEdif) lblNivelesEdif.innerText = "Plantas Construidas";
                 if(lblNivelInmueble) lblNivelInmueble.innerText = "Planta de Desplante";
                 
-                // 🚀 FIX: Solo bloqueamos el Elevador. Nivel_del_Inmueble queda libre para que el usuario ponga 0.
-                const camposDepa = ['Elevador'];
-                camposDepa.forEach(name => {
-                    const el = document.querySelector(`[name="${name}"]`);
-                    if(el) { el.disabled = true; if(el.type === 'number') el.value = 0; if(el.tagName === 'SELECT') el.value = 'Ninguna'; }
-                });
+                // 🚀 CLON PERFECTO V20: En la Bóveda original NADA se bloquea para las Casas. 
+                // El Elevador se queda activo para que el valuador lo deje en "No" explícitamente y el motor lo lea.
             }
 
             // 4. Reglas de Bloqueo Terrenos (Infraestructura activa, cero acabados)
@@ -1536,83 +1532,54 @@ window.renderizarMiniaturasDropzone = function() {
                 btnEjecutar.innerHTML = '<span class="material-symbols-rounded text-xl animate-spin">sync</span> Calculando...';
             }
 
-            window.showLoader("Ejecutando Algoritmo V20", "Buscando comparables y extrayendo parámetros...");
-
-            const parametros = {};
+        const parametros = {};
             const formElements = document.getElementById('form-eme').elements;
             
             for(let el of formElements) {
                 if(!el.name) continue;
-                const esNumerico = (typeof camposNumericosEstrictos !== 'undefined' && camposNumericosEstrictos.includes(el.name)) || 
-                                   el.name === 'Porcentaje_Avance' ||
-                                   (el.name.startsWith('EME_CP_T') && (el.name.includes('Precio') || el.name.includes('Sup_') || el.name.includes('Niveles') || el.name.includes('Edad')));
+                
+                // Mapeo idéntico a la Bóveda V20
+                const esNumerico = el.type === 'number' || el.type === 'range' || 
+                                  (el.type === 'hidden' && el.name.startsWith('EME_CP_T') && 
+                                   (el.name.includes('Precio') || el.name.includes('Sup_') || el.name.includes('Niveles') || el.name.includes('Edad')));
 
-if(el.disabled) { 
-                    const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
-                    
-                    if (camposValuador.includes(el.name)) {
-                        parametros[el.name] = "";
-                    } else if (el.name === 'Porcentaje_Avance') {
-                        parametros[el.name] = 100; 
-                    } else if (el.name === 'Factor_Negociacion_Final') {
-                        parametros[el.name] = parseFloat(el.value) || 2; 
+                if(el.disabled) { 
+                    // REGLA DE ORO V20: Si está disabled, se purga a false, 0 o "Ninguna"
+                    if (el.type === 'checkbox') {
+                        parametros[el.name] = false;
+                    } else if (esNumerico) {
+                        parametros[el.name] = 0;
                     } else {
-                        // 🚀 FIX: Respetamos el valor asignado por la Lógica Inteligente (Ej: Nivel 1 en Casas) en lugar de forzar a 0.
-                        if (el.type === 'checkbox') {
-                            parametros[el.name] = el.checked;
-                        } else if (esNumerico) {
-                            parametros[el.name] = parseFloat(el.value) || 0;
-                        } else {
-                            parametros[el.name] = el.value || "Ninguna";
-                        }
+                        const camposValuador = ['Nombre_Valuador', 'Cedula_Valuador', 'EME_ID', 'Correo_Valuador', 'Telefono_Valuador'];
+                        parametros[el.name] = camposValuador.includes(el.name) ? "" : "Ninguna";
                     }
                 } 
                 else {
-                    if (el.type === 'checkbox') { parametros[el.name] = el.checked; } 
+                    // REGLA DE ORO V20: Si está activo, captura el valor real
+                    if (el.type === 'checkbox') { 
+                        parametros[el.name] = el.checked; 
+                    } 
                     else if (esNumerico) { 
                         let valorLimpio = typeof el.value === 'string' ? el.value.replace(/[^0-9.-]+/g, '') : el.value;
                         parametros[el.name] = parseFloat(valorLimpio) || 0; 
                     } 
                     else { 
-                        // 🚀 FIX ARQUITECTÓNICO: Diccionario estricto para valores vacíos según V20
-                        if (el.tagName === 'SELECT' && el.value.trim() === "") {
-                            const usanNinguno = ['Caso_Atipico_Plusvalia', 'Tipo_Aire_Acondicionado'];
-                            const usanNula = ['Alcance_Remodelacion', 'Tipo_de_Vigilancia'];
-                            if (usanNinguno.includes(el.name)) parametros[el.name] = "Ninguno";
-                            else if (usanNula.includes(el.name)) parametros[el.name] = "Nula";
-                            else parametros[el.name] = "Ninguna";
-                        } else {
-                            parametros[el.name] = el.value; 
-                        }
+                        parametros[el.name] = el.value || "Ninguna"; 
                     }
                 }
             }
             
+            // Atrapamos el perfil real desde fuera del formulario
             parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario')?.value || 4);
             parametros["Geolocalizacion_Google"] = coords;
-            
-            // 🛡️ PARCHE DE NIVELES Y TERRENOS (V20 STRICT MODE)
-            if (parametros["Tipo_Inmueble"] === "Departamento") {
-                if (!parametros["Nivel_del_Inmueble"] || parametros["Nivel_del_Inmueble"] === 0) parametros["Nivel_del_Inmueble"] = 1;
-                if (!parametros["Total_Niveles_Edificio"] || parametros["Total_Niveles_Edificio"] === 0) parametros["Total_Niveles_Edificio"] = 3;
-            } else if (parametros["Tipo_Inmueble"] === "Terreno") {
-                parametros["Porcentaje_Avance"] = 100;
-                parametros["Factor_Negociacion_Final"] = parametros["Factor_Negociacion_Final"] || 2;
-                parametros["Verticalidad_Premium"] = "Ninguna";
-            }
-            // 🚀 FIX: Se eliminó la inyección forzada de "Ninguna" para Casa, permitiendo que viaje la selección real del valuador.
 
-            // Atrapamos el perfil real desde fuera del formulario
-            parametros["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
-
-            // 🏗️ CONCATENAR COMPLEJO CONDOMINAL A LA CALLE (Si el usuario lo llenó)
+            // 🏗️ CONCATENAR COMPLEJO CONDOMINAL A LA CALLE (Única regla de UI nueva que no afecta el cálculo)
             const inputComplejo = document.getElementById('est-complejo');
             if (inputComplejo && inputComplejo.value.trim() !== "") {
                 parametros["Calle_Sujeto"] = parametros["Calle_Sujeto"] + ", " + inputComplejo.value.trim();
             }
 
             ultimaBusqueda = parametros;
-
             // 🕵️ AUDITORÍA DE DATOS (Míralo presionando F12 -> Consola)
             console.log("============= AUDITORÍA MOTOR EME =============");
             console.log("Enviando JSON a Python:", JSON.stringify(ultimaBusqueda, null, 2));

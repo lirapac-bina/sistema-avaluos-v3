@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Perfiles AvEME | Ecosistema Leezar</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: {
+                            primary: '#0f4c81',
+                            success: '#059669', /* emerald-600 */
+                            accent1: '#0d9488',
+                            darkBg: '#0f172a',
+                            darkCard: '#1e293b',
+                            darkBorder: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos Base Adicionales -->
+    <style type="text/tailwindcss">
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        .glass-panel {
+            @apply bg-white dark:bg-leezar-darkCard border border-gray-200 dark:border-leezar-darkBorder shadow-sm rounded-lg p-6;
+        }
+        .leezar-input {
+            @apply w-full p-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors;
+        }
+        .leezar-label {
+            @apply block text-xs font-bold text-gray-700 dark:text-gray-400 mb-1 uppercase tracking-wide;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-leezar-darkBg text-gray-900 dark:text-gray-100 antialiased min-h-screen">
+
+    <!-- Dependencia Exclusiva AvEME (Inyecta Menú y Seguridad) -->
+    <script src="js/layout_aveme.js"></script>
+
+    <!-- Contenedor Principal interceptado por el layout -->
+    <main>
+        <div class="max-w-7xl mx-auto w-full">
+            
+            <!-- Encabezado -->
+            <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-leezar-darkBorder pb-5 gap-4">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-wide flex items-center gap-2">
+                        <span class="material-symbols-rounded text-3xl text-red-600">manage_accounts</span>
+                        Gestión de Perfiles AvEME
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+                        Administración de usuarios, roles periciales y firmas digitales.
+                    </p>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Columna Izquierda: Formulario de Alta/Edición -->
+                <div class="lg:col-span-1">
+                    <section class="glass-panel sticky top-6">
+                        <h2 class="text-lg font-bold text-red-600 dark:text-red-500 uppercase mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                            Datos del Usuario
+                        </h2>
+                        
+                        <form id="form_usuario_dictamen" class="space-y-4">
+                            <div>
+                                <label class="leezar-label">Correo Electrónico (ID Único)</label>
+                                <input type="email" id="txt_email" class="leezar-input" placeholder="usuario@leezar.com" required>
+                            </div>
+                            
+                            <div>
+                                <label class="leezar-label">Nombre Completo</label>
+                                <input type="text" id="txt_nombre" class="leezar-input" placeholder="Nombre del valuador" required>
+                            </div>
+
+                            <div>
+                                <label class="leezar-label">Teléfono</label>
+                                <input type="text" id="txt_telefono" class="leezar-input" placeholder="10 dígitos">
+                            </div>
+
+                            <div>
+                                <label class="leezar-label">Perfil de Acceso</label>
+                                <select id="sel_perfil" class="leezar-input font-bold text-red-600 dark:text-red-400" onchange="ajustarCamposPerfil()" required>
+                                    <option value="1">Perfil 1: Usuario Convencional</option>
+                                    <option value="2">Perfil 2: Inmobiliaria / Bróker</option>
+                                    <option value="3">Perfil 3: Valuador Independiente</option>
+                                    <option value="4">Perfil 4: Perito Certificado EME</option>
+                                </select>
+                            </div>
+
+                            <!-- Campos Dinámicos (Ocultos por defecto) -->
+                            <div id="div_campos_periciales" class="hidden space-y-4 bg-red-50 dark:bg-red-900/10 p-4 rounded-lg border border-red-100 dark:border-red-800">
+                                <div id="div_cedula" class="hidden">
+                                    <label class="leezar-label text-red-700 dark:text-red-400">Cédula Profesional</label>
+                                    <input type="text" id="txt_cedula" class="leezar-input border-red-200 focus:border-red-600" placeholder="Ej: 12345678">
+                                </div>
+
+                                <div id="div_id_eme" class="hidden">
+                                    <label class="leezar-label text-red-700 dark:text-red-400">ID Certificación EME</label>
+                                    <input type="text" id="txt_id_eme" class="leezar-input border-red-200 focus:border-red-600" placeholder="Ej: EME-PERITO-092">
+                                </div>
+
+                                <div id="div_firma" class="hidden">
+                                    <label class="leezar-label text-red-700 dark:text-red-400">Firma Autógrafa (.PNG sin fondo)</label>
+                                    <input type="file" id="file_firma" accept="image/png" class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-red-600 file:text-white hover:file:bg-red-700 transition-colors" onchange="procesarFirmaLocal()">
+                                    
+                                    <!-- Vista Previa de la Firma -->
+                                    <div id="preview_firma_container" class="mt-3 hidden bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-gray-600 p-2 rounded text-center">
+                                        <img id="img_firma_preview" src="" alt="Firma" class="max-h-16 mx-auto object-contain">
+                                        <button type="button" onclick="limpiarFirma()" class="text-[10px] text-red-500 mt-1 hover:underline">Quitar Firma</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-2">
+                                <input type="checkbox" id="chk_activo" checked class="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 dark:focus:ring-emerald-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <label class="text-sm font-bold text-gray-700 dark:text-gray-300">Usuario Activo</label>
+                            </div>
+
+                            <button type="button" onclick="guardarUsuarioDictamen()" id="btn_guardar_usuario" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 mt-4">
+                                <span class="material-symbols-rounded">save</span>
+                                GUARDAR PERFIL
+                            </button>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- Columna Derecha: Tabla de Usuarios -->
+                <div class="lg:col-span-2">
+                    <section class="glass-panel">
+                        <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-white uppercase">
+                                Padrón de Usuarios AvEME
+                            </h2>
+                            <button onclick="cargarUsuariosDictamen()" class="text-gray-400 hover:text-indigo-500 transition-colors flex items-center gap-1 text-sm font-bold">
+                                <span class="material-symbols-rounded text-lg">sync</span> Actualizar
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-[10px] uppercase tracking-wider">
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg">Usuario</th>
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700">Perfil</th>
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700">Credenciales</th>
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700">Firma</th>
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700">Estado</th>
+                                        <th class="p-3 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tr-lg">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_usuarios_dictamen" class="text-sm">
+                                    <!-- Aquí se inyectarán los usuarios vía JS -->
+                                    <tr>
+                                        <td colspan="6" class="p-8 text-center text-gray-500">
+                                            <span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span>
+                                            <p>Cargando padrón de usuarios...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts de Lógica y Conexión al Backend -->
+    <script>
+        // Variables globales
+        let firmaBase64Global = null;
+        let padronUsuarios = [];
+
+        // Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarUsuariosDictamen();
+        });
+
+        // Utilidad de seguridad local
+        function sanitizarHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m];
+            });
+        }
+
+        // Adaptación visual del formulario
+        function ajustarCamposPerfil() {
+            const perfil = document.getElementById('sel_perfil').value;
+            const divCampos = document.getElementById('div_campos_periciales');
+            const divCedula = document.getElementById('div_cedula');
+            const divIdEme = document.getElementById('div_id_eme');
+            const divFirma = document.getElementById('div_firma');
+
+            // Reset visual
+            divCampos.classList.add('hidden');
+            divCedula.classList.add('hidden');
+            divIdEme.classList.add('hidden');
+            divFirma.classList.add('hidden');
+
+            if (perfil === "3") {
+                divCampos.classList.remove('hidden');
+                divCedula.classList.remove('hidden');
+                divFirma.classList.remove('hidden');
+            } else if (perfil === "4") {
+                divCampos.classList.remove('hidden');
+                divCedula.classList.remove('hidden');
+                divIdEme.classList.remove('hidden');
+                divFirma.classList.remove('hidden');
+            }
+        }
+
+        // Carga y procesamiento de la Firma en Base64
+        function procesarFirmaLocal() {
+            const input = document.getElementById('file_firma');
+            const file = input.files[0];
+            
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert("La imagen de la firma es demasiado pesada. El límite es 2MB.");
+                limpiarFirma();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                firmaBase64Global = e.target.result.split(',')[1]; // Extraemos base64 puro
+                const imgPreview = document.getElementById('img_firma_preview');
+                imgPreview.src = e.target.result;
+                document.getElementById('preview_firma_container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function limpiarFirma() {
+            document.getElementById('file_firma').value = "";
+            firmaBase64Global = null;
+            document.getElementById('img_firma_preview').src = "";
+            document.getElementById('preview_firma_container').classList.add('hidden');
+        }
+
+        // Guardar o Actualizar Usuario en Backend
+        async function guardarUsuarioDictamen() {
+            const email = document.getElementById('txt_email').value.trim();
+            const nombre = document.getElementById('txt_nombre').value.trim();
+            
+            if (!email || !nombre) {
+                alert("El correo electrónico y el nombre son obligatorios.");
+                return;
+            }
+
+            const perfil = document.getElementById('sel_perfil').value;
+            const telefono = document.getElementById('txt_telefono').value.trim();
+            const cedula = document.getElementById('txt_cedula').value.trim();
+            const idEme = document.getElementById('txt_id_eme').value.trim();
+            const activo = document.getElementById('chk_activo').checked;
+
+            // Bloqueo defensivo por roles
+            if ((perfil === "3" || perfil === "4") && !cedula) {
+                alert("La Cédula Profesional es obligatoria para este perfil.");
+                return;
+            }
+            if (perfil === "4" && !idEme) {
+                alert("El ID de Certificación EME es obligatorio para el Perfil 4.");
+                return;
+            }
+            if ((perfil === "3" || perfil === "4") && !firmaBase64Global) {
+                const confirmar = confirm("No has subido una firma autógrafa. ¿Deseas guardar el perfil de todos modos? (El motor no podrá estampar la firma en el PDF).");
+                if (!confirmar) return;
+            }
+
+            const btnGuardar = document.getElementById('btn_guardar_usuario');
+            const originalText = btnGuardar.innerHTML;
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> PROCESANDO...';
+            btnGuardar.disabled = true;
+
+            const payload = {
+                email: email,
+                nombre: nombre,
+                telefono: telefono,
+                perfil: perfil,
+                cedula_profesional: cedula,
+                id_eme: idEme,
+                activo: activo,
+                firma_base64: firmaBase64Global
+            };
+
+            try {
+                const response = await fetch('/.netlify/functions/manage-usuarios-dictamen', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Fallo en la comunicación con el servidor.");
+                
+                alert("Perfil pericial guardado con éxito.");
+                document.getElementById('form_usuario_dictamen').reset();
+                limpiarFirma();
+                ajustarCamposPerfil();
+                cargarUsuariosDictamen();
+                
+            } catch (error) {
+                console.error(error);
+                alert("Error de sistema: " + error.message);
+            } finally {
+                btnGuardar.innerHTML = originalText;
+                btnGuardar.disabled = false;
+            }
+        }
+
+        // Consultar el padrón y renderizar la tabla
+        async function cargarUsuariosDictamen() {
+            const tbody = document.getElementById('tbody_usuarios_dictamen');
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500"><span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span><p>Sincronizando padrón pericial...</p></td></tr>';
+
+            try {
+                const response = await fetch('/.netlify/functions/manage-usuarios-dictamen', { method: 'GET' });
+                if (!response.ok) throw new Error("Error en la extracción de datos.");
+
+                padronUsuarios = await response.json();
+                
+                if (padronUsuarios.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500"><span class="material-symbols-rounded text-3xl mb-2">group_off</span><p>No hay peritos registrados en la bóveda AvEME.</p></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                padronUsuarios.forEach(user => {
+                    const statusColor = user.activo ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
+                    const statusText = user.activo ? 'Activo' : 'Inactivo';
+                    const hasFirma = user.firma_base64 ? '<span class="material-symbols-rounded text-emerald-500" title="Firma Registrada">draw</span>' : '<span class="material-symbols-rounded text-gray-400" title="Sin Firma">edit_off</span>';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-3">
+                            <p class="font-bold text-slate-800 dark:text-white">${sanitizarHTML(user.nombre)}</p>
+                            <p class="text-xs text-gray-500">${sanitizarHTML(user.id)}</p>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-xs font-bold border border-red-100 dark:border-red-800">
+                                P${user.perfil}
+                            </span>
+                        </td>
+                        <td class="p-3 text-xs text-gray-600 dark:text-gray-400">
+                            ${user.cedula_profesional ? `Céd: ${sanitizarHTML(user.cedula_profesional)}<br>` : ''}
+                            ${user.id_eme ? `ID: ${sanitizarHTML(user.id_eme)}` : ''}
+                            ${!user.cedula_profesional && !user.id_eme ? '-' : ''}
+                        </td>
+                        <td class="p-3 text-center">${hasFirma}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${statusText}</span>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="editarUsuario('${sanitizarHTML(user.id)}')" class="text-red-500 hover:text-red-700 transition-colors p-1" title="Editar Expediente">
+                                <span class="material-symbols-rounded text-lg">edit</span>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500"><span class="material-symbols-rounded text-3xl mb-2">error</span><p>Fallo de servidor: ${error.message}</p></td></tr>`;
+            }
+        }
+
+        // Llenar formulario en modo edición
+        window.editarUsuario = function(email) {
+            const user = padronUsuarios.find(u => u.id === email);
+            if(!user) return;
+
+            document.getElementById('txt_email').value = user.id;
+            document.getElementById('txt_nombre').value = user.nombre || '';
+            document.getElementById('txt_telefono').value = user.telefono || '';
+            document.getElementById('sel_perfil').value = user.perfil || "1";
+            document.getElementById('txt_cedula').value = user.cedula_profesional || '';
+            document.getElementById('txt_id_eme').value = user.id_eme || '';
+            document.getElementById('chk_activo').checked = user.activo !== false;
+            
+            limpiarFirma();
+            if(user.firma_base64) {
+                firmaBase64Global = user.firma_base64;
+                const imgPreview = document.getElementById('img_firma_preview');
+                imgPreview.src = "data:image/png;base64," + user.firma_base64;
+                document.getElementById('preview_firma_container').classList.remove('hidden');
+            }
+
+            ajustarCamposPerfil();
+            document.getElementById('form_usuario_dictamen').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+    </script>
+</body>
+</html>

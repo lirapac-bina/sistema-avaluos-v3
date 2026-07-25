@@ -25,6 +25,18 @@ document.addEventListener("DOMContentLoaded", () => {
         
         localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
         window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // 🚀 ENRUTADOR INTELIGENTE (Ecosistemas Aislados)
+        const moduloDestino = sessionStorage.getItem('modulo_destino');
+        if (moduloDestino === 'dictamen_aveme') {
+            sessionStorage.removeItem('modulo_destino');
+            window.location.replace('dashboard_dictamen.html');
+            return;
+        } else if (moduloDestino === 'hipotecas') {
+            sessionStorage.removeItem('modulo_destino');
+            window.location.replace('gestion-hipotecas.html'); 
+            return;
+        }
     }
 
     // B. LECTURA DE SESIÓN ACTUAL
@@ -208,6 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if(accesosRuta.includes('dashboard')) menuOperacionesHTML += `<li><a href="dashboard.html" title="Tablero de Trabajo" class="${opBase} ${file.includes('dashboard') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('dashboard') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">dashboard</span><span class="sidebar-text">Tablero de Trabajo</span></a></li>`;
     if(accesosRuta.includes('gestion')) menuOperacionesHTML += `<li><a href="gestion.html" title="Gestión de Expedientes" class="${opBase} ${file.includes('gestion') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('gestion') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">folder_shared</span><span class="sidebar-text">Expedientes</span></a></li>`;
     if(accesosRuta.includes('revision')) menuOperacionesHTML += `<li><a href="revision.html" title="Mesa de Control" class="${opBase} ${file.includes('revision') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('revision') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">fact_check</span><span class="sidebar-text">Mesa de Control</span></a></li>`;
+    
+    // NUEVO MÓDULO: SIMULADOR PERICIAL EME
+    menuOperacionesHTML += `<li><a href="dictamen_eme.html" title="Simulador AvEME" class="${opBase} ${file.includes('dictamen_eme') ? opActive : opHover}"><span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file.includes('dictamen_eme') ? 'text-teal-600 dark:text-teal-400' : 'group-hover:text-teal-600 dark:group-hover:text-teal-400'}">calculate</span><span class="sidebar-text">Simulador AvEME</span></a></li>`;
 
     let menuTecnicoHTML = '';
     const tecBase = "w-full flex items-center px-4 py-2.5 font-medium text-sm rounded-lg group transition-all";

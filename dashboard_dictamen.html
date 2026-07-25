@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard AvEME | Ecosistema Leezar</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        leezar: {
+                            primary: '#0f4c81',
+                            success: '#059669',
+                            accent1: '#0d9488',
+                            accent2: '#4f46e5',
+                            darkBg: '#0f172a',
+                            darkCard: '#1e293b',
+                            darkBorder: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Material Symbols (Consistencia UI) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,1,0" />
+
+    <!-- Estilos Base Adicionales -->
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        .glass-panel {
+            @apply bg-white dark:bg-leezar-darkCard border border-gray-200 dark:border-leezar-darkBorder shadow-sm rounded-lg p-6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-leezar-darkBg text-gray-900 dark:text-gray-100 antialiased min-h-screen">
+
+    <!-- Dependencia Global Leezar (Inyecta Sidebar y Seguridad) -->
+    <script src="js/layout_aveme.js"></script>
+
+    <!-- Etiqueta main obligatoria para que layout.js estructure la vista -->
+    <main>
+        <div class="max-w-7xl mx-auto w-full">
+            
+            <!-- Encabezado del Dashboard -->
+            <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-leezar-darkBorder pb-5 gap-4">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-wide flex items-center gap-2">
+                        <span class="material-symbols-rounded text-3xl text-red-600">query_stats</span>
+                        Panel de Control AvEME
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+                        Gestión de reportes automatizados y monitoreo de dictámenes
+                    </p>
+                </div>
+                
+                <!-- Botón de Acción Principal -->
+                <a href="dictamen_eme.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                    <span class="material-symbols-rounded">add_circle</span>
+                    NUEVO DICTAMEN
+                </a>
+            </header>
+
+            <!-- Contenedor para futuras Tarjetas de Métricas -->
+            <section id="metricas_aveme" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Se inyectarán desde JS -->
+            </section>
+
+            <!-- Contenedor para la Tabla Principal -->
+            <section class="glass-panel">
+                <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">
+                    <h2 class="text-lg font-bold text-leezar-primary dark:text-white uppercase">
+                        Historial de Dictámenes
+                    </h2>
+                    <div class="relative">
+                        <span class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+                        <input type="text" id="buscador_dictamenes" placeholder="Buscar folio o cliente..." class="pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded text-sm focus:outline-none focus:border-leezar-accent1 transition-colors w-64 text-gray-900 dark:text-white">
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla_dictamenes">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg">Folio ID</th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Fecha</th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Inmueble</th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Estatus</th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body_tabla_dictamenes" class="text-sm">
+                            <!-- Los datos se renderizarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Scripts Funcionales del Dashboard -->
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarHistorialDictamenes();
+        });
+
+        async function cargarHistorialDictamenes() {
+            const tablaBody = document.getElementById('body_tabla_dictamenes');
+            const tbodyHtml = [];
+            
+            try {
+                // 1. Validar Sesión Activa
+                const sessionData = localStorage.getItem('leezar_user_active');
+                if (!sessionData) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                const activeUser = JSON.parse(sessionData);
+
+                // UI de Carga
+                tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 font-bold"><span class="material-symbols-rounded animate-spin">sync</span> Cargando bóveda pericial...</td></tr>`;
+
+                // 2. Solicitar historial a la Bóveda Segura de Netlify
+                const response = await fetch(`/.netlify/functions/get-historial-dictamenes?email=${encodeURIComponent(activeUser.email)}`);
+                
+                if (!response.ok) {
+                    const errorBackend = await response.json();
+                    throw new Error(errorBackend.error || "Fallo al conectar con la bóveda de historiales.");
+                }
+                
+                const dictamenes = await response.json();
+
+                if (dictamenes.length === 0) {
+                    tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 dark:text-gray-400 font-bold">No tienes dictámenes registrados en tu historial.</td></tr>`;
+                    return;
+                }
+
+                // 3. Renderizar Tarjetas
+                dictamenes.forEach(doc => {
+                    const fechaObj = new Date(doc.fecha);
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    
+                    let badgeEstatus = '';
+                    if (doc.estatus === 'completado') {
+                        badgeEstatus = `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold border border-emerald-200">Emitido Oficial</span>`;
+                    } else if (doc.estatus === 'forjando') {
+                        badgeEstatus = `<span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold border border-yellow-200">En Forja Nube</span>`;
+                    } else {
+                        badgeEstatus = `<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-200">Error / Pendiente</span>`;
+                    }
+
+                    const botonAccion = doc.pdf_url 
+                        ? `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`
+                        : `<span class="text-gray-400 text-xs font-bold flex items-center gap-1"><span class="material-symbols-rounded text-sm">lock</span> Archivo Dañado</span>`;
+
+                    tbodyHtml.push(`
+                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="p-4 font-mono text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">${doc.folio.replace('ticket_', '#')}</td>
+                            <td class="p-4 text-sm font-semibold">${fechaFormateada}</td>
+                            <td class="p-4 text-sm font-bold text-leezar-primary dark:text-gray-200 uppercase">${doc.tipo_inmueble} <br><span class="font-normal text-gray-500">${doc.calle}</span></td>
+                            <td class="p-4">${badgeEstatus}</td>
+                            <td class="p-4">${botonAccion}</td>
+                        </tr>
+                    `);
+                });
+
+                tablaBody.innerHTML = tbodyHtml.join('');
+
+            } catch (error) {
+                console.error("[AvEME] Error de Historial:", error);
+                tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-bold">Error de conexión al recuperar el historial.</td></tr>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
