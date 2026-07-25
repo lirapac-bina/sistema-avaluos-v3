@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoría Global de Dictámenes | Ecosistema Leezar</title>
+    <title>Auditoría Global Unificada | Ecosistema Leezar</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,6 +25,9 @@
     <style>
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .glass-panel { @apply bg-white dark:bg-leezar-darkCard border border-gray-200 dark:border-leezar-darkBorder shadow-sm rounded-lg p-6; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-leezar-darkBg text-gray-900 dark:text-gray-100 antialiased min-h-screen">
@@ -48,80 +51,97 @@
     </script>
 
     <main>
-        <div class="max-w-7xl mx-auto w-full">
+        <div class="max-w-7xl mx-auto w-full p-4 md:p-8">
             
             <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-leezar-darkBorder pb-5 gap-4">
                 <div>
                     <h1 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-wide flex items-center gap-2">
                         <span class="material-symbols-rounded text-3xl text-leezar-accent1">radar</span>
-                        Radar Pericial (Auditoría)
+                        Centro de Auditoría Global
                     </h1>
                     <p class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
-                        Monitoreo en vivo de todos los dictámenes generados en la plataforma.
+                        Monitoreo de dictámenes generados y feedback de calidad de peritos.
                     </p>
                 </div>
                 
-                <button onclick="cargarDictamenesGlobales()" class="bg-slate-800 hover:bg-slate-900 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-bold py-2 px-6 rounded-lg shadow transition-all flex items-center gap-2">
-                    <span class="material-symbols-rounded">sync</span> REFRESCAR RADAR
+                <button onclick="cargarTodo()" class="bg-slate-800 hover:bg-slate-900 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-bold py-2 px-6 rounded-lg shadow transition-all flex items-center gap-2">
+                    <span class="material-symbols-rounded">sync</span> REFRESCAR SISTEMA
                 </button>
             </header>
 
-            <!-- Tarjetas de Métricas -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="glass-panel border-l-4 border-l-blue-500 pl-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Total Generados</p>
-                            <h3 class="text-3xl font-black text-blue-600 mt-1" id="metric_total">0</h3>
-                        </div>
-                        <span class="material-symbols-rounded text-blue-200 text-4xl">analytics</span>
-                    </div>
+            <!-- ================= SECCIÓN 1: DICTÁMENES ================= -->
+            <div class="mb-4 border-b border-gray-700 pb-2">
+                <h2 class="text-lg font-black text-blue-500 uppercase flex items-center gap-2">
+                    <span class="material-symbols-rounded">analytics</span> 1. Radar de Dictámenes (Motor 20.6)
+                </h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="glass-panel border-l-4 border-l-blue-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">Total Generados</p><h3 class="text-3xl font-black text-blue-600 mt-1" id="metric_total">0</h3></div>
+                    <span class="material-symbols-rounded text-blue-200 text-4xl">inventory_2</span>
                 </div>
-                
-                <div class="glass-panel border-l-4 border-l-emerald-500 pl-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">PDFs Completados</p>
-                            <h3 class="text-3xl font-black text-emerald-600 mt-1" id="metric_completados">0</h3>
-                        </div>
-                        <span class="material-symbols-rounded text-emerald-200 text-4xl">picture_as_pdf</span>
-                    </div>
+                <div class="glass-panel border-l-4 border-l-emerald-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">PDFs Completados</p><h3 class="text-3xl font-black text-emerald-600 mt-1" id="metric_completados">0</h3></div>
+                    <span class="material-symbols-rounded text-emerald-200 text-4xl">picture_as_pdf</span>
                 </div>
-
-                <div class="glass-panel border-l-4 border-l-yellow-500 pl-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">En Proceso / Error</p>
-                            <h3 class="text-3xl font-black text-yellow-600 mt-1" id="metric_pendientes">0</h3>
-                        </div>
-                        <span class="material-symbols-rounded text-yellow-200 text-4xl">pending_actions</span>
-                    </div>
+                <div class="glass-panel border-l-4 border-l-yellow-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">En Proceso / Error</p><h3 class="text-3xl font-black text-yellow-600 mt-1" id="metric_pendientes">0</h3></div>
+                    <span class="material-symbols-rounded text-yellow-200 text-4xl">pending_actions</span>
                 </div>
             </div>
 
-            <!-- Tabla de Dictámenes -->
-            <section class="glass-panel">
-                <h2 class="text-lg font-bold text-leezar-primary dark:text-white uppercase mb-4">Base de Datos de Dictámenes</h2>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg">Fecha</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Usuario (Perfil)</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Inmueble</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Valor Comercial</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tr-lg">Documento</th>
+            <section class="glass-panel mb-12">
+                <div class="overflow-x-auto h-80 custom-scroll">
+                    <table class="w-full text-left border-collapse relative">
+                        <thead class="sticky top-0 z-10 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider shadow">
+                            <tr>
+                                <th class="p-4 font-bold border-b border-gray-700">Fecha</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Usuario (Perfil)</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Inmueble</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Valor Comercial</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Documento</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody_dictamenes" class="text-sm">
+                        <tbody id="tbody_dictamenes" class="text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ================= SECCIÓN 2: FEEDBACK ================= -->
+            <div class="mb-4 border-b border-gray-700 pb-2">
+                <h2 class="text-lg font-black text-emerald-500 uppercase flex items-center gap-2">
+                    <span class="material-symbols-rounded">forum</span> 2. Feedback y Calibración
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="glass-panel border-l-4 border-l-emerald-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">Índice de Precisión</p><h3 class="text-3xl font-black text-emerald-600 mt-1" id="metric_excelente">0%</h3></div>
+                    <span class="material-symbols-rounded text-emerald-200 text-4xl">thumb_up</span>
+                </div>
+                <div class="glass-panel border-l-4 border-l-yellow-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">Reportes de Ajuste</p><h3 class="text-3xl font-black text-yellow-600 mt-1" id="metric_detalles">0</h3></div>
+                    <span class="material-symbols-rounded text-yellow-200 text-4xl">tune</span>
+                </div>
+                <div class="glass-panel border-l-4 border-l-red-500 pl-6 flex justify-between items-start">
+                    <div><p class="text-xs text-gray-500 uppercase font-bold">Fallas Técnicas</p><h3 class="text-3xl font-black text-red-600 mt-1" id="metric_problemas">0</h3></div>
+                    <span class="material-symbols-rounded text-red-200 text-4xl">warning</span>
+                </div>
+            </div>
+
+            <section class="glass-panel mb-8">
+                <div class="overflow-x-auto h-80 custom-scroll">
+                    <table class="w-full text-left border-collapse relative">
+                        <thead class="sticky top-0 z-10 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider shadow">
                             <tr>
-                                <td colspan="5" class="p-8 text-center text-gray-500">
-                                    <span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span>
-                                    <p>Conectando con la Bóveda EME...</p>
-                                </td>
+                                <th class="p-4 font-bold border-b border-gray-700">Fecha</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Perito</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Evaluación</th>
+                                <th class="p-4 font-bold border-b border-gray-700">Detalles y Notas</th>
                             </tr>
-                        </tbody>
+                        </thead>
+                        <tbody id="tbody_feedback" class="text-sm"></tbody>
                     </table>
                 </div>
             </section>
@@ -133,15 +153,19 @@
         const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
 
         document.addEventListener("DOMContentLoaded", () => {
-            cargarDictamenesGlobales();
+            cargarTodo();
         });
+
+        function cargarTodo() {
+            cargarDictamenesGlobales();
+            cargarFeedbackGlobal();
+        }
 
         async function cargarDictamenesGlobales() {
             const tbody = document.getElementById('tbody_dictamenes');
             tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500"><span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span><p>Descargando auditoría...</p></td></tr>`;
 
             try {
-                // 🎯 LLAMADA A LA NUEVA FUNCIÓN DE AUDITORÍA GLOBAL
                 const response = await fetch('/.netlify/functions/get-auditoria-dictamenes');
                 if (!response.ok) throw new Error("Error en la conexión con el servidor");
                 
@@ -203,6 +227,59 @@
 
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-bold">Error conectando con la base de datos de auditoría.</td></tr>`;
+            }
+        }
+
+        async function cargarFeedbackGlobal() {
+            const tbody = document.getElementById('tbody_feedback');
+            tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500"><span class="material-symbols-rounded animate-spin text-3xl mb-2">sync</span><p>Descargando auditoría de la bóveda...</p></td></tr>`;
+
+            try {
+                const response = await fetch('/.netlify/functions/get-feedback-dictamenes');
+                if (!response.ok) throw new Error("Error en la conexión con el servidor");
+                
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500 font-bold">Aún no hay reportes de calibración registrados.</td></tr>`;
+                    return;
+                }
+
+                let excelentes = 0, detalles = 0, problemas = 0;
+                let rowsHtml = '';
+
+                data.forEach(item => {
+                    const fechaObj = new Date(item.fecha);
+                    const fechaStr = fechaObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    
+                    let badgeColor = 'bg-gray-100 text-gray-800';
+                    let tipoTexto = 'Registro';
+
+                    if (item.comentario.includes('Excelente')) { badgeColor = 'bg-emerald-100 border-emerald-300 text-emerald-800'; tipoTexto = '🟢 Impecable'; excelentes++; }
+                    else if (item.comentario.includes('Detalles')) { badgeColor = 'bg-yellow-100 border-yellow-300 text-yellow-800'; tipoTexto = '🟡 Detalles'; detalles++; }
+                    else if (item.comentario.includes('Problemas')) { badgeColor = 'bg-red-100 border-red-300 text-red-800'; tipoTexto = '🔴 Fallas'; problemas++; }
+
+                    let extraInfo = item.comentario.replace(/\[.*?\]/, '').trim();
+
+                    rowsHtml += `
+                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">${fechaStr}</td>
+                            <td class="p-4 text-xs text-leezar-primary dark:text-leezar-accent1 font-bold">${item.email}</td>
+                            <td class="p-4"><span class="px-3 py-1 border rounded-full text-xs font-bold ${badgeColor}">${tipoTexto}</span></td>
+                            <td class="p-4 text-xs text-gray-600 dark:text-gray-300 italic">${extraInfo || '- Sin notas -'}</td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = rowsHtml;
+                
+                const total = data.length;
+                document.getElementById('metric_excelente').innerText = Math.round((excelentes / total) * 100) + '%';
+                document.getElementById('metric_detalles').innerText = detalles;
+                document.getElementById('metric_problemas').innerText = problemas;
+
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-red-500 font-bold">Error conectando con la base de datos de auditoría.</td></tr>`;
             }
         }
     </script>
