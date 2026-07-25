@@ -20,7 +20,16 @@ exports.handler = async (event, context) => {
         if (!ticket_id) return;
 
         const ticketRef = db.collection('tickets_motor').doc(ticket_id);
-        await ticketRef.set({ estatus_pdf: 'forjando' }, { merge: true });
+        
+        // 🎯 AQUÍ RESOLVEMOS EL VALOR: Guardamos la decisión de tu slider en la base de datos
+        if (parametros_motor && parametros_motor.valor_comercial_rango) {
+            await ticketRef.set({ 
+                estatus_pdf: 'forjando',
+                parametros_motor: { valor_comercial_rango: parametros_motor.valor_comercial_rango }
+            }, { merge: true });
+        } else {
+            await ticketRef.set({ estatus_pdf: 'forjando' }, { merge: true });
+        }
 
         const googleEndpoint = "https://us-central1-motor-valuacion-api.cloudfunctions.net/motor-pericial-eme";
         const llaveSecreta = process.env.LEEZAR_API_SECRET;

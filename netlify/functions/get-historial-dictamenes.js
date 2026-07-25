@@ -42,13 +42,15 @@ exports.handler = async (event) => {
             .where('parametros_motor.email_perito', '==', email)
             .get();
 
-        const dictamenes = [];
+const dictamenes = [];
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // Extracción segura de la fecha para evitar colapsos
+            // 1. FECHA: Priorizamos la hora exacta en la que el Motor forjó el PDF
             let fechaObjeto = new Date();
-            if (data.timestamp) {
+            if (data.resultado && data.resultado.fecha_emision) {
+                fechaObjeto = new Date(data.resultado.fecha_emision);
+            } else if (data.timestamp) {
                 fechaObjeto = data.timestamp.toDate();
             } else if (doc.id.includes('_')) {
                 const partes = doc.id.split('_');
@@ -57,16 +59,36 @@ exports.handler = async (event) => {
                 }
             }
 
+            // 2. VALOR COMERCIAL: Rastreamos la verdad absoluta.
+            // Primero, buscamos si el usuario ajustó el valor con el slider (se guarda en parametros_motor.valor_comercial_rango antes de pedir el PDF)
+            // Si no existe, buscamos el valor puro que arrojó la auditoría del motor.
+            let valorFinal = 0;
+            if (data.parametros_motor && data.parametros_motor.valor_comercial_rango) {
+                valorFinal = data.parametros_motor.valor_comercial_rango;
+            } else if (data.resultado && data.resultado.data && data.resultado.data.VALOR_FINAL) {
+                valorFinal = data.resultado.data.VALOR_FINAL;
+            }
+
+            // 3. FOLIO: Intentamos sacar el Hash_ID. 
+            // Si el motor Python no guardó el folio criptográfico (Ej. #113282...) en Firebase tras forjar el PDF,
+            // extraeremos los últimos 12 caracteres del ticket temporal para que al menos se vea "limpio" en la tabla, en lugar del larguísimo "ticket_178...".
+            let folioReal = doc.id;
+            if (data.resultado && data.resultado.data && data.resultado.data.HASH_ID) {
+                folioReal = data.resultado.data.HASH_ID;
+            } else if (doc.id.startsWith('ticket_')) {
+                folioReal = doc.id.slice(-12).toUpperCase(); // Tomamos el final del ticket para simular un Hash
+            }
+
             dictamenes.push({
-                folio: doc.id,
-                fecha: fechaObjeto.toISOString(), // Lo mandamos como string seguro
+                folio: folioReal,
+                fecha: fechaObjeto.toISOString(), 
                 tipo_inmueble: data.parametros_motor ? (data.parametros_motor.Tipo_Inmueble || 'N/A') : 'N/A',
                 calle: data.parametros_motor ? (data.parametros_motor.Calle_Sujeto || 'Sin dirección') : 'Sin dirección',
                 estatus: data.estatus_pdf || data.estatus || 'pendiente',
-                pdf_url: data.pdf_url || null
+                pdf_url: data.pdf_url || null,
+                valor_comercial: valorFinal // Lo mandamos en la raíz del paquete
             });
         });
-
         // Ordenamos en RAM para no pedir índices compuestos a Firebase
         dictamenes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 

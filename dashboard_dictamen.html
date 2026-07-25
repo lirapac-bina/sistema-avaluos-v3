@@ -78,20 +78,24 @@
                     <h2 class="text-lg font-bold text-leezar-primary dark:text-white uppercase">
                         Historial de Dictámenes
                     </h2>
-                    <div class="relative">
-                        <span class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
-                        <input type="text" id="buscador_dictamenes" placeholder="Buscar folio o cliente..." class="pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded text-sm focus:outline-none focus:border-leezar-accent1 transition-colors w-64 text-gray-900 dark:text-white">
+                    <div class="flex items-center gap-4">
+                        <button onclick="cargarHistorialDictamenes()" class="text-gray-400 hover:text-leezar-accent1 transition-colors flex items-center gap-1 text-sm font-bold">
+                            <span class="material-symbols-rounded text-lg">sync</span> Refrescar
+                        </button>
+                        <div class="relative">
+                            <span class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+                            <input type="text" id="buscador_dictamenes" onkeyup="filtrarTablaDashboard()" placeholder="Buscar folio, fecha o inmueble..." class="pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded text-sm focus:outline-none focus:border-leezar-accent1 transition-colors w-64 text-gray-900 dark:text-white">
+                        </div>
                     </div>
                 </div>
                 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse" id="tabla_dictamenes">
                         <thead>
-                            <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg">Folio ID</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Fecha</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Inmueble</th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700">Estatus</th>
+                            <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider select-none">
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(0, 'date')">Fecha <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(1, 'string')">Inmueble <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(2, 'number')">Valor Comercial <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
                                 <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tr-lg">Acciones</th>
                             </tr>
                         </thead>
@@ -136,6 +140,9 @@
                 }
                 
                 const dictamenes = await response.json();
+                
+                // 🔍 Radiografía de la estructura exacta del Motor 20.6
+                console.log("🔥 Datos desde Firebase (Primer Registro):", dictamenes[0]);
 
                 if (dictamenes.length === 0) {
                     tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 dark:text-gray-400 font-bold">No tienes dictámenes registrados en tu historial.</td></tr>`;
@@ -145,7 +152,8 @@
                 // 3. Renderizar Tarjetas
                 dictamenes.forEach(doc => {
                     const fechaObj = new Date(doc.fecha);
-                    const fechaFormateada = fechaObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    // 🎯 FECHA LIMPIA: Solo dejamos Día, Mes y Año como solicitaste
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
                     
                     let badgeEstatus = '';
                     if (doc.estatus === 'completado') {
@@ -160,12 +168,16 @@
                         ? `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`
                         : `<span class="text-gray-400 text-xs font-bold flex items-center gap-1"><span class="material-symbols-rounded text-sm">lock</span> Archivo Dañado</span>`;
 
+                    // Redondeamos matemáticamente el valor y le quitamos los decimales visuales
+                    const valorComercial = doc.valor_comercial || 0;
+                    const valorRedondeado = Math.round(valorComercial);
+                    const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(valorRedondeado);
+
                     tbodyHtml.push(`
-                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td class="p-4 font-mono text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">${doc.folio.replace('ticket_', '#')}</td>
-                            <td class="p-4 text-sm font-semibold">${fechaFormateada}</td>
+                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors fila-dictamen">
+                            <td class="p-4 text-sm font-semibold" data-fecha="${fechaObj.getTime()}">${fechaFormateada}</td>
                             <td class="p-4 text-sm font-bold text-leezar-primary dark:text-gray-200 uppercase">${doc.tipo_inmueble} <br><span class="font-normal text-gray-500">${doc.calle}</span></td>
-                            <td class="p-4">${badgeEstatus}</td>
+                            <td class="p-4 text-sm font-black text-emerald-600 dark:text-emerald-400" data-valor="${valorRedondeado}">${formatoMoneda}</td>
                             <td class="p-4">${botonAccion}</td>
                         </tr>
                     `);
@@ -175,8 +187,57 @@
 
             } catch (error) {
                 console.error("[AvEME] Error de Historial:", error);
-                tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-bold">Error de conexión al recuperar el historial.</td></tr>`;
+                // Ajustamos el colspan a 6 por la nueva columna
+                tablaBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-bold">Error de conexión al recuperar el historial.</td></tr>`;
             }
+        }
+
+        // Función de Búsqueda y Filtrado en Vivo
+        function filtrarTablaDashboard() {
+            const input = document.getElementById("buscador_dictamenes");
+            const filtro = input.value.toLowerCase();
+            const filas = document.querySelectorAll(".fila-dictamen");
+
+            filas.forEach(fila => {
+                const textoFila = fila.innerText.toLowerCase();
+                if (textoFila.includes(filtro)) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            });
+        }
+
+        // Motor de Ordenamiento por Columnas
+        let ordenAscendente = true;
+        function ordenarTabla(columnaIdx, tipoDato) {
+            const tbody = document.getElementById("body_tabla_dictamenes");
+            const filas = Array.from(tbody.querySelectorAll("tr.fila-dictamen"));
+
+            filas.sort((a, b) => {
+                let valA, valB;
+
+                if (tipoDato === 'date') {
+                    valA = parseFloat(a.children[columnaIdx].getAttribute('data-fecha')) || 0;
+                    valB = parseFloat(b.children[columnaIdx].getAttribute('data-fecha')) || 0;
+                } else if (tipoDato === 'number') {
+                    valA = parseFloat(a.children[columnaIdx].getAttribute('data-valor')) || 0;
+                    valB = parseFloat(b.children[columnaIdx].getAttribute('data-valor')) || 0;
+                } else {
+                    valA = a.children[columnaIdx].innerText.trim().toLowerCase();
+                    valB = b.children[columnaIdx].innerText.trim().toLowerCase();
+                }
+
+                if (valA < valB) return ordenAscendente ? -1 : 1;
+                if (valA > valB) return ordenAscendente ? 1 : -1;
+                return 0;
+            });
+
+            ordenAscendente = !ordenAscendente;
+            
+            // Reinyectar filas ordenadas
+            tbody.innerHTML = '';
+            filas.forEach(fila => tbody.appendChild(fila));
         }
     </script>
 

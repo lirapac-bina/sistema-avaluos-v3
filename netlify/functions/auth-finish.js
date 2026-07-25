@@ -101,7 +101,27 @@ exports.handler = async (event, context) => {
         }
 
         if (!accesoPermitido) {
-            return { statusCode: 403, body: `<h1>Acceso Denegado</h1><p>El usuario <strong>${userEmail}</strong> no tiene permisos.</p><a href="/">Volver</a>` };
+            // 🎯 AUTO-REGISTRO PARA EL PÚBLICO GENERAL (Ecosistema + AvEME)
+            rolUsuario = 'invitado'; // Nivel más bajo para proteger la Sección 1 (Expedientes)
+            accesoPermitido = true;
+            
+            // 1. Registro en el Ecosistema General (Sin permisos operativos)
+            await db.collection('usuarios').doc(userEmail).set({
+                nombre: userName, 
+                email: userEmail, 
+                rol: rolUsuario, 
+                activo: true, 
+                fechaRegistro: new Date().toISOString()
+            }, { merge: true });
+
+            // 2. Registro en el Motor AvEME (Perfil 1 - Automatizado)
+            await db.collection('usuarios_dictamen').doc(userEmail).set({
+                nombre: userName,
+                id: userEmail,
+                perfil: "1", 
+                activo: true,
+                fechaAlta: new Date().toISOString()
+            }, { merge: true });
         }
 
         const firebaseToken = await admin.auth().createCustomToken(userEmail);
@@ -122,6 +142,11 @@ exports.handler = async (event, context) => {
 
     } catch (error) {
         console.error("Error Crítico Auth-Finish:", error);
-        return { statusCode: 500, body: JSON.stringify({ error: "Fallo en autenticación", details: error.message }) };
+        // 🎯 REDIRECCIÓN SILENCIOSA: Si el código caducó (invalid_grant), lo regresamos al login
+        return { 
+            statusCode: 302, 
+            headers: { 'Location': '/index.html', 'Cache-Control': 'no-cache' },
+            body: ''
+        };
     }
 };

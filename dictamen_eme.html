@@ -834,69 +834,76 @@
         </div>
     </div>
 
-<!-- Módulo de Feedback Premium -->
-    <div id="modal_feedback" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[110] transition-all duration-300 opacity-0">
-        <div class="bg-white dark:bg-leezar-darkCard p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-4 border-leezar-accent1 transform scale-95 transition-transform duration-300" id="feedback_box">
+<!-- Módulo de Feedback Premium (Dinámico) -->
+    <div id="modal_feedback" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[110] transition-all duration-300 opacity-0 overflow-y-auto py-10">
+        <div class="bg-white dark:bg-leezar-darkCard p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-4 border-leezar-accent1 transform scale-95 transition-transform duration-300 m-auto" id="feedback_box">
             
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 mb-4 shadow-inner">
-                    <span class="material-symbols-rounded text-4xl">celebration</span>
+            <div id="zona_encuestas">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 mb-4 shadow-inner">
+                        <span class="material-symbols-rounded text-4xl">speed</span>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-wide">¡Dictamen Oficializado!</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
+                        ¿Cómo calificarías el desempeño del Motor 20.6 en este cálculo?
+                    </p>
                 </div>
-                <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-wide">¡Dictamen Exitoso!</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-                    Vimos que terminaste tu proceso en AvEME. Para ayudarnos a afinar el proceso, califica tu experiencia aquí:
-                </p>
-            </div>
-            
-            <div id="botones_feedback" class="flex flex-col gap-3">
-                <button onclick="procesarFeedback('excelente')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-emerald-500 hover:bg-emerald-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
-                    <span class="flex items-center gap-2"><span class="text-xl">🟢</span> Me ahorró mucho tiempo</span>
-                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
-                </button>
-                
-                <button onclick="procesarFeedback('detalles')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-yellow-500 hover:bg-yellow-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
-                    <span class="flex items-center gap-2"><span class="text-xl">🟡</span> Funciona, pero hay detalles</span>
-                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
-                </button>
-                
-                <button onclick="procesarFeedback('problemas')" class="group relative w-full bg-white dark:bg-slate-800 border-2 border-red-500 hover:bg-red-500 text-slate-700 hover:text-white dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-between overflow-hidden">
-                    <span class="flex items-center gap-2"><span class="text-xl">🔴</span> Tuve problemas técnicos</span>
-                    <span class="material-symbols-rounded opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all">arrow_forward</span>
-                </button>
+
+                <!-- Paso 1: Botones Directivos -->
+                <div id="botones_directivos" class="flex gap-2 mb-4">
+                    <button onclick="mostrarOpcionesDinamicas('🟢 Todo Excelente')" class="flex-1 bg-gray-50 hover:bg-emerald-50 dark:bg-slate-800/80 dark:hover:bg-emerald-900/30 border border-gray-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 font-bold py-3 px-1 rounded-xl transition-all hover:border-emerald-400 text-[10px] uppercase flex flex-col items-center gap-2 group">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">🟢</span> Excelente
+                    </button>
+                    <button onclick="mostrarOpcionesDinamicas('🟡 Hay Detalles')" class="flex-1 bg-gray-50 hover:bg-yellow-50 dark:bg-slate-800/80 dark:hover:bg-yellow-900/30 border border-gray-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 font-bold py-3 px-1 rounded-xl transition-all hover:border-yellow-400 text-[10px] uppercase flex flex-col items-center gap-2 group">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">🟡</span> Detalles
+                    </button>
+                    <button onclick="mostrarOpcionesDinamicas('🔴 Problemas Técnicos')" class="flex-1 bg-gray-50 hover:bg-red-50 dark:bg-slate-800/80 dark:hover:bg-red-900/30 border border-gray-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 font-bold py-3 px-1 rounded-xl transition-all hover:border-red-400 text-[10px] uppercase flex flex-col items-center gap-2 group">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">🔴</span> Problemas
+                    </button>
+                </div>
+
+                <!-- Paso 2: Etiquetas Dinámicas (Ocultas inicialmente) -->
+                <div id="zona_detalles" class="hidden space-y-4 bg-gray-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in-up">
+                    <p id="titulo_detalles" class="text-[10px] font-bold text-gray-500 dark:text-gray-400 text-center uppercase tracking-widest mb-1">¿QUÉ PODEMOS AFINAR?</p>
+                    
+                    <!-- Contenedor donde JS inyectará los botones -->
+                    <div id="contenedor_tags" class="flex flex-wrap gap-2 justify-center mb-3"></div>
+                    
+                    <textarea id="txt_detalle_feedback" rows="2" placeholder="Comentarios adicionales (opcional)..." class="leezar-input !text-xs resize-none shadow-inner"></textarea>
+                    
+                    <button onclick="enviarFeedbackConDetalles()" id="btn_enviar_feedback" class="w-full bg-leezar-primary hover:bg-blue-800 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-black py-3 rounded-lg transition-all shadow-md text-sm flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded text-lg">send</span> ENVIAR REPORTE
+                    </button>
+                </div>
             </div>
 
-            <!-- Respuesta 1: Excelente -->
-            <div id="respuesta_excelente" class="hidden mt-2 text-center transition-all duration-500 transform translate-y-4 opacity-0">
-                <span class="material-symbols-rounded text-5xl text-emerald-500 mb-2">star</span>
-                <p class="text-emerald-600 dark:text-emerald-400 font-black text-lg mb-2 uppercase tracking-wide">¡Qué excelente noticia!</p>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-6 font-medium">
-                    Nos alegra mucho saber que el motor pericial te está ahorrando tiempo. ¡Esa es nuestra meta principal!
-                </p>
-                <button onclick="cerrarFeedback()" class="inline-flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl">
-                    <span class="material-symbols-rounded">done_all</span>
-                    Finalizar y Cerrar
-                </button>
-            </div>
-
-            <!-- Respuesta 2/3: Detalles o Problemas -->
-            <div id="respuesta_problemas" class="hidden mt-2 transition-all duration-500 transform translate-y-4 opacity-0">
-                <p class="text-leezar-primary dark:text-leezar-accent1 font-black text-lg mb-2 text-center uppercase tracking-wide">Gracias por avisarnos</p>
-                <label class="leezar-label !text-gray-600 dark:!text-gray-300 !normal-case !mb-3 text-center block">¿Podrías escribirnos aquí mismo en un mensaje qué fue lo que falló o qué le faltó?</label>
-                <textarea id="txt_detalle_feedback" rows="4" class="leezar-input !rounded-xl resize-none shadow-inner"></textarea>
-                <button onclick="enviarFeedbackServidor()" id="btn_enviar_feedback" class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg mt-4 flex items-center justify-center gap-2">
-                    <span class="material-symbols-rounded">send</span>
-                    Enviar Mensaje
+            <!-- Respuesta de Éxito -->
+            <div id="respuesta_exito" class="hidden mt-2 text-center transition-all duration-500 transform translate-y-4 opacity-0">
+                <span class="material-symbols-rounded text-6xl text-emerald-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-full p-4">task_alt</span>
+                <p class="text-emerald-600 dark:text-emerald-400 font-black text-xl mb-2 uppercase tracking-wide">¡Gracias por tu reporte!</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">La bóveda pericial ha recibido tus datos correctamente.</p>
+                <button onclick="cerrarFeedback()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+                    Continuar al Dashboard <span class="material-symbols-rounded">arrow_forward</span>
                 </button>
             </div>
             
-            <button onclick="cerrarFeedback()" class="mt-6 w-full text-center text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 uppercase tracking-widest font-bold transition-colors">
-                Cerrar sin calificar
+            <button onclick="cerrarFeedback()" id="btn_omitir_feedback" class="mt-6 w-full text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 uppercase tracking-widest font-bold transition-colors">
+                Omitir por ahora
             </button>
         </div>
     </div>
 
     <!-- Scripts de Lógica del Feedback -->
     <script>
+        let votoBaseDirectivo = "";
+
+        // Catálogo de respuestas depurado a solicitud
+        const etiquetasPorVoto = {
+            'Excelente': ['Ahorró mucho tiempo', 'Valor concluido certero', 'Fácil de usar'],
+            'Detalles': ['Valor muy bajo/alto', 'Flujo confuso'],
+            'Problemas': ['Falla en mapa', 'Error al calcular', 'PDF no descarga', 'Error de conexión']
+        };
+
         function mostrarFeedback() {
             const modal = document.getElementById('modal_feedback');
             const box = document.getElementById('feedback_box');
@@ -911,54 +918,114 @@
             modal.classList.add('opacity-0'); box.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden'); modal.classList.remove('flex');
-                document.getElementById('botones_feedback').classList.remove('hidden');
-                document.getElementById('respuesta_excelente').classList.add('hidden', 'translate-y-4', 'opacity-0');
-                document.getElementById('respuesta_problemas').classList.add('hidden', 'translate-y-4', 'opacity-0');
+                
+                // Reset de interfaz
+                document.getElementById('zona_encuestas').classList.remove('hidden');
+                document.getElementById('respuesta_exito').classList.add('hidden', 'translate-y-4', 'opacity-0');
+                document.getElementById('zona_detalles').classList.add('hidden');
+                document.getElementById('btn_omitir_feedback').classList.remove('hidden');
                 document.getElementById('txt_detalle_feedback').value = '';
+                votoBaseDirectivo = "";
             }, 300);
         }
 
-        function procesarFeedback(tipo) {
-            document.getElementById('botones_feedback').classList.add('hidden');
-            const objMostrar = tipo === 'excelente' ? document.getElementById('respuesta_excelente') : document.getElementById('respuesta_problemas');
-            objMostrar.classList.remove('hidden');
-            setTimeout(() => { objMostrar.classList.remove('translate-y-4', 'opacity-0'); }, 10);
+        function mostrarOpcionesDinamicas(tipo) {
+            votoBaseDirectivo = tipo;
+            document.getElementById('zona_detalles').classList.remove('hidden');
+            document.getElementById('btn_omitir_feedback').classList.add('hidden');
+
+            const titulo = document.getElementById('titulo_detalles');
+            let categoria = 'Excelente';
+            
+            if (tipo.includes('Excelente')) {
+                titulo.innerText = '¿QUÉ FUE LO MEJOR? (SELECCIONA LAS OPCIONES)';
+            } else if (tipo.includes('Detalles')) {
+                titulo.innerText = '¿QUÉ PODEMOS AFINAR? (SELECCIONA LAS OPCIONES)';
+                categoria = 'Detalles';
+            } else {
+                titulo.innerText = '¿QUÉ FALLÓ EXACTAMENTE? (SELECCIONA LAS OPCIONES)';
+                categoria = 'Problemas';
+            }
+
+            const contenedorTags = document.getElementById('contenedor_tags');
+            // Agregamos un borde más grueso (border-2) para que el cambio de estado sea súper visible
+            contenedorTags.innerHTML = etiquetasPorVoto[categoria].map(tag => 
+                `<button type="button" onclick="toggleTag(this)" class="tag-falla px-4 py-2 bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-full text-xs text-slate-600 dark:text-gray-300 hover:border-emerald-400 transition-all font-medium">${tag}</button>`
+            ).join('');
         }
 
-        async function enviarFeedbackServidor() {
-            const comentario = document.getElementById('txt_detalle_feedback').value;
-            if (!comentario.trim()) return;
+        function toggleTag(btn) {
+            // Alternamos un estado visual súper claro: Fondo verde esmeralda y borde fuerte
+            btn.classList.toggle('bg-emerald-100');
+            btn.classList.toggle('dark:bg-emerald-900/50');
+            btn.classList.toggle('border-emerald-500');
+            btn.classList.toggle('text-emerald-800');
+            btn.classList.toggle('dark:text-emerald-300');
+            btn.classList.toggle('font-bold');
+            
+            // Alternamos las clases por defecto
+            btn.classList.toggle('bg-slate-100');
+            btn.classList.toggle('dark:bg-slate-700');
+            btn.classList.toggle('border-transparent');
+            btn.classList.toggle('text-slate-600');
+            btn.classList.toggle('dark:text-gray-300');
+            btn.classList.toggle('font-medium');
+            
+            // Agregamos un pequeño efecto de rebote al seleccionar
+            btn.classList.add('scale-95');
+            setTimeout(() => btn.classList.remove('scale-95'), 150);
+        }
+
+        function enviarFeedbackConDetalles() {
+            const tagsActivos = Array.from(document.querySelectorAll('.tag-falla.border-emerald-500')).map(t => t.innerText);
+            const notas = document.getElementById('txt_detalle_feedback').value.trim();
+            
+            let payloadConstruido = `[${votoBaseDirectivo}]`;
+            if (tagsActivos.length > 0) payloadConstruido += ` Etiquetas: ${tagsActivos.join(', ')}.`;
+            if (notas) payloadConstruido += ` Notas: ${notas}`;
+
+            ejecutarEnvioBackend(payloadConstruido);
+        }
+
+        async function ejecutarEnvioBackend(comentarioFinal) {
             const btn = document.getElementById('btn_enviar_feedback');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Enviando...';
-            btn.disabled = true;
+            const originalText = btn ? btn.innerHTML : '';
+            if(btn) {
+                btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> PROCESANDO...';
+                btn.disabled = true;
+            }
+
             try {
                 let emailPerito = "Desconocido";
                 const sessionData = localStorage.getItem('leezar_user_active');
                 if (sessionData) emailPerito = JSON.parse(sessionData).email;
                 const ticketActual = typeof ticketActualGlobal !== 'undefined' ? ticketActualGlobal : 'Sin folio';
-                const payload = { email: emailPerito, ticket_id: ticketActual, comentario: comentario };
+                
+                const payload = { email: emailPerito, ticket_id: ticketActual, comentario: comentarioFinal };
+                
                 const response = await fetch('/.netlify/functions/guardar-feedback-dictamen', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
+                
                 if (!response.ok) throw new Error("Fallo en la comunicación.");
-                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> ¡Mensaje Recibido!';
-                btn.classList.replace('bg-slate-800', 'bg-emerald-600'); btn.classList.replace('dark:bg-leezar-accent1', 'dark:bg-emerald-600');
-                setTimeout(() => {
-                    cerrarFeedback();
-                    setTimeout(() => {
-                        btn.innerHTML = originalText; btn.disabled = false;
-                        btn.classList.replace('bg-emerald-600', 'bg-slate-800'); btn.classList.replace('dark:bg-emerald-600', 'dark:bg-leezar-accent1');
-                    }, 500);
-                }, 1500);
+                
+                // Transición al éxito
+                document.getElementById('zona_encuestas').classList.add('hidden');
+                document.getElementById('btn_omitir_feedback').classList.add('hidden');
+                const msjExito = document.getElementById('respuesta_exito');
+                msjExito.classList.remove('hidden');
+                setTimeout(() => { msjExito.classList.remove('translate-y-4', 'opacity-0'); }, 50);
+
             } catch (error) {
                 console.error("Error enviando feedback:", error);
-                btn.innerHTML = '<span class="material-symbols-rounded">error</span> Error al enviar';
-                btn.classList.replace('bg-slate-800', 'bg-red-600'); btn.classList.replace('dark:bg-leezar-accent1', 'dark:bg-red-600');
-                setTimeout(() => {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    btn.classList.replace('bg-red-600', 'bg-slate-800'); btn.classList.replace('dark:bg-red-600', 'dark:bg-leezar-accent1');
-                }, 2000);
+                if(btn) {
+                    btn.innerHTML = '<span class="material-symbols-rounded">error</span> ERROR DE RED';
+                    btn.classList.replace('bg-leezar-primary', 'bg-red-600');
+                    setTimeout(() => {
+                        btn.innerHTML = originalText; btn.disabled = false;
+                        btn.classList.replace('bg-red-600', 'bg-leezar-primary');
+                    }, 2000);
+                }
             }
         }
     </script>
@@ -1488,6 +1555,15 @@
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-3xl">sync</span> COMPILANDO EXPEDIENTE OFICIAL...';
             btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
 
+            // 🎯 NUEVO: Mostrar el Blur de carga
+            const overlay = document.getElementById('overlay_carga');
+            const txtCarga = document.getElementById('txt_estado_carga');
+            if(overlay && txtCarga) {
+                overlay.classList.remove('hidden'); 
+                overlay.classList.add('flex');
+                txtCarga.innerText = "Generando PDF...";
+            }
+
             try {
                 const parametros_motor = JSON.parse(localStorage.getItem('leezar_memoria_completa') || '{}');
                 parametros_motor["valor_comercial_rango"] = window.valorCierreCalculado; 
@@ -1511,6 +1587,10 @@
                 const data = await response.json();
 
                 if (data.estatus_pdf === 'completado') {
+                    // 🎯 NUEVO: Ocultar el Blur cuando el PDF esté listo
+                    const overlay = document.getElementById('overlay_carga');
+                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+
                     localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
                     btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
                     btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');

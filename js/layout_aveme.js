@@ -113,15 +113,38 @@ document.addEventListener("DOMContentLoaded", () => {
         </a></li>
     `;
 
-    // Menú de Admin (Para la nueva colección usuarios_dictamen)
+    // Menú de Admin y Auditoría (Seguridad por Rol y Correo)
     const esAltoMando = ['ADMIN', 'SUPER ADMIN', 'DIRECTOR', 'SUPER_ADMIN'].includes(activeUser.rol);
-    const menuAdminHTML = esAltoMando ? `
-        <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
-            <p class="px-4 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1 sidebar-section-title"><span class="sidebar-text">Administración</span> <span class="material-symbols-rounded text-[12px] sidebar-text">admin_panel_settings</span></p>
+    
+    // 🎯 NUEVO: Lista blanca de correos para Auditoría Global
+    const correosAuditores = ['lirapac@gmail.com', 'ivan.herrera110@gmail.com', 'perinu88@gmail.com'];
+    const esAuditorAutorizado = correosAuditores.includes(activeUser.email);
+
+    let itemsAdminHTML = '';
+
+    if (esAltoMando) {
+        itemsAdminHTML += `
             <a href="admin_dictamen.html" title="Gestión de Perfiles" class="${opBase} ${file === 'admin_dictamen.html' ? opActive : opHover}">
                 <span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file === 'admin_dictamen.html' ? 'text-red-600 dark:text-red-400' : 'group-hover:text-red-600 dark:group-hover:text-red-400'}">manage_accounts</span>
                 <span class="sidebar-text">Gestión de Perfiles</span>
             </a>
+        `;
+    }
+
+    // Solo inyectamos el botón del Radar si su correo está en la lista blanca
+    if (esAuditorAutorizado) {
+        itemsAdminHTML += `
+            <a href="auditoria_global.html" title="Auditoría Global" class="${opBase} ${file === 'auditoria_global.html' ? opActive : opHover}">
+                <span class="material-symbols-rounded mr-3 text-[20px] transition-all ${file === 'auditoria_global.html' ? 'text-leezar-accent1' : 'group-hover:text-leezar-accent1'}">radar</span>
+                <span class="sidebar-text">Auditoría Global</span>
+            </a>
+        `;
+    }
+
+    const menuAdminHTML = (itemsAdminHTML !== '') ? `
+        <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
+            <p class="px-4 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1 sidebar-section-title"><span class="sidebar-text">Administración</span> <span class="material-symbols-rounded text-[12px] sidebar-text">admin_panel_settings</span></p>
+            ${itemsAdminHTML}
         </div>
     ` : '';
 
