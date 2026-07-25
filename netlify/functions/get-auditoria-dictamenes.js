@@ -29,27 +29,39 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
     try {
-        const snapshot = await db.collection('tickets_motor')
-            .orderBy('fecha', 'desc')
-            .limit(100)
-            .get();
+        // 🎯 QUITAMOS el orderBy('fecha') porque bloqueaba la consulta. Traemos los últimos 100 directos.
+        const snapshot = await db.collection('tickets_motor').limit(100).get();
 
         const dictamenes = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            let fechaISO = new Date().toISOString();
-            if (data.fecha && typeof data.fecha.toDate === 'function') {
-                fechaISO = data.fecha.toDate().toISOString();
-            } else if (data.fecha) {
-                try { fechaISO = new Date(data.fecha).toISOString(); } catch(e) {}
+            
+            // 🎯 Lógica de extracción de fecha (Idéntica a la que usas en tu historial)
+            let fechaObjeto = new Date();
+            if (data.resultado && data.resultado.fecha_emision) {
+                fechaObjeto = new Date(data.resultado.fecha_emision);
+            } else if (data.timestamp) {
+                fechaObjeto = data.timestamp.toDate();
+            } else if (doc.id.includes('_')) {
+                const partes = doc.id.split('_');
+                if (partes.length > 1 && !isNaN(partes[1])) {
+                    fechaObjeto = new Date(parseInt(partes[1]));
+                }
             }
+
+            // Aseguramos capturar el email del usuario para mostrarlo en el Radar
+            const emailUser = data.email || (data.parametros_motor ? data.parametros_motor.email_perito : null) || 'Desconocido';
 
             dictamenes.push({
                 id: doc.id,
                 ...data,
-                fecha: fechaISO
+                fecha: fechaObjeto.toISOString(),
+                email: emailUser
             });
         });
+
+        // 🎯 Ordenamos en memoria (RAM) del más nuevo al más viejo
+        dictamenes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
         return { statusCode: 200, headers, body: JSON.stringify(dictamenes) };
 
