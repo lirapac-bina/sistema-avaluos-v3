@@ -1030,8 +1030,19 @@
         }
     </script>
 
-    <!-- Scripts Base y Lógica Estricta de Privilegios -->
+<!-- Scripts Base y Lógica Estricta de Privilegios -->
     <script>
+        // 👇 1. ESTA ES LA VITAMINA ANTI-ERRORES (NUEVA FUNCIÓN)
+        function validarPrecioTestigo(input) {
+            const valor = parseFloat(input.value);
+            if (valor > 0 && valor < 10000) {
+                alert(`⚠️ ALERTA DE CAPTURA:\n\nIngresaste $${valor} pesos en el precio del testigo.\n\n¿Estás seguro de que no te faltaron ceros? (Ejemplo: ${valor * 1000})`);
+                input.classList.add('border-red-500', 'border-2', 'text-red-700', 'bg-red-50');
+            } else {
+                input.classList.remove('border-red-500', 'border-2', 'text-red-700', 'bg-red-50');
+            }
+        }
+
         function generarTestigosManuales() {
             const contenedor = document.getElementById('testigos-container');
             if (!contenedor) return;
@@ -1043,7 +1054,9 @@
                         <span class="material-symbols-rounded">home_work</span> TESTIGO ${i}
                     </h4>
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="leezar-label">Precio</label><input type="number" name="EME_CP_T${i}_Precio" value="0" class="leezar-input"></div>
+                        <!-- 👇 2. AQUÍ ESTÁ LA MAGIA, MIRA EL FINAL DE ESTA LÍNEA -->
+                        <div><label class="leezar-label">Precio</label><input type="number" name="EME_CP_T${i}_Precio" value="0" class="leezar-input" onblur="validarPrecioTestigo(this)"></div>
+                        
                         <div><label class="leezar-label">Sup. Terr.</label><input type="number" name="EME_CP_T${i}_Sup_Terreno" value="0" class="leezar-input"></div>
                         <div><label class="leezar-label">Sup. Const.</label><input type="number" name="EME_CP_T${i}_Sup_Construccion" value="0" class="leezar-input"></div>
                         <div><label class="leezar-label">Niveles</label><input type="number" name="EME_CP_T${i}_Niveles" value="0" class="leezar-input"></div>

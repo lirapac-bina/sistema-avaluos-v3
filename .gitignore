@@ -13,3 +13,11 @@
 
 # Ignora la llave de la cuenta de servicio
 **/serviceaccountkey.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

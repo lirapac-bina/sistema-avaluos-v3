@@ -7,3 +7,10 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# 👇 REGLA DE SEGURIDAD: Bloqueo total a la carpeta de pruebas
+[[redirects]]
+  from = "/tests/*"
+  to = "/404.html"
+  status = 404
+  force = true
