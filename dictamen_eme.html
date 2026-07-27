@@ -1393,16 +1393,24 @@
             parametros_motor["email_perito"] = emailUsuarioGlobal; 
             parametros_motor["firma_base64"] = window.firmaPeritoGlobal || ""; 
 
-            parametros_motor["foto_base64"] = ""; parametros_motor["fotos_adicionales"] = []; parametros_motor["anexos_adicionales"] = [];
+            // ⚖️ LA BÁSCULA PREDICTIVA: Simulamos el peso total CON fotos antes de enviarlo
+            const paqueteSimuladoParaPesar = JSON.parse(JSON.stringify(parametros_motor));
+            paqueteSimuladoParaPesar["foto_base64"] = arrayPortada ? arrayPortada.base64 : "";
+            paqueteSimuladoParaPesar["fotos_adicionales"] = arrayInteriores.map(foto => ({ "base64": foto.base64, "descripcion": foto.texto }));
+            paqueteSimuladoParaPesar["anexos_adicionales"] = arrayAnexos.map(anexo => ({ "base64": anexo.base64, "titulo": anexo.texto }));
 
-            if (!ticketActualGlobal) { ticketActualGlobal = `ticket_${Date.now()}_${Math.floor(Math.random() * 1000)}`; }
-            const payload = { "parametros_motor": parametros_motor, "ticket_id": ticketActualGlobal };
-
-            // ⚖️ INYECCIÓN DE LA BÁSCULA AQUÍ
-            if (!validarPesoPayload(payload)) {
+            if (!validarPesoPayload(paqueteSimuladoParaPesar)) {
                 overlay.classList.add('hidden'); overlay.classList.remove('flex');
                 return;
             }
+
+            // Vaciamos las fotos para el cálculo matemático inicial
+            parametros_motor["foto_base64"] = ""; 
+            parametros_motor["fotos_adicionales"] = []; 
+            parametros_motor["anexos_adicionales"] = [];
+
+            if (!ticketActualGlobal) { ticketActualGlobal = `ticket_${Date.now()}_${Math.floor(Math.random() * 1000)}`; }
+            const payload = { "parametros_motor": parametros_motor, "ticket_id": ticketActualGlobal };
 
             try {
                 txtCarga.innerText = "Conectando al Motor V20.6...";
@@ -1630,7 +1638,6 @@
                     throw new Error(data.error || `Falla de infraestructura (HTTP ${response.status}).`);
                 }
 
-                // Si todo sale bien, la data ya trae el URL
                 clearInterval(window.intervaloMensajesPDF); 
                 if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
 
@@ -1652,8 +1659,6 @@
                 if (slider) { slider.disabled = false; slider.classList.remove('opacity-50', 'cursor-not-allowed'); }
             }
         };
-
-        // NOTA: La función verificarTicketPDF fue eliminada porque ya no la necesitamos
 
         function restaurarBotonPDF(btn, textoOriginal) {
             btn.innerHTML = textoOriginal; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
