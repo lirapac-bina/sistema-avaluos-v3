@@ -13,21 +13,40 @@ const db = admin.firestore();
 
 exports.handler = async (event) => {
     try {
-        // Notar que solo recibe el ticket_id (pesa menos de 1 KB)
         const { ticket_id } = JSON.parse(event.body);
         if (!ticket_id) return;
 
         const ticketRef = db.collection('tickets_motor').doc(ticket_id);
         await ticketRef.set({ estatus_pdf: 'forjando' }, { merge: true });
 
-        // 📥 LECTURA: Extraemos los datos pesados que "guardar-dictamen.js" guardó en el Paso 1
+        // 🦴 1. RECUPERAMOS EL ESQUELETO LIGERO
         const doc = await ticketRef.get();
-        if (!doc.exists) throw new Error("Dictamen no encontrado en la base de datos.");
+        if (!doc.exists) throw new Error("Expediente no encontrado en la base de datos.");
         const parametros_motor = doc.data().parametros_motor;
+
+        // 🧩 2. RECUPERAMOS LOS PEDACITOS DE LA BÓVEDA Y RECONSTRUIMOS
+        const bovedaSnapshot = await ticketRef.collection('boveda_pesada').get();
+        
+        parametros_motor.fotos_adicionales = [];
+        parametros_motor.anexos_adicionales = [];
+        
+        bovedaSnapshot.forEach(item => {
+            const id = item.id;
+            const data = item.data();
+            
+            if (id === 'portada') parametros_motor.foto_base64 = data.base64;
+            else if (id === 'memoria') parametros_motor.memoria_serper_json = data.datos;
+            else if (id.startsWith('foto_')) parametros_motor.fotos_adicionales.push(data);
+            else if (id.startsWith('anexo_')) parametros_motor.anexos_adicionales.push(data);
+        });
+
+        // Ordenamos las fotos
+        parametros_motor.fotos_adicionales.sort((a, b) => a.indice_eme - b.indice_eme);
+        parametros_motor.anexos_adicionales.sort((a, b) => a.indice_eme - b.indice_eme);
 
         const googleEndpoint = "https://us-central1-motor-valuacion-api.cloudfunctions.net/motor-pericial-eme";
         
-        // 🚀 ENVIAMOS A GCP Y ESPERAMOS (Esta función nos da 15 minutos sin que Netlify corte)
+        // 🚀 ENVIAMOS EL PAQUETE RECONSTRUIDO A GCP
         const respuestaNube = await fetch(googleEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-leezar-secret': process.env.LEEZAR_API_SECRET },
@@ -36,7 +55,7 @@ exports.handler = async (event) => {
 
         if (!respuestaNube.ok) {
             const errorTexto = await respuestaNube.text();
-            throw new Error(`Falla en Motor Central de GCP: ${errorTexto}`);
+            throw new Error(`Falla en GCP: ${errorTexto}`);
         }
 
         const dataGCP = await respuestaNube.json();
