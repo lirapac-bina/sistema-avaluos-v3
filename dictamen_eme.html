@@ -1168,7 +1168,7 @@
                 reader.onload = function(readerEvent) {
                     const img = new Image();
                     img.onload = function() {
-                        const MAX_WIDTH = 1000; const MAX_HEIGHT = 1000;
+                        const MAX_WIDTH = 800; const MAX_HEIGHT = 800
                         let width = img.width; let height = img.height;
                         if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
                         else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
@@ -1176,7 +1176,7 @@
                         const canvas = document.createElement('canvas');
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.70);
                         const base64Limpio = dataUrl.split(',')[1];
                         const dataObj = { id: uniqueId, base64: base64Limpio, texto: defaultText };
                         
@@ -1355,6 +1355,19 @@
             }
         }
 
+        // ⚖️ LA BÁSCULA: Calcula el peso del JSON en Megabytes
+        function validarPesoPayload(payloadObj) {
+            const stringPayload = JSON.stringify(payloadObj);
+            // Calculamos los bytes reales usando un Blob
+            const pesoMB = new Blob([stringPayload]).size / (1024 * 1024);
+            
+            if (pesoMB > 5.0) {
+                alert(`⚠️ LÍMITE DE TAMAÑO EXCEDIDO:\n\nTu expediente pesa ${pesoMB.toFixed(2)} MB.\nEl límite máximo de la bóveda es de 5.00 MB.\n\nPor favor, elimina algunas fotografías de la Fase 8 e intenta nuevamente.`);
+                return false;
+            }
+            return true;
+        }
+
         async function enviarDictamenPrevio() {
             const overlay = document.getElementById('overlay_carga');
             const txtCarga = document.getElementById('txt_estado_carga');
@@ -1384,6 +1397,12 @@
 
             if (!ticketActualGlobal) { ticketActualGlobal = `ticket_${Date.now()}_${Math.floor(Math.random() * 1000)}`; }
             const payload = { "parametros_motor": parametros_motor, "ticket_id": ticketActualGlobal };
+
+            // ⚖️ INYECCIÓN DE LA BÁSCULA AQUÍ
+            if (!validarPesoPayload(payload)) {
+                overlay.classList.add('hidden'); overlay.classList.remove('flex');
+                return;
+            }
 
             try {
                 txtCarga.innerText = "Conectando al Motor V20.6...";
@@ -1461,6 +1480,12 @@
             parametros_motor["foto_base64"] = arrayPortada ? arrayPortada.base64 : "";
             parametros_motor["fotos_adicionales"] = arrayInteriores.map(foto => ({ "base64": foto.base64, "descripcion": foto.texto }));
             parametros_motor["anexos_adicionales"] = arrayAnexos.map(anexo => ({ "base64": anexo.base64, "titulo": anexo.texto }));
+
+            // ⚖️ INYECCIÓN DE LA BÁSCULA AQUÍ
+            if (!validarPesoPayload(parametros_motor)) {
+                btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                return;
+            }
 
             localStorage.setItem('leezar_memoria_completa', JSON.stringify(parametros_motor));
 

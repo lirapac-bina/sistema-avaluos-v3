@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
         const googleEndpoint = "https://us-central1-motor-valuacion-api.cloudfunctions.net/motor-pericial-eme";
         const llaveSecreta = process.env.LEEZAR_API_SECRET;
 
-        // 🚀 ENVIAMOS EL PAQUETE COMPLETO IDÉNTICO AL SIMULADOR ORIGINAL
+// 🚀 ENVIAMOS EL PAQUETE COMPLETO IDÉNTICO AL SIMULADOR ORIGINAL
         const respuestaNube = await fetch(googleEndpoint, {
             method: 'POST',
             headers: { 
@@ -46,9 +46,15 @@ exports.handler = async (event, context) => {
             })
         });
 
+        // 🛡️ EL BLINDAJE: Detectar caídas de GCP antes de forzar el JSON
+        if (!respuestaNube.ok) {
+            const errorTexto = await respuestaNube.text();
+            throw new Error(`Fallo en Motor Central (GCP HTTP ${respuestaNube.status}): ${errorTexto}`);
+        }
+
         const dataGCP = await respuestaNube.json();
         
-        if (!respuestaNube.ok || dataGCP.error) {
+        if (dataGCP.error) {
             throw new Error(dataGCP.error || "Google rechazó la compilación del documento.");
         }
 
