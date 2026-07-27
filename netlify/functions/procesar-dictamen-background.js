@@ -53,12 +53,16 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ parametros_motor }) 
         });
 
-        const data = await response.json();
-
+        // 🛡️ EL BLINDAJE: Verificamos si Google Cloud falló o mandó un timeout ANTES de leer el JSON
         if (!response.ok) {
-            await ticketRef.set({ estatus: 'error', error: data.error || "Fallo interno en el motor pericial." }, { merge: true });
+            const errorTexto = await response.text();
+            console.error(`[AvEME] Error en GCP (HTTP ${response.status}):`, errorTexto);
+            await ticketRef.set({ estatus: 'error', error: `El Motor Central tardó demasiado en responder o falló (GCP HTTP ${response.status}).` }, { merge: true });
             return;
         }
+
+        // Si todo está ok, ahora sí procesamos el JSON con seguridad
+        const data = await response.json();
 
         // 3. ¡Éxito!
         await ticketRef.set({ 

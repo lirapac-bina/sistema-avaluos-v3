@@ -1568,14 +1568,30 @@
             btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-3xl">sync</span> COMPILANDO EXPEDIENTE OFICIAL...';
             btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
 
-            // 🎯 NUEVO: Mostrar el Blur de carga
             const overlay = document.getElementById('overlay_carga');
             const txtCarga = document.getElementById('txt_estado_carga');
+            
             if(overlay && txtCarga) {
                 overlay.classList.remove('hidden'); 
                 overlay.classList.add('flex');
-                txtCarga.innerText = "Generando PDF...";
+                txtCarga.innerText = "Iniciando forjado de PDF...";
             }
+
+            // 🧘‍♂️ VITAMINA ANTI-ESTRÉS: Mensajes rotativos
+            const mensajesUX = [
+                "Compilando expediente oficial...",
+                "Ajustando tablas de mercado...",
+                "Inyectando evidencia fotográfica...",
+                "Aplicando sello criptográfico EME...",
+                "Optimizando tamaño del documento..."
+            ];
+            let contadorUX = 0;
+            window.intervaloMensajesPDF = setInterval(() => {
+                if (txtCarga) {
+                    txtCarga.innerText = mensajesUX[contadorUX % mensajesUX.length];
+                    contadorUX++;
+                }
+            }, 4000); // Cambia cada 4 segundos
 
             try {
                 const parametros_motor = JSON.parse(localStorage.getItem('leezar_memoria_completa') || '{}');
@@ -1583,13 +1599,21 @@
 
                 const payload = { ticket_id: ticket_id, session_id: session_id, parametros_motor: parametros_motor };
 
-                await fetch('/.netlify/functions/generar-pdf-final-background', {
+                const response = await fetch('/.netlify/functions/generar-pdf-final-background', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
 
+                // 🛡️ BLINDAJE ANTI-BUCLE: Verificamos si hubo un 500 antes de seguir
+                if (!response.ok) {
+                    const errorFalla = await response.text();
+                    throw new Error(`Falla crítica en el servidor de PDFs (HTTP ${response.status}).`);
+                }
+
                 verificarTicketPDF(ticket_id, btn, originalText);
             } catch (error) {
-                alert("Error de conexión al solicitar el PDF.");
+                clearInterval(window.intervaloMensajesPDF); // Detenemos la animación
+                alert("Error de conexión al solicitar el PDF: " + error.message);
+                if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
                 restaurarBotonPDF(btn, originalText);
             }
         };
@@ -1600,7 +1624,7 @@
                 const data = await response.json();
 
                 if (data.estatus_pdf === 'completado') {
-                    // 🎯 NUEVO: Ocultar el Blur cuando el PDF esté listo
+                    clearInterval(window.intervaloMensajesPDF); // Detenemos la animación al terminar
                     const overlay = document.getElementById('overlay_carga');
                     if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
 
@@ -1608,7 +1632,6 @@
                     btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
                     btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
                     
-                    // 🎯 Revelar el botón de retorno al dashboard
                     const btnRetorno = document.getElementById('btn_retorno_dashboard');
                     if(btnRetorno) {
                         btnRetorno.classList.remove('hidden');
@@ -1618,6 +1641,10 @@
                     window.open(data.pdf_url, '_blank');
                     setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
                 } else if (data.estatus_pdf === 'error') {
+                    clearInterval(window.intervaloMensajesPDF); // Detenemos la animación si hay error del motor
+                    const overlay = document.getElementById('overlay_carga');
+                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+                    
                     alert("Error al compilar el PDF: " + data.error_pdf);
                     restaurarBotonPDF(btn, originalText);
                 } else {
