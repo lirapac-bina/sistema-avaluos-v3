@@ -1599,24 +1599,19 @@
             if(overlay && txtCarga) {
                 overlay.classList.remove('hidden'); 
                 overlay.classList.add('flex');
-                txtCarga.innerText = "Iniciando forjado de PDF...";
+                txtCarga.innerText = "Transfiriendo imágenes y forjando PDF...";
             }
 
-            // 🧘‍♂️ VITAMINA ANTI-ESTRÉS: Mensajes rotativos
             const mensajesUX = [
-                "Compilando expediente oficial...",
-                "Ajustando tablas de mercado...",
-                "Inyectando evidencia fotográfica...",
-                "Aplicando sello criptográfico EME...",
-                "Optimizando tamaño del documento..."
+                "Transfiriendo imágenes a bóveda...",
+                "Forjando estructura del documento...",
+                "Aplicando sellos y firmas periciales...",
+                "Optimizando tamaño del PDF..."
             ];
             let contadorUX = 0;
             window.intervaloMensajesPDF = setInterval(() => {
-                if (txtCarga) {
-                    txtCarga.innerText = mensajesUX[contadorUX % mensajesUX.length];
-                    contadorUX++;
-                }
-            }, 4000); // Cambia cada 4 segundos
+                if (txtCarga) { txtCarga.innerText = mensajesUX[contadorUX % mensajesUX.length]; contadorUX++; }
+            }, 3000);
 
             try {
                 const parametros_motor = JSON.parse(localStorage.getItem('leezar_memoria_completa') || '{}');
@@ -1624,61 +1619,41 @@
 
                 const payload = { ticket_id: ticket_id, session_id: session_id, parametros_motor: parametros_motor };
 
-                const response = await fetch('/.netlify/functions/generar-pdf-final-background', {
+                // 🚀 LLAMADA DIRECTA AL NUEVO ARCHIVO SÍNCRONO
+                const response = await fetch('/.netlify/functions/generar-pdf-final', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
 
-                // 🛡️ BLINDAJE ANTI-BUCLE: Verificamos si hubo un 500 antes de seguir
-                if (!response.ok) {
-                    const errorFalla = await response.text();
-                    throw new Error(`Falla crítica en el servidor de PDFs (HTTP ${response.status}).`);
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `Falla de infraestructura (HTTP ${response.status}).`);
                 }
 
-                verificarTicketPDF(ticket_id, btn, originalText);
-            } catch (error) {
-                clearInterval(window.intervaloMensajesPDF); // Detenemos la animación
-                alert("Error de conexión al solicitar el PDF: " + error.message);
+                // Si todo sale bien, la data ya trae el URL
+                clearInterval(window.intervaloMensajesPDF); 
                 if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-                restaurarBotonPDF(btn, originalText);
+
+                localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
+                btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
+                btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
+                
+                const btnRetorno = document.getElementById('btn_retorno_dashboard');
+                if(btnRetorno) { btnRetorno.classList.remove('hidden'); btnRetorno.classList.add('inline-flex'); }
+
+                window.open(data.pdf_url, '_blank');
+                setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
+
+            } catch (error) {
+                clearInterval(window.intervaloMensajesPDF);
+                alert("Error al compilar el PDF: " + error.message);
+                if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+                btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                if (slider) { slider.disabled = false; slider.classList.remove('opacity-50', 'cursor-not-allowed'); }
             }
         };
 
-        async function verificarTicketPDF(ticket_id, btn, originalText) {
-            try {
-                const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
-                const data = await response.json();
-
-                if (data.estatus_pdf === 'completado') {
-                    clearInterval(window.intervaloMensajesPDF); // Detenemos la animación al terminar
-                    const overlay = document.getElementById('overlay_carga');
-                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-
-                    localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
-                    btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
-                    btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
-                    
-                    const btnRetorno = document.getElementById('btn_retorno_dashboard');
-                    if(btnRetorno) {
-                        btnRetorno.classList.remove('hidden');
-                        btnRetorno.classList.add('inline-flex');
-                    }
-
-                    window.open(data.pdf_url, '_blank');
-                    setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
-                } else if (data.estatus_pdf === 'error') {
-                    clearInterval(window.intervaloMensajesPDF); // Detenemos la animación si hay error del motor
-                    const overlay = document.getElementById('overlay_carga');
-                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-                    
-                    alert("Error al compilar el PDF: " + data.error_pdf);
-                    restaurarBotonPDF(btn, originalText);
-                } else {
-                    setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
-                }
-            } catch (error) {
-                setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
-            }
-        }
+        // NOTA: La función verificarTicketPDF fue eliminada porque ya no la necesitamos
 
         function restaurarBotonPDF(btn, textoOriginal) {
             btn.innerHTML = textoOriginal; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
