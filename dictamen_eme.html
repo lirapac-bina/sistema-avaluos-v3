@@ -1660,7 +1660,6 @@
                 txtCarga.innerText = "Transfiriendo imágenes y forjando PDF...";
             }
 
-            // 🧘‍♂️ VITAMINA ANTI-ESTRÉS DINÁMICA
             const perfilActual = document.getElementById('perfil_usuario').value;
             let mensajesUX = [];
             
@@ -1691,38 +1690,61 @@
 
                 const payload = { ticket_id: ticket_id, session_id: session_id, parametros_motor: parametros_motor };
 
-                // 🚀 LLAMADA DIRECTA AL NUEVO ARCHIVO SÍNCRONO
-                const response = await fetch('/.netlify/functions/generar-pdf-final', {
+                // 🚀 VOLVEMOS AL BACKGROUND: Para que Netlify no nos corte a los 10 segundos
+                const response = await fetch('/.netlify/functions/generar-pdf-final-background', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || `Falla de infraestructura (HTTP ${response.status}).`);
+                if (response.status !== 202 && !response.ok) {
+                    throw new Error(`Falla de infraestructura (HTTP ${response.status}).`);
                 }
 
-                clearInterval(window.intervaloMensajesPDF); 
-                if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-
-                localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
-                btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
-                btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
-                
-                const btnRetorno = document.getElementById('btn_retorno_dashboard');
-                if(btnRetorno) { btnRetorno.classList.remove('hidden'); btnRetorno.classList.add('inline-flex'); }
-
-                window.open(data.pdf_url, '_blank');
-                setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
+                // Iniciamos la rutina para preguntarle a la base de datos si ya terminó
+                verificarTicketPDF(ticket_id, btn, originalText);
 
             } catch (error) {
                 clearInterval(window.intervaloMensajesPDF);
-                alert("Error al compilar el PDF: " + error.message);
+                alert("Error al iniciar la compilación del PDF: " + error.message);
                 if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-                btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
-                if (slider) { slider.disabled = false; slider.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                restaurarBotonPDF(btn, originalText);
             }
         };
+
+        // 🔄 RUTINA DE VERIFICACIÓN (POLLING)
+        async function verificarTicketPDF(ticket_id, btn, originalText) {
+            try {
+                const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
+                const data = await response.json();
+
+                if (data.estatus_pdf === 'completado') {
+                    clearInterval(window.intervaloMensajesPDF); 
+                    const overlay = document.getElementById('overlay_carga');
+                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+
+                    localStorage.removeItem('leezar_ticket_pendiente'); localStorage.removeItem('leezar_memoria_completa'); 
+                    btn.innerHTML = '<span class="material-symbols-rounded text-3xl">check_circle</span> DICTAMEN DESCARGADO';
+                    btn.classList.replace('bg-leezar-primary', 'bg-emerald-600');
+                    
+                    const btnRetorno = document.getElementById('btn_retorno_dashboard');
+                    if(btnRetorno) { btnRetorno.classList.remove('hidden'); btnRetorno.classList.add('inline-flex'); }
+
+                    window.open(data.pdf_url, '_blank');
+                    setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
+                } else if (data.estatus_pdf === 'error') {
+                    clearInterval(window.intervaloMensajesPDF); 
+                    const overlay = document.getElementById('overlay_carga');
+                    if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+                    
+                    alert("Error interno al compilar el PDF: " + data.error_pdf);
+                    restaurarBotonPDF(btn, originalText);
+                } else {
+                    // Si sigue forjando, espera 3 segundos y vuelve a preguntar
+                    setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
+                }
+            } catch (error) {
+                setTimeout(() => verificarTicketPDF(ticket_id, btn, originalText), 3000);
+            }
+        }
 
         function restaurarBotonPDF(btn, textoOriginal) {
             btn.innerHTML = textoOriginal; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
