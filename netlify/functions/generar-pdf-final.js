@@ -17,7 +17,6 @@ exports.handler = async (event, context) => {
         const payload = JSON.parse(event.body);
         const { ticket_id, parametros_motor } = payload;
 
-        // Actualizamos estatus en Firebase
         if (ticket_id) {
             await db.collection('tickets_motor').doc(ticket_id).set({ estatus_pdf: 'forjando' }, { merge: true });
         }
@@ -25,7 +24,7 @@ exports.handler = async (event, context) => {
         const googleEndpoint = "https://us-central1-motor-valuacion-api.cloudfunctions.net/motor-pericial-eme";
         const llaveSecreta = process.env.LEEZAR_API_SECRET;
 
-        // 🚀 ENVIAMOS EL PAQUETE PESADO DIRECTO A GCP
+        // 🚀 ENVIAMOS EL PAQUETE DIRECTO A GCP (La Memoria Serper y las fotos ya vienen aquí)
         const respuestaNube = await fetch(googleEndpoint, {
             method: 'POST',
             headers: { 

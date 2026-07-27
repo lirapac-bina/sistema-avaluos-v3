@@ -1032,16 +1032,25 @@
 
 <!-- Scripts Base y Lógica Estricta de Privilegios -->
     <script>
-        // 👇 1. ESTA ES LA VITAMINA ANTI-ERRORES (NUEVA FUNCIÓN)
-        function validarPrecioTestigo(input) {
-            const valor = parseFloat(input.value);
-            if (valor > 0 && valor < 10000) {
-                alert(`⚠️ ALERTA DE CAPTURA:\n\nIngresaste $${valor} pesos en el precio del testigo.\n\n¿Estás seguro de que no te faltaron ceros? (Ejemplo: ${valor * 1000})`);
-                input.classList.add('border-red-500', 'border-2', 'text-red-700', 'bg-red-50');
+// 🧘‍♂️ VITAMINA ANTI-ESTRÉS DINÁMICA
+            const perfilActual = document.getElementById('perfil_usuario').value;
+            let mensajesUX = [];
+            
+            if (perfilActual === "1") {
+                mensajesUX = [
+                    "Compilando expediente oficial...",
+                    "Estructurando tablas de mercado...",
+                    "Aplicando sello criptográfico EME...",
+                    "Optimizando tamaño del documento..."
+                ];
             } else {
-                input.classList.remove('border-red-500', 'border-2', 'text-red-700', 'bg-red-50');
+                mensajesUX = [
+                    "Transfiriendo imágenes a bóveda...",
+                    "Forjando estructura del documento...",
+                    "Aplicando sellos y firmas periciales...",
+                    "Optimizando tamaño del PDF..."
+                ];
             }
-        }
 
         function generarTestigosManuales() {
             const contenedor = document.getElementById('testigos-container');
@@ -1151,6 +1160,7 @@
         let arrayPortada = null; 
         let arrayInteriores = [];
         let arrayAnexos = [];
+        let memoriaSerperGlobal = []; // 🧠 REGLA DEL SIMULADOR
 
         function comprimirYMostrarImagen(input, contenedorId, esUnica) {
             const contenedor = document.getElementById(contenedorId);
@@ -1320,13 +1330,42 @@
             }
         }
 
+        // Conversión automática de Números a Letras en la Calle
+        function numeroALetras(num) {
+            const unidades = ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+            const especiales = {
+                10: "DIEZ", 11: "ONCE", 12: "DOCE", 13: "TRECE", 14: "CATORCE", 15: "QUINCE",
+                20: "VEINTE", 30: "TREINTA", 40: "CUARENTA", 50: "CINCUENTA", 60: "SESENTA", 
+                70: "SETENTA", 80: "OCHENTA", 90: "NOVENTA"
+            };
+            if (num in especiales) return especiales[num];
+            if (num < 10) return unidades[num];
+            if (num > 15 && num < 20) return "DIECI" + unidades[num % 10];
+            if (num > 20 && num < 30) return "VEINTI" + unidades[num % 10];
+            if (num > 30 && num < 100) {
+                let decena = Math.floor(num / 10) * 10;
+                let unidad = num % 10;
+                return especiales[decena] + " Y " + unidades[unidad];
+            }
+            return num.toString();
+        }
+
         function procesarCalle(input) {
             let texto = input.value;
             if (!texto) return;
-            texto = texto.replace(/\bav\b\.?/gi, "Avenida").replace(/\bcol\b\.?/gi, "Colonia").replace(/\bc\b\.?/gi, "Calle");
-            const unidades = ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
-            texto = texto.replace(/\b\d\b/g, match => unidades[parseInt(match)]);
-            input.value = texto.toUpperCase();
+
+            texto = texto.replace(/\bav\b\.?/gi, "Avenida ");
+            texto = texto.replace(/\bcalz\b\.?/gi, "Calzada ");
+            texto = texto.replace(/\bcol\b\.?/gi, "Colonia ");
+            texto = texto.replace(/\bc\b\.?/gi, "Calle ");
+            texto = texto.replace(/\bno\b\.?/gi, "Número ");
+            texto = texto.replace(/\bn°\b/gi, "Número ");
+
+            texto = texto.replace(/\b\d{1,2}\b/g, function(match) {
+                return numeroALetras(parseInt(match, 10));
+            });
+
+            input.value = texto.replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
         function ajustarFormulario() {
@@ -1437,6 +1476,12 @@
                 const data = await response.json();
                 if (data.estatus === 'completado') {
                     resultadoMotorGlobal = data.resultado; ticketActualGlobal = ticket_id; 
+                    
+                    // 🧠 REGLA DEL SIMULADOR: Atrapamos la memoria
+                    if (resultadoMotorGlobal.data && resultadoMotorGlobal.data.memoria_serper_json) {
+                        memoriaSerperGlobal = resultadoMotorGlobal.data.memoria_serper_json;
+                    }
+
                     overlay.classList.add('hidden'); overlay.classList.remove('flex');
                     document.getElementById('form-eme').classList.add('hidden');
                     document.getElementById('sec_selector_perfil').classList.add('hidden');
@@ -1488,6 +1533,11 @@
             parametros_motor["foto_base64"] = arrayPortada ? arrayPortada.base64 : "";
             parametros_motor["fotos_adicionales"] = arrayInteriores.map(foto => ({ "base64": foto.base64, "descripcion": foto.texto }));
             parametros_motor["anexos_adicionales"] = arrayAnexos.map(anexo => ({ "base64": anexo.base64, "titulo": anexo.texto }));
+
+            // 🚀 REGLA DEL SIMULADOR: Inyectamos la memoria para evitar que GCP pierda 15 segundos buscando de nuevo
+            if (memoriaSerperGlobal.length > 0) {
+                parametros_motor["memoria_serper_json"] = memoriaSerperGlobal;
+            }
 
             // ⚖️ INYECCIÓN DE LA BÁSCULA AQUÍ
             if (!validarPesoPayload(parametros_motor)) {
@@ -1610,12 +1660,26 @@
                 txtCarga.innerText = "Transfiriendo imágenes y forjando PDF...";
             }
 
-            const mensajesUX = [
-                "Transfiriendo imágenes a bóveda...",
-                "Forjando estructura del documento...",
-                "Aplicando sellos y firmas periciales...",
-                "Optimizando tamaño del PDF..."
-            ];
+            // 🧘‍♂️ VITAMINA ANTI-ESTRÉS DINÁMICA
+            const perfilActual = document.getElementById('perfil_usuario').value;
+            let mensajesUX = [];
+            
+            if (perfilActual === "1") {
+                mensajesUX = [
+                    "Compilando expediente oficial...",
+                    "Estructurando tablas de mercado...",
+                    "Aplicando sello criptográfico EME...",
+                    "Optimizando tamaño del documento..."
+                ];
+            } else {
+                mensajesUX = [
+                    "Transfiriendo imágenes a bóveda...",
+                    "Forjando estructura del documento...",
+                    "Aplicando sellos y firmas periciales...",
+                    "Optimizando tamaño del PDF..."
+                ];
+            }
+
             let contadorUX = 0;
             window.intervaloMensajesPDF = setInterval(() => {
                 if (txtCarga) { txtCarga.innerText = mensajesUX[contadorUX % mensajesUX.length]; contadorUX++; }
