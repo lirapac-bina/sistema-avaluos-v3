@@ -1688,18 +1688,29 @@
                 const parametros_motor = JSON.parse(localStorage.getItem('leezar_memoria_completa') || '{}');
                 parametros_motor["valor_comercial_rango"] = window.valorCierreCalculado; 
 
-                const payload = { ticket_id: ticket_id, session_id: session_id, parametros_motor: parametros_motor };
+                // 1️⃣ EL CARGADOR SÍNCRONO: Guarda las fotos pesadas en la base de datos (soporta 6 MB)
+                if (txtCarga) txtCarga.innerText = "Respaldando evidencia fotográfica...";
+                const responseGuardar = await fetch('/.netlify/functions/guardar-dictamen', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ ticket_id: ticket_id, parametros_motor: parametros_motor })
+                });
+                
+                if (!responseGuardar.ok) throw new Error("El paquete de imágenes no pudo ser guardado en la bóveda.");
 
-                // 🚀 VOLVEMOS AL BACKGROUND: Para que Netlify no nos corte a los 10 segundos
-                const response = await fetch('/.netlify/functions/generar-pdf-final-background', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                // 2️⃣ EL GATILLO BACKGROUND: Dispara el PDF mandando SOLO el folio (evita el límite de 256KB)
+                if (txtCarga) txtCarga.innerText = "Iniciando motor matemático pericial...";
+                const responseBackground = await fetch('/.netlify/functions/generar-pdf-final-background', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ ticket_id: ticket_id })
                 });
 
-                if (response.status !== 202 && !response.ok) {
-                    throw new Error(`Falla de infraestructura (HTTP ${response.status}).`);
+                if (responseBackground.status !== 202 && !responseBackground.ok) {
+                    throw new Error(`Falla al disparar el proceso secundario (HTTP ${responseBackground.status}).`);
                 }
 
-                // Iniciamos la rutina para preguntarle a la base de datos si ya terminó
+                // 3️⃣ INICIAMOS EL CICLO DE MONITOREO
                 verificarTicketPDF(ticket_id, btn, originalText);
 
             } catch (error) {
