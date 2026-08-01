@@ -1559,7 +1559,19 @@
             localStorage.setItem('leezar_memoria_completa', JSON.stringify(parametros_motor));
             localStorage.setItem('ticket_en_proceso', ticketActualGlobal);
 
-            const payload = { ticket_id: ticketActualGlobal, email: emailUsuarioGlobal, perfil_usuario: parseInt(document.getElementById('perfil_usuario').value, 10) };
+            // Candado Estricto de Identidad
+            if (!emailUsuarioGlobal || emailUsuarioGlobal.trim() === "") {
+                alert("⚠️ ACCESO DENEGADO:\nNo se detectó una sesión activa. Por seguridad y para resguardar tu documento en la bóveda, debes iniciar sesión antes de procesar el pago.");
+                btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                return; // Corta la ejecución aquí mismo
+            }
+
+            const perfilSeleccionado = document.getElementById('perfil_usuario') ? parseInt(document.getElementById('perfil_usuario').value, 10) : 1;
+            const payload = { 
+                ticket_id: ticketActualGlobal, 
+                email: emailUsuarioGlobal, 
+                perfil_usuario: perfilSeleccionado 
+            };
 
             try {
                 const response = await fetch('/.netlify/functions/create-checkout-dictamen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
