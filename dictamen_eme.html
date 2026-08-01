@@ -1567,10 +1567,13 @@
             }
 
             const perfilSeleccionado = document.getElementById('perfil_usuario') ? parseInt(document.getElementById('perfil_usuario').value, 10) : 1;
+            
+            // EL BLINDAJE: Agregamos returnUrl para engañar al backend viejo si Netlify sigue atascado
             const payload = { 
                 ticket_id: ticketActualGlobal, 
                 email: emailUsuarioGlobal, 
-                perfil_usuario: perfilSeleccionado 
+                perfil_usuario: perfilSeleccionado,
+                returnUrl: window.location.origin + window.location.pathname 
             };
 
             try {
@@ -1578,7 +1581,14 @@
                 const data = await response.json();
                 if (!response.ok || data.error) throw new Error(data.error || "Error al generar la pasarela.");
                 
-                // Transición UI a Cajas de Stripe
+                // PARACAÍDAS TÉCNICO: Si el backend devuelve "url", significa que Netlify sigue usando tu código viejo.
+                if (data.url) {
+                    console.warn("Aviso: Servidor de Netlify desincronizado. Usando pasarela de redirección temporal.");
+                    window.location.href = data.url;
+                    return;
+                }
+
+                // Transición UI a Cajas de Stripe (Flujo Nuevo Correcto)
                 btn.classList.add('hidden');
                 document.getElementById('stripe_element_container').classList.remove('hidden');
                 const btnConfirmar = document.getElementById('btn_confirmar_pago');
