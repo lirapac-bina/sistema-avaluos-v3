@@ -103,10 +103,15 @@
         <form id="form-eme" class="space-y-8">
             <!-- FASE 1: IDENTIFICACIÓN Y UBICACIÓN -->
 <section id="sec_fase_1" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
-    <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+    <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
         1. IDENTIFICACIÓN Y UBICACIÓN
     </h2>
-    
+    <p class="text-[12px] text-blue-600 dark:text-blue-400 mb-6 font-semibold flex items-start gap-1 leading-tight">
+        <span class="material-symbols-rounded text-[18px] flex-shrink-0">auto_awesome</span>
+        <span><b>Autocompletado Activo:</b> Si conoce la georeferencia exacta, simplemente coloque las coordenadas o ubique el inmueble en el mapa inferior; el sistema extraerá y llenará la dirección por usted.</span>
+    </p>
+
+        
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div>
             <label class="leezar-label">Tipo de Inmueble</label>
@@ -139,12 +144,16 @@
         <div>
             <label class="leezar-label">Colonia / Complejo Condominal</label>
             <input type="text" name="Colonia" id="txt_colonia" class="leezar-input">
-            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-semibold">💡 Sugerencia: Anexe colonia y condominio si lo conoce.</p>
+            <!-- Contenedor oculto por defecto, solo despierta cuando se mueve el mapa -->
+            <p id="alerta_colonia" class="hidden"></p>
         </div>
         <div>
-            <label class="leezar-label">Calle Sujeto</label>
+            <label class="leezar-label">Calle y Número del Sujeto</label>
             <input type="text" name="Calle_Sujeto" id="txt_calle" class="leezar-input uppercase" onblur="procesarCalle(this)">
-            <p class="text-xs text-red-500 mt-1 font-semibold">⚠️ Evite abreviaturas. Los números de calle se escribirán en letras.</p>
+            <p class="text-[11px] text-blue-600 dark:text-blue-400 mt-1 font-semibold flex items-start gap-1 leading-tight">
+                <span class="material-symbols-rounded text-[16px] flex-shrink-0 mt-0.5">info</span> 
+                <span><b>Formato automatizado:</b> Escriba la vía sin abreviar. El sistema convertirá los números a texto por usted.</span>
+            </p>
         </div>
     </div>
 
@@ -1325,12 +1334,18 @@
 
             marker.on('dragend', function() {
                 const posicion = marker.getLatLng();
-                document.getElementById('coordenadas_google').value = posicion.lat.toFixed(6) + ", " + posicion.lng.toFixed(6);
+                const lat = posicion.lat.toFixed(6);
+                const lng = posicion.lng.toFixed(6);
+                document.getElementById('coordenadas_google').value = lat + ", " + lng;
+                extraerDatosDeCoordenadas(lat, lng); // <-- Dispara la magia
             });
 
             map.on('click', function(e) {
                 marker.setLatLng(e.latlng);
-                document.getElementById('coordenadas_google').value = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+                const lat = e.latlng.lat.toFixed(6);
+                const lng = e.latlng.lng.toFixed(6);
+                document.getElementById('coordenadas_google').value = lat + ", " + lng;
+                extraerDatosDeCoordenadas(lat, lng); // <-- Dispara la magia
             });
         }
 
@@ -1342,7 +1357,77 @@
                 if (!isNaN(lat) && !isNaN(lng)) {
                     const nuevasCoords = [lat, lng];
                     map.setView(nuevasCoords, 15); marker.setLatLng(nuevasCoords);
+                    extraerDatosDeCoordenadas(lat, lng); // <-- Dispara la magia
                 }
+            }
+        }
+
+        // 🪄 NUEVA FUNCIÓN: Extrae dirección desde Lat/Lng (Reverse Geocoding gratuito de OSM)
+        async function extraerDatosDeCoordenadas(lat, lng) {
+            try {
+                // Feedback visual: Avisa que está leyendo el mapa
+                const inputCoordenadas = document.getElementById('coordenadas_google');
+                const valorOriginal = inputCoordenadas.value;
+                inputCoordenadas.value = "Extrayendo dirección...";
+
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+                const response = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+                const data = await response.json();
+                
+                inputCoordenadas.value = valorOriginal; // Restauramos las coordenadas al input
+
+                if (data && data.address) {
+                    const addr = data.address;
+                    
+                    if(document.getElementById('txt_estado')) document.getElementById('txt_estado').value = addr.state || '';
+                    if(document.getElementById('txt_ciudad')) document.getElementById('txt_ciudad').value = addr.city || addr.town || addr.village || addr.county || addr.state_district || '';
+                    if(document.getElementById('txt_colonia')) {
+                        const inputColonia = document.getElementById('txt_colonia');
+                        // Ampliamos el espectro de búsqueda a más etiquetas de OSM
+                        const coloniaDetectada = addr.suburb || addr.neighbourhood || addr.residential || addr.hamlet || addr.quarter || '';
+                        
+                        // Siempre sobreescribimos para evitar colonias "fantasma" del pin anterior
+                        inputColonia.value = coloniaDetectada;
+                        
+                        if (coloniaDetectada) {
+                            inputColonia.focus();
+                            inputColonia.classList.add('ring-4', 'ring-yellow-400', 'bg-yellow-50', 'text-yellow-900');
+                            
+                            const sugerencia = document.getElementById('alerta_colonia') || inputColonia.nextElementSibling;
+                            if (sugerencia) {
+                                if (window.alertaUXTimeout) clearTimeout(window.alertaUXTimeout);
+                                
+                                // 1. Cambiamos el color a Ámbar (Sugerencia) y usamos tu texto exacto. El mensaje SE QUEDA FIJO.
+                                sugerencia.className = "text-[11px] text-amber-600 dark:text-amber-400 mt-2 font-bold flex items-start gap-1 leading-tight";
+                                sugerencia.innerHTML = `<span class="material-symbols-rounded text-[16px] animate-pulse flex-shrink-0 mt-0.5">edit_location_alt</span> <span>Sugerencia del mapa: <b>${coloniaDetectada}</b>. Valide el dato y anexe el complejo condominal si aplica.</span>`;
+                                
+                                // 2. Solo apagamos el brillo de la caja de texto a los 4 segundos para no lastimar la vista del usuario
+                                window.alertaUXTimeout = setTimeout(() => {
+                                    inputColonia.classList.remove('ring-4', 'ring-yellow-400', 'bg-yellow-50', 'text-yellow-900');
+                                }, 4000);
+                            }
+                        } else {
+                            // 3. Si mueven el pin a un lugar sin colonia registrada, ocultamos el mensaje
+                            const sugerencia = document.getElementById('alerta_colonia');
+                            if(sugerencia) sugerencia.className = "hidden";
+                            inputColonia.classList.remove('ring-4', 'ring-yellow-400', 'bg-yellow-50', 'text-yellow-900');
+                        }
+                    }
+                    if(document.getElementById('txt_cp')) document.getElementById('txt_cp').value = addr.postcode || '';
+                    
+                    // Une calle y número
+                    let calle = addr.road || addr.pedestrian || '';
+                    let numero = addr.house_number || '';
+                    let direccion = `${calle} ${numero}`.trim();
+                    
+                    if(document.getElementById('txt_calle') && direccion) {
+                        document.getElementById('txt_calle').value = direccion.toUpperCase();
+                        procesarCalle(document.getElementById('txt_calle')); // Convierte los números a letras como te gusta
+                    }
+                }
+            } catch (error) {
+                console.error("Error obteniendo dirección:", error);
+                document.getElementById('coordenadas_google').value = `${lat}, ${lng}`;
             }
         }
 
