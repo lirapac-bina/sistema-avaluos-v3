@@ -9,6 +9,10 @@
     
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Stripe Elements JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -808,9 +812,21 @@
                 </ul>
             </div>
 
+            <!-- Contenedor del Formulario Integrado de Stripe -->
+            <div id="stripe_element_container" class="hidden mb-6 bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-inner">
+                <div id="payment-element"></div>
+                <div id="payment-error" class="hidden text-red-500 text-xs font-bold mt-3 text-center"></div>
+            </div>
+
             <button type="button" id="btn_pagar_stripe" onclick="iniciarPagoStripe()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-lg tracking-wide">
                 <span class="material-symbols-rounded text-2xl">lock_open</span>
                 DESBLOQUEAR DICTAMEN (STRIPE)
+            </button>
+
+            <!-- Botón oculto para procesar la tarjeta -->
+            <button type="button" id="btn_confirmar_pago" onclick="procesarPagoStripe()" class="hidden w-full bg-leezar-primary hover:bg-blue-800 dark:bg-leezar-accent1 dark:hover:bg-teal-500 text-white font-black py-4 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all items-center justify-center gap-3 text-lg tracking-wide">
+                <span class="material-symbols-rounded text-2xl">payment</span>
+                CONFIRMAR PAGO DE $125.00 MXN
             </button>
             
             <button type="button" onclick="reiniciarFormulario()" class="mt-6 text-sm text-gray-500 hover:text-leezar-primary dark:hover:text-gray-300 underline font-semibold transition-colors">
@@ -1506,132 +1522,154 @@
             document.getElementById('sec_fase_1').scrollIntoView({ behavior: 'smooth' });
         }
 
+        let stripeInstance = null;
+        let stripeElements = null;
+
+        const STRIPE_PUBLIC_KEY = 'pk_test_51TyET0HtzvvvlnzLCcosN1S3azueKHHSmGyFeaoNh1GwGOdhsU72p0Q7ch0lBV7ZpG4IdcOhi1e2aRaleAoX71dx00sBxl6mM2'; 
+
         async function iniciarPagoStripe() {
             if (!ticketActualGlobal) { alert("Error estructural: No se detectó un ticket de cálculo activo."); return; }
             const btn = document.getElementById('btn_pagar_stripe');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-2xl">sync</span> GENERANDO SESIÓN SEGURA...';
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-2xl">sync</span> GENERANDO CONEXIÓN BANCARIA...';
             btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
 
             const parametros_motor = {};
             const elementos = document.getElementById('form-eme').elements;
             for (let el of elementos) {
                 if (el.name) {
-                    if (el.disabled) {
-                        parametros_motor[el.name] = (el.type === 'checkbox') ? false : ((el.type === 'number' || el.type === 'range') ? 0 : "Ninguna");
-                    } else {
-                        if (el.type === 'checkbox') parametros_motor[el.name] = el.checked;
-                        else if (el.type === 'number' || el.type === 'range') parametros_motor[el.name] = parseFloat(el.value) || 0;
-                        else parametros_motor[el.name] = el.value;
-                    }
+                    if (el.disabled) parametros_motor[el.name] = (el.type === 'checkbox') ? false : ((el.type === 'number' || el.type === 'range') ? 0 : "Ninguna");
+                    else parametros_motor[el.name] = (el.type === 'checkbox') ? el.checked : ((el.type === 'number' || el.type === 'range') ? parseFloat(el.value) || 0 : el.value);
                 }
             }
             parametros_motor["perfil_solicitante"] = parseInt(document.getElementById('perfil_usuario').value, 10) || 1;
             parametros_motor["email_perito"] = emailUsuarioGlobal;
             parametros_motor["firma_base64"] = window.firmaPeritoGlobal || ""; 
-            
             parametros_motor["foto_base64"] = arrayPortada ? arrayPortada.base64 : "";
             parametros_motor["fotos_adicionales"] = arrayInteriores.map(foto => ({ "base64": foto.base64, "descripcion": foto.texto }));
             parametros_motor["anexos_adicionales"] = arrayAnexos.map(anexo => ({ "base64": anexo.base64, "titulo": anexo.texto }));
 
-            // 🚀 REGLA DEL SIMULADOR: Inyectamos la memoria para evitar que GCP pierda 15 segundos buscando de nuevo
-            if (memoriaSerperGlobal.length > 0) {
-                parametros_motor["memoria_serper_json"] = memoriaSerperGlobal;
-            }
+            if (memoriaSerperGlobal.length > 0) parametros_motor["memoria_serper_json"] = memoriaSerperGlobal;
 
-            // ⚖️ INYECCIÓN DE LA BÁSCULA AQUÍ
             if (!validarPesoPayload(parametros_motor)) {
                 btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
                 return;
             }
 
             localStorage.setItem('leezar_memoria_completa', JSON.stringify(parametros_motor));
+            localStorage.setItem('ticket_en_proceso', ticketActualGlobal);
 
-            const payload = {
-                ticket_id: ticketActualGlobal, email: emailUsuarioGlobal,
-                returnUrl: window.location.origin + window.location.pathname,
-                perfil_usuario: parseInt(document.getElementById('perfil_usuario').value, 10)
-            };
+            const payload = { ticket_id: ticketActualGlobal, email: emailUsuarioGlobal, perfil_usuario: parseInt(document.getElementById('perfil_usuario').value, 10) };
 
             try {
-                const response = await fetch('/.netlify/functions/create-checkout-dictamen', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                });
+                const response = await fetch('/.netlify/functions/create-checkout-dictamen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await response.json();
                 if (!response.ok || data.error) throw new Error(data.error || "Error al generar la pasarela.");
-                window.location.href = data.url;
+                
+                // Transición UI a Cajas de Stripe
+                btn.classList.add('hidden');
+                document.getElementById('stripe_element_container').classList.remove('hidden');
+                const btnConfirmar = document.getElementById('btn_confirmar_pago');
+                btnConfirmar.classList.remove('hidden');
+                btnConfirmar.classList.add('flex');
+
+                // Inicializar Stripe con Tema Oscuro/Claro dinámico
+                stripeInstance = Stripe(STRIPE_PUBLIC_KEY);
+                const isDark = document.documentElement.classList.contains('dark');
+                stripeElements = stripeInstance.elements({ 
+                    clientSecret: data.clientSecret,
+                    appearance: { theme: isDark ? 'night' : 'stripe' }
+                });
+
+                const paymentElement = stripeElements.create('payment');
+                paymentElement.mount('#payment-element');
+
             } catch (error) {
                 alert("Error de conexión con Stripe: " + error.message);
                 btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         }
 
+        async function procesarPagoStripe() {
+            const btn = document.getElementById('btn_confirmar_pago');
+            const errorDiv = document.getElementById('payment-error');
+            errorDiv.classList.add('hidden');
+            
+            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-2xl">sync</span> PROCESANDO PAGO...';
+            btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const { error, paymentIntent } = await stripeInstance.confirmPayment({
+                elements: stripeElements,
+                redirect: 'if_required' // EVITA LA REDIRECCIÓN
+            });
+
+            if (error) {
+                errorDiv.innerText = error.message; errorDiv.classList.remove('hidden');
+                btn.innerHTML = '<span class="material-symbols-rounded text-2xl">payment</span> CONFIRMAR PAGO DE $125.00 MXN';
+                btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+                abrirBovedaPericial(ticketActualGlobal); // Dispara el éxito
+            }
+        }
+
         async function verificarRetornoStripe() {
             const params = new URLSearchParams(window.location.search);
-            const success = params.get('success'); const session_id = params.get('session_id'); const ticket_id = params.get('ticket_id');
-
-            if (success === 'true' && session_id && ticket_id) {
+            // Captura redirecciones forzadas (Ej. tarjetas que piden PIN bancario 3D Secure)
+            if (params.get('redirect_status') === 'succeeded' && localStorage.getItem('ticket_en_proceso')) {
                 window.history.replaceState({}, document.title, window.location.pathname);
-                document.getElementById('form-eme').classList.add('hidden');
-                document.getElementById('sec_selector_perfil').classList.add('hidden');
+                ticketActualGlobal = localStorage.getItem('ticket_en_proceso');
+                abrirBovedaPericial(ticketActualGlobal);
+            }
+        }
+
+        async function abrirBovedaPericial(ticket_id) {
+            document.getElementById('form-eme').classList.add('hidden');
+            document.getElementById('sec_selector_perfil').classList.add('hidden');
+            const secCheckout = document.getElementById('sec_checkout');
+            secCheckout.classList.remove('hidden');
+            secCheckout.classList.replace('border-emerald-500', 'border-leezar-primary');
+            
+            secCheckout.innerHTML = `<div class="flex flex-col items-center justify-center p-6 text-leezar-primary"><span class="material-symbols-rounded animate-spin text-5xl mb-4">sync</span><p class="text-sm font-bold tracking-widest uppercase">Abriendo Bóveda de Forjado...</p></div>`;
+            
+            try {
+                const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
+                const data = await response.json();
+                if (data.estatus !== 'completado') throw new Error("Ticket no completado en base de datos.");
                 
-                const secCheckout = document.getElementById('sec_checkout');
-                secCheckout.classList.remove('hidden');
-                secCheckout.classList.replace('border-emerald-500', 'border-leezar-primary');
+                resultadoMotorGlobal = data.resultado; ticketActualGlobal = ticket_id;
+
+                const valorBase = resultadoMotorGlobal.data ? resultadoMotorGlobal.data.valor_final : 0;
+                const minValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_inf) ? resultadoMotorGlobal.auditoria_inyeccion.limite_inf : (valorBase * 0.85);
+                const maxValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_sup) ? resultadoMotorGlobal.auditoria_inyeccion.limite_sup : (valorBase * 1.15);
+                const valorPromedio = (minValor + maxValor) / 2;
                 
+                window.valorCierreCalculado = valorPromedio;
+                const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
+
                 secCheckout.innerHTML = `
-                    <div class="flex flex-col items-center justify-center p-6 text-leezar-primary">
-                        <span class="material-symbols-rounded animate-spin text-5xl mb-4">sync</span>
-                        <p class="text-sm font-bold tracking-widest uppercase">Abriendo Bóveda de Forjado...</p>
-                    </div>
-                `;
-
-                try {
-                    const response = await fetch(`/.netlify/functions/check-dictamen-ticket?id=${ticket_id}`);
-                    const data = await response.json();
-                    if (data.estatus !== 'completado') throw new Error("Ticket no completado en base de datos.");
-                    
-                    resultadoMotorGlobal = data.resultado; ticketActualGlobal = ticket_id;
-
-                    const valorBase = resultadoMotorGlobal.data ? resultadoMotorGlobal.data.valor_final : 0;
-                    const minValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_inf) ? resultadoMotorGlobal.auditoria_inyeccion.limite_inf : (valorBase * 0.85);
-                    const maxValor = (resultadoMotorGlobal.auditoria_inyeccion && resultadoMotorGlobal.auditoria_inyeccion.limite_sup) ? resultadoMotorGlobal.auditoria_inyeccion.limite_sup : (valorBase * 1.15);
-                    const valorPromedio = (minValor + maxValor) / 2;
-                    
-                    window.valorCierreCalculado = valorPromedio;
-                    const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
-
-                    secCheckout.innerHTML = `
-                        <div class="mb-6 flex justify-center"><span class="material-symbols-rounded text-6xl text-white bg-leezar-primary p-4 rounded-full shadow-lg">workspace_premium</span></div>
-                        <h2 class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 mb-2 uppercase tracking-wide">EMISIÓN DE DICTAMEN</h2>
-                        <div class="bg-gray-50 dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-8 text-left shadow-inner">
-                            <h3 class="text-md font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 flex items-center gap-2"><span class="material-symbols-rounded">tune</span> CONCLUIR VALOR PERICIAL</h3>
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div><label class="leezar-label text-center">Rango Mínimo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(minValor)}" readonly></div>
-                                <div><label class="leezar-label text-center">Rango Máximo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(maxValor)}" readonly></div>
-                            </div>
-                            <div class="text-center mt-6">
-                                <label class="leezar-label text-lg">Valor Seleccionado</label>
-                                <span id="lbl_valor_cierre" class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 tracking-wide">${formatoMoneda.format(valorPromedio)}</span>
-                            </div>
-                            <input type="range" id="slider_conclusion" class="w-full h-3 bg-gray-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-leezar-primary mt-4 shadow-inner" min="0" max="100" value="50" oninput="actualizarValorCierreUI(this.value, ${minValor}, ${maxValor})">
+                    <div class="mb-6 flex justify-center"><span class="material-symbols-rounded text-6xl text-white bg-leezar-primary p-4 rounded-full shadow-lg">workspace_premium</span></div>
+                    <h2 class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 mb-2 uppercase tracking-wide">EMISIÓN DE DICTAMEN</h2>
+                    <div class="bg-gray-50 dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-8 text-left shadow-inner">
+                        <h3 class="text-md font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 flex items-center gap-2"><span class="material-symbols-rounded">tune</span> CONCLUIR VALOR PERICIAL</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div><label class="leezar-label text-center">Rango Mínimo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(minValor)}" readonly></div>
+                            <div><label class="leezar-label text-center">Rango Máximo</label><input type="text" class="leezar-input font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-center" value="${formatoMoneda.format(maxValor)}" readonly></div>
                         </div>
-                        <button type="button" id="btn_forjar_pdf" onclick="ejecutarForjadoFinal('${ticket_id}', '${session_id}')" class="w-full bg-leezar-primary hover:bg-blue-800 text-white font-black py-5 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-xl tracking-wide mb-4">
-                            <span class="material-symbols-rounded text-3xl">picture_as_pdf</span> DESCARGAR DICTAMEN
-                        </button>
-                        
-                        <!-- 🎯 Botón oculto inicialmente con la clase 'hidden' -->
-                        <a href="dashboard_dictamen.html" id="btn_retorno_dashboard" class="hidden items-center justify-center gap-2 w-full text-sm font-bold text-gray-500 hover:text-leezar-accent1 dark:text-gray-400 dark:hover:text-emerald-400 uppercase tracking-widest transition-all p-3 border-2 border-transparent hover:border-leezar-accent1 dark:hover:border-emerald-400 rounded-lg">
-                            <span class="material-symbols-rounded text-xl">dashboard</span>
-                            Ir al Dashboard de Dictámenes
-                        </a>
-                    `;
-                } catch (error) {
-                    secCheckout.innerHTML = `<div class="p-6 text-center"><span class="material-symbols-rounded text-6xl text-red-500 mb-2">error</span><p class="text-red-500 font-bold text-lg mb-2">Error de conexión segura</p><p class="text-sm text-gray-600 dark:text-gray-400">${error.message}</p></div>`;
-                }
-            } else if (params.get('canceled') === 'true') {
-                window.history.replaceState({}, document.title, window.location.pathname);
-                alert("La operación de pago fue cancelada.");
+                        <div class="text-center mt-6">
+                            <label class="leezar-label text-lg">Valor Seleccionado</label>
+                            <span id="lbl_valor_cierre" class="text-3xl font-black text-leezar-primary dark:text-leezar-accent1 tracking-wide">${formatoMoneda.format(valorPromedio)}</span>
+                        </div>
+                        <input type="range" id="slider_conclusion" class="w-full h-3 bg-gray-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-leezar-primary mt-4 shadow-inner" min="0" max="100" value="50" oninput="actualizarValorCierreUI(this.value, ${minValor}, ${maxValor})">
+                    </div>
+                    <button type="button" id="btn_forjar_pdf" onclick="ejecutarForjadoFinal('${ticket_id}', 'local_session')" class="w-full bg-leezar-primary hover:bg-blue-800 text-white font-black py-5 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-xl tracking-wide mb-4">
+                        <span class="material-symbols-rounded text-3xl">picture_as_pdf</span> DESCARGAR DICTAMEN
+                    </button>
+                    <a href="dashboard_dictamen.html" id="btn_retorno_dashboard" class="hidden items-center justify-center gap-2 w-full text-sm font-bold text-gray-500 hover:text-leezar-accent1 dark:text-gray-400 dark:hover:text-emerald-400 uppercase tracking-widest transition-all p-3 border-2 border-transparent hover:border-leezar-accent1 dark:hover:border-emerald-400 rounded-lg">
+                        <span class="material-symbols-rounded text-xl">dashboard</span> Ir al Dashboard de Dictámenes
+                    </a>
+                `;
+            } catch (error) {
+                secCheckout.innerHTML = `<div class="p-6 text-center"><span class="material-symbols-rounded text-6xl text-red-500 mb-2">error</span><p class="text-red-500 font-bold text-lg mb-2">Error de conexión segura</p><p class="text-sm text-gray-600 dark:text-gray-400">${error.message}</p></div>`;
             }
         }
         
