@@ -715,11 +715,12 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Zona 1: Portada -->
             <div>
-                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
-                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">image</span>
+                <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all group overflow-hidden flex flex-col items-center justify-center min-h-[160px]">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2 group-hover:scale-110 transition-transform">image</span>
                     <label class="leezar-label !text-center">Fachada / Portada</label>
-                    <p class="text-xs text-gray-500 mb-3">Sube 1 imagen principal (.jpg, .png)</p>
-                    <input type="file" id="foto_portada" accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_portada', true)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                    <p class="text-xs text-gray-500 mb-3">Clic o arrastre aquí (.jpg, .png)</p>
+                    <span class="bg-leezar-primary text-white text-xs font-bold py-2 px-4 rounded shadow-sm group-hover:bg-blue-800 transition-colors">Seleccionar Archivo</span>
+                    <input type="file" id="foto_portada" accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_portada', true)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Arrastra tu foto aquí">
                 </div>
                 <!-- Miniatura Portada -->
                 <div id="preview_portada" class="mt-4 grid grid-cols-1 gap-2"></div>
@@ -727,11 +728,12 @@
 
             <!-- Zona 2: Interiores -->
             <div>
-                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
-                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">photo_library</span>
+                <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all group overflow-hidden flex flex-col items-center justify-center min-h-[160px]">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2 group-hover:scale-110 transition-transform">photo_library</span>
                     <label class="leezar-label !text-center">Fotos Interiores</label>
-                    <p class="text-xs text-gray-500 mb-3">Sube múltiples imágenes (.jpg, .png)</p>
-                    <input type="file" id="fotos_interiores" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_interiores', false)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                    <p class="text-xs text-gray-500 mb-3">Clic o arrastre aquí (.jpg, .png)</p>
+                    <span class="bg-leezar-primary text-white text-xs font-bold py-2 px-4 rounded shadow-sm group-hover:bg-blue-800 transition-colors">Seleccionar Archivos</span>
+                    <input type="file" id="fotos_interiores" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_interiores', false)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Arrastra tus fotos aquí">
                 </div>
                 <!-- Miniaturas Interiores -->
                 <div id="preview_interiores" class="mt-4 grid grid-cols-2 gap-2"></div>
@@ -739,11 +741,12 @@
 
             <!-- Zona 3: Anexos -->
             <div>
-                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all">
-                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2">schema</span>
+                <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-leezar-accent1 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all group overflow-hidden flex flex-col items-center justify-center min-h-[160px]">
+                    <span class="material-symbols-rounded text-4xl text-leezar-accent1 mb-2 group-hover:scale-110 transition-transform">schema</span>
                     <label class="leezar-label !text-center">Planos y Anexos</label>
-                    <p class="text-xs text-gray-500 mb-3">Croquis, predial o mapas (.jpg, .png)</p>
-                    <input type="file" id="fotos_anexos" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_anexos', false)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-leezar-primary file:text-white hover:file:bg-blue-800 transition-colors cursor-pointer">
+                    <p class="text-xs text-gray-500 mb-3">Croquis o predial (.jpg, .png)</p>
+                    <span class="bg-leezar-primary text-white text-xs font-bold py-2 px-4 rounded shadow-sm group-hover:bg-blue-800 transition-colors">Seleccionar Archivos</span>
+                    <input type="file" id="fotos_anexos" multiple accept="image/jpeg, image/png" onchange="comprimirYMostrarImagen(this, 'preview_anexos', false)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Arrastra tus anexos aquí">
                 </div>
                 <!-- Miniaturas Anexos -->
                 <div id="preview_anexos" class="mt-4 grid grid-cols-2 gap-2"></div>
@@ -1129,6 +1132,19 @@
                 </div>`;
             }
         }
+
+        window.validarPrecioTestigo = function(input) {
+            const valor = parseFloat(input.value);
+            // Si ponen algo entre 1 y 9,999 (ej. 650 en lugar de 650,000), salta la alerta
+            if (valor > 0 && valor <= 9999) {
+                alert(`⚠️ ALERTA DE CAPTURA EN TESTIGO:\n\nHas introducido un valor de $${valor}.\n\nSi el precio real es en CIENTOS DE MILES o MILLONES, asegúrate de escribir TODOS LOS CEROS.\n\nEl sistema no procesa cifras abreviadas. Por favor, corrige el dato si es un error.`);
+                // Pinta la caja de rojo para obligarlos a ver el error
+                input.classList.add('ring-4', 'ring-red-400', 'bg-red-50', 'dark:bg-red-900/30');
+            } else {
+                // Si lo corrigen, le quitamos la alerta visual
+                input.classList.remove('ring-4', 'ring-red-400', 'bg-red-50', 'dark:bg-red-900/30');
+            }
+        };
 
         function aplicarLogicaPerfiles() {
             const perfil = document.getElementById('perfil_usuario').value;
