@@ -106,6 +106,16 @@
                 </div>
             </section>
 
+            <!-- Footer Legal -->
+            <footer class="mt-12 py-6 border-t border-gray-200 dark:border-leezar-darkBorder text-center">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    &copy; 2026 Motor Pericial EME | Ecosistema Leezar. Todos los derechos reservados. <br>
+                    <button onclick="mostrarAvisoPrivacidadManual()" class="text-leezar-primary dark:text-leezar-accent1 hover:underline font-bold mt-2 transition-colors">
+                        Consultar Aviso de Privacidad y Resguardo de Datos
+                    </button>
+                </p>
+            </footer>
+
         </div>
     </main>
 
@@ -131,11 +141,25 @@
                 // UI de Carga
                 tablaBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 font-bold"><span class="material-symbols-rounded animate-spin">sync</span> Cargando bóveda pericial...</td></tr>`;
 
-                // 2. Solicitar historial a la Bóveda Segura de Netlify
-                const response = await fetch(`/.netlify/functions/get-historial-dictamenes?email=${encodeURIComponent(activeUser.email)}`);
+                // 2. Solicitar historial a la Bóveda (CON PARACAÍDAS DE 15 SEGUNDOS)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos límite
+
+                let response;
+                try {
+                    response = await fetch(`/.netlify/functions/get-historial-dictamenes?email=${encodeURIComponent(activeUser.email)}`, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId); // Apagamos la alarma si responde a tiempo
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        throw new Error("El servidor tardó demasiado en responder. Posible bucle o caída de red.");
+                    }
+                    throw err; // Lanza otros errores (ej. sin internet)
+                }
                 
                 if (!response.ok) {
-                    const errorBackend = await response.json();
+                    const errorBackend = await response.json().catch(() => ({}));
                     throw new Error(errorBackend.error || "Fallo al conectar con la bóveda de historiales.");
                 }
                 
@@ -165,18 +189,34 @@
                     }
 
                     let botonAccion = '';
-                    if (doc.estatus === 'forjando' || doc.estatus_pdf === 'forjando' || (!doc.pdf_url && doc.estatus !== 'error' && doc.estatus_pdf !== 'error')) {
-                        botonAccion = `<span class="text-yellow-600 dark:text-yellow-400 font-bold text-xs flex items-center gap-1 animate-pulse"><span class="material-symbols-rounded text-sm animate-spin">sync</span> En Proceso...</span>`;
-                    } else if (doc.pdf_url) {
-                        botonAccion = `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`;
-                    } else {
-                        botonAccion = `<span class="text-red-500 text-xs font-bold flex items-center gap-1" title="${doc.error_pdf || 'Error al generar PDF'}"><span class="material-symbols-rounded text-sm">lock</span> Archivo Dañado</span>`;
-                    }
+                    let formatoMoneda = '';
+                    let valorRedondeado = 0;
 
-                    // Redondeamos matemáticamente el valor y le quitamos los decimales visuales
-                    const valorComercial = doc.valor_comercial || 0;
-                    const valorRedondeado = Math.round(valorComercial);
-                    const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(valorRedondeado);
+                    // Si NO hay PDF, asumimos que está en el limbo / pendiente de pago
+                    if (doc.estatus === 'forjando' || doc.estatus_pdf === 'forjando' || (!doc.pdf_url && doc.estatus !== 'error' && doc.estatus_pdf !== 'error')) {
+                        
+                        // 1. OCULTAMOS EL VALOR CON UN CANDADO VISUAL
+                        formatoMoneda = `<span class="text-gray-400 dark:text-gray-500 italic flex items-center gap-1 text-xs"><span class="material-symbols-rounded text-[16px]">lock</span> Valor Protegido</span>`;
+                        
+                        // 2. CREAMOS EL BOTÓN DE REANUDAR (Mandamos el ID del ticket por URL)
+                        const ticketId = doc.ticket_id || doc.id;
+                        botonAccion = `<a href="dictamen_eme.html?resume=${ticketId}" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/50 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 w-max transition-colors shadow-sm">
+                                          <span class="material-symbols-rounded text-sm">shopping_cart_checkout</span> Reanudar Pago
+                                       </a>`;
+                    } 
+                    // Si SÍ hay PDF, ya pagó y todo está libre
+                    else if (doc.pdf_url) {
+                        const valorComercial = doc.valor_comercial || 0;
+                        valorRedondeado = Math.round(valorComercial);
+                        formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(valorRedondeado);
+                        
+                        botonAccion = `<a href="${doc.pdf_url}" target="_blank" class="text-leezar-primary hover:text-blue-800 dark:text-leezar-accent1 dark:hover:text-teal-400 font-bold text-xs flex items-center gap-1"><span class="material-symbols-rounded text-sm">picture_as_pdf</span> Descargar PDF</a>`;
+                    } 
+                    // Error crítico de sistema
+                    else {
+                        formatoMoneda = `<span class="text-red-400 text-xs">Error</span>`;
+                        botonAccion = `<span class="text-red-500 text-xs font-bold flex items-center gap-1" title="${doc.error_pdf || 'Error al generar PDF'}"><span class="material-symbols-rounded text-sm">error</span> Archivo Dañado</span>`;
+                    }
 
                     tbodyHtml.push(`
                         <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors fila-dictamen">
@@ -192,8 +232,17 @@
 
             } catch (error) {
                 console.error("[AvEME] Error de Historial:", error);
-                // Ajustamos el colspan a 6 por la nueva columna
-                tablaBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-bold">Error de conexión al recuperar el historial.</td></tr>`;
+                tablaBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="p-8 text-center">
+                        <span class="material-symbols-rounded text-5xl text-red-500 mb-3 block">cloud_off</span>
+                        <p class="text-gray-700 dark:text-gray-300 font-bold text-lg mb-2">Conexión Interrumpida</p>
+                        <p class="text-sm text-gray-500 mb-4">${error.message}</p>
+                        <button onclick="cargarHistorialDictamenes()" class="bg-leezar-primary hover:bg-blue-800 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2 mx-auto shadow-md">
+                            <span class="material-symbols-rounded text-sm">refresh</span> Reintentar conexión
+                        </button>
+                    </td>
+                </tr>`;
             }
         }
 
@@ -244,6 +293,58 @@
             tbody.innerHTML = '';
             filas.forEach(fila => tbody.appendChild(fila));
         }
+    </script>
+
+    <!-- 🛡️ AVISO LEGAL Y DE ALMACENAMIENTO (COOKIES / LOCALSTORAGE) -->
+    <div id="alerta_privacidad" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-4xl bg-slate-900 text-gray-300 text-xs p-4 rounded-xl shadow-2xl border border-slate-700 z-[100] flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-500 opacity-0 pointer-events-none translate-y-4">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-rounded text-leezar-accent1 text-2xl flex-shrink-0">gpp_maybe</span>
+            <p class="leading-relaxed">
+                <strong class="text-white block mb-1">Aviso de Privacidad y Resguardo de Datos:</strong> 
+                Este sistema utiliza almacenamiento local en su dispositivo exclusivamente para resguardar su progreso ante cortes de conexión. <strong>Por seguridad, el sistema guarda temporalmente un solo dictamen a la vez; iniciar un proceso nuevo sobrescribirá y eliminará cualquier sesión anterior no completada.</strong> Al continuar, acepta nuestras políticas. Leezar no almacena información bancaria ni asume responsabilidad por la pérdida de datos en sesiones interrumpidas.
+            </p>
+        </div>
+        <button onclick="aceptarPrivacidad()" class="bg-leezar-accent1 hover:bg-teal-500 text-white font-bold py-2.5 px-6 rounded-lg whitespace-nowrap transition-colors shadow-lg">
+            Entendido
+        </button>
+    </div>
+
+    <script>
+        // Lógica para mostrar el aviso legal solo si no ha sido aceptado antes
+        document.addEventListener("DOMContentLoaded", () => {
+            const avisoAceptado = localStorage.getItem('leezar_aviso_legal_aceptado');
+            const alertaPrivacidad = document.getElementById('alerta_privacidad');
+            
+            if (!avisoAceptado && alertaPrivacidad) {
+                // Pequeño retraso para que aparezca con una animación elegante
+                setTimeout(() => {
+                    alertaPrivacidad.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                }, 1000);
+            }
+        });
+
+        window.aceptarPrivacidad = function() {
+            localStorage.setItem('leezar_aviso_legal_aceptado', 'true');
+            const alertaPrivacidad = document.getElementById('alerta_privacidad');
+            
+            // Animación de salida
+            alertaPrivacidad.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                alertaPrivacidad.style.display = 'none';
+            }, 500);
+        };
+
+        window.mostrarAvisoPrivacidadManual = function() {
+            const alertaPrivacidad = document.getElementById('alerta_privacidad');
+            if (alertaPrivacidad) {
+                // Le quitamos el display none en caso de que ya lo hubiera aceptado antes
+                alertaPrivacidad.style.display = 'flex'; 
+                // Pequeño retraso de 10ms para que la animación de CSS funcione suavemente
+                setTimeout(() => {
+                    alertaPrivacidad.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                }, 10);
+            }
+        };
     </script>
 
 </body>

@@ -1281,6 +1281,47 @@
             generarTestigosManuales(); 
             inicializarMapa();
             await autoDetectarPerfilUsuario();
+            
+            // --- NUEVO: PARACAÍDAS DE RECUPERACIÓN (PASO 2) ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketRescatado = urlParams.get('resume');
+            
+            if (ticketRescatado) {
+                const memoriaStr = localStorage.getItem('leezar_memoria_completa');
+                if (memoriaStr) {
+                    try {
+                        const memoria = JSON.parse(memoriaStr);
+                        
+                        // 1. Rellenamos el formulario invisible para que la matemática no se rompa
+                        const elementos = document.getElementById('form-eme').elements;
+                        for (let el of elementos) {
+                            if (el.name && memoria[el.name] !== undefined) {
+                                if (el.type === 'checkbox') el.checked = memoria[el.name];
+                                else el.value = memoria[el.name];
+                            }
+                        }
+                        
+                        // 2. Restauramos las variables globales de imágenes a la memoria temporal
+                        if (memoria["foto_base64"]) arrayPortada = { base64: memoria["foto_base64"], texto: "Portada recuperada" };
+                        if (memoria["fotos_adicionales"]) arrayInteriores = memoria["fotos_adicionales"];
+                        if (memoria["anexos_adicionales"]) arrayAnexos = memoria["anexos_adicionales"];
+                        if (memoria["memoria_serper_json"]) memoriaSerperGlobal = memoria["memoria_serper_json"];
+                        
+                        // 3. Teletransportamos al cliente directo a la caja de cobro
+                        ticketActualGlobal = ticketRescatado;
+                        document.getElementById('form-eme').classList.add('hidden');
+                        document.getElementById('sec_selector_perfil').classList.add('hidden');
+                        document.getElementById('sec_checkout').classList.remove('hidden');
+                        
+                    } catch (e) {
+                        console.error("Error rescatando la sesión", e);
+                    }
+                } else {
+                    // Si cambian de computadora o borran el historial, protegemos el sistema
+                    alert("⚠️ SESIÓN CADUCADA:\nPor seguridad, los datos no pagados solo se guardan temporalmente en el dispositivo original. Por favor, captura el dictamen nuevamente.");
+                }
+            }
+
             verificarRetornoStripe(); 
         });
 
@@ -1933,4 +1974,44 @@
         }
     </script>
     </body>
+
+    <!-- 🛡️ AVISO LEGAL Y DE ALMACENAMIENTO (COOKIES / LOCALSTORAGE) -->
+    <div id="alerta_privacidad" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-4xl bg-slate-900 text-gray-300 text-xs p-4 rounded-xl shadow-2xl border border-slate-700 z-[100] flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-500 opacity-0 pointer-events-none translate-y-4">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-rounded text-leezar-accent1 text-2xl flex-shrink-0">gpp_maybe</span>
+<p class="leading-relaxed">
+                <strong class="text-white block mb-1">Aviso de Privacidad y Resguardo de Datos:</strong> 
+                Este sistema utiliza almacenamiento local en su dispositivo exclusivamente para resguardar su progreso ante cortes de conexión. <strong>Por seguridad, el sistema guarda temporalmente un solo dictamen a la vez; iniciar un proceso nuevo sobrescribirá y eliminará cualquier sesión anterior no completada.</strong> Al continuar, acepta nuestras políticas. Leezar no almacena información bancaria ni asume responsabilidad por la pérdida de datos en sesiones interrumpidas.
+            </p>
+        </div>
+        <button onclick="aceptarPrivacidad()" class="bg-leezar-accent1 hover:bg-teal-500 text-white font-bold py-2.5 px-6 rounded-lg whitespace-nowrap transition-colors shadow-lg">
+            Entendido
+        </button>
+    </div>
+
+    <script>
+        // Lógica para mostrar el aviso legal solo si no ha sido aceptado antes
+        document.addEventListener("DOMContentLoaded", () => {
+            const avisoAceptado = localStorage.getItem('leezar_aviso_legal_aceptado');
+            const alertaPrivacidad = document.getElementById('alerta_privacidad');
+            
+            if (!avisoAceptado && alertaPrivacidad) {
+                // Pequeño retraso para que aparezca con una animación elegante
+                setTimeout(() => {
+                    alertaPrivacidad.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                }, 1000);
+            }
+        });
+
+        window.aceptarPrivacidad = function() {
+            localStorage.setItem('leezar_aviso_legal_aceptado', 'true');
+            const alertaPrivacidad = document.getElementById('alerta_privacidad');
+            
+            // Animación de salida
+            alertaPrivacidad.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                alertaPrivacidad.style.display = 'none';
+            }, 500);
+        };
+    </script>
 </html>
