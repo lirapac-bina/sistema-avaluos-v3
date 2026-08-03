@@ -90,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark'); // Esto detiene el ciclado obligando al sistema a limpiar el tema
     }
 
     const fotoSrc = activeUser.photo || activeUser.photoUrl || activeUser.fotoUrl || '';
@@ -197,8 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#0b1121] space-y-3 flex flex-col items-center">
             <button onclick="toggleTheme()" class="w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 hover:border-red-500 transition-colors theme-toggle-btn">
-                <span class="sidebar-text">Modo Oscuro</span> 
-                <span class="material-symbols-rounded text-lg">${document.documentElement.classList.contains('dark') ? 'dark_mode' : 'light_mode'}</span>
+                <span class="sidebar-text" id="lbl_tema">${document.documentElement.classList.contains('dark') ? 'Modo Claro' : 'Modo Oscuro'}</span> 
+                <span class="material-symbols-rounded text-lg" id="icono_tema">${document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode'}</span>
             </button>
             
             <div class="w-full flex items-center gap-3 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 group profile-container">
@@ -235,8 +237,14 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.toggleTheme = () => {
-        document.documentElement.classList.toggle('dark');
-        localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.theme = isDark ? 'dark' : 'light';
+        
+        // Actualizamos el botón visualmente sin recargar la página
+        const lbl = document.getElementById('lbl_tema');
+        const icono = document.getElementById('icono_tema');
+        if (lbl) lbl.innerText = isDark ? 'Modo Claro' : 'Modo Oscuro';
+        if (icono) icono.innerText = isDark ? 'light_mode' : 'dark_mode';
     };
 
     window.cerrarSesion = () => { 

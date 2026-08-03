@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,9 +24,9 @@
                             success: '#059669', /* emerald-600 */
                             accent1: '#0d9488', /* teal-600 */
                             accent2: '#4f46e5', /* indigo-600 */
-                            darkBg: '#0f172a',
-                            darkCard: '#1e293b',
-                            darkBorder: '#334155'
+                            darkBg: '#090E17', /* Fondo ultra profundo tipo macOS */
+                            darkCard: '#111827', /* Tarjeta ligeramente contrastada */
+                            darkBorder: '#1F2937' /* Borde súper sutil */
                         }
                     }
                 }
@@ -41,11 +41,19 @@
     <style type="text/tailwindcss">
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .leezar-input {
-            @apply w-full p-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-leezar-darkBorder rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-leezar-accent1 transition-all;
+            /* Se hunden con shadow-inner y usan leezar-darkBg para máximo contraste */
+            @apply w-full p-2.5 bg-slate-50 dark:bg-leezar-darkBg border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-leezar-accent1 transition-all shadow-inner;
         }
         .leezar-label {
             @apply block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide;
         }
+        
+        /* 🪄 NUEVA CLASE: Tarjetas flotantes premium con profundidad y micro-interacción */
+        .leezar-card {
+            /* Usan leezar-darkCard para resaltar sobre el fondo principal */
+            @apply bg-white dark:bg-leezar-darkCard p-6 md:p-8 rounded-2xl border border-gray-100 dark:border-leezar-darkBorder shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.4)] hover:-translate-y-1;
+        }
+
         .leezar-input:disabled {
             @apply bg-gray-100 dark:bg-slate-900 text-gray-500 cursor-not-allowed opacity-70;
         }
@@ -102,7 +110,7 @@
         <!-- Contenedor Principal del Formulario (A integrar en el siguiente paso) -->
         <form id="form-eme" class="space-y-8">
             <!-- FASE 1: IDENTIFICACIÓN Y UBICACIÓN -->
-<section id="sec_fase_1" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+<section id="sec_fase_1" class="leezar-card relative z-10">
     <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
         1. IDENTIFICACIÓN Y UBICACIÓN
     </h2>
@@ -186,7 +194,7 @@
 </section>
 
 <!-- FASE 2: CARACTERÍSTICAS DEL TERRENO -->
-<section id="sec_fase_2" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+<section id="sec_fase_2" class="leezar-card relative z-10">
     <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
         2. CARACTERÍSTICAS DEL TERRENO
     </h2>
@@ -241,7 +249,7 @@
     </section>
 
     <!-- FASE 3: CARACTERÍSTICAS DE CONSTRUCCIÓN -->
-    <section id="sec_fase_3" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="sec_fase_3" class="leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
             3. CARACTERÍSTICAS DE CONSTRUCCIÓN
         </h2>
@@ -293,7 +301,7 @@
     </section>
 
     <!-- FASE 4: EQUIPAMIENTO Y CATEGORÍA -->
-    <section id="sec_fase_4" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="sec_fase_4" class="leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
             4. EQUIPAMIENTO Y CATEGORÍA (BASE)
         </h2>
@@ -556,7 +564,7 @@
     </section>
 
     <!-- FASE 6: PARÁMETROS CRÍTICOS (MATRIZ 0.3) -->
-    <section id="sec_fase_6" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="sec_fase_6" class="leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
             6. PARÁMETROS CRÍTICOS (MATRIZ 0.3)
         </h2>
@@ -680,7 +688,7 @@
     </section>
 
 <!-- FASE 7: ESPECIFICACIONES DE VERTICALIDAD -->
-    <section id="sec_fase_7" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="sec_fase_7" class="leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
             7. ESPECIFICACIONES DE VERTICALIDAD
         </h2>
@@ -697,7 +705,7 @@
     </section>
 
     <!-- FASE 8: EVIDENCIA FOTOGRÁFICA Y ANEXOS -->
-    <section id="sec_fase_8" class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="sec_fase_8" class="leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
             <span class="material-symbols-rounded">photo_camera</span>
             8. EVIDENCIA FOTOGRÁFICA Y ANEXOS
@@ -744,7 +752,7 @@
     </section>
 
     <!-- 👤 CREDENCIALES DEL EMISOR DEL DICTAMEN -->
-    <section id="seccion_datos_valuador" class="hidden bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-leezar-darkBorder shadow-sm transition-colors duration-300">
+    <section id="seccion_datos_valuador" class="hidden leezar-card relative z-10">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
             <span class="material-symbols-rounded">badge</span>
             CREDENCIALES DEL EMISOR DEL DICTAMEN
@@ -774,7 +782,7 @@
     </section>
 
     <!-- FASE 9: PANEL DE CONTROL PERICIAL (MUESTREO MANUAL) -->
-    <section id="seccion_muestreo_manual" class="hidden bg-white dark:bg-slate-800 p-6 rounded-lg border-2 border-leezar-accent1 shadow-sm transition-colors duration-300">
+    <section id="seccion_muestreo_manual" class="hidden leezar-card relative z-10 !border-2 !border-leezar-accent1">
         <h2 class="text-lg font-bold text-leezar-primary dark:text-leezar-accent1 mb-4 border-b border-leezar-accent1 pb-2 flex items-center gap-2">
             <span class="material-symbols-rounded">manage_search</span>
             9. PANEL DE CONTROL PERICIAL (MUESTREO MANUAL)
@@ -793,7 +801,7 @@
             
             <!-- Botón de Acción: Tiempo 1 -->
             <div class="mt-8 border-t border-gray-200 dark:border-leezar-darkBorder pt-6">
-                <button type="button" id="btn_pre_calcular" onclick="enviarDictamenPrevio()" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-lg tracking-wide">
+                <button type="button" id="btn_pre_calcular" onclick="enviarDictamenPrevio()" class="w-full bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black py-4 px-6 rounded-xl shadow-[0_8px_20px_rgb(220,38,38,0.25)] hover:shadow-[0_15px_30px_rgb(220,38,38,0.4)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3 text-lg tracking-wide">
                     <span class="material-symbols-rounded text-2xl">bolt</span>
                     CALCULAR PRE-DICTAMEN
                 </button>
@@ -1768,7 +1776,7 @@
                         </div>
                         <input type="range" id="slider_conclusion" class="w-full h-3 bg-gray-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-leezar-primary mt-4 shadow-inner" min="0" max="100" value="50" oninput="actualizarValorCierreUI(this.value, ${minValor}, ${maxValor})">
                     </div>
-                    <button type="button" id="btn_forjar_pdf" onclick="ejecutarForjadoFinal('${ticket_id}', 'local_session')" class="w-full bg-leezar-primary hover:bg-blue-800 text-white font-black py-5 px-6 rounded-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 text-xl tracking-wide mb-4">
+                    <button type="button" id="btn_forjar_pdf" onclick="ejecutarForjadoFinal('${ticket_id}', 'local_session')" class="w-full bg-gradient-to-r from-leezar-primary to-blue-800 hover:from-blue-600 hover:to-blue-700 text-white font-black py-5 px-6 rounded-xl shadow-[0_8px_20px_rgb(15,76,129,0.25)] hover:shadow-[0_15px_30px_rgb(15,76,129,0.4)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3 text-xl tracking-wide mb-4">
                         <span class="material-symbols-rounded text-3xl">picture_as_pdf</span> DESCARGAR DICTAMEN
                     </button>
                     <a href="dashboard_dictamen.html" id="btn_retorno_dashboard" class="hidden items-center justify-center gap-2 w-full text-sm font-bold text-gray-500 hover:text-leezar-accent1 dark:text-gray-400 dark:hover:text-emerald-400 uppercase tracking-widest transition-all p-3 border-2 border-transparent hover:border-leezar-accent1 dark:hover:border-emerald-400 rounded-lg">
