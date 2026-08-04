@@ -13,6 +13,9 @@
     <!-- Stripe Elements JS -->
     <script src="https://js.stripe.com/v3/"></script>
 
+    <!-- Material Symbols (Iconos UI) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -78,19 +81,22 @@
     <div class="max-w-6xl mx-auto bg-white dark:bg-leezar-darkCard rounded-lg shadow-lg border border-gray-200 dark:border-leezar-darkBorder p-8">
         
         <header class="mb-8 border-b border-gray-200 dark:border-leezar-darkBorder pb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-black text-leezar-primary dark:text-leezar-accent1 uppercase tracking-wide">
-                    MOTOR PERICIAL EME
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
-                    Ecosistema Leezar
-                </p>
+            <div class="flex flex-col items-start gap-2">
+                <img src="https://centrointegralinmobiliarioeme.com/wp-content/uploads/2023/09/logo-eme-2023.png" alt="Logo EME" class="h-10 md:h-12 object-contain mb-1">
+                <div>
+                    <h1 class="text-2xl font-black text-leezar-primary dark:text-leezar-accent1 uppercase tracking-wide">
+                        MOTOR PERICIAL EME
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
+                        Ecosistema Leezar
+                    </p>
+                </div>
             </div>
             
             <!-- Badge de Estado del Motor -->
-            <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-full text-red-700 dark:text-red-400 text-xs font-bold tracking-wider shadow-sm">
+            <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 rounded-full text-emerald-700 dark:text-emerald-400 text-xs font-bold tracking-wider shadow-sm">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                MOTOR Versión 20.6 ACTIVO
+                SISTEMA EN LÍNEA ACTIVO
             </div>
         </header>   
 
@@ -881,7 +887,7 @@
                     </div>
                     <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-wide">¡Dictamen Oficializado!</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-                        ¿Cómo calificarías el desempeño del Motor 20.6 en este cálculo?
+                        ¿Cómo calificarías el desempeño del sistema en este cálculo?
                     </p>
                 </div>
 
@@ -918,7 +924,7 @@
                 <span class="material-symbols-rounded text-6xl text-emerald-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-full p-4">task_alt</span>
                 <p class="text-emerald-600 dark:text-emerald-400 font-black text-xl mb-2 uppercase tracking-wide">¡Gracias por tu reporte!</p>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">La bóveda pericial ha recibido tus datos correctamente.</p>
-                <button onclick="cerrarFeedback()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+                <button onclick="window.location.href='dashboard_dictamen.html'" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
                     Continuar al Dashboard <span class="material-symbols-rounded">arrow_forward</span>
                 </button>
             </div>
@@ -926,6 +932,64 @@
             <button onclick="cerrarFeedback()" id="btn_omitir_feedback" class="mt-6 w-full text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 uppercase tracking-widest font-bold transition-colors">
                 Omitir por ahora
             </button>
+        </div>
+    </div>
+
+    <!-- 🚀 Módulo de Edu-Selling Premium (Potencia tu próximo dictamen) -->
+    <div id="modal_upsell" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md hidden items-center justify-center z-[120] transition-all duration-500 opacity-0 overflow-y-auto py-10">
+        <div class="w-11/12 max-w-5xl mx-auto transform translate-y-12 transition-all duration-500 relative" id="upsell_box">
+            
+            <button onclick="cerrarUpsell()" class="absolute -top-12 right-0 md:-right-8 text-gray-400 hover:text-white transition-colors">
+                <span class="material-symbols-rounded text-4xl">close</span>
+            </button>
+
+            <!-- Encabezado Estratégico -->
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-5xl font-black text-white uppercase tracking-wide mb-3 flex items-center justify-center gap-3">
+                    <span class="material-symbols-rounded text-5xl text-leezar-accent1">rocket_launch</span>
+                    POTENCIA TU PRÓXIMO DICTAMEN
+                </h2>
+                <p class="text-lg md:text-xl text-gray-300 font-medium">Ya tienes acceso a las herramientas avanzadas. ¿Qué nivel usarás la próxima vez?</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <!-- Tarjeta 1: Base (Azul) -->
+                <div class="bg-blue-800 text-white rounded-3xl p-8 flex flex-col h-full shadow-2xl relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 border-4 border-transparent hover:border-blue-400 group">
+                    <span class="text-xs font-bold tracking-widest text-blue-300 mb-3 uppercase">Nivel Básico</span>
+                    <h3 class="text-4xl font-black mb-4">Perfil 1</h3>
+                    <p class="text-blue-100 mb-8 flex-grow leading-relaxed text-sm md:text-base">
+                        Cálculos automatizados y acceso al motor matemático base. Ideal para consultas rápidas de valor sin necesidad de capturar anexos ni fotografías.
+                    </p>
+                    <button onclick="activarPerfilDesdeUpsell('1')" class="w-full bg-blue-900 group-hover:bg-blue-950 text-white text-center font-black py-4 rounded-xl transition-colors mt-auto shadow-lg">
+                        Continuar con Perfil 1
+                    </button>
+                </div>
+
+                <!-- Tarjeta 2: Bróker (Rojo) -->
+                <div class="bg-red-700 text-white rounded-3xl p-8 flex flex-col h-full shadow-2xl relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 border-4 border-transparent hover:border-red-400 group">
+                    <span class="text-xs font-bold tracking-widest text-red-200 mb-3 uppercase">Mayor Control</span>
+                    <h3 class="text-4xl font-black mb-4">Perfil 2</h3>
+                    <p class="text-red-100 mb-8 flex-grow leading-relaxed text-sm md:text-base">
+                        Activa la inyección de testigos manuales. Toma el control del mercado y ajusta la matriz de homologación pericial con tus propios datos de venta.
+                    </p>
+                    <button onclick="activarPerfilDesdeUpsell('2')" class="w-full bg-red-900 group-hover:bg-red-950 text-white text-center font-black py-4 rounded-xl transition-colors mt-auto shadow-lg">
+                        Probar Perfil 2
+                    </button>
+                </div>
+
+                <!-- Tarjeta 3: Valuador (Amarillo Naranja) -->
+                <div class="bg-amber-500 text-slate-900 rounded-3xl p-8 flex flex-col h-full shadow-2xl relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 border-4 border-transparent hover:border-white group">
+                    <span class="text-xs font-bold tracking-widest text-amber-900 mb-3 uppercase">Nivel Experto</span>
+                    <h3 class="text-4xl font-black mb-4">Perfil 3</h3>
+                    <p class="text-amber-950 mb-8 flex-grow leading-relaxed text-sm md:text-base">
+                        El ecosistema completo. Adjunta evidencia fotográfica, anexos, planos y estampa tu propia firma en el dictamen final para tus clientes.
+                    </p>
+                    <button onclick="activarPerfilDesdeUpsell('3')" class="w-full bg-slate-900 group-hover:bg-slate-800 text-white text-center font-black py-4 rounded-xl transition-colors mt-auto shadow-lg">
+                        Dominar Perfil 3
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1277,6 +1341,39 @@
             else if (contenedorId === 'preview_anexos') { const img = arrayAnexos.find(i => i.id === id); if (img) img.texto = texto; }
         };
 
+        // --- 🚀 FUNCIONES DEL CARRUSEL UPSELL ---
+        function mostrarUpsell() {
+            const modal = document.getElementById('modal_upsell');
+            const box = document.getElementById('upsell_box');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); box.classList.remove('translate-y-12'); }, 10);
+        }
+
+        function cerrarUpsell() {
+            const modal = document.getElementById('modal_upsell');
+            const box = document.getElementById('upsell_box');
+            modal.classList.add('opacity-0'); box.classList.add('translate-y-12');
+            setTimeout(() => { 
+                modal.classList.add('hidden'); modal.classList.remove('flex'); 
+                // 🚀 CADENA DE EVENTOS: Al cerrar el Carrusel, lanzamos el Feedback
+                if (typeof mostrarFeedback === 'function') mostrarFeedback();
+            }, 500);
+        }
+
+        function activarPerfilDesdeUpsell(perfil) {
+            // Cerramos el carrusel, lo que desencadenará el Feedback automáticamente
+            cerrarUpsell();
+            document.getElementById('perfil_usuario').value = perfil;
+            aplicarLogicaPerfiles();
+            
+            // Refrescamos el formulario en el fondo
+            setTimeout(() => {
+                reiniciarFormulario();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                alert(`¡Excelente elección!\nEl Perfil ${perfil} quedó seleccionado para tu próximo dictamen. Por favor, califica tu experiencia anterior.`);
+            }, 600);
+        }
+
         document.addEventListener("DOMContentLoaded", async () => {
             generarTestigosManuales(); 
             inicializarMapa();
@@ -1362,12 +1459,13 @@
                     selectorPerfil.value = "1";
                 }
 
+                // 🚀 EL TECHO LIBERADO: Perfiles 1, 2 y 3 siempre accesibles. El 4 sigue exclusivo de EME.
                 for (let i = 0; i < opciones.length; i++) {
                     const valorOpcion = parseInt(opciones[i].value, 10);
-                    if (valorOpcion > nivelMaximo) {
-                        opciones[i].disabled = true; opciones[i].classList.add('hidden'); 
+                    if (valorOpcion <= 3 || valorOpcion <= nivelMaximo) {
+                        opciones[i].disabled = false; opciones[i].classList.remove('hidden'); 
                     } else {
-                        opciones[i].disabled = false; opciones[i].classList.remove('hidden');
+                        opciones[i].disabled = true; opciones[i].classList.add('hidden');
                     }
                 }
             } catch (error) {
@@ -1618,7 +1716,7 @@
             const payload = { "parametros_motor": parametros_motor, "ticket_id": ticketActualGlobal };
 
             try {
-                txtCarga.innerText = "Conectando al Motor V20.6...";
+                txtCarga.innerText = "Conectando al Sistema Pericial...";
                 const response = await fetch('/.netlify/functions/procesar-dictamen-background', { 
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
                 });
@@ -1950,7 +2048,16 @@
                     if(btnRetorno) { btnRetorno.classList.remove('hidden'); btnRetorno.classList.add('inline-flex'); }
 
                     window.open(data.pdf_url, '_blank');
-                    setTimeout(() => { if (typeof mostrarFeedback === 'function') mostrarFeedback(); }, 1500);
+                    
+                    // 🚀 INTERCEPCIÓN EDU-SELLING: Mostrar a Perfiles 1, 2 y 3.
+                    setTimeout(() => { 
+                        const perfilUsado = document.getElementById('perfil_usuario').value;
+                        if (perfilUsado === "1" || perfilUsado === "2" || perfilUsado === "3") {
+                            mostrarUpsell();
+                        } else if (typeof mostrarFeedback === 'function') {
+                            mostrarFeedback(); 
+                        }
+                    }, 1500);
                 } else if (data.estatus_pdf === 'error') {
                     clearInterval(window.intervaloMensajesPDF); 
                     const overlay = document.getElementById('overlay_carga');
