@@ -128,7 +128,15 @@ exports.handler = async (event, context) => {
             maxAge: 60 * 60 * 24 * 7 
         });
 
-        const targetUrl = `/dashboard.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
+        // 🎯 REDIRECCIÓN INTELIGENTE BASADA EN ROL
+        let targetUrl = '';
+        if (rolUsuario === 'cliente_aveme') {
+            // Los clientes van a su propio ecosistema de dictámenes
+            targetUrl = `/dashboard_dictamen.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
+        } else {
+            // El Staff (admin, gestor, capturista) va al ERP
+            targetUrl = `/dashboard.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
+        }
 
         return {
             statusCode: 302,
