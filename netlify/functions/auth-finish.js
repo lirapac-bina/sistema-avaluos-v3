@@ -82,44 +82,54 @@ exports.handler = async (event, context) => {
 
         let rolUsuario = null;
         let accesoPermitido = false;
+        let targetDashboard = '';
 
         try {
+            // 1. Buscamos primero si el usuario pertenece al Staff (ERP / Hipotecas)
             const userDoc = await db.collection('usuarios').doc(userEmail).get();
             if (userDoc.exists && userDoc.data().activo !== false) {
-                // Leemos el rol exacto (admin, gestor, capturista). 
                 rolUsuario = userDoc.data().rol;
-                // Si el usuario existe pero tiene el rol viejo de 'invitado' o no tiene rol, NO lo dejamos pasar como Staff
+                // Bloqueamos a los "invitados". SOLO pasan roles autorizados (admin, gestor, etc.)
                 if (rolUsuario && rolUsuario !== 'invitado') {
                     accesoPermitido = true;
+                    targetDashboard = '/dashboard.html';
+                }
+            }
+
+            // 2. Si no es del Staff, buscamos si está autorizado como Cliente (Dictamen AvEME)
+            if (!accesoPermitido) {
+                const clientDoc = await db.collection('usuarios_dictamen').doc(userEmail).get();
+                if (clientDoc.exists && clientDoc.data().activo !== false) {
+                    rolUsuario = 'cliente_aveme';
+                    accesoPermitido = true;
+                    targetDashboard = '/dashboard_dictamen.html';
                 }
             }
         } catch (dbError) { console.warn("Error consultando DB:", dbError.message); }
 
+        // 3. Whitelist de Respaldo Seguro
         const WHITELIST_ADMINS = ['lirapac@gmail.com']; 
         if (!accesoPermitido && WHITELIST_ADMINS.includes(userEmail)) {
             rolUsuario = 'admin';
             accesoPermitido = true;
+            targetDashboard = '/dashboard.html';
             await db.collection('usuarios').doc(userEmail).set({
                 nombre: userName, email: userEmail, rol: 'admin', activo: true, fechaRegistro: new Date().toISOString()
             }, { merge: true });
         }
 
+        // 🚫 4. LA PATADA (ZERO TRUST): Si no existe en BD, no entra a NADA.
         if (!accesoPermitido) {
-            // 🎯 AUTO-REGISTRO EXCLUSIVO PARA CLIENTES (AvEME)
-            // Ya NO se guardan en la colección "usuarios" (ERP). Solo en su bóveda de clientes.
-            rolUsuario = 'cliente_aveme'; // Etiqueta clara para identificar que no son del Staff
-            accesoPermitido = true;
-
-            // Registro únicamente en el Motor AvEME (Perfil 1 - Automatizado)
-            await db.collection('usuarios_dictamen').doc(userEmail).set({
-                nombre: userName,
-                id: userEmail,
-                perfil: "1", 
-                activo: true,
-                fechaAlta: new Date().toISOString()
-            }, { merge: true });
+            console.warn(`Acceso denegado: ${userEmail} intentó entrar sin autorización.`);
+            return { 
+                statusCode: 302, 
+                // Lo mandamos de regreso al login con un parámetro de error
+                headers: { 'Location': '/index.html?error=unauthorized', 'Cache-Control': 'no-cache' },
+                body: ''
+            };
         }
 
+        // --- 5. GENERACIÓN DE SESIÓN (Solo para los que pasaron el filtro) ---
         const firebaseToken = await admin.auth().createCustomToken(userEmail);
         const authCookie = cookie.serialize('leezar_token', firebaseToken, {
             secure: process.env.NODE_ENV === 'production',
@@ -128,15 +138,7 @@ exports.handler = async (event, context) => {
             maxAge: 60 * 60 * 24 * 7 
         });
 
-        // 🎯 REDIRECCIÓN INTELIGENTE BASADA EN ROL
-        let targetUrl = '';
-        if (rolUsuario === 'cliente_aveme') {
-            // Los clientes van a su propio ecosistema de dictámenes
-            targetUrl = `/dashboard_dictamen.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
-        } else {
-            // El Staff (admin, gestor, capturista) va al ERP
-            targetUrl = `/dashboard.html?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
-        }
+        const targetUrl = `${targetDashboard}?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(userName)}&photo=${encodeURIComponent(userPhoto)}&role=${rolUsuario}`;
 
         return {
             statusCode: 302,
