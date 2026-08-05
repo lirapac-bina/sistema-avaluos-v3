@@ -101,20 +101,12 @@ exports.handler = async (event, context) => {
         }
 
         if (!accesoPermitido) {
-            // 🎯 AUTO-REGISTRO PARA EL PÚBLICO GENERAL (Ecosistema + AvEME)
-            rolUsuario = 'invitado'; // Nivel más bajo para proteger la Sección 1 (Expedientes)
+            // 🎯 AUTO-REGISTRO EXCLUSIVO PARA CLIENTES (AvEME)
+            // Ya NO se guardan en la colección "usuarios" (ERP). Solo en su bóveda de clientes.
+            rolUsuario = 'cliente_aveme'; // Etiqueta clara para identificar que no son del Staff
             accesoPermitido = true;
-            
-            // 1. Registro en el Ecosistema General (Sin permisos operativos)
-            await db.collection('usuarios').doc(userEmail).set({
-                nombre: userName, 
-                email: userEmail, 
-                rol: rolUsuario, 
-                activo: true, 
-                fechaRegistro: new Date().toISOString()
-            }, { merge: true });
 
-            // 2. Registro en el Motor AvEME (Perfil 1 - Automatizado)
+            // Registro únicamente en el Motor AvEME (Perfil 1 - Automatizado)
             await db.collection('usuarios_dictamen').doc(userEmail).set({
                 nombre: userName,
                 id: userEmail,
