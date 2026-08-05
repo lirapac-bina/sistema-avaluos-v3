@@ -9,8 +9,28 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. GESTIÓN DE SESIÓN Y SEGURIDAD (Heredado del core Leezar)
     // =================================================================
     const SESSION_KEY = 'leezar_user_active';
-    let activeUser = null;
+
+    // 🚨 1.1 INTERCEPCIÓN DE NUEVA SESIÓN (Atrapamos los datos de auth-finish.js)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEmail = urlParams.get('email');
+    const urlRole = urlParams.get('role');
     
+    if (urlEmail && urlRole) {
+        const newSession = {
+            email: urlEmail,
+            nombre: urlParams.get('name') || 'Usuario AvEME',
+            rol: urlRole,
+            photo: urlParams.get('photo') || ''
+        };
+        // Sobrescribimos cualquier sesión vieja (Mata al fantasma de lirapac)
+        localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
+        
+        // Limpiamos la URL para que no se vea fea y sea más seguro
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 1.2 LECTURA NORMAL DE SESIÓN
+    let activeUser = null;
     try {
         const stored = localStorage.getItem(SESSION_KEY);
         if (stored) activeUser = JSON.parse(stored);
