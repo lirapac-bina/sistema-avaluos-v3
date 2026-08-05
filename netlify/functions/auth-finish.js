@@ -33,7 +33,7 @@ const db = admin.firestore();
 exports.handler = async (event, context) => {
     const { code, state } = event.queryStringParameters;
 
-    // 🛡️ 1. VALIDACIÓN ANTI-CSRF (STATE) - ¡Corregido, declarada solo UNA vez!
+    // 🛡️ 1. VALIDACIÓN ANTI-CSRF (STATE)
     const cookies = cookie.parse(event.headers.cookie || '');
     const storedState = cookies.oauth_state;
 
@@ -48,9 +48,6 @@ exports.handler = async (event, context) => {
                 <p style="color: #475569; max-width: 400px; margin: 0 auto 20px auto; line-height: 1.5;">
                     No pudimos validar tu sesión de forma segura. Esto suele ocurrir si pasaron más de 10 minutos o si tu navegador tiene <b>bloqueadas las cookies</b>.
                 </p>
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; max-width: 400px; margin: 0 auto 30px auto; font-size: 14px; color: #334155;">
-                    <b>💡 Solución:</b> Asegúrate de permitir cookies para este sitio web o intenta usar una ventana normal (no incógnito estricto).
-                </div>
                 <a href="/" style="background: #0f4c81; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Volver al Inicio</a>
             </div>
             ` 
@@ -85,43 +82,21 @@ exports.handler = async (event, context) => {
         let targetDashboard = '';
 
         try {
-            // 1. Buscamos primero si el usuario pertenece al Staff (ERP / Hipotecas)
+            // 1. Buscamos EXCLUSIVAMENTE si el usuario pertenece al Staff (ERP Leezar)
             const userDoc = await db.collection('usuarios').doc(userEmail).get();
             if (userDoc.exists && userDoc.data().activo !== false) {
                 rolUsuario = userDoc.data().rol;
-                // Bloqueamos a los "invitados". SOLO pasan roles autorizados (admin, gestor, etc.)
                 if (rolUsuario && rolUsuario !== 'invitado') {
                     accesoPermitido = true;
                     targetDashboard = '/dashboard.html';
                 }
             }
+            
+            // 🚫 (Se eliminó por completo la puerta trasera de Auto-Registro Público)
 
-            // 2. Si no es del Staff, procedemos con el Ecosistema Público (AvEME)
-            if (!accesoPermitido) {
-                const clientDoc = await db.collection('usuarios_dictamen').doc(userEmail).get();
-                if (clientDoc.exists && clientDoc.data().activo !== false) {
-                    // Cliente existente
-                    rolUsuario = 'cliente_aveme';
-                    accesoPermitido = true;
-                    targetDashboard = '/dashboard_dictamen.html';
-                } else {
-                    // 🎯 AUTO-REGISTRO PÚBLICO (Solo para AvEME)
-                    rolUsuario = 'cliente_aveme';
-                    accesoPermitido = true;
-                    targetDashboard = '/dashboard_dictamen.html';
-
-                    await db.collection('usuarios_dictamen').doc(userEmail).set({
-                        nombre: userName,
-                        id: userEmail,
-                        perfil: "1", 
-                        activo: true,
-                        fechaAlta: new Date().toISOString()
-                    }, { merge: true });
-                }
-            }
         } catch (dbError) { console.warn("Error consultando DB:", dbError.message); }
 
-        // 3. Whitelist de Respaldo Seguro
+        // 2. Whitelist de Respaldo Seguro
         const WHITELIST_ADMINS = ['lirapac@gmail.com']; 
         if (!accesoPermitido && WHITELIST_ADMINS.includes(userEmail)) {
             rolUsuario = 'admin';
@@ -132,7 +107,17 @@ exports.handler = async (event, context) => {
             }, { merge: true });
         }
 
-        // --- 5. GENERACIÓN DE SESIÓN (Solo para los que pasaron el filtro) ---
+        // 🚫 4. LA PATADA: Solo se ejecuta si por alguna razón extraña no pasó ningún filtro anterior.
+        if (!accesoPermitido) {
+            console.warn(`Acceso denegado: ${userEmail} intentó entrar sin autorización.`);
+            return { 
+                statusCode: 302, 
+                headers: { 'Location': '/index.html?error=unauthorized', 'Cache-Control': 'no-cache' },
+                body: ''
+            };
+        }
+
+        // --- 5. GENERACIÓN DE SESIÓN ---
         const firebaseToken = await admin.auth().createCustomToken(userEmail);
         const authCookie = cookie.serialize('leezar_token', firebaseToken, {
             secure: process.env.NODE_ENV === 'production',
@@ -151,7 +136,6 @@ exports.handler = async (event, context) => {
 
     } catch (error) {
         console.error("Error Crítico Auth-Finish:", error);
-        // 🎯 REDIRECCIÓN SILENCIOSA: Si el código caducó (invalid_grant), lo regresamos al login
         return { 
             statusCode: 302, 
             headers: { 'Location': '/index.html', 'Cache-Control': 'no-cache' },

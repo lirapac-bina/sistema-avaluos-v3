@@ -503,8 +503,16 @@
                     if(label) label.textContent = `En vivo: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 
                 }, (error) => {
-                    console.error("❌ ERROR FIREBASE:", error);
-                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${error.message}</td></tr>`;
+                    // 🛡️ EL PARCHE INVISIBLE: Atrapamos el portazo por token caducado
+                    if (error.code === 'permission-denied') {
+                        console.warn("Sesión caducada. Limpiando memoria y redirigiendo al login...");
+                        localStorage.removeItem('leezar_user_active');
+                        window.location.replace('index.html');
+                    } else {
+                        // Si es otro tipo de error, lo mostramos normalmente
+                        console.error("❌ ERROR FIREBASE:", error);
+                        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${error.message}</td></tr>`;
+                    }
                 });
         }
         
