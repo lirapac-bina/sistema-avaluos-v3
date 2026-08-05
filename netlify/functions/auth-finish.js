@@ -96,13 +96,27 @@ exports.handler = async (event, context) => {
                 }
             }
 
-            // 2. Si no es del Staff, buscamos si está autorizado como Cliente (Dictamen AvEME)
+            // 2. Si no es del Staff, procedemos con el Ecosistema Público (AvEME)
             if (!accesoPermitido) {
                 const clientDoc = await db.collection('usuarios_dictamen').doc(userEmail).get();
                 if (clientDoc.exists && clientDoc.data().activo !== false) {
+                    // Cliente existente
                     rolUsuario = 'cliente_aveme';
                     accesoPermitido = true;
                     targetDashboard = '/dashboard_dictamen.html';
+                } else {
+                    // 🎯 AUTO-REGISTRO PÚBLICO (Solo para AvEME)
+                    rolUsuario = 'cliente_aveme';
+                    accesoPermitido = true;
+                    targetDashboard = '/dashboard_dictamen.html';
+
+                    await db.collection('usuarios_dictamen').doc(userEmail).set({
+                        nombre: userName,
+                        id: userEmail,
+                        perfil: "1", 
+                        activo: true,
+                        fechaAlta: new Date().toISOString()
+                    }, { merge: true });
                 }
             }
         } catch (dbError) { console.warn("Error consultando DB:", dbError.message); }
@@ -116,17 +130,6 @@ exports.handler = async (event, context) => {
             await db.collection('usuarios').doc(userEmail).set({
                 nombre: userName, email: userEmail, rol: 'admin', activo: true, fechaRegistro: new Date().toISOString()
             }, { merge: true });
-        }
-
-        // 🚫 4. LA PATADA (ZERO TRUST): Si no existe en BD, no entra a NADA.
-        if (!accesoPermitido) {
-            console.warn(`Acceso denegado: ${userEmail} intentó entrar sin autorización.`);
-            return { 
-                statusCode: 302, 
-                // Lo mandamos de regreso al login con un parámetro de error
-                headers: { 'Location': '/index.html?error=unauthorized', 'Cache-Control': 'no-cache' },
-                body: ''
-            };
         }
 
         // --- 5. GENERACIÓN DE SESIÓN (Solo para los que pasaron el filtro) ---
