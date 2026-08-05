@@ -94,8 +94,9 @@
                         <thead>
                             <tr class="bg-gray-100 dark:bg-slate-800/50 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider select-none">
                                 <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tl-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(0, 'date')">Fecha <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(1, 'string')">Inmueble <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
-                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(2, 'number')">Valor Comercial <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(1, 'string')">Folio <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(2, 'string')">Inmueble <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
+                                <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" onclick="ordenarTabla(3, 'number')">Valor Comercial <span class="material-symbols-rounded align-middle text-sm">swap_vert</span></th>
                                 <th class="p-4 font-bold border-b border-gray-200 dark:border-gray-700 rounded-tr-lg">Acciones</th>
                             </tr>
                         </thead>
@@ -218,9 +219,13 @@
                         botonAccion = `<span class="text-red-500 text-xs font-bold flex items-center gap-1" title="${doc.error_pdf || 'Error al generar PDF'}"><span class="material-symbols-rounded text-sm">error</span> Archivo Dañado</span>`;
                     }
 
+                    // Extraemos el folio (Si es un dictamen viejo sin folio, ponemos un guión)
+                    const folioVisual = doc.folio_institucional || '<span class="text-gray-400 font-normal">-</span>';
+
                     tbodyHtml.push(`
                         <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors fila-dictamen">
                             <td class="p-4 text-sm font-semibold" data-fecha="${fechaObj.getTime()}">${fechaFormateada}</td>
+                            <td class="p-4 text-sm font-bold text-gray-700 dark:text-gray-300">${folioVisual}</td>
                             <td class="p-4 text-sm font-bold text-leezar-primary dark:text-gray-200 uppercase">${doc.tipo_inmueble} <br><span class="font-normal text-gray-500">${doc.calle}</span></td>
                             <td class="p-4 text-sm font-black text-emerald-600 dark:text-emerald-400" data-valor="${valorRedondeado}">${formatoMoneda}</td>
                             <td class="p-4">${botonAccion}</td>

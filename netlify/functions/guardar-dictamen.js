@@ -32,8 +32,40 @@ exports.handler = async (event) => {
         parametros_motor.foto_base64 = "";
         parametros_motor.memoria_serper_json = [];
 
-        // 💾 2. GUARDAMOS EL ESQUELETO
-        await db.collection('tickets_motor').doc(ticket_id).set({ parametros_motor: parametros_motor }, { merge: true });
+        // 💾 2. ASIGNACIÓN ATÓMICA DE FOLIO Y GUARDADO DEL ESQUELETO
+        const ticketRef = db.collection('tickets_motor').doc(ticket_id);
+        // Creamos un contador maestro escondido en tu bóveda de configuración
+        const contadorRef = db.collection('configuracion').doc('folios_motor');
+
+        await db.runTransaction(async (transaction) => {
+            const ticketDoc = await transaction.get(ticketRef);
+            let folioFinal = ticketDoc.exists ? ticketDoc.data().folio_institucional : null;
+
+            // Si es la primera vez que se guarda y no tiene folio, sacamos uno nuevo de la fila
+            if (!folioFinal) {
+                const contadorDoc = await transaction.get(contadorRef);
+                let actual = 0;
+                if (contadorDoc.exists) {
+                    actual = contadorDoc.data().ultimo_folio || 0;
+                }
+                const nuevo = actual + 1;
+                
+                // Formato automático con 5 ceros a la izquierda (Ej. EME 00001)
+                folioFinal = `EME ${String(nuevo).padStart(5, '0')}`;
+                
+                // Actualizamos el contador maestro
+                transaction.set(contadorRef, { ultimo_folio: nuevo }, { merge: true });
+            }
+
+            // Inyectamos el folio en los parámetros para que viaje hasta GCP y se imprima en el PDF
+            parametros_motor.folio_institucional = folioFinal;
+
+            // Guardamos el esqueleto y estampamos el folio en la raíz para que tu Radar de Auditoría lo lea fácil
+            transaction.set(ticketRef, { 
+                parametros_motor: parametros_motor,
+                folio_institucional: folioFinal
+            }, { merge: true });
+        });
 
         // 🧱 3. GUARDAMOS LO PESADO EN PEDACITOS DENTRO DE UNA SUBCOLECCIÓN
         const batch = db.batch();
