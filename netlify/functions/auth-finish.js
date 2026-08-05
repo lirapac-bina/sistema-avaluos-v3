@@ -86,8 +86,12 @@ exports.handler = async (event, context) => {
         try {
             const userDoc = await db.collection('usuarios').doc(userEmail).get();
             if (userDoc.exists && userDoc.data().activo !== false) {
-                rolUsuario = userDoc.data().rol || 'invitado';
-                accesoPermitido = true;
+                // Leemos el rol exacto (admin, gestor, capturista). 
+                rolUsuario = userDoc.data().rol;
+                // Si el usuario existe pero tiene el rol viejo de 'invitado' o no tiene rol, NO lo dejamos pasar como Staff
+                if (rolUsuario && rolUsuario !== 'invitado') {
+                    accesoPermitido = true;
+                }
             }
         } catch (dbError) { console.warn("Error consultando DB:", dbError.message); }
 
