@@ -41,7 +41,10 @@ exports.handler = async (event) => {
             if (data.resultado && data.resultado.fecha_emision) {
                 fechaObjeto = new Date(data.resultado.fecha_emision);
             } else if (data.timestamp) {
-                fechaObjeto = data.timestamp.toDate();
+                // Validación blindada: Soporta objetos Timestamp de Firebase o Strings nativos
+                fechaObjeto = typeof data.timestamp.toDate === 'function' 
+                    ? data.timestamp.toDate() 
+                    : new Date(data.timestamp);
             } else if (doc.id.includes('_')) {
                 const partes = doc.id.split('_');
                 if (partes.length > 1 && !isNaN(partes[1])) {
