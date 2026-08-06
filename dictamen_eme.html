@@ -72,32 +72,27 @@
             -moz-appearance: textfield;
         }
     </style>
-<!-- 🛑 TRAMPA DE ACCESO: LISTA BLANCA DE DICTÁMENES -->
+<!-- 🛡️ TRAMPA DE ACCESO BLINDADA (CONEXIÓN AL BACKEND) -->
     <script>
-        (function() {
-            // 1. Define aquí los únicos correos que SÍ tienen llave para este departamento
-            const listaBlanca = [
-                'tu_correo_personal@gmail.com', // <-- Reemplaza este por tu correo personal
-                'lirapac@gmail.com',
-                'pamenogue9@gmail.com',
-                'eme@emeavaluos.com',
-                'ivan.herrera110@gmail.com',
-                'perinu88@gmail.com'
-            ];
-
+        (async function() {
             try {
                 const sessionData = localStorage.getItem('leezar_user_active');
                 if (sessionData) {
                     const activeUser = JSON.parse(sessionData);
                     
-                    // 2. Si el correo del usuario NO está en la lista blanca...
-                    if (!listaBlanca.includes(activeUser.email)) {
-                        // 3. Lo pateamos inmediatamente al lobby (dashboard general)
+                    // Le preguntamos al guardián en la bóveda, la lista ya no existe aquí
+                    const response = await fetch(`/.netlify/functions/verificar-acceso-dictamen?email=${encodeURIComponent(activeUser.email)}`);
+                    const data = await response.json();
+                    
+                    // Si el backend dice que no tiene acceso, lo rebotamos
+                    if (!data.acceso) {
                         alert("⛔ ACCESO DENEGADO: Tu perfil no tiene autorización para ingresar al módulo de Dictámenes Periciales.");
                         window.location.replace('dashboard.html');
                     }
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Error de validación de seguridad.");
+            }
         })();
     </script>
 </head>
