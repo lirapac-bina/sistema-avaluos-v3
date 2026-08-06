@@ -29,8 +29,8 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
     try {
-        // 🎯 QUITAMOS el orderBy('fecha') porque bloqueaba la consulta. Traemos los últimos 100 directos.
-        const snapshot = await db.collection('tickets_motor').limit(100).get();
+        // 🎯 Ampliamos el límite para asegurar que entren los de hoy. La memoria RAM se encargará de ordenarlos.
+        const snapshot = await db.collection('tickets_motor').limit(1000).get();
 
         const dictamenes = [];
         snapshot.forEach(doc => {
@@ -52,14 +52,27 @@ exports.handler = async (event) => {
                 }
             }
 
-            // Aseguramos capturar el email del usuario para mostrarlo en el Radar
+// Aseguramos capturar el email del usuario para mostrarlo en el Radar
             const emailUser = data.email || (data.parametros_motor ? data.parametros_motor.email_perito : null) || 'Desconocido';
 
+            // 🛑 EL FIX: Extraemos estrictamente los textos para la tabla.
+            // Ignoramos las fotos en Base64 para que el servidor vuele sin asfixiarse.
+            const params = data.parametros_motor || {};
+            
             dictamenes.push({
                 id: doc.id,
-                ...data,
+                folio_institucional: data.folio_institucional || null, // 🎯 EL FIX: Dejamos pasar el folio oficial
                 fecha: fechaObjeto.toISOString(),
-                email: emailUser
+                email: emailUser,
+                estatus_pdf: data.estatus_pdf || data.estatus || 'pendiente',
+                pdf_url: data.pdf_url || null,
+                valor_comercial: params.valor_comercial_rango || data.valor_comercial || 0,
+                parametros_motor: {
+                    Tipo_Inmueble: params.Tipo_Inmueble || 'N/D',
+                    Colonia: params.Colonia || '',
+                    Ciudad_Municipio: params.Ciudad_Municipio || '',
+                    perfil_solicitante: params.perfil_solicitante || '1'
+                }
             });
         });
 
