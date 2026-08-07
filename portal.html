@@ -593,6 +593,9 @@
             const savedPin = localStorage.getItem('auth_pin_' + expedienteId);
             if (savedPin) {
                 document.getElementById('securityLock').classList.add('hidden');
+                // 🐛 FIX VISUAL: Liberamos el contenedor padre para que el spinner pueda verse
+                document.getElementById('mainContent').classList.remove('hidden'); 
+                document.getElementById('main-container').classList.add('hidden'); // Ocultamos la info vacía
                 document.getElementById('loading-card').classList.remove('hidden');
                 cargarDatosEnSesion(savedPin); 
             } else {
@@ -622,8 +625,9 @@
                 db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
                     if (doc.exists) {
                         expedienteGlobal = doc.data();
-                        document.getElementById('mainContent').classList.remove('hidden');
+                        // 🐛 FIX VISUAL: Apagamos el spinner y encendemos la info
                         document.getElementById('loading-card').classList.add('hidden');
+                        document.getElementById('main-container').classList.remove('hidden'); 
                         renderizarExpediente(expedienteGlobal); 
                         verificarEstadoLegal();
                     }
