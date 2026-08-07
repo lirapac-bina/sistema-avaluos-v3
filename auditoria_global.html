@@ -314,7 +314,14 @@
                 } else if (item.estatus_pdf === 'completado' && item.pdf_url) {
                     botonPdf = `<a href="${item.pdf_url}" target="_blank" class="flex items-center gap-1 text-emerald-500 font-bold hover:underline"><span class="material-symbols-rounded text-[18px]">picture_as_pdf</span> Ver PDF</a>`;
                 } else {
-                    botonPdf = `<span class="flex items-center gap-1 text-red-500 font-bold text-xs"><span class="material-symbols-rounded text-[16px]">lock</span> Error/Vacío</span>`;
+                    // Extraemos el mensaje de error si existe, si no, mostramos el genérico
+                    const mensajeError = item.error || 'Vacío o Incompleto';
+                    botonPdf = `
+                        <div class="flex flex-col gap-1">
+                            <span class="flex items-center gap-1 text-red-500 font-bold text-xs"><span class="material-symbols-rounded text-[16px]">lock</span> Error</span>
+                            <span class="text-[9px] text-red-400 font-mono italic max-w-[200px] truncate" title="${mensajeError}">${mensajeError}</span>
+                        </div>
+                    `;
                 }
 
                 rowsHtml += `
