@@ -621,16 +621,22 @@
 
                 if (!response.ok) throw new Error("Acceso denegado o sesión expirada");
                 
-                // 🌟 Encendemos el "Tiempo Real" de Firebase
+                // 🌟 Encendemos el "Tiempo Real" de Firebase con Detector de Errores
                 db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
                     if (doc.exists) {
                         expedienteGlobal = doc.data();
-                        // 🐛 FIX VISUAL: Apagamos el spinner y encendemos la info
                         document.getElementById('loading-card').classList.add('hidden');
                         document.getElementById('main-container').classList.remove('hidden'); 
                         renderizarExpediente(expedienteGlobal); 
                         verificarEstadoLegal();
+                    } else {
+                        // Si el ID de la URL está mal o lo borraron
+                        document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">error</span><p class="text-red-600 font-bold text-xl">Expediente no encontrado</p><p class="text-gray-500 text-sm mt-2">El documento no existe en la base de datos.</p></div>';
                     }
+                }, (error) => {
+                    // Si Safari o un AdBlocker bloquean la conexión
+                    console.error("Firebase Error:", error);
+                    document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-amber-500 mb-4">wifi_off</span><p class="text-amber-600 font-bold text-xl">Bloqueo de conexión detectado</p><p class="text-gray-500 text-sm max-w-sm mx-auto mt-2">Tu navegador (Safari) o un bloqueador de anuncios está impidiendo la conexión segura a la bóveda.<br><br><b>Solución:</b> Apaga tu bloqueador de anuncios o intenta abrir la liga en modo incógnito/Chrome.</p></div>';
                 });
                 
             } catch (e) {
@@ -677,9 +683,15 @@
                         expedienteGlobal = doc.data();
                         document.getElementById('mainContent').classList.remove('hidden');
                         document.getElementById('loading-card').classList.add('hidden');
+                        document.getElementById('main-container').classList.remove('hidden');
                         renderizarExpediente(expedienteGlobal); 
                         verificarEstadoLegal();
+                    } else {
+                         document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">error</span><p class="text-red-600 font-bold text-xl">Expediente no encontrado</p></div>';
                     }
+                }, (error) => {
+                    console.error("Firebase Error:", error);
+                    alert("⚠️ ALERTA DE RED: Tu navegador está bloqueando la conexión a la base de datos. Si usas Safari o un bloqueador de anuncios, apágalo para este sitio.");
                 });
                 
             } catch (error) {
