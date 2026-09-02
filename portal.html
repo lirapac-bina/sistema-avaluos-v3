@@ -609,7 +609,7 @@
             }
         });
 
-        // 🔥 FIX MAESTRO: Tiempo Real Activado y Blindado
+        // 🔥 FIX MAESTRO: Tiempo Real Activado
         async function cargarDatosEnSesion(pinSecreto) {
             try {
                 // 1. Verificamos el PIN con Netlify por seguridad
@@ -621,21 +621,6 @@
 
                 if (!response.ok) throw new Error("Acceso denegado o sesión expirada");
                 
-                // 🐛 FIX VISUAL: Aseguramos que el contenedor principal y el loader sean visibles
-                document.getElementById('mainContent').classList.remove('hidden');
-                document.getElementById('main-container').classList.add('hidden');
-                document.getElementById('loading-card').classList.remove('hidden');
-                document.getElementById('loading-card').innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-4 border-leezar-500 border-t-transparent mx-auto mb-4"></div><p class="text-gray-500 font-medium animate-pulse">Sincronizando con la bóveda segura...</p>';
-
-                // 🚨 DETECTOR DE BLOQUEO DE API KEY
-                try {
-                    await db.collection('expedientes_avaluos').doc(expedienteId).get();
-                } catch (dbError) {
-                    console.error("Error de Base de Datos:", dbError);
-                    document.getElementById('loading-card').innerHTML = '<div class="text-center py-10"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">vpn_key_off</span><p class="text-red-600 font-bold text-xl">Bloqueo de Seguridad Detectado</p><p class="text-gray-500 text-sm mt-2 max-w-sm mx-auto">La base de datos rechazó la conexión porque el nuevo dominio no está autorizado en la <b>API Key de Google Cloud</b>.</p></div>';
-                    return; // Detenemos la ejecución para romper el ciclo infinito
-                }
-
                 // 🌟 Encendemos el "Tiempo Real" de Firebase con Detector de Errores
                 db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
                     if (doc.exists) {
@@ -645,8 +630,13 @@
                         renderizarExpediente(expedienteGlobal); 
                         verificarEstadoLegal();
                     } else {
+                        // Si el ID de la URL está mal o lo borraron
                         document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">error</span><p class="text-red-600 font-bold text-xl">Expediente no encontrado</p><p class="text-gray-500 text-sm mt-2">El documento no existe en la base de datos.</p></div>';
                     }
+                }, (error) => {
+                    // Si Safari o un AdBlocker bloquean la conexión
+                    console.error("Firebase Error:", error);
+                    document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-amber-500 mb-4">wifi_off</span><p class="text-amber-600 font-bold text-xl">Bloqueo de conexión detectado</p><p class="text-gray-500 text-sm max-w-sm mx-auto mt-2">Tu navegador (Safari) o un bloqueador de anuncios está impidiendo la conexión segura a la bóveda.<br><br><b>Solución:</b> Apaga tu bloqueador de anuncios o intenta abrir la liga en modo incógnito/Chrome.</p></div>';
                 });
                 
             } catch (e) {
@@ -687,25 +677,11 @@
                 localStorage.setItem('auth_pin_' + expedienteId, code);
                 document.getElementById('securityLock').classList.add('hidden');
                 
-                // 🐛 FIX VISUAL (Edge): Evita la pantalla negra mostrando el loader de inmediato
-                document.getElementById('mainContent').classList.remove('hidden');
-                document.getElementById('main-container').classList.add('hidden');
-                document.getElementById('loading-card').classList.remove('hidden');
-                document.getElementById('loading-card').innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-4 border-leezar-500 border-t-transparent mx-auto mb-4"></div><p class="text-gray-500 font-medium animate-pulse">Sincronizando con la bóveda segura...</p>';
-
-                // 🚨 DETECTOR DE BLOQUEO DE API KEY
-                try {
-                    await db.collection('expedientes_avaluos').doc(expedienteId).get();
-                } catch (dbError) {
-                    console.error("Error de Base de Datos:", dbError);
-                    document.getElementById('loading-card').innerHTML = '<div class="text-center py-10"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">vpn_key_off</span><p class="text-red-600 font-bold text-xl">Bloqueo de Seguridad Detectado</p><p class="text-gray-500 text-sm mt-2 max-w-sm mx-auto">La base de datos rechazó la conexión porque el nuevo dominio no está autorizado en la <b>API Key de Google Cloud</b>.</p></div>';
-                    return; // Detenemos la ejecución para romper el ciclo infinito
-                }
-
                 // 🌟 Encendemos el Tiempo Real para que el portal sea "En Vivo"
                 db.collection('expedientes_avaluos').doc(expedienteId).onSnapshot((doc) => {
                     if (doc.exists) {
                         expedienteGlobal = doc.data();
+                        document.getElementById('mainContent').classList.remove('hidden');
                         document.getElementById('loading-card').classList.add('hidden');
                         document.getElementById('main-container').classList.remove('hidden');
                         renderizarExpediente(expedienteGlobal); 
@@ -713,6 +689,9 @@
                     } else {
                          document.getElementById('loading-card').innerHTML = '<div class="text-center py-20"><span class="material-symbols-rounded text-6xl text-red-500 mb-4">error</span><p class="text-red-600 font-bold text-xl">Expediente no encontrado</p></div>';
                     }
+                }, (error) => {
+                    console.error("Firebase Error:", error);
+                    alert("⚠️ ALERTA DE RED: Tu navegador está bloqueando la conexión a la base de datos. Si usas Safari o un bloqueador de anuncios, apágalo para este sitio.");
                 });
                 
             } catch (error) {
@@ -1046,28 +1025,13 @@
             
             // 🔥 LEEMOS LA PLANTILLA DEL DICCIONARIO
             let urlFinal = item.plantilla || item.urlFormato;
-            let esSolicitudAVEoInfo = false;
             
-            // FIX: Quitamos la restricción !urlFinal. 
-            // Si el nombre contiene SOLICITUD y (AVE o INFONAVIT), el botón inteligente manda.
-            const nombreM = nombre.toUpperCase();
-            if (nombreM.includes('SOLICITUD') && (nombreM.includes('AVE') || nombreM.includes('INFONAVIT'))) {
-                esSolicitudAVEoInfo = true;
-                // Nos aseguramos de tener la URL inyectada por si Firebase no la mandó (para la alerta amarilla)
-                if (!urlFinal) {
-                    if (nombreM.includes('AVE')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
-                    else if (nombreM.includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
-                }
+            if (!urlFinal && nombre.toUpperCase().includes('SOLICITUD')) {
+                if (nombre.toUpperCase().includes('AVE')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-avaluo-ave-RLFaTVxxccFJWZIH.pdf';
+                else if (nombre.toUpperCase().includes('INFONAVIT')) urlFinal = 'https://assets.zyrosite.com/YKb8g9DzkGUbzMqW/solicitud-infonavit-BvU7wD8zhF0udyEB.pdf';
             }
 
-            // Si es una de nuestras solicitudes maestras y está pendiente, abrimos el Asistente Dual
-            if (esSolicitudAVEoInfo && estatus === 'pendiente') {
-                downloadLink = `
-                    <button onclick="abrirModalUnificado()" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-teal-50 text-teal-700 rounded-lg font-bold text-xs shadow-sm hover:bg-teal-100 border border-teal-200 transition-all active:scale-95 mb-2 sm:mb-0 relative overflow-hidden group">
-                        <div class="absolute inset-0 bg-teal-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                        <span class="material-symbols-rounded text-lg animate-pulse">smart_button</span> Pre-Llenar Solicitudes
-                    </button>`;
-            } else if (urlFinal) {
+            if (urlFinal) {
                 downloadLink = `<a href="${urlFinal}" target="_blank" class="w-full sm:w-auto px-4 py-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-xs shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-100 mb-2 sm:mb-0"><span class="material-symbols-rounded text-lg">download</span> Descargar Plantilla</a>`;
             }
             
@@ -2281,6 +2245,7 @@
             </div>
 
             <div class="p-5 overflow-y-auto thin-scroll">
+                
                 <div class="space-y-3 mb-6">
                     <div class="guia-card border-l-4 border-l-indigo-500">
                         <div class="flex gap-4 items-start">
@@ -2346,6 +2311,7 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
+            // Truco para reiniciar la animación CSS cada vez que se abre
             const steps = document.querySelectorAll('.step-animate');
             steps.forEach(step => {
                 step.style.animation = 'none';
@@ -2353,544 +2319,14 @@
                 step.style.animation = null; 
             });
         }
-
         function cerrarTimeline() {
             document.getElementById('timelineModal').classList.add('hidden');
             document.getElementById('timelineModal').classList.remove('flex');
         }
     </script>
-
-    <div class="help-fab" onclick="abrirTimeline()">
+<div class="help-fab" onclick="abrirTimeline()">
         <span class="material-symbols-rounded">menu_book</span>
         <span class="text-xs font-black uppercase tracking-widest">Cómo usar el portal</span>
     </div>
-
-<!-- ========================================================================= -->
-    <!-- 📄 MODAL MAESTRO DE LLENADO DUAL (AVE E INFONAVIT EN 1 CLIC)              -->
-    <!-- ========================================================================= -->
-    <div id="modalSolicitudesPDF" class="fixed inset-0 z-[9600] hidden bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 transition-all">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-[24px] shadow-2xl relative overflow-hidden flex flex-col max-h-[98vh] border border-slate-200 dark:border-slate-700 animate-[popIn_0.3s_ease-out]">
-            
-            <div class="p-4 sm:p-5 bg-teal-50 dark:bg-teal-900/20 border-b border-teal-100 dark:border-teal-800 flex justify-between items-center shrink-0 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-teal-500/10 dark:text-teal-400/5">
-                    <span class="material-symbols-rounded text-9xl">join</span>
-                </div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-teal-100 dark:bg-teal-800 text-teal-600 dark:text-teal-300 rounded-2xl flex items-center justify-center shadow-inner">
-                        <span class="material-symbols-rounded text-xl sm:text-2xl">edit_document</span>
-                    </div>
-                    <div>
-                        <h3 class="text-base sm:text-xl font-black text-teal-800 dark:text-teal-300 uppercase tracking-tight" id="solicitud-modal-titulo">Asistente de Solicitudes</h3>
-                        <p class="text-[9px] sm:text-[10px] font-bold text-teal-600 dark:text-teal-500 uppercase tracking-widest mt-0.5">Llena una vez, genera AVE e INFONAVIT juntas</p>
-                    </div>
-                </div>
-                <button onclick="cerrarModalUnificado()" class="w-8 h-8 relative z-10 flex items-center justify-center text-teal-600/50 hover:text-red-500 bg-white dark:bg-slate-700 rounded-full shadow-sm transition-colors"><span class="material-symbols-rounded">close</span></button>
-            </div>
-
-            <div class="p-4 sm:p-6 overflow-y-auto thin-scroll flex-1 space-y-4 bg-slate-50 dark:bg-slate-900/50">
-                <input type="hidden" id="sol_tipo" value="AMBAS">
-                <input type="hidden" id="sol_url" value="">
-                
-                <!-- 0. DATOS DEL SERVICIO (Cabecera AVE) -->
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">request_quote</span> 0. Detalles del Servicio (AVE)</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-2">
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Tipo de Servicio</label><input type="text" id="srv_tipo" value="AVALÚO" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Especificar</label><input type="text" id="srv_especificar" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Entidad Otorgante</label>
-                            <select id="srv_entidad_select" onchange="toggleEntidadEspecificar(this.value)" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-semibold uppercase cursor-pointer">
-                                <option value="INFONAVIT" selected>INFONAVIT</option>
-                                <option value="FOVISSSTE">FOVISSSTE</option>
-                                <option value="BANJERCITO">BANJERCITO</option>
-                                <option value="OTRO">OTRO / ESPECIFIQUE</option>
-                            </select>
-                            <input type="text" id="srv_entidad" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold mt-2 hidden" placeholder="Especifique la entidad...">
-                        </div>
-
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Cofinanciamiento</label>
-                            <select id="srv_cofinanciamiento" onchange="toggleCofinanciamiento(this.value)" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-semibold uppercase cursor-pointer">
-                                <option value="NO" selected>NO</option>
-                                <option value="SI">SÍ</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-span-1"><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Monto Compra Venta</label><input type="text" id="srv_monto_compra" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-mono font-bold"></div>
-                        <div class="col-span-1"><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Monto Crédito</label><input type="text" id="srv_monto_credito" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-mono font-bold"></div>
-                    </div>
-                </div>
-
-                <!-- 1. SOLICITANTE TITULAR -->
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">person</span> 1. Solicitante / Acreditado (Titular)</h4>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Nombres</label><input type="text" id="sol_nombres" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Ap. Paterno</label><input type="text" id="sol_apaterno" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Ap. Materno</label><input type="text" id="sol_amaterno" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                        <div class="col-span-2"><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase text-indigo-500" id="lbl_nss">NSS (11 Dígitos)</label><input type="text" id="sol_nss" maxlength="11" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-800 dark:text-white font-mono font-bold" placeholder="Para Infonavit"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">RFC</label><input type="text" id="sol_rfc" maxlength="13" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">CURP</label><input type="text" id="sol_curp" maxlength="18" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Teléfono Móvil</label><input type="text" id="sol_tel_movil" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Teléfono Fijo</label><input type="text" id="sol_tel_fijo" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Correo Electrónico</label><input type="email" id="sol_correo" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white lowercase font-semibold"></div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <div class="col-span-4 sm:col-span-2"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Calle (Solicitante)</label><input type="text" id="sol_dir_calle" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Num Ext.</label><input type="text" id="sol_dir_next" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Num Int.</label><input type="text" id="sol_dir_nint" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Colonia</label><input type="text" id="sol_dir_col" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">C.P.</label><input type="text" id="sol_dir_cp" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Municipio</label><input type="text" id="sol_dir_mun" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Estado</label><input type="text" id="sol_dir_est" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                    </div>
-                </div>
-
-                <!-- 1B. CO-ACREDITADO (DINÁMICO) -->
-                <div id="seccion_coacreditado" class="bg-indigo-50 dark:bg-indigo-900/10 p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-inner hidden transition-all animate-[popIn_0.3s_ease-out]">
-                    <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">group_add</span> 1B. Co-Acreditado</h4>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Nombres (Co-Acreditado)</label><input type="text" id="co_nombres" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Ap. Paterno</label><input type="text" id="co_apaterno" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Ap. Materno</label><input type="text" id="co_amaterno" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white uppercase font-semibold"></div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                        <div class="col-span-2"><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">NSS (11 Dígitos)</label><input type="text" id="co_nss" maxlength="11" class="w-full border border-indigo-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-600 dark:bg-slate-900 dark:border-indigo-600 dark:text-white font-mono font-bold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">RFC</label><input type="text" id="co_rfc" maxlength="13" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">CURP</label><input type="text" id="co_curp" maxlength="18" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white uppercase font-semibold"></div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Teléfono Móvil</label><input type="text" id="co_tel_movil" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Teléfono Fijo</label><input type="text" id="co_tel_fijo" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-indigo-500 dark:text-indigo-300 mb-1 uppercase">Correo Electrónico</label><input type="email" id="co_correo" class="w-full border border-indigo-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-indigo-700 dark:text-white lowercase font-semibold"></div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-2 bg-white dark:bg-slate-800 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
-                        <div class="col-span-4 sm:col-span-2"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Calle (Co-Acreditado)</label><input type="text" id="co_dir_calle" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Num Ext.</label><input type="text" id="co_dir_next" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Num Int.</label><input type="text" id="co_dir_nint" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Colonia</label><input type="text" id="co_dir_col" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">C.P.</label><input type="text" id="co_dir_cp" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Municipio</label><input type="text" id="co_dir_mun" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-indigo-400 dark:text-indigo-300 mb-1 uppercase">Estado</label><input type="text" id="co_dir_est" class="w-full border border-indigo-100 rounded-md p-1.5 text-xs outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                    </div>
-                </div>
-
-                <!-- 2. PROPIETARIO -->
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">real_estate_agent</span> 2. Propietario / Vendedor</h4>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Nombres / Razón Social</label><input type="text" id="prop_nombres" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Ap. Paterno</label><input type="text" id="prop_apaterno" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Ap. Materno</label><input type="text" id="prop_amaterno" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">RFC</label><input type="text" id="prop_rfc" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">CURP</label><input type="text" id="prop_curp" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Teléfono</label><input type="text" id="prop_tel" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white uppercase font-semibold"></div>
-                        <div><label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Correo</label><input type="email" id="prop_correo" class="w-full border rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white lowercase font-semibold"></div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <div class="col-span-4 sm:col-span-2"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Calle (Propietario)</label><input type="text" id="prop_dir_calle" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Num Ext.</label><input type="text" id="prop_dir_next" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Num Int.</label><input type="text" id="prop_dir_nint" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Colonia</label><input type="text" id="prop_dir_col" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">C.P.</label><input type="text" id="prop_dir_cp" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Municipio</label><input type="text" id="prop_dir_mun" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Estado</label><input type="text" id="prop_dir_est" class="w-full border rounded-md p-1.5 text-xs outline-none focus:border-teal-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase font-medium"></div>
-                    </div>
-                </div>
-
-                <!-- 3. INMUEBLE A VALUAR -->
-                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 sm:p-5 rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm">
-                    <h4 class="text-xs font-black text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-1"><span class="material-symbols-rounded text-sm">home</span> 3. Domicilio del Inmueble a Valuar</h4>
-                    <div class="grid grid-cols-4 gap-2">
-                        <div class="col-span-4 sm:col-span-2"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Calle Principal</label><input type="text" id="inm_calle" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Num Ext.</label><input type="text" id="inm_next" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Num Int.</label><input type="text" id="inm_nint" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Colonia</label><input type="text" id="inm_col" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">C.P.</label><input type="text" id="inm_cp" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-2 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Municipio</label><input type="text" id="inm_mun" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                        <div class="col-span-4 sm:col-span-1"><label class="block text-[9px] font-bold text-indigo-400 mb-1 uppercase">Estado</label><input type="text" id="inm_est" class="w-full border border-indigo-200 dark:border-indigo-700 rounded-md p-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white uppercase font-bold"></div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="p-5 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0 flex flex-col sm:flex-row gap-3">
-                <button onclick="generarAmbasSolicitudes()" id="btn-generar-duales" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3.5 sm:py-4 rounded-xl shadow-[0_4px_15px_rgba(13,148,136,0.3)] dark:shadow-none transition-all flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm uppercase tracking-widest">
-                    <span class="material-symbols-rounded">magic_button</span> Crear e Imprimir Formatos
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CEREBRO PDF Y FUNCIONES JS -->
-    <script>
-        // ----------------------------------------------------------------------
-        // DICCIONARIO INFONAVIT (Modo Manual / DrawText - Página 2)
-        // ----------------------------------------------------------------------
-        const PDF_COORDS = {
-            'INFONAVIT': {
-                pageIndex: 1, // El formato empieza en la página 2
-                'sol_nss': { x: 45, y: 685, size: 12, letterSpacing: 10.5 },
-                'sol_apaterno': { x: 45, y: 650, size: 9 },
-                'sol_amaterno': { x: 220, y: 650, size: 9 },
-                'sol_nombres': { x: 400, y: 650, size: 9 },
-                'sol_calle': { x: 45, y: 620, size: 8 },
-                'sol_num_ext': { x: 400, y: 620, size: 8 },
-                'sol_colonia': { x: 45, y: 590, size: 8 },
-                'sol_municipio': { x: 220, y: 590, size: 8 },
-                'sol_estado': { x: 45, y: 560, size: 8 },
-                'sol_cp': { x: 220, y: 560, size: 8 },
-                'sol_tel_fijo': { x: 350, y: 560, size: 8 }, 
-                
-                'prop_apaterno': { x: 45, y: 495, size: 9 },
-                'prop_amaterno': { x: 220, y: 495, size: 9 },
-                'prop_nombres': { x: 400, y: 495, size: 9 },
-                'prop_rfc': { x: 45, y: 465, size: 9 },
-                'prop_calle': { x: 45, y: 435, size: 8 },
-                'prop_colonia': { x: 45, y: 405, size: 8 },
-                'prop_municipio': { x: 220, y: 405, size: 8 },
-                'prop_estado': { x: 45, y: 375, size: 8 },
-                'prop_cp': { x: 220, y: 375, size: 8 },
-                'prop_tel': { x: 350, y: 375, size: 8 },
-                
-                'inm_calle': { x: 45, y: 310, size: 8 },
-                'inm_num_ext': { x: 350, y: 310, size: 8 },
-                'inm_num_int': { x: 420, y: 310, size: 8 },
-                'inm_colonia': { x: 45, y: 280, size: 8 },
-                'inm_municipio': { x: 45, y: 250, size: 8 },
-                'inm_estado': { x: 220, y: 250, size: 8 },
-                'inm_cp': { x: 380, y: 250, size: 8 }
-            }
-        };
-
-        function toggleEntidadEspecificar(val) {
-            const input = document.getElementById('srv_entidad');
-            if (val === 'OTRO') {
-                input.classList.remove('hidden');
-                input.focus();
-            } else {
-                input.classList.add('hidden');
-                input.value = '';
-            }
-        }
-
-        function toggleCofinanciamiento(val) {
-            const div = document.getElementById('seccion_coacreditado');
-            if (val === 'SI') {
-                div.classList.remove('hidden');
-            } else {
-                div.classList.add('hidden');
-            }
-        }
-
-        function abrirModalUnificado() {
-            if (typeof expedienteGlobal !== 'undefined' && expedienteGlobal) {
-                let clienteParts = (expedienteGlobal.nombreCliente || expedienteGlobal.cliente || "").split(' ');
-                document.getElementById('sol_nombres').value = clienteParts[0] || "";
-                document.getElementById('sol_apaterno').value = clienteParts.length > 1 ? clienteParts[1] : "";
-                document.getElementById('sol_amaterno').value = clienteParts.length > 2 ? clienteParts.slice(2).join(' ') : "";
-                document.getElementById('sol_tel_movil').value = expedienteGlobal.telefono || "";
-                document.getElementById('sol_correo').value = expedienteGlobal.correo || "";
-                
-                if (expedienteGlobal.checklist && expedienteGlobal.checklist['UBICACION_MAPS']) {
-                    const ubi = expedienteGlobal.checklist['UBICACION_MAPS'];
-                    let addrParts = (ubi.direccion || "").split(',');
-                    if (addrParts.length > 2) {
-                        document.getElementById('inm_calle').value = addrParts[0].trim();
-                        document.getElementById('inm_col').value = addrParts[1].trim();
-                        document.getElementById('inm_mun').value = addrParts[2].trim();
-                        document.getElementById('inm_est').value = (addrParts[3] || "").trim();
-                    }
-                }
-            }
-            document.getElementById('modalSolicitudesPDF').classList.remove('hidden');
-            document.getElementById('modalSolicitudesPDF').classList.add('flex');
-        }
-
-        function cerrarModalUnificado() {
-            document.getElementById('modalSolicitudesPDF').classList.add('hidden');
-            document.getElementById('modalSolicitudesPDF').classList.remove('flex');
-        }
-
-        async function generarAmbasSolicitudes() {
-            const btn = document.getElementById('btn-generar-duales');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-rounded animate-spin">sync</span> Generando Documentos...';
-
-            try {
-                // 1. DATOS COMPARTIDOS (Servicio, Propietario e Inmueble)
-                const d = {
-                    srv_tipo: document.getElementById('srv_tipo').value.trim().toUpperCase(),
-                    srv_especificar: document.getElementById('srv_especificar').value.trim().toUpperCase(),
-                    srv_entidad_select: document.getElementById('srv_entidad_select').value,
-                    srv_entidad: document.getElementById('srv_entidad').value.trim().toUpperCase(),
-                    srv_cofinanciamiento: document.getElementById('srv_cofinanciamiento').value,
-                    srv_monto_compra: document.getElementById('srv_monto_compra').value.trim(),
-                    srv_monto_credito: document.getElementById('srv_monto_credito').value.trim(),
-
-                    prop_nombres: document.getElementById('prop_nombres').value.trim().toUpperCase(),
-                    prop_apaterno: document.getElementById('prop_apaterno').value.trim().toUpperCase(),
-                    prop_amaterno: document.getElementById('prop_amaterno').value.trim().toUpperCase(),
-                    prop_nombreCompleto: `${document.getElementById('prop_nombres').value} ${document.getElementById('prop_apaterno').value} ${document.getElementById('prop_amaterno').value}`.trim().toUpperCase(),
-                    prop_rfc: document.getElementById('prop_rfc').value.trim().toUpperCase(),
-                    prop_curp: document.getElementById('prop_curp').value.trim().toUpperCase(),
-                    prop_tel: document.getElementById('prop_tel').value.trim(),
-                    prop_correo: document.getElementById('prop_correo').value.trim().toLowerCase(),
-                    
-                    prop_calle_num: document.getElementById('prop_dir_calle').value.trim().toUpperCase(),
-                    prop_num_ext: document.getElementById('prop_dir_next').value.trim().toUpperCase(),
-                    prop_num_int: document.getElementById('prop_dir_nint').value.trim().toUpperCase(),
-                    prop_colonia: document.getElementById('prop_dir_col').value.trim().toUpperCase(),
-                    prop_municipio: document.getElementById('prop_dir_mun').value.trim().toUpperCase(),
-                    prop_estado: document.getElementById('prop_dir_est').value.trim().toUpperCase(),
-                    prop_cp: document.getElementById('prop_dir_cp').value.trim(),
-                    
-                    inm_calle: document.getElementById('inm_calle').value.trim().toUpperCase(),
-                    inm_num_ext: document.getElementById('inm_next').value.trim().toUpperCase(),
-                    inm_num_int: document.getElementById('inm_nint').value.trim().toUpperCase(),
-                    inm_colonia: document.getElementById('inm_col').value.trim().toUpperCase(),
-                    inm_municipio: document.getElementById('inm_mun').value.trim().toUpperCase(),
-                    inm_estado: document.getElementById('inm_est').value.trim().toUpperCase(),
-                    inm_cp: document.getElementById('inm_cp').value.trim()
-                };
-
-                // 2. CREACIÓN DINÁMICA DE ARREGLO DE SOLICITANTES
-                const solicitantes = [];
-                
-                // Titular (Siempre va)
-                solicitantes.push({
-                    esCoacreditado: false,
-                    nombres: document.getElementById('sol_nombres').value.trim().toUpperCase(),
-                    apaterno: document.getElementById('sol_apaterno').value.trim().toUpperCase(),
-                    amaterno: document.getElementById('sol_amaterno').value.trim().toUpperCase(),
-                    nombreCompleto: `${document.getElementById('sol_nombres').value} ${document.getElementById('sol_apaterno').value} ${document.getElementById('sol_amaterno').value}`.trim().toUpperCase(),
-                    curp: document.getElementById('sol_curp').value.trim().toUpperCase(),
-                    rfc: document.getElementById('sol_rfc').value.trim().toUpperCase(),
-                    nss: document.getElementById('sol_nss').value.trim(),
-                    tel_movil: document.getElementById('sol_tel_movil').value.trim(),
-                    tel_fijo: document.getElementById('sol_tel_fijo').value.trim(),
-                    correo: document.getElementById('sol_correo').value.trim().toLowerCase(),
-                    calle_num: document.getElementById('sol_dir_calle').value.trim().toUpperCase(),
-                    num_ext: document.getElementById('sol_dir_next').value.trim().toUpperCase(),
-                    num_int: document.getElementById('sol_dir_nint').value.trim().toUpperCase(),
-                    colonia: document.getElementById('sol_dir_col').value.trim().toUpperCase(),
-                    municipio: document.getElementById('sol_dir_mun').value.trim().toUpperCase(),
-                    estado: document.getElementById('sol_dir_est').value.trim().toUpperCase(),
-                    cp: document.getElementById('sol_dir_cp').value.trim()
-                });
-
-                // Co-Acreditado (Opcional si eligen SÍ en cofinanciamiento)
-                if (d.srv_cofinanciamiento === 'SI') {
-                    solicitantes.push({
-                        esCoacreditado: true,
-                        nombres: document.getElementById('co_nombres').value.trim().toUpperCase(),
-                        apaterno: document.getElementById('co_apaterno').value.trim().toUpperCase(),
-                        amaterno: document.getElementById('co_amaterno').value.trim().toUpperCase(),
-                        nombreCompleto: `${document.getElementById('co_nombres').value} ${document.getElementById('co_apaterno').value} ${document.getElementById('co_amaterno').value}`.trim().toUpperCase(),
-                        curp: document.getElementById('co_curp').value.trim().toUpperCase(),
-                        rfc: document.getElementById('co_rfc').value.trim().toUpperCase(),
-                        nss: document.getElementById('co_nss').value.trim(),
-                        tel_movil: document.getElementById('co_tel_movil').value.trim(),
-                        tel_fijo: document.getElementById('co_tel_fijo').value.trim(),
-                        correo: document.getElementById('co_correo').value.trim().toLowerCase(),
-                        calle_num: document.getElementById('co_dir_calle').value.trim().toUpperCase(),
-                        num_ext: document.getElementById('co_dir_next').value.trim().toUpperCase(),
-                        num_int: document.getElementById('co_dir_nint').value.trim().toUpperCase(),
-                        colonia: document.getElementById('co_dir_col').value.trim().toUpperCase(),
-                        municipio: document.getElementById('co_dir_mun').value.trim().toUpperCase(),
-                        estado: document.getElementById('co_dir_est').value.trim().toUpperCase(),
-                        cp: document.getElementById('co_dir_cp').value.trim()
-                    });
-                }
-
-                const f = new Date();
-                const fechaTxt = `${f.getDate().toString().padStart(2, '0')}/${(f.getMonth()+1).toString().padStart(2, '0')}/${f.getFullYear()}`;
-                const { PDFDocument, rgb } = window.PDFLib;
-                const colorTexto = rgb(0.1, 0.1, 0.4);
-
-                // 3. LA MAGIA: ITERAMOS SOBRE CADA SOLICITANTE PARA CREAR SUS PDFs
-                for (let i = 0; i < solicitantes.length; i++) {
-                    const sol = solicitantes[i];
-                    const etiquetaArchivo = sol.esCoacreditado ? "_COACREDITADO" : "";
-                    
-                    // ==========================================================
-                    // GENERAR PDF AVE (ACROFORMS)
-                    // ==========================================================
-                    const urlAVE = './Master Formulario Solicitud AVE.pdf'; 
-                    const resAVE = await fetch(urlAVE);
-                    if (!resAVE.ok) throw new Error("No se encontró el PDF AVE local.");
-                    
-                    const bytesAVE = await resAVE.arrayBuffer();
-                    const pdfAVE = await PDFDocument.load(bytesAVE);
-                    const formAVE = pdfAVE.getForm();
-                    
-                    const setField = (name, value) => { try { const field = formAVE.getTextField(name); if(field) field.setText(value || ""); } catch(e) {} };
-                    const checkField = (name) => { try { const field = formAVE.getCheckBox(name); if(field) field.check(); } catch(e) {} };
-
-                    // Cabecera AVE
-                    setField('Fecha', fechaTxt); 
-                    setField('TIPO DE SERVICIO', d.srv_tipo);
-                    setField('ESPECIFICAR', d.srv_especificar);
-                    setField('COMPRA VENTA', d.srv_monto_compra);
-                    setField('CREDITO', d.srv_monto_credito);
-                    
-                    // Entidad
-                    if (d.srv_entidad_select === 'INFONAVIT') checkField('Check INFONAVIT');
-                    else if (d.srv_entidad_select === 'FOVISSSTE') checkField('Check FOVISSSTE');
-                    else if (d.srv_entidad_select === 'BANJERCITO') checkField('Check BANEJERCITO'); 
-                    else if (d.srv_entidad_select === 'OTRO') { checkField('Check OTRO'); setField('ESPECIFICAR ENTIDAD', d.srv_entidad); }
-
-                    // Cofinanciamiento
-                    if (d.srv_cofinanciamiento === 'SI') checkField('Check Box1');
-                    else if (d.srv_cofinanciamiento === 'NO') checkField('Check Box2');
-
-                    // Inyección Dinámica del Solicitante Actual (Titular o Co-Acreditado)
-                    setField('NOMBRES O RAZÓN SOCIAL', sol.nombreCompleto);
-                    setField('APELLIDO PATERNO', sol.apaterno);
-                    setField('APELLIDO MATERNO', sol.amaterno);
-                    setField('CALLE', sol.calle_num);
-                    setField('NÚMERO EXTERIOR', sol.num_ext);
-                    setField('NÚMERO INTERIOR', sol.num_int);
-                    setField('COLONIA', sol.colonia);
-                    setField('CÓDIGO POSTAL', sol.cp);
-                    setField('MUNICIPIO ALCALDÍA', sol.municipio);
-                    setField('ENTIDAD ESTADO', sol.estado);
-                    setField('TELÉFONO MÓVIL', sol.tel_movil);
-                    setField('TELÉFONO FIJO', sol.tel_fijo);
-                    setField('CURP', sol.curp);
-                    setField('CORREO ELECTRÓNICO', sol.correo);
-                    setField('RFC', sol.rfc);
-                    setField('NSS', sol.nss);
-                    // (La firma se queda en blanco)
-
-                    // Propietario (Es el mismo para ambos)
-                    setField('NOMBRES O RAZÓN SOCIAL_2', d.prop_nombreCompleto);
-                    setField('APELLIDO PATERNO_2', d.prop_apaterno);
-                    setField('APELLIDO MATERNO_2', d.prop_amaterno);
-                    setField('CALLE_2', d.prop_calle_num);
-                    setField('NÚMERO EXTERIOR_2', d.prop_num_ext);
-                    setField('NÚMERO INTERIOR_2', d.prop_num_int);
-                    setField('COLONIA_2', d.prop_colonia);
-                    setField('CÓDIGO POSTAL_2', d.prop_cp);
-                    setField('MUNICIPIO ALCALDÍA_2', d.prop_municipio);
-                    setField('ENTIDAD ESTADO_2', d.prop_estado);
-                    setField('TELÉFONO MÓVIL_2', d.prop_tel);
-                    setField('TELÉFONO FIJO_2', d.prop_tel);
-                    setField('CURP_2', d.prop_curp);
-                    setField('CORREO ELECTRÓNICO_2', d.prop_correo);
-                    setField('RFC_2', d.prop_rfc);
-
-                    // Inmueble (Es el mismo para ambos)
-                    setField('CALLE_3', d.inm_calle);
-                    setField('NÚMERO EXTERIOR_3', d.inm_num_ext);
-                    setField('NÚMERO INTERIOR_3', d.inm_num_int);
-                    setField('COLONIARow1', d.inm_colonia); 
-                    setField('CÓDIGO POSTAL_3', d.inm_cp);
-                    setField('MUNICIPIO ALCALDÍA_3', d.inm_municipio);
-                    setField('ENTIDAD ESTADO_3', d.inm_estado);
-
-                    const blobAVE = new Blob([await pdfAVE.save()], { type: "application/pdf" });
-                    const linkAVE = document.createElement('a');
-                    linkAVE.href = window.URL.createObjectURL(blobAVE);
-                    linkAVE.download = `SOLICITUD_AVE_${sol.nombres.replace(/\s+/g,'_')}${etiquetaArchivo}.pdf`;
-                    linkAVE.click();
-
-                    await new Promise(r => setTimeout(r, 1500));
-
-                    // ==========================================================
-                    // GENERAR PDF INFONAVIT PARA ESTE SOLICITANTE
-                    // ==========================================================
-                    const urlINFO = './Master Solicitud INFONAVIT.pdf';
-                    const resINFO = await fetch(urlINFO);
-                    if (!resINFO.ok) throw new Error("No se encontró el PDF INFONAVIT local.");
-                    
-                    const bytesINFO = await resINFO.arrayBuffer();
-                    const pdfINFO = await PDFDocument.load(bytesINFO);
-                    const cINFO = PDF_COORDS['INFONAVIT'];
-                    const pINFO = pdfINFO.getPages()[cINFO.pageIndex];
-
-                    const wINFO = (key, text) => { 
-                        if (cINFO[key] && text) {
-                            if (cINFO[key].letterSpacing) {
-                                for(let j=0; j < text.length; j++){
-                                    pINFO.drawText(text[j], { x: cINFO[key].x + (j * cINFO[key].letterSpacing), y: cINFO[key].y, size: cINFO[key].size, color: colorTexto });
-                                }
-                            } else {
-                                pINFO.drawText(text, { x: cINFO[key].x, y: cINFO[key].y, size: cINFO[key].size, color: colorTexto });
-                            }
-                        } 
-                    };
-
-                    wINFO('sol_nss', sol.nss);
-                    wINFO('sol_apaterno', sol.apaterno);
-                    wINFO('sol_amaterno', sol.amaterno);
-                    wINFO('sol_nombres', sol.nombres);
-                    wINFO('sol_calle', sol.calle_num);
-                    wINFO('sol_num_ext', sol.num_ext);
-                    wINFO('sol_colonia', sol.colonia);
-                    wINFO('sol_municipio', sol.municipio);
-                    wINFO('sol_estado', sol.estado);
-                    wINFO('sol_cp', sol.cp);
-                    wINFO('sol_tel_fijo', sol.tel_fijo);
-
-                    wINFO('prop_apaterno', d.prop_apaterno);
-                    wINFO('prop_amaterno', d.prop_amaterno);
-                    wINFO('prop_nombres', d.prop_nombres);
-                    wINFO('prop_rfc', d.prop_rfc);
-                    wINFO('prop_calle', d.prop_calle_num);
-                    wINFO('prop_colonia', d.prop_colonia);
-                    wINFO('prop_municipio', d.prop_municipio);
-                    wINFO('prop_estado', d.prop_estado);
-                    wINFO('prop_cp', d.prop_cp);
-                    wINFO('prop_tel', d.prop_tel);
-
-                    wINFO('inm_calle', d.inm_calle);
-                    wINFO('inm_num_ext', d.inm_num_ext);
-                    wINFO('inm_num_int', d.inm_num_int);
-                    wINFO('inm_colonia', d.inm_colonia);
-                    wINFO('inm_municipio', d.inm_municipio);
-                    wINFO('inm_estado', d.inm_estado);
-                    wINFO('inm_cp', d.inm_cp);
-
-                    const blobINFO = new Blob([await pdfINFO.save()], { type: "application/pdf" });
-                    const linkINFO = document.createElement('a');
-                    linkINFO.href = window.URL.createObjectURL(blobINFO);
-                    linkINFO.download = `SOLICITUD_INFONAVIT_${sol.nombres.replace(/\s+/g,'_')}${etiquetaArchivo}.pdf`;
-                    linkINFO.click();
-
-                    await new Promise(r => setTimeout(r, 1500));
-                } // Fin del for loop (Siguiente solicitante)
-
-                // Finalizar y limpiar
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-rounded">magic_button</span> Crear e Imprimir Formatos';
-                cerrarModalUnificado();
-
-            } catch (error) {
-                console.error(error);
-                alert("Error al procesar: " + error.message);
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-rounded">magic_button</span> Crear e Imprimir Formatos';
-            }
-        }
-    </script>
 </body>
 </html>
